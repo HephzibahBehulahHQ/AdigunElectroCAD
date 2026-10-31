@@ -8,6 +8,7 @@
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
 | Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
+| Placed-component removal | Connected manual wires are cleaned up and the prior project state remains available through Undo | Automated |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |

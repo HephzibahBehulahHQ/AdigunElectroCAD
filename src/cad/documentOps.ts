@@ -30,6 +30,12 @@ export function canPlaceComponent(components: ComponentInstance[], componentId: 
   return components.every((component) => component.id === componentId || !overlaps(x, y, component.x, component.y));
 }
 
+export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
+  if (!document.components.some((component) => component.id === componentId)) return { document, removedWireCount: 0 };
+  const wires = document.wires.filter((wire) => wire.from.componentId !== componentId && wire.to.componentId !== componentId);
+  return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
+}
+
 function overlaps(leftX: number, leftY: number, rightX: number, rightY: number): boolean {
   return Math.abs(leftX - rightX) < componentWidth && Math.abs(leftY - rightY) < componentHeight;
 }

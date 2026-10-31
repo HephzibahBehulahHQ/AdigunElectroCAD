@@ -14,6 +14,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Validated JSON project import that rejects malformed, unknown-device, invalid-topology and label-overflow input.
 - On-demand BOM, wire-list and terminal-list reports for the active sheet.
 - Collision-safe component placement and movement that preserve clear, non-overlapping symbols.
+- Safe removal for placed components, including connected-wire cleanup and project Undo recovery.
 
 The catalog contains eight supported DOL simulation definitions plus 512 generic symbol templates, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
