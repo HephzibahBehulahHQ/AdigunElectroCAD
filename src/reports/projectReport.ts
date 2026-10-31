@@ -28,6 +28,8 @@ export interface ProjectReport {
   terminals: TerminalLine[];
 }
 
+export type ReportSection = "bom" | "wires" | "terminals";
+
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
   const components = new Map(document.components.map((component) => [component.id, component]));
@@ -54,4 +56,14 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
     wires: document.wires.map((wire) => ({ id: wire.id, netName: wire.netName ?? "—", from: endpointLabel(wire.from.componentId, wire.from.terminalId), to: endpointLabel(wire.to.componentId, wire.to.terminalId) })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
   };
+}
+
+export function reportCsv(report: ProjectReport, section: ReportSection): string {
+  if (section === "bom") return toCsv(["Component", "Category", "Quantity", "References"], report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")]));
+  if (section === "wires") return toCsv(["Net", "From", "To"], report.wires.map((line) => [line.netName, line.from, line.to]));
+  return toCsv(["Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction]));
+}
+
+function toCsv(headers: string[], rows: string[][]): string {
+  return [headers, ...rows].map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(",")).join("\n");
 }

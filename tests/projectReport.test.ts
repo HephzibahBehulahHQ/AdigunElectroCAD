@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
-import { createProjectReport } from "../src/reports/projectReport";
+import { createProjectReport, reportCsv } from "../src/reports/projectReport";
 
 describe("engineering project reports", () => {
   it("derives a BOM, wire list and terminal list from the DOL document", () => {
@@ -20,5 +20,11 @@ describe("engineering project reports", () => {
     const motor = report.bom.find((line) => line.definitionId === "motor.three-phase");
 
     expect(motor).toMatchObject({ quantity: 2, references: ["M1", "M2"] });
+    expect(reportCsv(report, "bom")).toContain('"M1, M2"');
+  });
+
+  it("serializes wire reports with a stable CSV header", () => {
+    const report = createProjectReport(createDolMotorStarter(), catalogById);
+    expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Net","From","To"');
   });
 });

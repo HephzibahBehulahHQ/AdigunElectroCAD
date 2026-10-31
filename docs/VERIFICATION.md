@@ -7,6 +7,7 @@
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
+| Report CSV export | BOM aggregation and wire-list headers serialize as escaped CSV | Automated |
 | Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
 | Placed-component removal | Connected manual wires are cleaned up and the prior project state remains available through Undo | Automated |
 | Reference-label legibility | UI and JSON imports cap references at 12 characters; free-symbol labels are fitted inside the symbol | Automated + build validation |
