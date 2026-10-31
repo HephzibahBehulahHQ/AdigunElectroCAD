@@ -22,5 +22,6 @@ describe("circuit topology validation", () => {
     project.components.push(insertedMotor);
     expect(canConnectTerminals(project, catalogById, { componentId: "supply", terminalId: "l1" }, { componentId: "motor-2", terminalId: "u1" })).toEqual({ ok: true });
     expect(canConnectTerminals(project, catalogById, { componentId: "supply", terminalId: "l1" }, { componentId: "start", terminalId: "13" })).toEqual(expect.objectContaining({ ok: false }));
+    expect(canConnectTerminals(project, catalogById, { componentId: "supply", terminalId: "l1" }, { componentId: "supply", terminalId: "l2" })).toEqual(expect.objectContaining({ ok: false }));
   });
 });

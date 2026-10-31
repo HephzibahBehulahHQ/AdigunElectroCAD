@@ -17,6 +17,7 @@ export function canConnectTerminals(document: CircuitDocument, definitions: Map<
   const toTerminal = resolveTerminal(to, document, definitions);
   if (!fromTerminal || !toTerminal) return { ok: false, reason: "Both wire endpoints must be valid catalog terminals." };
   if (fromTerminal.kind !== toTerminal.kind) return { ok: false, reason: `${fromTerminal.kind} and ${toTerminal.kind} terminals cannot be wired together.` };
+  if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) return { ok: false, reason: "Two input terminals or two output terminals cannot be wired together." };
   const duplicate = document.wires.some((wire) => sameConnection(wire.from, wire.to, from, to));
   return duplicate ? { ok: false, reason: "Those terminals are already connected." } : { ok: true };
 }
