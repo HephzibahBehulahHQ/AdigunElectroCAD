@@ -12,6 +12,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
 - SVG schematic workspace, local save, JSON export, English/German UI and light/dark themes.
 - Validated JSON project import that rejects malformed, unknown-device, invalid-topology and label-overflow input.
+- Validated local save restoration for multi-sheet projects.
 - On-demand BOM, wire-list and terminal-list reports for the active sheet.
 - CSV export for BOM, wire-list and terminal-list reports.
 - Collision-safe component placement and movement that preserve clear, non-overlapping symbols.

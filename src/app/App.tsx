@@ -65,6 +65,21 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [isRunning]);
 
+  useEffect(() => {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    try {
+      const restored = parseProjectJson(saved);
+      const firstSheet = restored.sheets[0];
+      setProject(restored);
+      setActiveSheetId(firstSheet.id);
+      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setNotice(`${restored.name} restored from local storage.`);
+    } catch {
+      setNotice("The saved local project could not be restored. It was left unchanged for manual review.");
+    }
+  }, []);
+
   const updateDocument = (next: CircuitDocument, saveHistory = true) => {
     if (saveHistory) setHistory((items) => [...items, project].slice(-30));
     setProject(replaceSheetDocument(project, activeSheet.id, next));
@@ -84,6 +99,28 @@ export function App() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
     setDirty(false);
     setNotice(t.projectSaved);
+  };
+
+  const loadLocalSave = () => {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      setNotice("No saved local project was found.");
+      return;
+    }
+    try {
+      const restored = parseProjectJson(saved);
+      const firstSheet = restored.sheets[0];
+      setHistory((items) => [...items, project].slice(-30));
+      setProject(restored);
+      setActiveSheetId(firstSheet.id);
+      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setWireMode(false);
+      setWireStart(null);
+      setDirty(false);
+      setNotice(`${restored.name} restored from local storage.`);
+    } catch {
+      setNotice("The saved local project is invalid and was not loaded.");
+    }
   };
 
   const exportProject = () => {
@@ -313,7 +350,7 @@ export function App() {
       </header>
 
       <nav className="menu-row" aria-label="Project actions">
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={exportProject}>{t.export}</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.length}>Edit · Undo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
         <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
