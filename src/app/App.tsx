@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { catalogById, dolCatalog } from "../catalog/dolCatalog";
+import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { moveComponent } from "../cad/documentOps";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, replaceSheetDocument } from "../projects/starterProject";
@@ -43,9 +43,9 @@ export function App() {
   const document = activeSheet.document;
   const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
-  const selectedDefinition = catalogById.get(selectedDefinitionId) ?? dolCatalog[0];
+  const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
-  const filteredCatalog = dolCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
+  const filteredCatalog = componentCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     window.document.documentElement.dataset.theme = theme;
@@ -237,8 +237,8 @@ export function App() {
 
       <section className="workspace">
         <aside className="panel component-panel">
-          <div className="panel-title"><strong>Component Library</strong><span>{dolCatalog.length} verified models</span></div>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search verified models" aria-label="Search component library" />
+          <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} modeled · {dolCatalog.length} DOL</span></div>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
           <div className="catalog-list">
             {filteredCatalog.map((definition) => <button key={definition.id} className={definition.id === selectedDefinitionId ? "catalog-item selected" : "catalog-item"} onClick={() => setSelectedDefinitionId(definition.id)}>
               <span className="symbol-glyph">{definition.symbolId.includes("motor") ? "Ⓜ" : definition.symbolId.includes("contactor") ? "⌇" : definition.symbolId.includes("pushbutton") ? "○" : "▣"}</span>

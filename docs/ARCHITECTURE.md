@@ -4,7 +4,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 
 ## Boundaries
 
-- `src/catalog`: immutable component definitions and terminal data.
+- `src/catalog`: immutable component definitions and terminal data. Eight DOL entries have supported simulation behavior; the 512 additional entries are schema-validated generic IEC-oriented symbol templates, not vendor-certified records.
 - `src/projects`: editable circuit documents built from catalog instances.
 - `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
 - `src/electrical`: graph validation independent of SVG geometry.
