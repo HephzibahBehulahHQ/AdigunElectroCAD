@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { moveComponent } from "../cad/documentOps";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
+import { parseProjectJson } from "../projects/projectSerialization";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -90,6 +91,26 @@ export function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     setNotice("Project JSON exported.");
+  };
+
+  const importProject = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    try {
+      const imported = parseProjectJson(await file.text());
+      const firstSheet = imported.sheets[0];
+      setHistory((items) => [...items, project].slice(-30));
+      setProject(imported);
+      setActiveSheetId(firstSheet.id);
+      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setWireMode(false);
+      setWireStart(null);
+      setDirty(true);
+      setNotice(`${imported.name} imported locally. Save to keep this project copy.`);
+    } catch (error) {
+      setNotice(`Import rejected: ${error instanceof Error ? error.message : "Unable to read project."}`);
+    }
   };
 
   const restoreDol = () => {
@@ -235,7 +256,7 @@ export function App() {
       </header>
 
       <nav className="menu-row" aria-label="Project actions">
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={exportProject}>{t.export}</button></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={exportProject}>{t.export}</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.length}>Edit · Undo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
         <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
