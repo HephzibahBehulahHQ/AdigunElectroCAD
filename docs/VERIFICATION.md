@@ -7,6 +7,7 @@
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
+| Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |

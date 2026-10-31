@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { moveComponent } from "../cad/documentOps";
+import { canPlaceComponent, findOpenPlacement, moveComponent } from "../cad/documentOps";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
@@ -23,6 +23,7 @@ const copy = {
 } as const;
 
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
+const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
@@ -139,13 +140,19 @@ export function App() {
   };
 
   const addSelectedComponent = () => {
+    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free");
+    if (!placement) {
+      setNotice("This sheet's placement grid is full. Add another free sheet to keep symbols clear and non-overlapping.");
+      return;
+    }
     const number = document.components.filter((component) => component.definitionId === selectedDefinition.id).length + 1;
     const instance: ComponentInstance = {
       id: `${selectedDefinition.id.replaceAll(".", "-")}-${Date.now()}`,
       definitionId: selectedDefinition.id,
       reference: `${selectedDefinition.referencePrefix}${number}`,
-      x: 955,
-      y: 130 + (document.components.length % 5) * 95,
+      x: placement.x,
+      y: placement.y,
       rotation: 0,
       properties: { ...selectedDefinition.propertiesSchema },
     };
@@ -233,8 +240,15 @@ export function App() {
 
   const nudgeSelectedComponent = (deltaX: number, deltaY: number) => {
     if (!selectedComponent) return;
-    if (["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"].includes(selectedComponent.id)) {
+    if (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id)) {
       setNotice("Reference DOL symbols are fixed in this increment. Newly placed component instances can be moved on the grid.");
+      return;
+    }
+    const nextX = selectedComponent.x + deltaX;
+    const nextY = selectedComponent.y + deltaY;
+    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
+    if (!canPlaceComponent(movableComponents, selectedComponent.id, nextX, nextY)) {
+      setNotice("Move blocked to keep component symbols clear and non-overlapping.");
       return;
     }
     updateDocument(moveComponent(document, selectedComponent.id, deltaX, deltaY));
@@ -308,7 +322,7 @@ export function App() {
 
         <aside className="panel properties-panel">
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? "—"}</span></div>
-          {selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onNudge={nudgeSelectedComponent} movable={!['supply', 'breaker', 'contactor', 'overload', 'motor', 'control', 'stop', 'start'].includes(selectedComponent.id)} /> : <p className="empty">Select a component to inspect its definition and terminals.</p>}
+          {selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onNudge={nudgeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component to inspect its definition and terminals.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>Simulation is not assigned to this schematic sheet.</div><div>Use the DOL reference sheet for the supported motor model.</div></section>}
           <p className="cloud-note">☁ {t.unavailable}</p>
         </aside>
