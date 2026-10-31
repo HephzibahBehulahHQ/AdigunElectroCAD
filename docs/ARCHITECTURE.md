@@ -7,6 +7,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/catalog`: immutable component definitions and terminal data. Eight DOL entries have supported simulation behavior; the 512 additional entries are schema-validated generic IEC-oriented symbol templates, not vendor-certified records.
 - `src/projects`: editable circuit documents built from catalog instances.
 - `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
+- `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic component-state and motor model.
 - `src/components`: workspace presentation and accessible interaction.

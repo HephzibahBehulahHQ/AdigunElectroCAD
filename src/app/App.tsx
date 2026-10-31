@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { moveComponent } from "../cad/documentOps";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
-import { addFreeSchematicSheet, createStarterProject, replaceSheetDocument } from "../projects/starterProject";
+import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
+import { templateLibrary } from "../projects/templateLibrary";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -37,6 +38,7 @@ export function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
   const t = copy[locale];
 
   const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
@@ -44,6 +46,7 @@ export function App() {
   const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
+  const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const filteredCatalog = componentCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
 
@@ -150,6 +153,25 @@ export function App() {
     setNotice(`${sheet.name} selected.`);
   };
 
+  const loadTemplate = () => {
+    let targetProject = project;
+    let targetSheetId = activeSheet.id;
+    if (isReferenceSheet) {
+      targetProject = addFreeSchematicSheet(project);
+      targetSheetId = targetProject.sheets.at(-1)!.id;
+    }
+    const next = loadTemplateIntoSheet(targetProject, targetSheetId, selectedTemplate);
+    const loadedSheet = next.sheets.find((sheet) => sheet.id === targetSheetId)!;
+    setHistory((items) => [...items, project].slice(-30));
+    setProject(next);
+    setActiveSheetId(targetSheetId);
+    setSelectedComponentId(loadedSheet.document.components[0]?.id ?? "");
+    setWireMode(false);
+    setWireStart(null);
+    setDirty(true);
+    setNotice(`${selectedTemplate.name} loaded as a topology-validated template; no process simulation is assigned.`);
+  };
+
   const toggleWireMode = () => {
     const next = !wireMode;
     setWireMode(next);
@@ -238,6 +260,7 @@ export function App() {
       <section className="workspace">
         <aside className="panel component-panel">
           <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} modeled · {dolCatalog.length} DOL</span></div>
+          <section className="template-library"><div><strong>Project Library</strong><span>{templateLibrary.length} topology templates</span></div><select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} aria-label="Project template">{templateLibrary.map((template) => <option key={template.id} value={template.id}>{template.level} · {template.name}</option>)}</select><p>{selectedTemplate.description}</p><button className="wide" onClick={loadTemplate}>Load into free sheet</button></section>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
           <div className="catalog-list">
             {filteredCatalog.map((definition) => <button key={definition.id} className={definition.id === selectedDefinitionId ? "catalog-item selected" : "catalog-item"} onClick={() => setSelectedDefinitionId(definition.id)}>

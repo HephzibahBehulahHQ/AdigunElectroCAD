@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | DOL terminal definitions | `tests/dolSimulator.test.ts` | Automated |
 | Modeled catalog schema | 520 unique entries across 16 categories, each with terminals and standards metadata; generic entries are not manufacturer-certified | Automated |
+| Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |

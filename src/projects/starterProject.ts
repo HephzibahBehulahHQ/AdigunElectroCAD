@@ -1,4 +1,5 @@
 import { createDolMotorStarter } from "./dolMotorStarter";
+import type { ProjectTemplate } from "./templateLibrary";
 import type { CircuitDocument, CircuitSheet, ElectricalProject } from "../types/electrical";
 
 export const createStarterProject = (): ElectricalProject => ({
@@ -22,6 +23,15 @@ export function addFreeSchematicSheet(project: ElectricalProject): ElectricalPro
 
 export function replaceSheetDocument(project: ElectricalProject, sheetId: string, document: CircuitDocument): ElectricalProject {
   return { ...project, revision: project.revision + 1, sheets: project.sheets.map((sheet) => sheet.id === sheetId ? { ...sheet, document } : sheet) };
+}
+
+export function loadTemplateIntoSheet(project: ElectricalProject, sheetId: string, template: ProjectTemplate): ElectricalProject {
+  const document: CircuitDocument = {
+    ...template.document,
+    components: template.document.components.map((component) => ({ ...component, properties: { ...component.properties } })),
+    wires: template.document.wires.map((wire) => ({ ...wire, from: { ...wire.from }, to: { ...wire.to }, points: wire.points.map((point) => ({ ...point })) })),
+  };
+  return { ...project, revision: project.revision + 1, sheets: project.sheets.map((sheet) => sheet.id === sheetId ? { ...sheet, name: template.name, kind: "free-schematic", document } : sheet) };
 }
 
 function blankDocument(id: string, name: string): CircuitDocument {
