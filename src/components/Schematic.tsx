@@ -1,11 +1,51 @@
 import type { CircuitDocument } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
+import type { TerminalEndpoint } from "../types/electrical";
+import { catalogById } from "../catalog/dolCatalog";
 
 interface Props {
   document: CircuitDocument;
   selectedComponentId: string;
   simulation: DolSimulationState;
+  wireMode: boolean;
+  wireStart: TerminalEndpoint | null;
   onSelect: (componentId: string) => void;
+  onTerminalSelect: (endpoint: TerminalEndpoint) => void;
+}
+
+interface TerminalAnchor {
+  endpoint: TerminalEndpoint;
+  x: number;
+  y: number;
+}
+
+const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
+const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${endpoint.terminalId}`;
+const isSameEndpoint = (left: TerminalEndpoint | null, right: TerminalEndpoint) => Boolean(left && left.componentId === right.componentId && left.terminalId === right.terminalId);
+
+function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
+  const anchors: TerminalAnchor[] = [
+    anchor("supply", "l1", 165, 100), anchor("supply", "l2", 255, 100), anchor("supply", "l3", 345, 100), anchor("supply", "pe", 445, 100),
+    anchor("breaker", "l1-in", 165, 146), anchor("breaker", "l2-in", 255, 146), anchor("breaker", "l3-in", 345, 146), anchor("breaker", "l1-out", 165, 252), anchor("breaker", "l2-out", 255, 252), anchor("breaker", "l3-out", 345, 252),
+    anchor("contactor", "l1-in", 165, 252), anchor("contactor", "l2-in", 255, 252), anchor("contactor", "l3-in", 345, 252), anchor("contactor", "l1-out", 165, 303), anchor("contactor", "l2-out", 255, 303), anchor("contactor", "l3-out", 345, 303), anchor("contactor", "a1", 780, 730), anchor("contactor", "a2", 834, 730), anchor("contactor", "aux-13", 375, 665), anchor("contactor", "aux-14", 610, 665),
+    anchor("overload", "l1-in", 165, 370), anchor("overload", "l2-in", 255, 370), anchor("overload", "l3-in", 345, 370), anchor("overload", "t1", 165, 401), anchor("overload", "t2", 255, 401), anchor("overload", "t3", 345, 401), anchor("overload", "aux-95", 310, 730), anchor("overload", "aux-96", 375, 730),
+    anchor("motor", "u1", 165, 516), anchor("motor", "v1", 255, 516), anchor("motor", "w1", 345, 516), anchor("motor", "pe", 445, 540),
+    anchor("control", "line", 130, 730), anchor("control", "neutral", 130, 765), anchor("stop", "21", 170, 730), anchor("stop", "22", 280, 730), anchor("start", "13", 440, 730), anchor("start", "14", 548, 730),
+  ];
+  for (const component of document.components.filter((item) => !staticComponentIds.has(item.id))) {
+    const definition = catalogById.get(component.definitionId);
+    definition?.terminals.forEach((terminal, index) => anchors.push(anchor(component.id, terminal.id, component.x + (index % 2 ? 32 : -32), component.y - 15 + Math.floor(index / 2) * 12)));
+  }
+  return anchors;
+}
+
+function anchor(componentId: string, terminalId: string, x: number, y: number): TerminalAnchor {
+  return { endpoint: { componentId, terminalId }, x, y };
+}
+
+function wirePath(from: TerminalAnchor, to: TerminalAnchor): string {
+  const middleX = Math.round((from.x + to.x) / 2);
+  return `M ${from.x} ${from.y} H ${middleX} V ${to.y} H ${to.x}`;
 }
 
 const componentBox = (id: string, selected: string, onSelect: (componentId: string) => void, x: number, y: number, width: number, height: number) => ({
@@ -14,16 +54,24 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
   children: <rect x={x} y={y} width={width} height={height} rx="6" className="selection-boundary" />,
 });
 
-export function Schematic({ document, selectedComponentId, simulation, onSelect }: Props) {
+export function Schematic({ document, selectedComponentId, simulation, wireMode, wireStart, onSelect, onTerminalSelect }: Props) {
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;
   const lineClass = (active: boolean) => active ? "wire energized" : "wire";
+  const anchors = terminalAnchors(document);
+  const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const manualWires = document.wires.filter((wire) => wire.id.startsWith("manual-wire-"));
 
   return <div className="schematic-wrap">
-    <svg className="schematic" viewBox="0 0 1100 780" role="img" aria-label="Direct-on-line motor starter power and control schematic">
+    <svg className="schematic" viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Direct-on-line motor starter power and control schematic"}>
       <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
       <rect width="1100" height="780" className="sheet-bg" /><rect width="1100" height="780" fill="url(#grid)" />
+      {manualWires.map((wire) => {
+        const from = anchorIndex.get(endpointKey(wire.from));
+        const to = anchorIndex.get(endpointKey(wire.to));
+        return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
+      })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="65" y="700" className="drawing-title">CONTROL CIRCUIT — THREE-WIRE START / STOP / HOLDING CONTACT</text>
 
@@ -67,6 +115,7 @@ export function Schematic({ document, selectedComponentId, simulation, onSelect 
       </g></g>
 
       {document.components.filter((component) => !["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"].includes(component.id)).map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}><rect x={component.x - 32} y={component.y - 23} width="64" height="46" className="extra-component" /><text x={component.x - 18} y={component.y + 4} className="extra-label">{component.reference}</text></g>)}
+      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
     </svg>
   </div>;
 }

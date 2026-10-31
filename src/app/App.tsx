@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { catalogById, dolCatalog } from "../catalog/dolCatalog";
-import { validateCircuit } from "../electrical/topology";
+import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { createDolMotorStarter } from "../projects/dolMotorStarter";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
-import type { CircuitDocument, ComponentInstance } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 
 type Locale = "en" | "de";
@@ -33,6 +33,8 @@ export function App() {
   const [simulation, setSimulation] = useState<DolSimulationState>(() => initialDolState());
   const [isRunning, setIsRunning] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [wireMode, setWireMode] = useState(false);
+  const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
   const t = copy[locale];
 
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
@@ -112,6 +114,32 @@ export function App() {
     setNotice(`${selectedDefinition.name} inserted as ${instance.reference}.`);
   };
 
+  const toggleWireMode = () => {
+    const next = !wireMode;
+    setWireMode(next);
+    setWireStart(null);
+    setNotice(next ? "Wiring mode: select a source terminal, then a compatible target terminal." : "Wiring mode closed.");
+  };
+
+  const selectWireTerminal = (endpoint: TerminalEndpoint) => {
+    if (!wireMode) return;
+    if (!wireStart) {
+      setWireStart(endpoint);
+      setNotice("Wire start selected. Choose a compatible target terminal.");
+      return;
+    }
+    const check = canConnectTerminals(document, catalogById, wireStart, endpoint);
+    if (!check.ok) {
+      setNotice(check.reason ?? "The selected terminals cannot be connected.");
+      setWireStart(null);
+      return;
+    }
+    const wire = { id: `manual-wire-${document.wires.length + 1}`, from: wireStart, to: endpoint, points: [], netName: `MANUAL_${document.wires.length + 1}` };
+    updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
+    setWireStart(null);
+    setNotice(`Wire ${wire.netName} created between catalog terminals.`);
+  };
+
   const updateReference = (reference: string) => {
     if (!selectedComponent || !reference.trim()) return;
     if (document.components.some((component) => component.id !== selectedComponent.id && component.reference === reference.trim())) {
@@ -153,7 +181,7 @@ export function App() {
         <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
         <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
         <button className="tool-button" onClick={undo} disabled={!history.length}>↶<span>Undo</span></button>
-        <button className="tool-button" onClick={() => setNotice("The reference project uses orthogonal terminal wires. Interactive wire authoring is next.")}>⌁<span>Wiring</span></button>
+        <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         <span className="tool-divider" />
         <button className="run" onClick={() => setIsRunning(true)}>▶ Run</button>
         <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
@@ -181,7 +209,7 @@ export function App() {
 
         <section className="drawing-area" aria-label="DOL motor starter schematic canvas">
           <div className="sheet-tabs"><button className="active">Power & Control Circuit · Sheet 1</button><button onClick={() => setNotice("Multi-sheet projects are not available in this initial increment.")}>＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} onSelect={setSelectedComponentId} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={setSelectedComponentId} onTerminalSelect={selectWireTerminal} />
           <div className="canvas-caption"><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></div>
         </section>
 
