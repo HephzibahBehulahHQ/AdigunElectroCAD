@@ -5,6 +5,7 @@ import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
 import { parseProjectJson } from "../projects/projectSerialization";
+import { createProjectReport, type ProjectReport } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -40,6 +41,7 @@ export function App() {
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
+  const [reportsOpen, setReportsOpen] = useState(false);
   const t = copy[locale];
 
   const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
@@ -49,6 +51,7 @@ export function App() {
   const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
   const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
+  const report = useMemo(() => createProjectReport(document, catalogById), [document]);
   const filteredCatalog = componentCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
@@ -262,7 +265,7 @@ export function App() {
         <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
         <button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Electrical · Validate</button>
         <button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation</button>
-        <button onClick={() => setNotice("Engineering reports are not available in this initial vertical slice.")}>Reports</button>
+        <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
       </nav>
 
@@ -317,6 +320,8 @@ export function App() {
         <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
       </section>
 
+      {reportsOpen && <ProjectReports sheetName={activeSheet.name} report={report} onClose={() => setReportsOpen(false)} />}
+
       <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span>{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
     </main>
   );
@@ -326,4 +331,12 @@ function Properties({ instance, onReferenceChange, onNudge, movable }: { instanc
   const definition = catalogById.get(instance.definitionId);
   if (!definition) return <p className="empty">Catalog definition missing.</p>;
   return <section className="properties-form"><label>Reference<input defaultValue={instance.reference} key={instance.id + instance.reference} onBlur={(event) => onReferenceChange(event.target.value)} /></label><label>Component<input value={definition.name} readOnly /></label><label>Category<input value={definition.category} readOnly /></label><label>Simulation<input value={definition.simulationSupport} readOnly /></label>{movable && <div className="move-grid"><strong>Position · snap 20</strong><span>X {instance.x} · Y {instance.y}</span><button onClick={() => onNudge(0, -20)} aria-label="Move component up">↑</button><button onClick={() => onNudge(-20, 0)} aria-label="Move component left">←</button><button onClick={() => onNudge(20, 0)} aria-label="Move component right">→</button><button onClick={() => onNudge(0, 20)} aria-label="Move component down">↓</button></div>}<div className="terminals"><strong>Terminals</strong>{definition.terminals.map((terminal) => <span key={terminal.id}>{terminal.label}<small>{terminal.kind}</small></span>)}</div><p>{definition.documentation}</p></section>;
+}
+
+function ProjectReports({ sheetName, report, onClose }: { sheetName: string; report: ProjectReport; onClose: () => void }) {
+  return <section className="report-panel" aria-label="Engineering reports"><div className="report-heading"><div><strong>Engineering reports</strong><span>{sheetName}</span></div><button onClick={onClose}>Close reports</button></div><div className="report-grid"><ReportTable title="Bill of materials" headers={["Component", "Category", "Qty", "References"]} rows={report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")])} /><ReportTable title="Wire list" headers={["Net", "From", "To"]} rows={report.wires.map((line) => [line.netName, line.from, line.to])} /><ReportTable title="Terminal list" headers={["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction])} /></div></section>;
+}
+
+function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
+  return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>No entries on this sheet.</td></tr>}</tbody></table></div></section>;
 }

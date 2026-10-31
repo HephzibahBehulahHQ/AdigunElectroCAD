@@ -6,6 +6,7 @@
 | Modeled catalog schema | 520 unique entries across 16 categories, each with terminals and standards metadata; generic entries are not manufacturer-certified | Automated |
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
+| Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |
