@@ -6,6 +6,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 
 - Typed IEC-oriented DOL component definitions with terminals.
 - Terminal-aware reference circuit with topology validation.
+- A typed multi-sheet project model with free-form schematic sheets.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
 - SVG schematic workspace, local save, JSON export, English/German UI and light/dark themes.
 

@@ -54,3 +54,20 @@ export interface CircuitDocument {
   wires: Wire[];
   revision: number;
 }
+
+export type SheetKind = "reference-dol" | "free-schematic";
+
+export interface CircuitSheet {
+  id: string;
+  name: string;
+  kind: SheetKind;
+  document: CircuitDocument;
+}
+
+export interface ElectricalProject {
+  id: string;
+  name: string;
+  description: string;
+  sheets: CircuitSheet[];
+  revision: number;
+}

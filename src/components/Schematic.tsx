@@ -24,14 +24,14 @@ const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${e
 const isSameEndpoint = (left: TerminalEndpoint | null, right: TerminalEndpoint) => Boolean(left && left.componentId === right.componentId && left.terminalId === right.terminalId);
 
 function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
-  const anchors: TerminalAnchor[] = [
+  const anchors: TerminalAnchor[] = document.id === "reference-dol-motor-starter" ? [
     anchor("supply", "l1", 165, 100), anchor("supply", "l2", 255, 100), anchor("supply", "l3", 345, 100), anchor("supply", "pe", 445, 100),
     anchor("breaker", "l1-in", 165, 146), anchor("breaker", "l2-in", 255, 146), anchor("breaker", "l3-in", 345, 146), anchor("breaker", "l1-out", 165, 252), anchor("breaker", "l2-out", 255, 252), anchor("breaker", "l3-out", 345, 252),
     anchor("contactor", "l1-in", 165, 252), anchor("contactor", "l2-in", 255, 252), anchor("contactor", "l3-in", 345, 252), anchor("contactor", "l1-out", 165, 303), anchor("contactor", "l2-out", 255, 303), anchor("contactor", "l3-out", 345, 303), anchor("contactor", "a1", 780, 730), anchor("contactor", "a2", 834, 730), anchor("contactor", "aux-13", 375, 665), anchor("contactor", "aux-14", 610, 665),
     anchor("overload", "l1-in", 165, 370), anchor("overload", "l2-in", 255, 370), anchor("overload", "l3-in", 345, 370), anchor("overload", "t1", 165, 401), anchor("overload", "t2", 255, 401), anchor("overload", "t3", 345, 401), anchor("overload", "aux-95", 310, 730), anchor("overload", "aux-96", 375, 730),
     anchor("motor", "u1", 165, 516), anchor("motor", "v1", 255, 516), anchor("motor", "w1", 345, 516), anchor("motor", "pe", 445, 540),
     anchor("control", "line", 130, 730), anchor("control", "neutral", 130, 765), anchor("stop", "21", 170, 730), anchor("stop", "22", 280, 730), anchor("start", "13", 440, 730), anchor("start", "14", 548, 730),
-  ];
+  ] : [];
   for (const component of document.components.filter((item) => !staticComponentIds.has(item.id))) {
     const definition = catalogById.get(component.definitionId);
     definition?.terminals.forEach((terminal, index) => anchors.push(anchor(component.id, terminal.id, component.x + (index % 2 ? 32 : -32), component.y - 15 + Math.floor(index / 2) * 12)));
@@ -54,7 +54,36 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
   children: <rect x={x} y={y} width={width} height={height} rx="6" className="selection-boundary" />,
 });
 
+function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onSelect, onTerminalSelect }: Props) {
+  const anchors = terminalAnchors(document);
+  const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const labelFor = (definitionId: string) => catalogById.get(definitionId)?.referencePrefix ?? "?";
+
+  return <div className="schematic-wrap">
+    <svg className="schematic" viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"}>
+      <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
+      <rect width="1100" height="780" className="sheet-bg" /><rect width="1100" height="780" fill="url(#free-grid)" />
+      <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
+      <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
+      {document.wires.filter((wire) => wire.id.startsWith("manual-wire-")).map((wire) => {
+        const from = anchorIndex.get(endpointKey(wire.from));
+        const to = anchorIndex.get(endpointKey(wire.to));
+        return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
+      })}
+      {document.components.map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
+        <rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" />
+        <rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />
+        <text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle">{component.reference}</text>
+        <text x={component.x} y={component.y + 16} className="free-kind" textAnchor="middle">{labelFor(component.definitionId)}</text>
+      </g>)}
+      {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
+      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
+    </svg>
+  </div>;
+}
+
 export function Schematic({ document, selectedComponentId, simulation, wireMode, wireStart, onSelect, onTerminalSelect }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onTerminalSelect={onTerminalSelect} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;

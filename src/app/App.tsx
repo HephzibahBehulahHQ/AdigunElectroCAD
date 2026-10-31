@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { catalogById, dolCatalog } from "../catalog/dolCatalog";
 import { moveComponent } from "../cad/documentOps";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
-import { createDolMotorStarter } from "../projects/dolMotorStarter";
+import { addFreeSchematicSheet, createStarterProject, replaceSheetDocument } from "../projects/starterProject";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
-import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 
 type Locale = "en" | "de";
@@ -19,11 +19,12 @@ const copy = {
   },
 } as const;
 
-const STORAGE_KEY = "adigun-electro-cad.dol-project.v1";
+const STORAGE_KEY = "adigun-electro-cad.project.v2";
 
 export function App() {
-  const [document, setDocument] = useState<CircuitDocument>(() => createDolMotorStarter());
-  const [history, setHistory] = useState<CircuitDocument[]>([]);
+  const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
+  const [activeSheetId, setActiveSheetId] = useState("sheet-dol");
+  const [history, setHistory] = useState<ElectricalProject[]>([]);
   const [selectedComponentId, setSelectedComponentId] = useState("contactor");
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
   const [search, setSearch] = useState("");
@@ -38,6 +39,9 @@ export function App() {
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
   const t = copy[locale];
 
+  const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
+  const document = activeSheet.document;
+  const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const selectedDefinition = catalogById.get(selectedDefinitionId) ?? dolCatalog[0];
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
@@ -54,37 +58,43 @@ export function App() {
   }, [isRunning]);
 
   const updateDocument = (next: CircuitDocument, saveHistory = true) => {
-    if (saveHistory) setHistory((items) => [...items, document].slice(-30));
-    setDocument(next);
+    if (saveHistory) setHistory((items) => [...items, project].slice(-30));
+    setProject(replaceSheetDocument(project, activeSheet.id, next));
     setDirty(true);
   };
 
   const runAction = (action: DolAction) => {
+    if (!isReferenceSheet) {
+      setNotice("DOL simulation controls are available on the Power & Control Circuit sheet.");
+      return;
+    }
     setSimulation((state) => transitionDol(state, action));
     if (action === "reset") setIsRunning(false);
   };
 
   const saveLocally = () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(document));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
     setDirty(false);
     setNotice(t.projectSaved);
   };
 
   const exportProject = () => {
-    const blob = new Blob([JSON.stringify(document, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = window.document.createElement("a");
     anchor.href = url;
-    anchor.download = "adigun-electro-cad-dol-starter.json";
+    anchor.download = "adigun-electro-cad-project.json";
     anchor.click();
     URL.revokeObjectURL(url);
     setNotice("Project JSON exported.");
   };
 
   const restoreDol = () => {
-    const restored = createDolMotorStarter();
-    updateDocument(restored);
+    setHistory((items) => [...items, project].slice(-30));
+    setProject(createStarterProject());
+    setActiveSheetId("sheet-dol");
     setSelectedComponentId("contactor");
+    setDirty(true);
     setSimulation(initialDolState());
     setNotice(t.projectRestored);
   };
@@ -93,8 +103,10 @@ export function App() {
     const previous = history.at(-1);
     if (!previous) return;
     setHistory((items) => items.slice(0, -1));
-    setDocument(previous);
-    setSelectedComponentId("contactor");
+    setProject(previous);
+    const restoredSheet = previous.sheets.find((sheet) => sheet.id === activeSheetId) ?? previous.sheets[0];
+    setActiveSheetId(restoredSheet.id);
+    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
     setDirty(true);
     setNotice("Last project edit undone.");
   };
@@ -113,6 +125,29 @@ export function App() {
     updateDocument({ ...document, components: [...document.components, instance], revision: document.revision + 1 });
     setSelectedComponentId(instance.id);
     setNotice(`${selectedDefinition.name} inserted as ${instance.reference}.`);
+  };
+
+  const addSheet = () => {
+    const next = addFreeSchematicSheet(project);
+    const sheet = next.sheets.at(-1)!;
+    setHistory((items) => [...items, project].slice(-30));
+    setProject(next);
+    setActiveSheetId(sheet.id);
+    setSelectedComponentId("");
+    setWireMode(false);
+    setWireStart(null);
+    setDirty(true);
+    setNotice(`${sheet.name} added. Insert a catalog component to begin the schematic.`);
+  };
+
+  const selectSheet = (sheetId: string) => {
+    const sheet = project.sheets.find((item) => item.id === sheetId);
+    if (!sheet) return;
+    setActiveSheetId(sheetId);
+    setSelectedComponentId(sheet.document.components[0]?.id ?? "");
+    setWireMode(false);
+    setWireStart(null);
+    setNotice(`${sheet.name} selected.`);
   };
 
   const toggleWireMode = () => {
@@ -167,7 +202,7 @@ export function App() {
           <img src={`${import.meta.env.BASE_URL}assets/hephzibah-behulah-official.jpg`} alt="Hephzibah Behulah" />
           <div className="product-brand"><strong>⚡ Adigun<span>ElectroCAD</span></strong><small>BY HB ELEKTRONIKER</small></div>
         </div>
-        <div className="project-status"><strong>{document.name}</strong><span className={dirty ? "dirty" : "saved"}>{dirty ? "Unsaved local changes" : "Saved locally"}</span></div>
+        <div className="project-status"><strong>{project.name}</strong><span className={dirty ? "dirty" : "saved"}>{dirty ? "Unsaved local changes" : "Saved locally"}</span></div>
         <div className="header-actions">
           <span className={isRunning ? "simulation-pill active" : "simulation-pill"}>{isRunning ? t.running : t.stopped}</span>
           <button className="icon-button" onClick={undo} disabled={!history.length} aria-label="Undo last project edit">↶</button>
@@ -194,10 +229,10 @@ export function App() {
         <button className="tool-button" onClick={undo} disabled={!history.length}>↶<span>Undo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         <span className="tool-divider" />
-        <button className="run" onClick={() => setIsRunning(true)}>▶ Run</button>
-        <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
-        <button className="danger" onClick={() => { setIsRunning(false); runAction("reset"); }}>■ Stop</button>
-        <button onClick={() => runAction("trip-overload")}>⚠ Trip F1</button>
+        <button className="run" onClick={() => setIsRunning(true)} disabled={!isReferenceSheet}>▶ Run</button>
+        <button onClick={() => setIsRunning(false)} disabled={!isReferenceSheet}>Ⅱ Pause</button>
+        <button className="danger" onClick={() => { setIsRunning(false); runAction("reset"); }} disabled={!isReferenceSheet}>■ Stop</button>
+        <button onClick={() => runAction("trip-overload")} disabled={!isReferenceSheet}>⚠ Trip F1</button>
       </section>
 
       <section className="workspace">
@@ -218,17 +253,16 @@ export function App() {
           </section>
         </aside>
 
-        <section className="drawing-area" aria-label="DOL motor starter schematic canvas">
-          <div className="sheet-tabs"><button className="active">Power & Control Circuit · Sheet 1</button><button onClick={() => setNotice("Multi-sheet projects are not available in this initial increment.")}>＋ Sheet</button></div>
+        <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
+          <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
           <Schematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={setSelectedComponentId} onTerminalSelect={selectWireTerminal} />
-          <div className="canvas-caption"><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></div>
+          <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
         <aside className="panel properties-panel">
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? "—"}</span></div>
           {selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onNudge={nudgeSelectedComponent} movable={!['supply', 'breaker', 'contactor', 'overload', 'motor', 'control', 'stop', 'start'].includes(selectedComponent.id)} /> : <p className="empty">Select a component to inspect its definition and terminals.</p>}
-          <section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section>
-          <section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section>
+          {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>Simulation is not assigned to this schematic sheet.</div><div>Use the DOL reference sheet for the supported motor model.</div></section>}
           <p className="cloud-note">☁ {t.unavailable}</p>
         </aside>
       </section>

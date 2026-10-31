@@ -1,11 +1,12 @@
 # Architecture
 
-The initial delivery implements the documented vertical slice: a typed catalog, terminal-aware circuit document, deterministic DOL control model, SVG schematic rendering, local project persistence and export.
+The initial delivery implements the documented vertical slice: a typed catalog, terminal-aware circuit document, multi-sheet project model, deterministic DOL control model, SVG schematic rendering, local project persistence and export.
 
 ## Boundaries
 
 - `src/catalog`: immutable component definitions and terminal data.
 - `src/projects`: editable circuit documents built from catalog instances.
+- `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic component-state and motor model.
 - `src/components`: workspace presentation and accessible interaction.
