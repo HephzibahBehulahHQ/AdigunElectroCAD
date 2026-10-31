@@ -16,6 +16,16 @@ describe("circuit topology validation", () => {
     ]));
   });
 
+  it("rejects imported topology with same-direction or duplicate connections", () => {
+    const project = createDolMotorStarter();
+    project.wires.push({ id: "bad-direction", from: { componentId: "supply", terminalId: "l1" }, to: { componentId: "supply", terminalId: "l2" }, points: [] });
+    project.wires.push({ ...project.wires[0], id: "duplicate-l1" });
+    expect(validateCircuit(project, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "incompatible-terminal-direction" }),
+      expect.objectContaining({ code: "duplicate-terminal-connection" }),
+    ]));
+  });
+
   it("allows compatible unused terminals and rejects a cross-domain connection", () => {
     const project = createDolMotorStarter();
     const insertedMotor = { id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 950, y: 200, rotation: 0 as const, properties: {} };
