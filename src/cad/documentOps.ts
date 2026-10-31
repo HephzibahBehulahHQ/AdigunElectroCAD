@@ -15,6 +15,13 @@ export function moveComponent(document: CircuitDocument, componentId: string, de
   };
 }
 
+export function rotateComponent(document: CircuitDocument, componentId: string): CircuitDocument {
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component) return document;
+  const rotation = component.rotation === 270 ? 0 : (component.rotation + 90) as 90 | 180 | 270;
+  return { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, rotation } : item) };
+}
+
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout): { x: number; y: number } | null {
   const columns = layout === "reference" ? [940, 800, 660] : [180, 360, 540, 720, 900];
   const rows = layout === "reference" ? [140, 240, 340, 440, 540] : [160, 280, 400, 520, 640];
@@ -27,7 +34,8 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
 }
 
 export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number): boolean {
-  return components.every((component) => component.id === componentId || !overlaps(x, y, component.x, component.y));
+  const rotation = components.find((component) => component.id === componentId)?.rotation ?? 0;
+  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, component.x, component.y, component.rotation));
 }
 
 export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
@@ -36,6 +44,12 @@ export function removeComponent(document: CircuitDocument, componentId: string):
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
 
-function overlaps(leftX: number, leftY: number, rightX: number, rightY: number): boolean {
-  return Math.abs(leftX - rightX) < componentWidth && Math.abs(leftY - rightY) < componentHeight;
+function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], rightX: number, rightY: number, rightRotation: ComponentInstance["rotation"]): boolean {
+  const [leftWidth, leftHeight] = dimensions(leftRotation);
+  const [rightWidth, rightHeight] = dimensions(rightRotation);
+  return Math.abs(leftX - rightX) < (leftWidth + rightWidth) / 2 && Math.abs(leftY - rightY) < (leftHeight + rightHeight) / 2;
+}
+
+function dimensions(rotation: ComponentInstance["rotation"]): [number, number] {
+  return rotation === 90 || rotation === 270 ? [componentHeight, componentWidth] : [componentWidth, componentHeight];
 }

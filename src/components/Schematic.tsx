@@ -34,9 +34,19 @@ function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   ] : [];
   for (const component of document.components.filter((item) => !staticComponentIds.has(item.id))) {
     const definition = catalogById.get(component.definitionId);
-    definition?.terminals.forEach((terminal, index) => anchors.push(anchor(component.id, terminal.id, component.x + (index % 2 ? 32 : -32), component.y - 15 + Math.floor(index / 2) * 12)));
+    definition?.terminals.forEach((terminal, index) => {
+      const offset = rotateOffset(index % 2 ? 32 : -32, -15 + Math.floor(index / 2) * 12, component.rotation);
+      anchors.push(anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y));
+    });
   }
   return anchors;
+}
+
+function rotateOffset(x: number, y: number, rotation: 0 | 90 | 180 | 270): { x: number; y: number } {
+  if (rotation === 90) return { x: -y, y: x };
+  if (rotation === 180) return { x: -x, y: -y };
+  if (rotation === 270) return { x: y, y: -x };
+  return { x, y };
 }
 
 function anchor(componentId: string, terminalId: string, x: number, y: number): TerminalAnchor {
@@ -71,8 +81,7 @@ function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onS
         return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
       })}
       {document.components.map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
-        <rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" />
-        <rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />
+        <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" /><path d={`M ${component.x - 28} ${component.y + 13} H ${component.x + 28}`} className="symbol-orientation" /></g>
         <text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle" textLength="78" lengthAdjust="spacingAndGlyphs">{component.reference}</text>
         <text x={component.x} y={component.y + 16} className="free-kind" textAnchor="middle">{labelFor(component.definitionId)}</text>
       </g>)}
@@ -143,7 +152,7 @@ export function Schematic({ document, selectedComponentId, simulation, wireMode,
         <path d="M 310 730 H 375" className={simulation.overloadTripped ? "wire fault" : lineClass(simulation.breakerClosed)} /><path d="M 330 720 L 355 740" className={simulation.overloadTripped ? "contact-blade open-fault" : "contact-blade closed"} /><text x="302" y="695" className="reference-label">F1 95–96</text>
       </g></g>
 
-      {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" /><text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle" textLength="78" lengthAdjust="spacingAndGlyphs">{component.reference}</text><text x={component.x} y={component.y + 16} className="free-kind" textAnchor="middle">{catalogById.get(component.definitionId)?.referencePrefix ?? "?"}</text></g>)}
+      {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}><g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" /><path d={`M ${component.x - 28} ${component.y + 13} H ${component.x + 28}`} className="symbol-orientation" /></g><text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle" textLength="78" lengthAdjust="spacingAndGlyphs">{component.reference}</text><text x={component.x} y={component.y + 16} className="free-kind" textAnchor="middle">{catalogById.get(component.definitionId)?.referencePrefix ?? "?"}</text></g>)}
       {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
     </svg>
   </div>;
