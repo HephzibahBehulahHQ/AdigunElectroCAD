@@ -73,7 +73,7 @@ export function Schematic({ document, selectedComponentId, simulation, wireMode,
         return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
-      <text x="65" y="700" className="drawing-title">CONTROL CIRCUIT — THREE-WIRE START / STOP / HOLDING CONTACT</text>
+      <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>
 
       {[{ x: 165, label: "L1", color: "phase-l1" }, { x: 255, label: "L2", color: "phase-l2" }, { x: 345, label: "L3", color: "phase-l3" }].map((phase) => <g key={phase.label}><text x={phase.x - 15} y="82" className="phase-label">{phase.label}</text><circle cx={phase.x} cy="100" r="7" className={phase.color} /><path d={`M ${phase.x} 107 V 146`} className={`wire ${phase.color}`} /></g>)}
       <text x="435" y="82" className="phase-label pe">PE</text><path d="M 445 100 V 540 H 390" className="wire pe-wire" />
