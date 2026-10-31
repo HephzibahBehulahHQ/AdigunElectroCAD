@@ -20,7 +20,7 @@ describe("project JSON import validation", () => {
 
   it("rejects overlong component references before they can affect drawing labels", () => {
     const input = JSON.parse(JSON.stringify(createStarterProject()));
-    input.sheets[0].document.components[0].reference = "R".repeat(25);
+    input.sheets[0].document.components[0].reference = "R".repeat(13);
 
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component reference");
   });

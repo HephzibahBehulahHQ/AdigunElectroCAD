@@ -9,6 +9,7 @@
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
 | Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
 | Placed-component removal | Connected manual wires are cleaned up and the prior project state remains available through Undo | Automated |
+| Reference-label legibility | UI and JSON imports cap references at 12 characters; free-symbol labels are fitted inside the symbol | Automated + build validation |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |

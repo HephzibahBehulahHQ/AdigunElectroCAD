@@ -231,6 +231,10 @@ export function App() {
 
   const updateReference = (reference: string) => {
     if (!selectedComponent || !reference.trim()) return;
+    if (reference.trim().length > 12) {
+      setNotice("Component reference labels are limited to 12 characters to keep the schematic legible.");
+      return;
+    }
     if (document.components.some((component) => component.id !== selectedComponent.id && component.reference === reference.trim())) {
       setNotice(`Reference ${reference.trim()} is already in use.`);
       return;

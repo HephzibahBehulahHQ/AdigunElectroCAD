@@ -55,7 +55,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   const rotation = component.rotation;
   if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) throw new Error("Component rotation is invalid.");
   return {
-    id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 24),
+    id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270,
     properties: properties(component.properties),
   };

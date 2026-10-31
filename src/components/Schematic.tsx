@@ -73,7 +73,7 @@ function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onS
       {document.components.map((component) => <g key={component.id} onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
         <rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" />
         <rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />
-        <text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle">{component.reference}</text>
+        <text x={component.x} y={component.y - 2} className="free-reference" textAnchor="middle" textLength="78" lengthAdjust="spacingAndGlyphs">{component.reference}</text>
         <text x={component.x} y={component.y + 16} className="free-kind" textAnchor="middle">{labelFor(component.definitionId)}</text>
       </g>)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
