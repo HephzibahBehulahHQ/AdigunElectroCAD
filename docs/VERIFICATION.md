@@ -11,6 +11,7 @@
 | Report CSV export | BOM aggregation and wire-list headers serialize as escaped CSV | Automated |
 | Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
 | Placed-component removal | Connected manual wires are cleaned up and the prior project state remains available through Undo | Automated |
+| Project edit history | Undo/Redo restores an edit; a subsequent edit clears the redo branch | Automated + build validation |
 | Reference-label legibility | UI and JSON imports cap references at 12 characters; free-symbol labels are fitted inside the symbol | Automated + build validation |
 | Placed-symbol rendering | Category-aware SVG glyphs render below the fitted upright reference label | Build validation |
 | Component rotation | Right-angle component rotation persists in the document model | Automated + build validation |

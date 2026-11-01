@@ -17,6 +17,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - CSV export for BOM, wire-list and terminal-list reports.
 - Collision-safe component placement and movement that preserve clear, non-overlapping symbols.
 - Safe removal for placed components, including connected-wire cleanup and project Undo recovery.
+- Bounded project Undo/Redo across schematic edits, sheet creation, template loading, imports and local-save restoration.
 - Bounded component references fitted inside free-sheet symbols to keep labels legible.
 - Right-angle rotation for placed components, including rotated terminal anchors and upright reference labels.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.

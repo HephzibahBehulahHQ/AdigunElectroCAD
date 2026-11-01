@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, findOpenPlacement, moveComponent, removeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
+import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
@@ -28,7 +29,7 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
   const [activeSheetId, setActiveSheetId] = useState("sheet-dol");
-  const [history, setHistory] = useState<ElectricalProject[]>([]);
+  const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("contactor");
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
   const [search, setSearch] = useState("");
@@ -80,10 +81,16 @@ export function App() {
     }
   }, []);
 
-  const updateDocument = (next: CircuitDocument, saveHistory = true) => {
-    if (saveHistory) setHistory((items) => [...items, project].slice(-30));
-    setProject(replaceSheetDocument(project, activeSheet.id, next));
+  const recordEdit = (next: ElectricalProject) => {
+    setHistory((state) => recordProjectEdit(state, project));
+    setProject(next);
     setDirty(true);
+  };
+
+  const updateDocument = (next: CircuitDocument, saveHistory = true) => {
+    const nextProject = replaceSheetDocument(project, activeSheet.id, next);
+    if (saveHistory) recordEdit(nextProject);
+    else setProject(nextProject);
   };
 
   const runAction = (action: DolAction) => {
@@ -110,8 +117,7 @@ export function App() {
     try {
       const restored = parseProjectJson(saved);
       const firstSheet = restored.sheets[0];
-      setHistory((items) => [...items, project].slice(-30));
-      setProject(restored);
+      recordEdit(restored);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
       setWireMode(false);
@@ -141,8 +147,7 @@ export function App() {
     try {
       const imported = parseProjectJson(await file.text());
       const firstSheet = imported.sheets[0];
-      setHistory((items) => [...items, project].slice(-30));
-      setProject(imported);
+      recordEdit(imported);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
       setWireMode(false);
@@ -155,8 +160,7 @@ export function App() {
   };
 
   const restoreDol = () => {
-    setHistory((items) => [...items, project].slice(-30));
-    setProject(createStarterProject());
+    recordEdit(createStarterProject());
     setActiveSheetId("sheet-dol");
     setSelectedComponentId("contactor");
     setDirty(true);
@@ -165,15 +169,27 @@ export function App() {
   };
 
   const undo = () => {
-    const previous = history.at(-1);
-    if (!previous) return;
-    setHistory((items) => items.slice(0, -1));
-    setProject(previous);
-    const restoredSheet = previous.sheets.find((sheet) => sheet.id === activeSheetId) ?? previous.sheets[0];
+    const result = undoProject(history, project);
+    if (!result.project) return;
+    setHistory(result.history);
+    setProject(result.project);
+    const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
     setActiveSheetId(restoredSheet.id);
     setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
     setDirty(true);
     setNotice("Last project edit undone.");
+  };
+
+  const redo = () => {
+    const result = redoProject(history, project);
+    if (!result.project) return;
+    setHistory(result.history);
+    setProject(result.project);
+    const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
+    setActiveSheetId(restoredSheet.id);
+    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setDirty(true);
+    setNotice("Last project edit redone.");
   };
 
   const addSelectedComponent = () => {
@@ -201,8 +217,7 @@ export function App() {
   const addSheet = () => {
     const next = addFreeSchematicSheet(project);
     const sheet = next.sheets.at(-1)!;
-    setHistory((items) => [...items, project].slice(-30));
-    setProject(next);
+    recordEdit(next);
     setActiveSheetId(sheet.id);
     setSelectedComponentId("");
     setWireMode(false);
@@ -230,8 +245,7 @@ export function App() {
     }
     const next = loadTemplateIntoSheet(targetProject, targetSheetId, selectedTemplate);
     const loadedSheet = next.sheets.find((sheet) => sheet.id === targetSheetId)!;
-    setHistory((items) => [...items, project].slice(-30));
-    setProject(next);
+    recordEdit(next);
     setActiveSheetId(targetSheetId);
     setSelectedComponentId(loadedSheet.document.components[0]?.id ?? "");
     setWireMode(false);
@@ -372,7 +386,8 @@ export function App() {
         <div className="project-status"><strong>{project.name}</strong><span className={dirty ? "dirty" : "saved"}>{dirty ? "Unsaved local changes" : "Saved locally"}</span></div>
         <div className="header-actions">
           <span className={isRunning ? "simulation-pill active" : "simulation-pill"}>{isRunning ? t.running : t.stopped}</span>
-          <button className="icon-button" onClick={undo} disabled={!history.length} aria-label="Undo last project edit">↶</button>
+          <button className="icon-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶</button>
+          <button className="icon-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷</button>
           <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)} aria-label="Interface language"><option value="en">EN</option><option value="de">DE</option></select>
           <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)} aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select>
           <button className="bot-button" onClick={() => setNotice("Adigun BOT requires a separately configured secure service; it is not enabled in this foundation.")}>◌ Adigun BOT</button>
@@ -381,7 +396,8 @@ export function App() {
 
       <nav className="menu-row" aria-label="Project actions">
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
-        <button onClick={undo} disabled={!history.length}>Edit · Undo</button>
+        <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
+        <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
         <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
         <button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Electrical · Validate</button>
@@ -393,7 +409,8 @@ export function App() {
       <section className="tool-row" aria-label="CAD and simulation tools">
         <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
         <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
-        <button className="tool-button" onClick={undo} disabled={!history.length}>↶<span>Undo</span></button>
+        <button className="tool-button" onClick={undo} disabled={!history.undo.length}>↶<span>Undo</span></button>
+        <button className="tool-button" onClick={redo} disabled={!history.redo.length}>↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         <span className="tool-divider" />
         <button className="run" onClick={() => setIsRunning(true)} disabled={!isReferenceSheet}>▶ Run</button>
