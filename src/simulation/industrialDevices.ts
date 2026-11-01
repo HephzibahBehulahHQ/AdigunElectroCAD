@@ -41,9 +41,11 @@ export function damperPosition(positionPercent: number, commandPercent: number, 
 }
 
 export function solarPowerW(irradianceWPerM2: number, areaM2: number, efficiency: number, derate = 1) { return Math.max(0, irradianceWPerM2) * Math.max(0, areaM2) * clamp(efficiency, 0, 1) * clamp(derate, 0, 1); }
+export function chargeControllerCurrentA(solarInputW: number, batteryVoltageV: number, maximumCurrentA: number) { return Math.min(Math.max(0, maximumCurrentA), Math.max(0, solarInputW) / Math.max(1, batteryVoltageV)); }
 export function batteryStateOfCharge(previousPercent: number, currentA: number, capacityAh: number, elapsedHours: number) { return clamp(previousPercent + currentA * Math.max(0, elapsedHours) / Math.max(0.001, capacityAh) * 100, 0, 100); }
 export function inverterAcPowerW(dcPowerW: number, efficiency = 0.94, ratedPowerW = Number.POSITIVE_INFINITY) { return Math.min(Math.max(0, ratedPowerW), Math.max(0, dcPowerW) * clamp(efficiency, 0, 1)); }
 export function gridTieClosed(gridPresent: boolean, frequencyDifferenceHz: number, maximumDifferenceHz = 0.2) { return gridPresent && Math.abs(frequencyDifferenceHz) <= Math.max(0, maximumDifferenceHz); }
+export function chillerCoolingW(ratedCoolingW: number, compressorRunning: boolean) { return compressorRunning ? Math.max(0, ratedCoolingW) : 0; }
 
 export function safetyRelayEnergized(channelAClosed: boolean, channelBClosed: boolean, reset: boolean) { return channelAClosed && channelBClosed && reset; }
 export function lightCurtainClear(interrupted: boolean) { return !interrupted; }
