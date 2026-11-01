@@ -20,6 +20,7 @@
 | Component rotation | Right-angle component rotation persists in the document model | Automated + build validation |
 | Placed-component parameters | A targeted property update persists without changing another component | Automated + build validation |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
+| PLC and analog laboratory | Contact, coil, latch, edge, all logic gates, comparators, math operations, 4–20 mA/ADC/DAC and implemented instrumentation functions | Automated + build validation |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |
 | Local workspace interaction | Breaker, START/holding, Run/Stop, catalog insertion and undo | Manually verified in browser |

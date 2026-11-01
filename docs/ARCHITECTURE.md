@@ -13,7 +13,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/reports`: derivation of BOM, wire-list and terminal-list data from the active circuit document.
 - `src/cad`: placement-grid, collision, rotation, component-parameter, wire-edit and bounded project-history operations used to keep edits recoverable and placed symbols visually separate.
 - `src/electrical`: graph validation independent of SVG geometry.
-- `src/simulation`: deterministic component-state and motor model.
+- `src/simulation`: deterministic DOL motor model plus PLC boolean/edge/latch/gate/math/comparator and analog instrumentation functions used by the live control laboratory.
 - `src/components`: workspace presentation and accessible interaction, including category-aware placed-symbol glyphs that preserve an upright fitted reference label.
 
 ## Supported model

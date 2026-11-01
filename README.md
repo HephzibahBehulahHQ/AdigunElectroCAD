@@ -9,7 +9,8 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
-- 500 loadable, topology-validated project templates; only the DOL project currently has a supported simulation model.
+- 500 loadable, topology-validated project templates; the DOL project and a live PLC control/analog laboratory have supported simulation models.
+- Live PLC Control & Analog Lab covering NO/NC contacts, output and set/reset coils, edges, six logic gates, comparators, four math blocks, and a level-sensor → 4–20 mA → ADC → PLC/DAC signal path.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
 - SVG schematic workspace, debounced local autosave and recovery, JSON/SVG/PNG export and print stylesheet, English/German UI and light/dark themes.
 - Validated JSON project import that rejects malformed, unknown-device, invalid-topology and label-overflow input.
