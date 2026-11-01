@@ -1,4 +1,4 @@
-import type { CircuitDocument, ComponentInstance } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
 
 export type PlacementLayout = "reference" | "free";
 
@@ -32,6 +32,21 @@ export function updateComponentProperty(document: CircuitDocument, componentId: 
       properties: { ...component.properties, [property]: value },
     } : component),
   };
+}
+
+export function renameWire(document: CircuitDocument, wireId: string, netName: string): CircuitDocument {
+  if (!document.wires.some((wire) => wire.id === wireId)) return document;
+  return { ...document, revision: document.revision + 1, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, netName } : wire) };
+}
+
+export function reconnectWire(document: CircuitDocument, wireId: string, target: TerminalEndpoint): CircuitDocument {
+  if (!document.wires.some((wire) => wire.id === wireId)) return document;
+  return { ...document, revision: document.revision + 1, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, to: target, points: [] } : wire) };
+}
+
+export function removeWire(document: CircuitDocument, wireId: string): CircuitDocument {
+  if (!document.wires.some((wire) => wire.id === wireId)) return document;
+  return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => wire.id !== wireId) };
 }
 
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout): { x: number; y: number } | null {

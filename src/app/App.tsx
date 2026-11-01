@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { canPlaceComponent, findOpenPlacement, moveComponent, removeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
+import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
@@ -8,7 +8,7 @@ import { templateLibrary } from "../projects/templateLibrary";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { createProjectReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
-import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 
 type Locale = "en" | "de";
@@ -42,6 +42,8 @@ export function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
+  const [selectedWireId, setSelectedWireId] = useState("");
+  const [reconnectingWireId, setReconnectingWireId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
   const [reportsOpen, setReportsOpen] = useState(false);
   const t = copy[locale];
@@ -50,6 +52,7 @@ export function App() {
   const document = activeSheet.document;
   const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
+  const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
   const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
   const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
@@ -75,6 +78,7 @@ export function App() {
       setProject(restored);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setSelectedWireId("");
       setNotice(`${restored.name} restored from local storage.`);
     } catch {
       setNotice("The saved local project could not be restored. It was left unchanged for manual review.");
@@ -91,6 +95,20 @@ export function App() {
     const nextProject = replaceSheetDocument(project, activeSheet.id, next);
     if (saveHistory) recordEdit(nextProject);
     else setProject(nextProject);
+  };
+
+  const selectComponent = (componentId: string) => {
+    setSelectedComponentId(componentId);
+    setSelectedWireId("");
+    setReconnectingWireId("");
+  };
+
+  const selectWire = (wireId: string) => {
+    setSelectedWireId(wireId);
+    setSelectedComponentId("");
+    setWireMode(false);
+    setWireStart(null);
+    setReconnectingWireId("");
   };
 
   const runAction = (action: DolAction) => {
@@ -120,6 +138,7 @@ export function App() {
       recordEdit(restored);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
       setDirty(false);
@@ -150,6 +169,7 @@ export function App() {
       recordEdit(imported);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
       setDirty(true);
@@ -163,6 +183,7 @@ export function App() {
     recordEdit(createStarterProject());
     setActiveSheetId("sheet-dol");
     setSelectedComponentId("contactor");
+    setSelectedWireId("");
     setDirty(true);
     setSimulation(initialDolState());
     setNotice(t.projectRestored);
@@ -176,6 +197,7 @@ export function App() {
     const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
     setActiveSheetId(restoredSheet.id);
     setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
     setDirty(true);
     setNotice("Last project edit undone.");
   };
@@ -188,6 +210,7 @@ export function App() {
     const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
     setActiveSheetId(restoredSheet.id);
     setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
     setDirty(true);
     setNotice("Last project edit redone.");
   };
@@ -210,7 +233,7 @@ export function App() {
       properties: { ...selectedDefinition.propertiesSchema },
     };
     updateDocument({ ...document, components: [...document.components, instance], revision: document.revision + 1 });
-    setSelectedComponentId(instance.id);
+    selectComponent(instance.id);
     setNotice(`${selectedDefinition.name} inserted as ${instance.reference}.`);
   };
 
@@ -220,6 +243,7 @@ export function App() {
     recordEdit(next);
     setActiveSheetId(sheet.id);
     setSelectedComponentId("");
+    setSelectedWireId("");
     setWireMode(false);
     setWireStart(null);
     setDirty(true);
@@ -231,6 +255,7 @@ export function App() {
     if (!sheet) return;
     setActiveSheetId(sheetId);
     setSelectedComponentId(sheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
     setWireMode(false);
     setWireStart(null);
     setNotice(`${sheet.name} selected.`);
@@ -248,6 +273,7 @@ export function App() {
     recordEdit(next);
     setActiveSheetId(targetSheetId);
     setSelectedComponentId(loadedSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
     setWireMode(false);
     setWireStart(null);
     setDirty(true);
@@ -269,6 +295,7 @@ export function App() {
     const next = !wireMode;
     setWireMode(next);
     setWireStart(null);
+    if (!next) setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target terminal." : "Wiring mode closed.");
   };
 
@@ -279,16 +306,58 @@ export function App() {
       setNotice("Wire start selected. Choose a compatible target terminal.");
       return;
     }
-    const check = canConnectTerminals(document, catalogById, wireStart, endpoint);
-    if (!check.ok) {
-      setNotice(check.reason ?? "The selected terminals cannot be connected.");
+    const reconnectingWire = reconnectingWireId ? document.wires.find((wire) => wire.id === reconnectingWireId) : undefined;
+    if (reconnectingWireId && !reconnectingWire) {
+      setNotice("The selected wire is no longer available for reconnection.");
       setWireStart(null);
+      setReconnectingWireId("");
       return;
     }
-    const wire = { id: `manual-wire-${document.wires.length + 1}`, from: wireStart, to: endpoint, points: [], netName: `MANUAL_${document.wires.length + 1}` };
-    updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
+    const validationDocument = reconnectingWire ? { ...document, wires: document.wires.filter((wire) => wire.id !== reconnectingWire.id) } : document;
+    const check = canConnectTerminals(validationDocument, catalogById, wireStart, endpoint);
+    if (!check.ok) {
+      setNotice(check.reason ?? "The selected terminals cannot be connected.");
+      setWireStart(reconnectingWire?.from ?? null);
+      return;
+    }
+    if (reconnectingWire) {
+      updateDocument(reconnectWire(document, reconnectingWire.id, endpoint));
+      setSelectedWireId(reconnectingWire.id);
+      setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
+    } else {
+      const wire = { id: `manual-wire-${document.wires.length + 1}`, from: wireStart, to: endpoint, points: [], netName: `MANUAL_${document.wires.length + 1}` };
+      updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
+      setSelectedWireId(wire.id);
+      setNotice(`Wire ${wire.netName} created between catalog terminals.`);
+    }
     setWireStart(null);
-    setNotice(`Wire ${wire.netName} created between catalog terminals.`);
+    setReconnectingWireId("");
+  };
+
+  const renameSelectedWire = (netName: string) => {
+    if (!selectedWire) return;
+    const normalized = netName.trim();
+    if (!normalized || normalized.length > 80) {
+      setNotice("Wire net names must contain 1–80 readable characters.");
+      return;
+    }
+    updateDocument(renameWire(document, selectedWire.id, normalized));
+    setNotice(`Wire renamed to ${normalized}.`);
+  };
+
+  const reconnectSelectedWire = () => {
+    if (!selectedWire) return;
+    setWireMode(true);
+    setWireStart(selectedWire.from);
+    setReconnectingWireId(selectedWire.id);
+    setNotice(`Reconnecting ${selectedWire.netName ?? selectedWire.id}: choose a replacement target terminal.`);
+  };
+
+  const removeSelectedWire = () => {
+    if (!selectedWire) return;
+    updateDocument(removeWire(document, selectedWire.id));
+    setSelectedWireId("");
+    setNotice(`Wire ${selectedWire.netName ?? selectedWire.id} removed. Use Undo to restore it.`);
   };
 
   const updateReference = (reference: string) => {
@@ -440,13 +509,13 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={setSelectedComponentId} onTerminalSelect={selectWireTerminal} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
         <aside className="panel properties-panel">
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? "—"}</span></div>
-          {selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component to inspect its definition and terminals.</p>}
+          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component or manual wire to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>Simulation is not assigned to this schematic sheet.</div><div>Use the DOL reference sheet for the supported motor model.</div></section>}
           <p className="cloud-note">☁ {t.unavailable}</p>
         </aside>
@@ -473,6 +542,10 @@ function Properties({ instance, onReferenceChange, onPropertyChange, onNudge, on
 
 function formatPropertyLabel(property: string) {
   return property.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (character) => character.toUpperCase());
+}
+
+function WireProperties({ wire, onNetNameChange, onReconnect, onRemove }: { wire: Wire; onNetNameChange: (netName: string) => void; onReconnect: () => void; onRemove: () => void }) {
+  return <section className="properties-form wire-properties"><label>Net name<input defaultValue={wire.netName ?? wire.id} key={wire.id + (wire.netName ?? "")} onBlur={(event) => onNetNameChange(event.target.value)} /></label><label>From terminal<input value={`${wire.from.componentId}.${wire.from.terminalId}`} readOnly /></label><label>To terminal<input value={`${wire.to.componentId}.${wire.to.terminalId}`} readOnly /></label><p>Wire geometry is stored separately from terminal topology. Reconnecting replaces the target endpoint and re-routes the visible orthogonal path.</p><button className="reconnect-wire" onClick={onReconnect}>Reconnect target terminal</button><button className="remove-component" onClick={onRemove}>Delete wire</button></section>;
 }
 
 function ProjectReports({ sheetName, report, onExport, onClose }: { sheetName: string; report: ProjectReport; onExport: (section: ReportSection) => void; onClose: () => void }) {

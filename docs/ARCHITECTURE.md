@@ -10,7 +10,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
 - `src/projects/projectSerialization.ts`: bounded local JSON import validation for project structure, catalog identities, terminal topology and readable label lengths.
 - `src/reports`: derivation of BOM, wire-list and terminal-list data from the active circuit document.
-- `src/cad`: placement-grid, collision, rotation, component-parameter and bounded project-history operations used to keep edits recoverable and placed symbols visually separate.
+- `src/cad`: placement-grid, collision, rotation, component-parameter, wire-edit and bounded project-history operations used to keep edits recoverable and placed symbols visually separate.
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic component-state and motor model.
 - `src/components`: workspace presentation and accessible interaction, including category-aware placed-symbol glyphs that preserve an upright fitted reference label.

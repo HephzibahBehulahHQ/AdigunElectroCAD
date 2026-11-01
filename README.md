@@ -7,6 +7,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Typed IEC-oriented DOL component definitions with terminals.
 - 520 schema-validated, IEC-oriented generic symbol templates across 16 categories; these are explicitly distinct from manufacturer-certified records.
 - Terminal-aware reference circuit with topology validation.
+- Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
 - 500 loadable, topology-validated project templates; only the DOL project currently has a supported simulation model.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.

@@ -21,6 +21,7 @@
 | Production base path | `vite.config.ts` | Build validation |
 | Local workspace interaction | Breaker, START/holding, Run/Stop, catalog insertion and undo | Manually verified in browser |
 | Terminal-click wiring | Compatible terminal-to-terminal connection creates a persisted circuit wire; cross-domain wiring is rejected | Automated + manually verified in browser |
+| Wire editing | A wire can be renamed, target-reconnected with orthogonal geometry reset, and deleted without changing its source endpoint | Automated + build validation |
 | Terminal direction validation | Same-direction input/input and output/output joins are rejected | Automated |
 | Imported topology validation | Import rejects incompatible terminal direction and duplicate endpoint pairs | Automated |
 | Placed component movement | 20-unit nudge moves a placed component without changing terminal-level wire topology | Automated + manually verified in browser |

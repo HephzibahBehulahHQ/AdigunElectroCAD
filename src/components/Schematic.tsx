@@ -6,10 +6,12 @@ import { catalogById } from "../catalog/dolCatalog";
 interface Props {
   document: CircuitDocument;
   selectedComponentId: string;
+  selectedWireId: string;
   simulation: DolSimulationState;
   wireMode: boolean;
   wireStart: TerminalEndpoint | null;
   onSelect: (componentId: string) => void;
+  onWireSelect: (wireId: string) => void;
   onTerminalSelect: (endpoint: TerminalEndpoint) => void;
 }
 
@@ -88,7 +90,7 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onSelect, onTerminalSelect }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
 
@@ -98,10 +100,10 @@ function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onS
       <rect width="1100" height="780" className="sheet-bg" /><rect width="1100" height="780" fill="url(#free-grid)" />
       <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
       <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
-      {document.wires.filter((wire) => wire.id.startsWith("manual-wire-")).map((wire) => {
+      {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to)} className={wire.id === selectedWireId ? "wire manual-wire selected-wire" : "wire manual-wire"} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
@@ -110,8 +112,8 @@ function FreeSchematic({ document, selectedComponentId, wireMode, wireStart, onS
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, simulation, wireMode, wireStart, onSelect, onTerminalSelect }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onTerminalSelect={onTerminalSelect} />;
+export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;
@@ -127,7 +129,7 @@ export function Schematic({ document, selectedComponentId, simulation, wireMode,
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to)} className="wire manual-wire" /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to)} className={wire.id === selectedWireId ? "wire manual-wire selected-wire" : "wire manual-wire"} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>

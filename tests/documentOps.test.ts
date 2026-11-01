@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, findOpenPlacement, moveComponent, removeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 
 describe("component movement", () => {
@@ -47,5 +47,14 @@ describe("component movement", () => {
     expect(updated.revision).toBe(project.revision + 1);
     expect(updated.components.find((component) => component.id === "motor-2")?.properties).toEqual({ ratedCurrentA: 16 });
     expect(updated.components.find((component) => component.id === "motor")?.properties).toEqual(project.components.find((component) => component.id === "motor")?.properties);
+  });
+
+  it("renames, reconnects and removes a wire without changing its source", () => {
+    const project = createDolMotorStarter();
+    project.wires.push({ id: "manual-wire-21", from: { componentId: "supply", terminalId: "l1" }, to: { componentId: "motor", terminalId: "u1" }, points: [{ x: 200, y: 100 }], netName: "OLD" });
+    const renamed = renameWire(project, "manual-wire-21", "MOTOR_L1");
+    const reconnected = reconnectWire(renamed, "manual-wire-21", { componentId: "motor", terminalId: "v1" });
+    expect(reconnected.wires.find((wire) => wire.id === "manual-wire-21")).toMatchObject({ from: { componentId: "supply", terminalId: "l1" }, to: { componentId: "motor", terminalId: "v1" }, netName: "MOTOR_L1", points: [] });
+    expect(removeWire(reconnected, "manual-wire-21").wires.some((wire) => wire.id === "manual-wire-21")).toBe(false);
   });
 });
