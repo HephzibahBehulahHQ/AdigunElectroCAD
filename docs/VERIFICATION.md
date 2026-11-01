@@ -3,7 +3,8 @@
 | Item | Evidence | Status |
 | --- | --- | --- |
 | DOL terminal definitions | `tests/dolSimulator.test.ts` | Automated |
-| Modeled catalog schema | 520 unique entries across 16 categories, each with terminals and standards metadata; generic entries are not manufacturer-certified | Automated |
+| Generic catalog schema | 512 generic IEC-oriented entries across 16 categories, each with terminals and standards metadata; they are not manufacturer-certified | Automated |
+| Executable PLC/instrumentation catalog | 30 component records resolve to registered models and produce a live output using their editable defaults | Automated + build validation |
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |

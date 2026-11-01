@@ -5,6 +5,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 ## Current verified increment
 
 - Typed IEC-oriented DOL component definitions with terminals.
+- 30 executable PLC and advanced-instrumentation definitions with editable input parameters and per-instance live model output.
 - 520 schema-validated, IEC-oriented generic symbol templates across 16 categories; these are explicitly distinct from manufacturer-certified records.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
@@ -26,7 +27,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.
 - Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
 
-The catalog contains eight supported DOL simulation definitions plus 512 generic symbol templates, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
+The catalog contains eight supported DOL simulation definitions, 30 executable PLC/instrumentation definitions and 512 generic symbol templates, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
 ## Development
 

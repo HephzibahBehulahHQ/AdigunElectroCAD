@@ -58,3 +58,12 @@ export function threePhaseVoltageDropV(currentA: number, cableLengthM: number, r
 export function threePhaseCableLossW(currentA: number, cableLengthM: number, resistanceOhmPerKm: number) {
   return 3 * Math.max(0, currentA) ** 2 * Math.max(0, cableLengthM) / 1000 * Math.max(0, resistanceOhmPerKm);
 }
+export function busbarUtilizationPercent(currentA: number, ratedCurrentA: number) { return Math.max(0, currentA) / Math.max(1, ratedCurrentA) * 100; }
+export function distributionBoardUtilizationPercent(energizedWays: number, totalWays: number) { return clamp(Math.max(0, energizedWays) / Math.max(1, totalWays) * 100, 0, 100); }
+export function dinRailFillPercent(occupiedMm: number, railLengthMm: number) { return clamp(Math.max(0, occupiedMm) / Math.max(1, railLengthMm) * 100, 0, 100); }
+export function panelFanCoolingW(airflowM3PerHour: number, temperatureRiseC: number) { return Math.max(0, airflowM3PerHour) / 3600 * 1_200 * Math.max(0, temperatureRiseC); }
+export function panelHeaterPowerW(setpointC: number, temperatureC: number, ratedPowerW: number) { return temperatureC < setpointC ? Math.max(0, ratedPowerW) : 0; }
+export function doorInterlockClosed(doorClosed: boolean, keyReleased: boolean) { return doorClosed && !keyReleased; }
+export function stackLightChannels(red: boolean, yellow: boolean, green: boolean) { return { red, yellow, green }; }
+export function shieldedCableInterferenceFactor(shieldBonded: boolean) { return shieldBonded ? 0.1 : 1; }
+export function cableTrayFillPercent(usedAreaMm2: number, availableAreaMm2: number) { return clamp(Math.max(0, usedAreaMm2) / Math.max(1, availableAreaMm2) * 100, 0, 100); }

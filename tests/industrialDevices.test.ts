@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve32, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "../src/simulation/industrialDevices";
+import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve32, directionalValve52, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "../src/simulation/industrialDevices";
 
 describe("industrial device models", () => {
   it("models pneumatic and hydraulic actuation", () => {
@@ -37,5 +37,17 @@ describe("industrial device models", () => {
   it("calculates cable voltage drop and heat loss", () => {
     expect(threePhaseVoltageDropV(10, 100, 1.5)).toBeCloseTo(2.598, 3);
     expect(threePhaseCableLossW(10, 100, 1.5)).toBeCloseTo(45);
+  });
+
+  it("models panel hardware and cable infrastructure", () => {
+    expect(busbarUtilizationPercent(50, 100)).toBe(50);
+    expect(distributionBoardUtilizationPercent(6, 12)).toBe(50);
+    expect(dinRailFillPercent(350, 500)).toBe(70);
+    expect(panelFanCoolingW(300, 10)).toBe(1000);
+    expect(panelHeaterPowerW(25, 20, 150)).toBe(150);
+    expect(doorInterlockClosed(true, false)).toBe(true);
+    expect(stackLightChannels(true, false, true)).toEqual({ red: true, yellow: false, green: true });
+    expect(shieldedCableInterferenceFactor(true)).toBe(0.1);
+    expect(cableTrayFillPercent(40, 100)).toBe(40);
   });
 });

@@ -1,4 +1,5 @@
 import type { ElectricalComponentDefinition } from "../types/electrical";
+import { functionalCatalog } from "./functionalCatalog";
 import { modeledCatalog } from "./modeledCatalog";
 
 const terminals = (...items: ElectricalComponentDefinition["terminals"]): ElectricalComponentDefinition["terminals"] => items;
@@ -44,5 +45,5 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   }
 ];
 
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...modeledCatalog];
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
