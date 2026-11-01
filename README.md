@@ -6,7 +6,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 
 - Typed IEC-oriented DOL component definitions with terminals.
 - 67 executable PLC, instrumentation, pneumatic, hydraulic, HVAC, renewable, safety, panel and cable definitions with editable input parameters and per-instance live model output.
-- Placed executable components are evaluated from the active schematic document; compatible functional terminal outputs propagate over direct wires, including level-sensor 4–20 mA → ADC and NO-contact → AND-gate → output-coil paths.
+- Placed executable components are evaluated from the active schematic document; unit-compatible functional terminal outputs propagate over direct wires, including level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil paths.
 - 520 schema-validated, IEC-oriented generic symbol templates across 16 categories; these are explicitly distinct from manufacturer-certified records.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.

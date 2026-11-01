@@ -29,4 +29,26 @@ describe("placed functional component execution", () => {
       expect.objectContaining({ reference: "Q1", output: { label: "Coil", value: "ON" } }),
     ]));
   });
+
+  it("propagates matching instrumentation units into PLC comparison blocks", () => {
+    const document = createDolMotorStarter();
+    document.components.push({ id: "pt100-hot", definitionId: "sensor.pt100", reference: "B1", x: 900, y: 180, rotation: 0, properties: { temperatureC: 100 } });
+    document.components.push({ id: "pt100-cool", definitionId: "sensor.pt100", reference: "B2", x: 900, y: 260, rotation: 0, properties: { temperatureC: 20 } });
+    document.components.push({ id: "temperature-compare", definitionId: "logic.comparator-greater-than", reference: "CMP1", x: 900, y: 340, rotation: 0, properties: { left: 0, right: 0 } });
+    document.wires.push({ id: "hot-signal", from: { componentId: "pt100-hot", terminalId: "signal" }, to: { componentId: "temperature-compare", terminalId: "in-a" }, points: [], netName: "RTD_HOT" });
+    document.wires.push({ id: "cool-signal", from: { componentId: "pt100-cool", terminalId: "signal" }, to: { componentId: "temperature-compare", terminalId: "in-b" }, points: [], netName: "RTD_COOL" });
+    expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reference: "CMP1", output: { label: "Comparator", value: "ON" } }),
+    ]));
+  });
+
+  it("rejects an incompatible sensor unit at an ADC input", () => {
+    const document = createDolMotorStarter();
+    document.components.push({ id: "pt100-1", definitionId: "sensor.pt100", reference: "B1", x: 900, y: 180, rotation: 0, properties: { temperatureC: 100 } });
+    document.components.push({ id: "adc-1", definitionId: "signal.adc", reference: "ADC1", x: 900, y: 260, rotation: 0, properties: { milliamp: 4 } });
+    document.wires.push({ id: "invalid-rtd-to-adc", from: { componentId: "pt100-1", terminalId: "signal" }, to: { componentId: "adc-1", terminalId: "in" }, points: [], netName: "RTD_NOT_4_20" });
+    expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reference: "ADC1", output: { label: "PLC raw value", value: "0" } }),
+    ]));
+  });
 });

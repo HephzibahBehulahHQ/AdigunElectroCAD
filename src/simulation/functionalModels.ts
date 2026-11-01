@@ -2,13 +2,15 @@ import { compare, currentTransformerSecondaryAmp, dacMilliamp, edgeTrigger, enco
 import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve32, directionalValve52, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
 
 export interface FunctionalModelResult { label: string; value: string; }
-export type FunctionalSignal = boolean | number;
+export type SignalUnit = "boolean" | "milliamp" | "plc-raw" | "ohm" | "millivolt" | "hertz" | "acceleration" | "pulse-count" | "ampere" | "scalar";
+export interface FunctionalSignal { unit: SignalUnit; value: boolean | number; }
 type Properties = Record<string, string | number | boolean>;
 type Model = (properties: Properties) => FunctionalModelResult;
 const number = (properties: Properties, key: string, fallback = 0) => typeof properties[key] === "number" && Number.isFinite(properties[key]) ? properties[key] : fallback;
 const bool = (properties: Properties, key: string) => properties[key] === true;
 const text = (properties: Properties, key: string, fallback = "") => typeof properties[key] === "string" ? properties[key] : fallback;
 const binary = (value: boolean) => value ? "ON" : "OFF";
+const signal = (unit: SignalUnit, value: boolean | number): FunctionalSignal => ({ unit, value });
 
 const models: Record<string, Model> = {
   "logic-no": (p) => ({ label: "NO output", value: binary(normallyOpen(bool(p, "input"))) }),
@@ -74,21 +76,28 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 export function hasFunctionalModel(modelId: string) { return modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
-  if (modelId === "logic-no") return normallyOpen(bool(properties, "input"));
-  if (modelId === "logic-nc") return normallyClosed(bool(properties, "input"));
-  if (modelId === "logic-output-coil") return outputCoil(bool(properties, "input"));
-  if (modelId === "logic-set-coil") return setResetLatch(bool(properties, "previous"), bool(properties, "input"), false);
-  if (modelId === "logic-reset-coil") return setResetLatch(bool(properties, "previous"), false, bool(properties, "input"));
-  if (modelId === "logic-edge-positive") return edgeTrigger(bool(properties, "previous"), bool(properties, "input")).positive;
-  if (modelId === "logic-edge-negative") return edgeTrigger(bool(properties, "previous"), bool(properties, "input")).negative;
+  if (modelId === "logic-no") return signal("boolean", normallyOpen(bool(properties, "input")));
+  if (modelId === "logic-nc") return signal("boolean", normallyClosed(bool(properties, "input")));
+  if (modelId === "logic-output-coil") return signal("boolean", outputCoil(bool(properties, "input")));
+  if (modelId === "logic-set-coil") return signal("boolean", setResetLatch(bool(properties, "previous"), bool(properties, "input"), false));
+  if (modelId === "logic-reset-coil") return signal("boolean", setResetLatch(bool(properties, "previous"), false, bool(properties, "input")));
+  if (modelId === "logic-edge-positive") return signal("boolean", edgeTrigger(bool(properties, "previous"), bool(properties, "input")).positive);
+  if (modelId === "logic-edge-negative") return signal("boolean", edgeTrigger(bool(properties, "previous"), bool(properties, "input")).negative);
   const gate = modelId.replace("logic-gate-", "");
-  if (["and", "or", "not", "nand", "nor", "xor"].includes(gate)) return logicGate(gate as "and" | "or" | "not" | "nand" | "nor" | "xor", [bool(properties, "inputA"), bool(properties, "inputB")]);
+  if (["and", "or", "not", "nand", "nor", "xor"].includes(gate)) return signal("boolean", logicGate(gate as "and" | "or" | "not" | "nand" | "nor" | "xor", [bool(properties, "inputA"), bool(properties, "inputB")]));
   const comparator = modelId.replace("logic-comparator-", "");
-  if (["greater-than", "less-than", "equal-to"].includes(comparator)) return compare(comparator as "greater-than" | "less-than" | "equal-to", number(properties, "left"), number(properties, "right"));
+  if (["greater-than", "less-than", "equal-to"].includes(comparator)) return signal("boolean", compare(comparator as "greater-than" | "less-than" | "equal-to", number(properties, "left"), number(properties, "right")));
   const math = modelId.replace("logic-math-", "");
-  if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", number(properties, "left"), number(properties, "right")); return result.ok ? result.value : undefined; }
-  if (modelId === "sensor-level-4-20") return levelToMilliamp(number(properties, "levelPercent", 50));
-  if (modelId === "signal-adc") return milliampToPlcRaw(number(properties, "milliamp", 4));
-  if (modelId === "signal-dac") return dacMilliamp(number(properties, "raw"));
+  if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", number(properties, "left"), number(properties, "right")); return result.ok ? signal("scalar", result.value) : undefined; }
+  if (modelId === "sensor-pt100") return signal("ohm", pt100ResistanceOhm(number(properties, "temperatureC", 20)));
+  if (modelId === "sensor-thermocouple") return signal("millivolt", thermocoupleMillivolt(number(properties, "temperatureC", 20)));
+  if (modelId === "sensor-flow") return signal("hertz", flowPulseHz(number(properties, "flowLpm"), number(properties, "pulsesPerLitre", 100)));
+  if (modelId === "sensor-level-4-20") return signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
+  if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));
+  if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
+  if (modelId === "sensor-load-cell") return signal("millivolt", loadCellMillivolt(number(properties, "forceN"), number(properties, "capacityN", 1000)));
+  if (modelId === "sensor-current-transformer") return signal("ampere", currentTransformerSecondaryAmp(number(properties, "primaryA"), number(properties, "ratedPrimaryA", 100)));
+  if (modelId === "signal-adc") return signal("plc-raw", milliampToPlcRaw(number(properties, "milliamp", 4)));
+  if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   return undefined;
 }
