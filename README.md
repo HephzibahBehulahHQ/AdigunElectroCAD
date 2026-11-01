@@ -22,7 +22,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Bounded component references fitted inside free-sheet symbols to keep labels legible.
 - Right-angle rotation for placed components, including rotated terminal anchors and upright reference labels.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.
-- Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels retained above the marks.
+- Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
 
 The catalog contains eight supported DOL simulation definitions plus 512 generic symbol templates, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
