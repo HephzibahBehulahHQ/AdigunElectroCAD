@@ -1,0 +1,15 @@
+/* Collision-safe overrides for persistent headers, toolbars, and footers. */
+.canvas-caption { flex-wrap: wrap; align-items: center; }
+.tool-row { overflow-x: auto; }
+
+@media (max-width: 1180px) {
+  .project-status { padding-left: 0; }
+}
+
+@media (max-width: 760px) {
+  .product-brand strong,
+  .product-brand small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
