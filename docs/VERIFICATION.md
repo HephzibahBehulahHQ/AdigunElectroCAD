@@ -13,6 +13,7 @@
 | Placed-component removal | Connected manual wires are cleaned up and the prior project state remains available through Undo | Automated |
 | Reference-label legibility | UI and JSON imports cap references at 12 characters; free-symbol labels are fitted inside the symbol | Automated + build validation |
 | Component rotation | Right-angle component rotation persists in the document model | Automated + build validation |
+| Placed-component parameters | A targeted property update persists without changing another component | Automated + build validation |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |

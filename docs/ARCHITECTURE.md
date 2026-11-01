@@ -10,7 +10,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
 - `src/projects/projectSerialization.ts`: bounded local JSON import validation for project structure, catalog identities, terminal topology and readable label lengths.
 - `src/reports`: derivation of BOM, wire-list and terminal-list data from the active circuit document.
-- `src/cad/documentOps.ts`: placement-grid and collision checks used to keep placed symbols visually separate.
+- `src/cad/documentOps.ts`: placement-grid, collision, rotation and component-parameter document operations used to keep placed symbols visually separate.
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic component-state and motor model.
 - `src/components`: workspace presentation and accessible interaction.
@@ -21,4 +21,4 @@ The DOL motor project is an educational, simplified model. It validates terminal
 
 ## Not in this increment
 
-The 520-entry catalog, 500 runnable projects, cloud accounts, PLC/Ladder integration, reports, measured hardware characteristics and Adigun BOT service are intentionally not advertised as present. No Supabase project has been provisioned for this product.
+The 520-entry catalog is not presented as manufacturer certified; the 500 templates are not presented as runnable simulations. PLC/Ladder integration, cloud accounts, advanced reports beyond the current sheet BOM/wire/terminal lists, measured hardware characteristics and an Adigun BOT service are not present. No Supabase project has been provisioned for this product.

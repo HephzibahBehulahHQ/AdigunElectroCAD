@@ -22,6 +22,18 @@ export function rotateComponent(document: CircuitDocument, componentId: string):
   return { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, rotation } : item) };
 }
 
+export function updateComponentProperty(document: CircuitDocument, componentId: string, property: string, value: string | number | boolean): CircuitDocument {
+  if (!document.components.some((component) => component.id === componentId)) return document;
+  return {
+    ...document,
+    revision: document.revision + 1,
+    components: document.components.map((component) => component.id === componentId ? {
+      ...component,
+      properties: { ...component.properties, [property]: value },
+    } : component),
+  };
+}
+
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout): { x: number; y: number } | null {
   const columns = layout === "reference" ? [940, 800, 660] : [180, 360, 540, 720, 900];
   const rows = layout === "reference" ? [140, 240, 340, 440, 540] : [160, 280, 400, 520, 640];
