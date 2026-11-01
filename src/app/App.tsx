@@ -85,6 +85,19 @@ export function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+        setDirty(false);
+      } catch {
+        setNotice("Local autosave could not complete. Use File → Export JSON to preserve this project.");
+      }
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [dirty, project]);
+
   const recordEdit = (next: ElectricalProject) => {
     setHistory((state) => recordProjectEdit(state, project));
     setProject(next);

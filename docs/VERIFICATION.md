@@ -7,6 +7,7 @@
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |
+| Local autosave | Debounced browser-local persistence records dirty project edits; persistence failures expose an export fallback notice | Build validation |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
 | Report CSV export | BOM aggregation and wire-list headers serialize as escaped CSV | Automated |
 | Placement collision guard | Grid allocation remains clear and occupied-position moves are rejected | Automated |
