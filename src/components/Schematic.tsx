@@ -2,6 +2,7 @@ import type { CircuitDocument } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
+import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 
 interface Props {
   document: CircuitDocument;
@@ -69,7 +70,7 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
 function PlacedSymbol({ component, selectedComponentId, onSelect }: { component: CircuitDocument["components"][number]; selectedComponentId: string; onSelect: (componentId: string) => void }) {
   const definition = catalogById.get(component.definitionId);
   return <g onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
-    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</g>
+    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</g>
     <text x={component.x} y={component.y + 45} className="free-reference" textAnchor="middle" textLength="78" lengthAdjust="spacingAndGlyphs">{component.reference}</text>
     <text x={component.x} y={component.y + 62} className="free-kind" textAnchor="middle">{definition?.referencePrefix ?? "?"}</text>
   </g>;

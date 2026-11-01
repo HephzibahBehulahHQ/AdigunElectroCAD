@@ -38,4 +38,4 @@ npm test
 npm run build
 ```
 
-GitHub Pages builds with `/AdigunElectroCAD/` as the required base path.
+Production target: [adigunelectrocad.hephzibahbehulah.com](https://adigunelectrocad.hephzibahbehulah.com/). Builds use root-domain asset paths.

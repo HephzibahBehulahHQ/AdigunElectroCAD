@@ -1,6 +1,8 @@
 /* Collision-safe overrides for persistent headers, toolbars, and footers. */
 .canvas-caption { flex-wrap: wrap; align-items: center; }
 .tool-row { overflow-x: auto; }
+.functional-symbol { opacity: 1; }
+.functional-symbol-text { fill: #17649c; font-size: 10px; font-weight: 900; pointer-events: none; }
 
 @media (max-width: 1180px) {
   .project-status { padding-left: 0; }
