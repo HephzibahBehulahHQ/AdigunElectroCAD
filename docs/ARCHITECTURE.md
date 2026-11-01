@@ -13,7 +13,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/cad/documentOps.ts`: placement-grid, collision, rotation and component-parameter document operations used to keep placed symbols visually separate.
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic component-state and motor model.
-- `src/components`: workspace presentation and accessible interaction.
+- `src/components`: workspace presentation and accessible interaction, including category-aware placed-symbol glyphs that preserve an upright fitted reference label.
 
 ## Supported model
 
