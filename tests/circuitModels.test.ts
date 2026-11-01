@@ -16,4 +16,17 @@ describe("placed functional component execution", () => {
       expect.objectContaining({ reference: "LG1", output: { label: "AND output", value: "ON" } }),
     ]));
   });
+
+  it("propagates a boolean control signal through a contact, gate and coil", () => {
+    const document = createDolMotorStarter();
+    document.components.push({ id: "contact-1", definitionId: "logic.no-contact", reference: "K1", x: 900, y: 180, rotation: 0, properties: { input: true } });
+    document.components.push({ id: "gate-1", definitionId: "logic.gate-and", reference: "LG1", x: 900, y: 280, rotation: 0, properties: { inputA: false, inputB: true } });
+    document.components.push({ id: "coil-1", definitionId: "logic.output-coil", reference: "Q1", x: 900, y: 380, rotation: 0, properties: { input: false } });
+    document.wires.push({ id: "contact-to-gate", from: { componentId: "contact-1", terminalId: "out" }, to: { componentId: "gate-1", terminalId: "in-a" }, points: [], netName: "CONTROL_A" });
+    document.wires.push({ id: "gate-to-coil", from: { componentId: "gate-1", terminalId: "out" }, to: { componentId: "coil-1", terminalId: "in" }, points: [], netName: "COIL_Q1" });
+    expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reference: "LG1", output: { label: "AND output", value: "ON" } }),
+      expect.objectContaining({ reference: "Q1", output: { label: "Coil", value: "ON" } }),
+    ]));
+  });
 });
