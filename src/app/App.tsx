@@ -241,6 +241,11 @@ export function App() {
     }
   };
 
+  const printSchematic = () => {
+    setNotice("Opening the browser print dialog for the active schematic.");
+    window.print();
+  };
+
   const importProject = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
@@ -546,7 +551,7 @@ export function App() {
       </header>
 
       <nav className="menu-row" aria-label="Project actions">
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
         <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
