@@ -6,6 +6,7 @@ import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
 import { parseProjectJson } from "../projects/projectSerialization";
+import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
@@ -170,6 +171,74 @@ export function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     setNotice("Project JSON exported.");
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const captureSchematicSvg = () => {
+    const drawing = window.document.querySelector("svg.schematic");
+    if (!(drawing instanceof SVGSVGElement)) {
+      setNotice("No schematic drawing is available for export.");
+      return null;
+    }
+    const copy = drawing.cloneNode(true) as SVGSVGElement;
+    copy.querySelectorAll(".terminal-anchors").forEach((node) => node.remove());
+    return prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(copy));
+  };
+
+  const exportSchematicSvg = () => {
+    try {
+      const markup = captureSchematicSvg();
+      if (!markup) return;
+      downloadBlob(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }), "adigun-electro-cad-schematic.svg");
+      setNotice("Standalone schematic SVG exported.");
+    } catch {
+      setNotice("Schematic SVG export could not be completed.");
+    }
+  };
+
+  const exportSchematicPng = () => {
+    try {
+      const markup = captureSchematicSvg();
+      if (!markup) return;
+      const sourceUrl = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }));
+      const image = new Image();
+      image.onload = () => {
+        const canvas = window.document.createElement("canvas");
+        canvas.width = 1100;
+        canvas.height = 780;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          URL.revokeObjectURL(sourceUrl);
+          setNotice("PNG export is unavailable in this browser.");
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(sourceUrl);
+          if (!blob) {
+            setNotice("PNG export could not be completed.");
+            return;
+          }
+          downloadBlob(blob, "adigun-electro-cad-schematic.png");
+          setNotice("Schematic PNG exported.");
+        }, "image/png");
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(sourceUrl);
+        setNotice("PNG export could not render the schematic.");
+      };
+      image.src = sourceUrl;
+    } catch {
+      setNotice("Schematic PNG export could not be completed.");
+    }
   };
 
   const importProject = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -477,7 +546,7 @@ export function App() {
       </header>
 
       <nav className="menu-row" aria-label="Project actions">
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
         <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>

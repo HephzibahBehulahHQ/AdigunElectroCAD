@@ -9,6 +9,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
 - `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
 - `src/projects/projectSerialization.ts`: bounded local JSON import/recovery validation for project structure, catalog identities, terminal topology and readable label lengths.
+- `src/projects/schematicExport.ts`: standalone SVG preparation with embedded drawing styles; the browser canvas path can render it to PNG.
 - `src/reports`: derivation of BOM, wire-list and terminal-list data from the active circuit document.
 - `src/cad`: placement-grid, collision, rotation, component-parameter, wire-edit and bounded project-history operations used to keep edits recoverable and placed symbols visually separate.
 - `src/electrical`: graph validation independent of SVG geometry.
