@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 import { functionalCatalog } from "../src/catalog/functionalCatalog";
 import { evaluateFunctionalModel, hasFunctionalModel } from "../src/simulation/functionalModels";
-import { hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
+import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 
 describe("functional component catalog", () => {
   it("contains only executable requested component definitions", () => {
@@ -10,6 +12,7 @@ describe("functional component catalog", () => {
     for (const definition of functionalCatalog) {
       expect(definition.simulationSupport).not.toBe("symbol-only");
       expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+      expect(renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 0, y: 0 }))).toContain("functional-symbol");
       expect(hasFunctionalModel(definition.simulationModelId)).toBe(true);
       expect(evaluateFunctionalModel(definition.simulationModelId, definition.propertiesSchema)).toMatchObject({ label: expect.any(String), value: expect.any(String) });
     }

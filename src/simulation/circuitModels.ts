@@ -54,9 +54,10 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const incoming = signals.get(endpointKey(component.id, terminal.id));
         const binding = inputBinding(definition.simulationModelId, terminal.id);
         const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
-        if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && activeProperties[binding.property] !== incoming.value) {
+        const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
+        if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
           activeProperties[binding.property] = incoming.value;
-          inputUnits.set(`${component.id}.${binding.property}`, incoming.unit);
+          inputUnits.set(inputUnitKey, incoming.unit);
           changed = true;
         }
       }

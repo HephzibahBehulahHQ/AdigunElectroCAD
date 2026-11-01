@@ -51,4 +51,16 @@ describe("placed functional component execution", () => {
       expect.objectContaining({ reference: "ADC1", output: { label: "PLC raw value", value: "0" } }),
     ]));
   });
+
+  it("retains a received unit when its value matches the block default", () => {
+    const document = createDolMotorStarter();
+    document.components.push({ id: "level-1", definitionId: "sensor.level-4-20", reference: "B1", x: 900, y: 180, rotation: 0, properties: { levelPercent: 0 } });
+    document.components.push({ id: "thermo-1", definitionId: "sensor.thermocouple", reference: "B2", x: 900, y: 260, rotation: 0, properties: { temperatureC: 100 } });
+    document.components.push({ id: "math-1", definitionId: "logic.math-add", reference: "MTH1", x: 900, y: 340, rotation: 0, properties: { left: 4, right: 0 } });
+    document.wires.push({ id: "level-to-math", from: { componentId: "level-1", terminalId: "signal" }, to: { componentId: "math-1", terminalId: "in-a" }, points: [], netName: "LEVEL_DEFAULT" });
+    document.wires.push({ id: "thermo-to-math", from: { componentId: "thermo-1", terminalId: "signal" }, to: { componentId: "math-1", terminalId: "in-b" }, points: [], netName: "THERMO_INCOMPATIBLE" });
+    expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reference: "MTH1", output: { label: "Math output", value: "4" } }),
+    ]));
+  });
 });
