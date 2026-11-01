@@ -6,6 +6,7 @@
 | Generic catalog schema | 512 generic IEC-oriented entries across 16 categories, each with terminals and standards metadata; they are not manufacturer-certified | Automated |
 | Executable component catalog | 67 requested component records resolve to registered models and produce a live output using their editable defaults | Automated + build validation |
 | Placed schematic execution | Functional instances placed in a circuit document execute through the registered model engine | Automated + build validation |
+| Functional signal propagation | A level-sensor 4–20 mA output propagates through a direct terminal wire into an ADC model | Automated + build validation |
 | Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |

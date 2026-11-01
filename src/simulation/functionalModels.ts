@@ -2,6 +2,7 @@ import { compare, currentTransformerSecondaryAmp, dacMilliamp, edgeTrigger, enco
 import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve32, directionalValve52, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
 
 export interface FunctionalModelResult { label: string; value: string; }
+export type FunctionalSignal = boolean | number;
 type Properties = Record<string, string | number | boolean>;
 type Model = (properties: Properties) => FunctionalModelResult;
 const number = (properties: Properties, key: string, fallback = 0) => typeof properties[key] === "number" && Number.isFinite(properties[key]) ? properties[key] : fallback;
@@ -71,3 +72,23 @@ const models: Record<string, Model> = {
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined { return models[modelId]?.(properties); }
 export function hasFunctionalModel(modelId: string) { return modelId in models; }
+
+export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+  if (modelId === "logic-no") return normallyOpen(bool(properties, "input"));
+  if (modelId === "logic-nc") return normallyClosed(bool(properties, "input"));
+  if (modelId === "logic-output-coil") return outputCoil(bool(properties, "input"));
+  if (modelId === "logic-set-coil") return setResetLatch(bool(properties, "previous"), bool(properties, "input"), false);
+  if (modelId === "logic-reset-coil") return setResetLatch(bool(properties, "previous"), false, bool(properties, "input"));
+  if (modelId === "logic-edge-positive") return edgeTrigger(bool(properties, "previous"), bool(properties, "input")).positive;
+  if (modelId === "logic-edge-negative") return edgeTrigger(bool(properties, "previous"), bool(properties, "input")).negative;
+  const gate = modelId.replace("logic-gate-", "");
+  if (["and", "or", "not", "nand", "nor", "xor"].includes(gate)) return logicGate(gate as "and" | "or" | "not" | "nand" | "nor" | "xor", [bool(properties, "inputA"), bool(properties, "inputB")]);
+  const comparator = modelId.replace("logic-comparator-", "");
+  if (["greater-than", "less-than", "equal-to"].includes(comparator)) return compare(comparator as "greater-than" | "less-than" | "equal-to", number(properties, "left"), number(properties, "right"));
+  const math = modelId.replace("logic-math-", "");
+  if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", number(properties, "left"), number(properties, "right")); return result.ok ? result.value : undefined; }
+  if (modelId === "sensor-level-4-20") return levelToMilliamp(number(properties, "levelPercent", 50));
+  if (modelId === "signal-adc") return milliampToPlcRaw(number(properties, "milliamp", 4));
+  if (modelId === "signal-dac") return dacMilliamp(number(properties, "raw"));
+  return undefined;
+}

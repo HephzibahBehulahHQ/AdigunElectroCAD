@@ -15,7 +15,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/electrical`: graph validation independent of SVG geometry.
 - `src/simulation`: deterministic DOL motor model; PLC boolean/edge/latch/gate/math/comparator and analog instrumentation functions used by the live control laboratory; and industrial-device calculations used by the live Industrial Device Lab.
 - `src/simulation/functionalModels.ts`: explicit registry binding every released component model ID to a live per-instance evaluator.
-- `src/simulation/circuitModels.ts`: evaluates registered functional models from placed schematic component instances; it does not yet infer input values across terminal nets.
+- `src/simulation/circuitModels.ts`: evaluates registered functional models from placed schematic component instances and iteratively propagates supported boolean/numeric outputs over compatible direct terminal wires.
 - `src/components`: workspace presentation and accessible interaction, including category-aware placed-symbol glyphs that preserve an upright fitted reference label.
 
 ## Supported model
