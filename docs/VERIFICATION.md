@@ -7,10 +7,11 @@
 | Executable component catalog | 67 requested component records resolve to registered models and produce a live output using their editable defaults | Automated + build validation |
 | Placed schematic execution | Functional instances placed in a circuit document execute through the registered model engine | Automated + build validation |
 | Functional signal propagation | Level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil signals propagate through direct terminal wires; incompatible units are rejected | Automated + build validation |
-| Project-template topology | 500 templates use only known component terminals and pass topology validation; they are not all simulations | Automated |
+| Executable project library | All 500 projects use known component terminals, pass topology validation, carry a recorded test sequence, and satisfy their stated component-abstraction outputs | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |
 | Local autosave | Debounced browser-local persistence records dirty project edits; persistence failures expose an export fallback notice | Build validation |
+| Supabase cloud persistence | `adigunelectrocad.projects` and `adigunelectrocad.user_preferences` exist with RLS, ownership policies, permanent-user insert restrictions, and authenticated API grants | Database query + build validation |
 | Schematic export | Standalone SVG namespace/style preparation is automated; browser SVG and PNG download controls are build validated | Automated + build validation |
 | Schematic print | The print command exposes only the active schematic and a compact product heading through print CSS | Build validation |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
@@ -38,5 +39,5 @@
 | Responsive workspace | Header/footer readability and no overlap at desktop and 390 px viewport | Manually verified in browser |
 | Schematic annotations | Control title and device labels are separated and fully visible | Manually verified in browser |
 
-This manifest only records checks that have been executed. It is not a claim that catalog or project-library release targets have been met.
+This manifest only records checks that have been executed. Component and project models are documented engineering abstractions, not manufacturer-certified or physical commissioning results.
 

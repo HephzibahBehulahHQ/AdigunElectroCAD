@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
@@ -6,6 +7,9 @@ import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
 import { verifyProjectTemplate } from "../projects/templateVerification";
+import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn, signOut, signUp, startAnonymousPreview } from "../services/auth";
+import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
+import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
@@ -30,6 +34,7 @@ const copy = {
 } as const;
 
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
+const CLOUD_PROJECT_KEY = "adigun-electro-cad.cloud-project-id.v1";
 const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
 export function App() {
@@ -69,7 +74,14 @@ export function App() {
   const [industrialCableCurrentA, setIndustrialCableCurrentA] = useState(10);
   const [industrialSafetyA, setIndustrialSafetyA] = useState(true);
   const [industrialSafetyB, setIndustrialSafetyB] = useState(true);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [cloudProjectId, setCloudProjectId] = useState(() => window.localStorage.getItem(CLOUD_PROJECT_KEY) ?? "");
   const t = copy[locale];
+  const anonymousSession = isAnonymousUser(authUser);
 
   const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
   const document = activeSheet.document;
@@ -104,6 +116,19 @@ export function App() {
   useEffect(() => {
     window.document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    const client = supabaseClient();
+    let active = true;
+    void client.auth.getUser().then(({ data }) => { if (active) setAuthUser(data.user); });
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => setAuthUser(session?.user ?? null));
+    return () => { active = false; subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!authUser || anonymousSession) return;
+    void saveUserPreferences(authUser.id, { theme, locale, favorites }).catch(() => undefined);
+  }, [authUser, anonymousSession, favorites, locale, theme]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -179,6 +204,93 @@ export function App() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
     setDirty(false);
     setNotice(t.projectSaved);
+  };
+
+  const saveToCloud = async () => {
+    if (!authUser) {
+      setAuthOpen(true);
+      setAuthMessage("Sign in or create an account before saving a new cloud project.");
+      return;
+    }
+    if (anonymousSession && !cloudProjectId) {
+      setAuthOpen(true);
+      setAuthMessage("Anonymous accounts can read, update, and delete their owned rows, but cannot create a cloud project. Upgrade this account to create one.");
+      return;
+    }
+    try {
+      const saved = await saveCloudProject(authUser.id, project, cloudProjectId || undefined);
+      window.localStorage.setItem(CLOUD_PROJECT_KEY, saved.id);
+      setCloudProjectId(saved.id);
+      setDirty(false);
+      setNotice(`${project.name} saved to the authenticated cloud account.`);
+    } catch (error) {
+      setNotice(`Cloud save failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    }
+  };
+
+  const loadFromCloud = async () => {
+    if (!authUser) {
+      setAuthOpen(true);
+      setAuthMessage("Sign in before loading a cloud project.");
+      return;
+    }
+    try {
+      const saved = await loadLatestCloudProject(authUser.id);
+      if (!saved) {
+        setNotice("No cloud project is available for this account.");
+        return;
+      }
+      const restored = parseProjectJson(JSON.stringify(saved.document));
+      const firstSheet = restored.sheets[0];
+      setProject(restored);
+      setHistory({ undo: [], redo: [] });
+      setActiveSheetId(firstSheet.id);
+      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setSelectedWireId("");
+      setWireMode(false);
+      setWireStart(null);
+      window.localStorage.setItem(CLOUD_PROJECT_KEY, saved.id);
+      setCloudProjectId(saved.id);
+      setDirty(false);
+      setNotice(`${restored.name} loaded from the authenticated cloud account.`);
+    } catch (error) {
+      setNotice(`Cloud load failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    }
+  };
+
+  const authenticate = async (mode: "sign-in" | "sign-up") => {
+    try {
+      const user = mode === "sign-in" ? await signIn(authEmail, authPassword) : await signUp(authEmail, authPassword);
+      setAuthUser(user);
+      setAuthMessage(mode === "sign-up" ? "Check your email to confirm the account before signing in." : "Signed in. Cloud project commands are now available.");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Authentication failed.");
+    }
+  };
+
+  const startPreview = async () => {
+    try {
+      const user = await startAnonymousPreview();
+      setAuthUser(user);
+      setAuthMessage("Preview started. The five-minute reminder is informational only; it does not restrict account access.");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Anonymous preview could not start.");
+    }
+  };
+
+  const beginUpgrade = async () => {
+    const result = await beginAnonymousUpgrade(authEmail);
+    setAuthMessage(result.existingEmail ? "That email already has an account. Use Sign in with password instead." : result.message);
+  };
+
+  const finishUpgrade = async () => {
+    try {
+      const user = await finishAnonymousUpgrade(authPassword);
+      setAuthUser(user);
+      setAuthMessage("Password set. The anonymous account is now linked to the confirmed email.");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Set a password only after confirming the email link.");
+    }
   };
 
   const loadLocalSave = () => {
@@ -588,11 +700,20 @@ export function App() {
           <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)} aria-label="Interface language"><option value="en">EN</option><option value="de">DE</option></select>
           <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)} aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select>
           <button className="bot-button" onClick={() => setNotice("Adigun BOT requires a separately configured secure service; it is not enabled in this foundation.")}>◌ Adigun BOT</button>
+          <button className="account-button" onClick={() => setAuthOpen((open) => !open)}>{authUser ? anonymousSession ? "Guest preview" : "Account" : "Sign in"}</button>
         </div>
       </header>
 
+      {authOpen && <section className="auth-panel" aria-label="Cloud account">
+        <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
+        {!authUser && <div className="auth-fields"><label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in</button><button onClick={() => void authenticate("sign-up")}>Create account</button><button onClick={() => void startPreview()}>Start preview</button></div></div>}
+        {anonymousSession && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div></div>}
+        {authUser && !anonymousSession && <div className="auth-actions"><span>{authUser.email ?? "Confirmed account"}</span><button onClick={() => void signOut().then(() => { setAuthUser(null); setAuthMessage("Signed out."); }).catch((error) => setAuthMessage(error instanceof Error ? error.message : "Sign out failed."))}>Sign out</button></div>}
+        {authMessage && <p className="auth-message">{authMessage}</p>}
+      </section>}
+
       <nav className="menu-row" aria-label="Project actions">
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={loadLocalSave}>Load local save</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
         <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
         <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
@@ -651,7 +772,7 @@ export function App() {
 
       <section className="engineering-console">
         <div className="console-section"><strong>Simulation</strong><span className={simulation.motorState === "running" ? "badge running" : "badge"}>{simulation.motorState.toUpperCase()}</span><dl><dt>Voltage</dt><dd>{simulation.lineVoltageV.toFixed(0)} V</dd><dt>Current</dt><dd>{simulation.lineCurrentA.toFixed(1)} A</dd><dt>Speed</dt><dd>{simulation.motorSpeedRpm.toFixed(0)} rpm</dd><dt>Time</dt><dd>{(simulation.elapsedMs / 1000).toFixed(1)} s</dd></dl></div>
-        <div className="console-section"><strong>{t.validation}</strong>{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}{circuitModelRuns.length > 0 && <p className="pass">✓ {circuitModelRuns.length} placed model{circuitModelRuns.length === 1 ? "" : "s"} executed: {circuitModelRuns.slice(0, 2).map((run) => `${run.reference} ${run.output.value}`).join(" · ")}{circuitModelRuns.length > 2 ? " …" : ""}</p>}<p className="muted">Catalog/project release targets are intentionally not claimed by this initial increment.</p></div>
+        <div className="console-section"><strong>{t.validation}</strong>{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}{circuitModelRuns.length > 0 && <p className="pass">✓ {circuitModelRuns.length} placed model{circuitModelRuns.length === 1 ? "" : "s"} executed: {circuitModelRuns.slice(0, 2).map((run) => `${run.reference} ${run.output.value}`).join(" · ")}{circuitModelRuns.length > 2 ? " …" : ""}</p>}<p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
         <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
         <section className="console-section plc-lab" aria-label="PLC logic and analog signal laboratory"><strong>PLC Control &amp; Analog Lab</strong><span className="badge running">FUNCTIONAL</span><div className="plc-controls"><label>Input A (NO / NC)<input type="checkbox" checked={plcInputA} onChange={(event) => { setPlcPreviousInputA(plcInputA); setPlcInputA(event.target.checked); }} /></label><label>Input B<input type="checkbox" checked={plcInputB} onChange={(event) => setPlcInputB(event.target.checked)} /></label><label>Logic gate<select value={plcGate} onChange={(event) => setPlcGate(event.target.value as LogicGate)}><option value="and">AND</option><option value="or">OR</option><option value="not">NOT</option><option value="nand">NAND</option><option value="nor">NOR</option><option value="xor">XOR</option></select></label><label>Comparator<select value={plcComparator} onChange={(event) => setPlcComparator(event.target.value as Comparator)}><option value="greater-than">Greater than</option><option value="less-than">Less than</option><option value="equal-to">Equal to</option></select></label><label>Math block<select value={plcMath} onChange={(event) => setPlcMath(event.target.value as MathOperation)}><option value="add">Add</option><option value="subtract">Subtract</option><option value="multiply">Multiply</option><option value="divide">Divide</option></select></label><label>Value A<input type="number" value={plcLeft} onChange={(event) => setPlcLeft(Number(event.target.value) || 0)} /></label><label>Value B<input type="number" value={plcRight} onChange={(event) => setPlcRight(Number(event.target.value) || 0)} /></label><label>Level sensor {levelPercent}%<input type="range" min="0" max="100" value={levelPercent} onChange={(event) => setLevelPercent(Number(event.target.value))} /></label></div><div className="plc-results"><span>NO {normallyOpen(plcInputA) ? "ON" : "OFF"} · NC {normallyClosed(plcInputA) ? "ON" : "OFF"}</span><span>Edge + {controlLab.edges.positive ? "ON" : "OFF"} · − {controlLab.edges.negative ? "ON" : "OFF"}</span><span>Gate {controlLab.logic ? "ON" : "OFF"} · Compare {controlLab.comparison ? "ON" : "OFF"} · Coil {controlLab.coil ? "ON" : "OFF"}</span><span>Math {controlLab.math.ok ? controlLab.math.value.toFixed(2) : controlLab.math.reason}</span><span>Level 4–20 mA: {controlLab.milliamp.toFixed(2)} mA → ADC {controlLab.raw} → DAC {controlLab.dac.toFixed(2)} mA</span></div><div className="plc-latch"><span>Set/Reset latch: {plcLatch ? "SET" : "RESET"}</span><button onClick={() => setPlcLatch((value) => setResetLatch(value, true, false))}>Set</button><button onClick={() => setPlcLatch((value) => setResetLatch(value, false, true))}>Reset</button></div></section>
         <section className="console-section industrial-lab" aria-label="Industrial device laboratory"><strong>Industrial Device Lab</strong><span className="badge running">FUNCTIONAL</span><div className="plc-controls industrial-controls"><label>Actuator command<select value={industrialDirection} onChange={(event) => setIndustrialDirection(event.target.value as Direction)}><option value="extend">Extend</option><option value="retract">Retract</option><option value="hold">Hold</option></select></label><label>Hydraulic pressure {industrialPressureBar} bar<input type="range" min="0" max="250" value={industrialPressureBar} onChange={(event) => setIndustrialPressureBar(Number(event.target.value))} /></label><label>Zone temperature {industrialTemperatureC}°C<input type="range" min="0" max="40" value={industrialTemperatureC} onChange={(event) => setIndustrialTemperatureC(Number(event.target.value))} /></label><label>Solar irradiance {industrialSolarIrradiance} W/m²<input type="range" min="0" max="1000" value={industrialSolarIrradiance} onChange={(event) => setIndustrialSolarIrradiance(Number(event.target.value))} /></label><label>Cable current {industrialCableCurrentA} A<input type="range" min="0" max="100" value={industrialCableCurrentA} onChange={(event) => setIndustrialCableCurrentA(Number(event.target.value))} /></label><label>Safety channel A<input type="checkbox" checked={industrialSafetyA} onChange={(event) => setIndustrialSafetyA(event.target.checked)} /></label><label>Safety channel B<input type="checkbox" checked={industrialSafetyB} onChange={(event) => setIndustrialSafetyB(event.target.checked)} /></label></div><div className="industrial-results"><span>Pneumatic 5/2: {industrialLab.valve} · cylinder 1 s step: {industrialLab.cylinder.toFixed(0)}% · compressor {industrialLab.compressorLpm.toFixed(0)} L/min · FRL {industrialLab.frlBar.toFixed(1)} bar</span><span>Hydraulic pump {industrialLab.pumpLpm.toFixed(1)} L/min · cylinder {industrialLab.forceN.toFixed(0)} N · relief {industrialLab.reliefOpen ? "OPEN" : "CLOSED"}</span><span>HVAC next {industrialLab.temperatureNext.toFixed(2)}°C · thermostat {industrialLab.thermostat ? "ON" : "OFF"} · humidistat {industrialLab.humidistat ? "ON" : "OFF"} · damper {industrialLab.damper.toFixed(0)}%</span><span>Solar {industrialLab.solarW.toFixed(0)} W · battery forecast {industrialLab.batterySoc.toFixed(1)}% · inverter {industrialLab.inverterW.toFixed(0)} W · grid tie {industrialLab.gridTie ? "CLOSED" : "OPEN"}</span><span>Safety relay {industrialLab.safety ? "ENERGIZED" : "OPEN"} · light curtain {industrialLab.curtainClear ? "CLEAR" : "BLOCKED"} · phases {industrialLab.phaseHealthy ? "HEALTHY" : "FAILED"} · leakage {industrialLab.leakageTrip ? "TRIPPED" : "HEALTHY"}</span><span>100 m three-phase cable: {industrialLab.voltageDrop.toFixed(2)} V drop · {industrialLab.cableLoss.toFixed(1)} W loss</span></div></section>
