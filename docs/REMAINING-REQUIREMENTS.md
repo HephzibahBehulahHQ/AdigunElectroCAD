@@ -6,7 +6,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 `src/projects/templateLibrary.ts` generates 500 entries from five scenario families. These are parameter variants, not 500 independently engineered projects. The requested forward/reverse, star-delta, multi-motor sequence, and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
 
-`verifyProjectTemplate` checks topology and a single configured model snapshot. Its expected-output checks match text fragments such as `rpm`, rather than numeric operating points. It does not execute the recorded sequence or prove that opening an upstream device removes downstream power. Sequence and fault verification must replace these weak checks before claiming runnable project coverage.
+`verifyProjectTemplate` checks topology and configured model snapshots. Motor-feeder variants now additionally execute breaker isolation, running, starter release, and restoration steps with exact stopped states and numeric speed expectations. Other families still rely on text-fragment snapshot expectations such as `rpm`. Sequence and fault verification must cover those families before claiming runnable project coverage.
 
 ## Authentication and persistence
 

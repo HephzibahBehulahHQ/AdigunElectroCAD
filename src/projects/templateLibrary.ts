@@ -1,4 +1,5 @@
 import type { CircuitDocument, ComponentInstance, Wire } from "../types/electrical";
+import type { CircuitSequenceStep } from "./templateVerification";
 
 export type TemplateLevel = "Beginner" | "Intermediate" | "Advanced" | "Industrial" | "Expert";
 
@@ -16,6 +17,7 @@ export interface ProjectTemplate {
   description: string;
   testSequence: string[];
   expectedOutputs: TemplateExpectation[];
+  operatingSequence?: CircuitSequenceStep[];
   document: CircuitDocument;
 }
 
@@ -96,6 +98,12 @@ function createTemplate(index: number): ProjectTemplate {
     description: `Executable ${scenario.category.toLowerCase()} project with parameterized IEC components. Run the recorded sequence and compare the live component abstractions with the stated outputs.`,
     testSequence,
     expectedOutputs: scenario.expectations(ordinal),
+    operatingSequence: scenario.id === "motor-feeder" ? [
+      { name: "Isolate breaker", changes: [{ reference: "Q1", properties: { closed: false } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
+      { name: "Close breaker and run", changes: [{ reference: "Q1", properties: { closed: true } }, { reference: "M1", properties: { nominalSpeedRpm: 1450 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1450 }] },
+      { name: "Release starter", changes: [{ reference: "KM1", properties: { energized: false } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
+      { name: "Restore starter", changes: [{ reference: "KM1", properties: { energized: true } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1450 }] },
+    ] : undefined,
     document: { id: `template-sheet-${String(ordinal).padStart(3, "0")}`, name, description: `Executable template ${name}. Test sequence: ${testSequence.join(" ")}`, components, wires, revision: 1 },
   };
 }
@@ -107,4 +115,3 @@ function instance(templateNumber: number, index: number, definitionId: string, r
 function wire(templateNumber: number, index: number, fromComponentId: string, fromTerminalId: string, toComponentId: string, toTerminalId: string): Wire {
   return { id: `t${templateNumber}-w${index + 1}`, from: { componentId: fromComponentId, terminalId: fromTerminalId }, to: { componentId: toComponentId, terminalId: toTerminalId }, points: [], netName: `T${templateNumber}_N${index + 1}` };
 }
-
