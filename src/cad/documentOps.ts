@@ -1,9 +1,8 @@
 import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
+import { componentFootprint } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
 
-const componentWidth = 110;
-const componentHeight = 70;
 
 export function moveComponent(document: CircuitDocument, componentId: string, deltaX: number, deltaY: number): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
@@ -51,7 +50,7 @@ export function removeWire(document: CircuitDocument, wireId: string): CircuitDo
 
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout): { x: number; y: number } | null {
   const columns = layout === "reference" ? [940, 800, 660] : [180, 360, 540, 720, 900];
-  const rows = layout === "reference" ? [140, 240, 340, 440, 540] : [160, 280, 400, 520, 640];
+  const rows = layout === "reference" ? [140, 260, 380, 500] : [160, 280, 400, 520, 640];
   for (const x of columns) {
     for (const y of rows) {
       if (canPlaceComponent(components, "", x, y)) return { x, y };
@@ -72,11 +71,7 @@ export function removeComponent(document: CircuitDocument, componentId: string):
 }
 
 function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], rightX: number, rightY: number, rightRotation: ComponentInstance["rotation"]): boolean {
-  const [leftWidth, leftHeight] = dimensions(leftRotation);
-  const [rightWidth, rightHeight] = dimensions(rightRotation);
-  return Math.abs(leftX - rightX) < (leftWidth + rightWidth) / 2 && Math.abs(leftY - rightY) < (leftHeight + rightHeight) / 2;
-}
-
-function dimensions(rotation: ComponentInstance["rotation"]): [number, number] {
-  return rotation === 90 || rotation === 270 ? [componentHeight, componentWidth] : [componentWidth, componentHeight];
+  const left = componentFootprint(leftX, leftY, leftRotation);
+  const right = componentFootprint(rightX, rightY, rightRotation);
+  return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
