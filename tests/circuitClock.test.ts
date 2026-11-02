@@ -5,6 +5,13 @@ import { advanceCircuitClock, resetCircuitClock } from "../src/simulation/circui
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("circuit simulation clock", () => {
+  it("expires at the exact threshold after ten 100 ms steps", () => {
+    let runtime = structuredClone(templateLibrary[3].document);
+    runtime.components[0].properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
+    for (let index = 0; index < 10; index++) runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(runtime.components[0].properties.elapsedSeconds).toBe(1);
+    expect(executeCircuitModels(runtime, catalogById).find((run) => run.reference === "KT1")?.output.value).toBe("CLOSED");
+  });
   it("resets runtime timing while preserving configured design values", () => {
     const design = structuredClone(templateLibrary[3].document);
     design.components[0].properties.elapsedSeconds = 9;
