@@ -46,6 +46,46 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return definition ? [[component.id, { ...definition.propertiesSchema, ...component.properties }]] : [];
   }));
   const signals = new Map<string, FunctionalSignal>();
+  // Trace each phase through actual wires and closed switching paths.
+  // Component commands alone cannot supply a motor with power.
+  const powerEdges = new Map<string, string[]>();
+  const link = (from: string, to: string) => powerEdges.set(from, [...(powerEdges.get(from) ?? []), to]);
+  for (const wire of document.wires) {
+    const from = endpointKey(wire.from.componentId, wire.from.terminalId);
+    const to = endpointKey(wire.to.componentId, wire.to.terminalId);
+    link(from, to); link(to, from);
+  }
+  const powered = new Map<string, Set<string>>();
+  const queue: Array<[string, string]> = [];
+  for (const component of document.components) {
+    const model = definitionsByComponent.get(component.id)?.simulationModelId;
+    const p = properties.get(component.id) ?? {};
+    if (model === "catalog-ac-supply" && p.outputEnabled === true) {
+      for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`]);
+    }
+    const conducting = model === "catalog-circuit-breaker" ? p.closed === true
+      : model === "catalog-motor-starter" ? p.energized === true
+      : model === "catalog-variable-frequency-drive" ? p.enabled === true : false;
+    if (conducting) for (const phase of ["l1", "l2", "l3"]) {
+      link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
+    }
+  }
+  while (queue.length) {
+    const [terminal, phase] = queue.shift()!;
+    const phases = powered.get(terminal) ?? new Set<string>();
+    if (phases.has(phase)) continue;
+    phases.add(phase);
+    powered.set(terminal, phases);
+    queue.push(...(powerEdges.get(terminal) ?? []).map((next): [string, string] => [next, phase]));
+  }
+  for (const component of document.components) {
+    if (definitionsByComponent.get(component.id)?.simulationModelId !== "catalog-induction-motor") continue;
+    const p = properties.get(component.id)!;
+    const feeds = ["u1", "v1", "w1"].map((terminal) => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
+    const uniqueFeeds = feeds.every((feed) => feed.length === 1) && new Set(feeds.map((feed) => feed[0])).size === 3;
+    const sameSource = new Set(feeds.flat().map((feed) => feed.slice(0, feed.lastIndexOf(":")))).size === 1;
+    p.energized = p.energized === true && uniqueFeeds && sameSource;
+  }
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < 12; iteration += 1) {
     let changed = false;
@@ -80,4 +120,3 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output }] : [];
   });
 }
-

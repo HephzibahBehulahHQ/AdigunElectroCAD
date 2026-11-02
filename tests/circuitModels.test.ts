@@ -2,8 +2,27 @@ import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("does not run a motor whose three terminals receive the same phase", () => {
+    const document = structuredClone(templateLibrary[0].document);
+    for (const wire of document.wires.filter((wire) => wire.to.componentId === document.components[3].id)) wire.from.terminalId = "l1-out";
+    const motor = executeCircuitModels(document, catalogById).find((run) => run.reference === "M1");
+    expect(motor?.output.value).toBe("STANDBY");
+  });
+  it("removes motor power when its breaker opens or a phase wire is removed", () => {
+    const document = structuredClone(templateLibrary[0].document);
+    const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
+    expect(motor()).toContain("rpm");
+    const breaker = document.components.find((component) => component.reference === "Q1")!;
+    breaker.properties.closed = false;
+    expect(motor()).toBe("STANDBY");
+    breaker.properties.closed = true;
+    expect(motor()).toContain("rpm");
+    document.wires.pop();
+    expect(motor()).toBe("STANDBY");
+  });
   it("evaluates a placed parameterized IEC catalog record through its declared abstraction", () => {
     const document = createDolMotorStarter();
     document.components.push({ id: "breaker-iec", definitionId: "iec.circuit-breaker.01", reference: "Q2", x: 900, y: 180, rotation: 0, properties: { nominalVoltageV: 24, ratedCurrentA: 4.1, poles: 3, closed: true, breakingCapacityKa: 7 } });
@@ -75,4 +94,3 @@ describe("placed functional component execution", () => {
     ]));
   });
 });
-
