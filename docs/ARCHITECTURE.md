@@ -4,7 +4,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 
 ## Boundaries
 
-- `src/catalog`: immutable component definitions and terminal data. Eight DOL entries and 67 component entries have supported simulation behavior; the 512 additional entries are schema-validated generic IEC-oriented symbol templates, not vendor-certified records.
+- `src/catalog`: immutable component definitions and terminal data. The 638-entry catalog contains eight DOL entries, 67 component entries with supported simulation behavior, and 563 parameterized IEC engineering entries. The first 520 satisfy the required category distribution; additional project variants and 32 dual-channel safety entries remain executable control, numerical or connectivity abstractions. None is a vendor-certified record.
 - `src/projects`: editable circuit documents built from catalog instances.
 - `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
 - `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
@@ -24,4 +24,5 @@ The DOL motor project is an educational, simplified model. It validates terminal
 
 ## Not in this increment
 
-The 520-entry catalog is not presented as manufacturer certified; the 500 templates are not presented as runnable simulations. PLC/Ladder integration, cloud accounts, advanced reports beyond the current sheet BOM/wire/terminal lists, measured hardware characteristics and an Adigun BOT service are not present. No Supabase project has been provisioned for this product.
+The 638-entry catalog is not presented as manufacturer certified; the 500 templates are not presented as runnable simulations. PLC/Ladder integration, cloud accounts, advanced reports beyond the current sheet BOM/wire/terminal lists, measured hardware characteristics and an Adigun BOT service are not present. No Supabase project has been provisioned for this product.
+

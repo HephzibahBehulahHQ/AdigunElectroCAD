@@ -4,6 +4,17 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("placed functional component execution", () => {
+  it("evaluates a placed parameterized IEC catalog record through its declared abstraction", () => {
+    const document = createDolMotorStarter();
+    document.components.push({ id: "breaker-iec", definitionId: "iec.circuit-breaker.01", reference: "Q2", x: 900, y: 180, rotation: 0, properties: { nominalVoltageV: 24, ratedCurrentA: 4.1, poles: 3, closed: true, breakingCapacityKa: 7 } });
+    document.components.push({ id: "timer-iec", definitionId: "iec.on-delay-timer.01", reference: "KT2", x: 900, y: 260, rotation: 0, properties: { nominalVoltageV: 24, ratedCurrentA: 4.1, energized: true, elapsedSeconds: 1, delaySeconds: 0.5 } });
+
+    expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reference: "Q2", output: { label: "Breaker path", value: "CLOSED · 3P / 4.1 A" } }),
+      expect.objectContaining({ reference: "KT2", output: { label: "Timer contact", value: "CLOSED" } }),
+    ]));
+  });
+
   it("evaluates functional catalog instances from the schematic document", () => {
     const document = createDolMotorStarter();
     document.components.push({ id: "level-1", definitionId: "sensor.level-4-20", reference: "B1", x: 900, y: 180, rotation: 0, properties: { levelPercent: 25 } });
@@ -64,3 +75,4 @@ describe("placed functional component execution", () => {
     ]));
   });
 });
+

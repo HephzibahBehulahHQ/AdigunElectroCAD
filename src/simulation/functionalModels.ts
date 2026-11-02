@@ -70,6 +70,22 @@ const models: Record<string, Model> = {
   "cable-armored": (p) => ({ label: "Cable result", value: `${threePhaseVoltageDropV(number(p, "currentA"), number(p, "lengthM"), number(p, "resistanceOhmPerKm")).toFixed(2)} V / ${threePhaseCableLossW(number(p, "currentA"), number(p, "lengthM"), number(p, "resistanceOhmPerKm")).toFixed(1)} W` }),
   "cable-shielded": (p) => ({ label: "Interference factor", value: shieldedCableInterferenceFactor(bool(p, "shieldBonded")).toFixed(2) }),
   "cable-tray": (p) => ({ label: "Tray fill", value: `${cableTrayFillPercent(number(p, "usedAreaMm2"), number(p, "availableAreaMm2")).toFixed(1)}%` }),
+  "catalog-ac-supply": (p) => ({ label: "Nominal supply", value: bool(p, "outputEnabled") ? `${number(p, "nominalVoltageV")} V / ${number(p, "frequencyHz", 50)} Hz` : "OFF" }),
+  "catalog-circuit-breaker": (p) => ({ label: "Breaker path", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${number(p, "poles", 3)}P / ${number(p, "ratedCurrentA")} A` }),
+  "catalog-fuse-switch": (p) => ({ label: "Fuse check", value: bool(p, "fuseHealthy") && number(p, "loadCurrentA") <= number(p, "ratedCurrentA") ? `${(number(p, "loadCurrentA") / number(p, "ratedCurrentA", 1) * 100).toFixed(1)}% load` : "TRIPPED / OVERRATING" }),
+  "catalog-motor-starter": (p) => ({ label: "Starter contacts", value: bool(p, "energized") ? `CLOSED · ${number(p, "coilVoltageV")} V coil` : "OPEN" }),
+  "catalog-interface-relay": (p) => ({ label: "Relay contacts", value: bool(p, "energized") ? `ENERGIZED · ${number(p, "changeoverContacts", 1)} CO` : "DE-ENERGIZED" }),
+  "catalog-selector-switch": (p) => ({ label: "Switch state", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${text(p, "contactForm", "NO")}` }),
+  "catalog-induction-motor": (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" }),
+  "catalog-control-transformer": (p) => ({ label: "Ideal ratio output", value: `${(number(p, "secondaryVoltageV") * (1 - number(p, "loadPercent") / 2000)).toFixed(1)} V from ${number(p, "primaryVoltageV")} V` }),
+  "catalog-proximity-sensor": (p) => ({ label: "Sensor output", value: bool(p, "detected") ? `${text(p, "outputType", "PNP")} ON` : `${text(p, "outputType", "PNP")} OFF` }),
+  "catalog-plc-digital-io": (p) => ({ label: "I/O state", value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(bool(p, "output"))}` }),
+  "catalog-on-delay-timer": (p) => ({ label: "Timer contact", value: bool(p, "energized") && number(p, "elapsedSeconds") >= number(p, "delaySeconds") ? "CLOSED" : `${number(p, "elapsedSeconds").toFixed(1)} / ${number(p, "delaySeconds").toFixed(1)} s` }),
+  "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
+  "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
+  "catalog-variable-frequency-drive": (p) => ({ label: "VFD output", value: bool(p, "enabled") ? `${Math.min(number(p, "commandHz"), number(p, "maximumFrequencyHz")).toFixed(1)} Hz` : "DISABLED" }),
+  "catalog-solenoid-actuator": (p) => ({ label: "Actuator position", value: bool(p, "energized") ? `EXTENDED ${number(p, "strokeMm")} mm` : bool(p, "returnSpring") ? "RETRACTED" : "HOLD" }),
+  "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "reset")) ? `ENABLED · Cat ${number(p, "safetyCategory", 1)}` : "INHIBITED" }),
 };
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined { return models[modelId]?.(properties); }
@@ -101,3 +117,4 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   return undefined;
 }
+
