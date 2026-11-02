@@ -22,6 +22,14 @@ LD I0; SET Q0; LD I1; RESET Q0
 
 This is a limited educational instruction interpreter. It does not provide a full IEC 61131-3 language implementation, vendor execution compatibility, physical I/O voltages, or safety-controller certification.
 
+## Input transition contacts
+
+`LDP I0` / `LDP I1` load a rising-edge pulse; `LDF I0` / `LDF I1` load a falling-edge pulse. Each compares the current sampled Boolean input against that module's previous scan. The result lasts one positive-time scan. For example, `LDP I0; OUT Q0` drives a wired output coil for one scan when I0 changes from false to true. A held input does not repeat the pulse. Combine the result with Boolean instructions, or use SET Q0 to latch it until a separate reset rung.
+
+Both inputs initially have false history, so an input already true on the first scan produces a rising pulse; an initially false input does not produce a falling pulse. Pause preserves history and any current pulse. Transitions that occur entirely between scans are not detected. Stop/design reset clears history. Repeated edge reads in one scan use the same snapshot, and each PLC module retains its own history. Edge contacts accept only I0/I1, not Q0, analog inputs or numeric registers. These instructions currently use the text Program editor; the graphical editor preserves them as outside its contact/coil subset.
+
+Automated transition tests cover both addresses, rising/falling truth tables, repeated reads, invalid instructions, wired input precedence, one-scan wired coil pulses, pause, reset and preservation of the saved design. Browser operation of these new instructions remains unverified.
+
 ## Graphical contact/coil editor
 
 Select a placed PLC on a free sheet and open Graphical ladder in its properties panel. The editor supports one to four rungs, each with up to four series stages. Each stage can have up to four parallel NO/NC contacts reading I0, I1 or retained Q0. Choose an output, set or reset Q0 coil per rung. Later rungs take priority. The diagram shows the actual branch structure; it does not highlight live power flow.
