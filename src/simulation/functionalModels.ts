@@ -89,6 +89,7 @@ const models: Record<string, Model> = {
 };
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
+  if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
     const connection = text(properties, "connection", "open");
@@ -102,9 +103,10 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   }
   return models[modelId]?.(properties);
 }
-export function hasFunctionalModel(modelId: string) { return ["power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
+export function hasFunctionalModel(modelId: string) { return ["thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+  if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
   if (modelId === "catalog-safety-relay") return signal("boolean", safetyRelayEnergized(bool(properties, "channelAClosed"), bool(properties, "channelBClosed"), bool(properties, "reset")));
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
   if (modelId === "catalog-on-delay-timer") return signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));

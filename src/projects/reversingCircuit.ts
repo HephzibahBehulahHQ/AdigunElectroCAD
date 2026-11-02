@@ -9,6 +9,11 @@ export function createReversingCircuit(): CircuitDocument {
     component("forward", "iec.motor-starter.01", "KM1", 360, 140, { energized: false }),
     component("reverse", "iec.motor-starter.01", "KM2", 360, 420, { energized: false }),
     component("motor", "iec.induction-motor.01", "M1", 680, 260, { energized: true, nominalSpeedRpm: 1440 }),
+    component("overload-control", "overload.thermal", "F1", 120, 620, { tripped: false }),
+    component("forward-command", "logic.no-contact", "SF", 300, 620, { input: false }),
+    component("forward-permit", "logic.gate-and", "GF", 460, 620, { inputA: false, inputB: false }),
+    component("reverse-command", "logic.no-contact", "SR", 620, 620, { input: false }),
+    component("reverse-permit", "logic.gate-and", "GR", 780, 620, { inputA: false, inputB: false }),
   ];
   const wires: Wire[] = [];
   const connect = (from: string, source: string, to: string, target: string) => wires.push({ id: `reversing-wire-${wires.length + 1}`, from: { componentId: from, terminalId: source }, to: { componentId: to, terminalId: target }, points: [], netName: `REV_${wires.length + 1}` });
@@ -21,13 +26,21 @@ export function createReversingCircuit(): CircuitDocument {
     connect("forward", `${phases[index]}-out`, "motor", ["u1", "v1", "w1"][index]);
     connect("reverse", `${phases[index]}-out`, "motor", ["w1", "v1", "u1"][index]);
   }
-  return { id: "reversing-circuit", name: "Forward / Reverse power circuit", description: "Editable power topology. KM2 interchanges L1 and L3. Operate through the reversing controller; control and protection wiring remain to be modeled.", revision: 1, components, wires };
+  for (const direction of ["forward", "reverse"]) {
+    connect(`${direction}-command`, "out", `${direction}-permit`, "in-a");
+    connect("overload-control", "aux-96", `${direction}-permit`, "in-b");
+    connect(`${direction}-permit`, "out", direction, "a1");
+  }
+  return { id: "reversing-circuit", name: "Forward / Reverse power circuit", description: "KM2 interchanges L1/L3. Boolean command permits include F1 NC interruption. Physical coil-voltage, holding/interlock wiring and overload power poles remain incomplete.", revision: 1, components, wires };
 }
 
 export function applyReversingState(document: CircuitDocument, state: ReversingState): CircuitDocument {
   return { ...document, components: document.components.map((component) => {
     const properties = { ...component.properties };
-    if (component.id === "breaker") properties.closed = state.breakerClosed && !state.overloadTripped;
+    if (component.id === "breaker") properties.closed = state.breakerClosed;
+    if (component.id === "overload-control") properties.tripped = state.overloadTripped;
+    if (component.id === "forward-command") properties.input = state.contactor === "forward";
+    if (component.id === "reverse-command") properties.input = state.contactor === "reverse";
     if (component.id === "forward") properties.energized = state.contactor === "forward";
     if (component.id === "reverse") properties.energized = state.contactor === "reverse";
     return { ...component, properties };
