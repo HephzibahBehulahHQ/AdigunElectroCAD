@@ -6,6 +6,12 @@ import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 
 describe("project template library", () => {
+  it.each(["LD I0; OUT Q0", "LD I0; OR Q0; OUT Q0"])("rejects PLC templates that lose holding or STOP behavior: %s", (program) => {
+    const template = structuredClone(templateLibrary[2]);
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
+    template.document.components[1].properties.program = program;
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
+  });
   it("advances real timer runtime in recorded operating steps without changing the design", () => {
     const template = structuredClone(templateLibrary[3]);
     const before = JSON.stringify(template.document);
