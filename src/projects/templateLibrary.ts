@@ -59,9 +59,9 @@ const scenarios: Scenario[] = [
   {
     id: "plc-sensor", name: "PLC sensor and actuator", category: "Automation",
     definitions: ["proximity-sensor", "plc-digital-io", "solenoid-actuator"], references: ["B1", "PLC1", "Y1"], wires: [[0, "signal", 1, "in-0"], [0, "common", 1, "common"], [1, "out-0", 2, "a1"]],
-    testSequence: () => ["Present a workpiece at B1.", "Set PLC1 Q0 for the detected condition.", "Confirm Y1 extends to its configured stroke."],
-    properties: () => profile({ detected: true }, { inputA: true, output: true }, { energized: true }),
-    expectations: () => [{ reference: "B1", label: "Sensor output", valueIncludes: "ON" }, { reference: "PLC1", label: "I/O state", valueIncludes: "Q0 ON" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
+    testSequence: () => ["Press Run with B1 detected to execute the holding program.", "Clear Live Detected at B1; Q0 must remain ON.", "Set PLC1 Live Input B to stop, then release it; Q0 must remain OFF until B1 detects again."],
+    properties: () => profile({ detected: true }, { inputA: false, inputB: false, output: false, program: "LD I0; OR Q0; ANDN I1; OUT Q0" }, { energized: false, returnSpring: true }),
+    expectations: () => [{ reference: "B1", label: "Sensor output", valueIncludes: "ON" }, { reference: "PLC1", label: "I/O state", valueIncludes: "Q0 OFF" }, { reference: "Y1", label: "Actuator position", valueIncludes: "RETRACTED" }],
   },
   {
     id: "timed-relay", name: "Timed relay control", category: "Control Circuit",
@@ -110,10 +110,11 @@ function createTemplate(index: number): ProjectTemplate {
       { name: "Zero-frequency stop", changes: [{ reference: "U1", properties: { commandHz: 0 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
       { name: "Disabled drive", changes: [{ reference: "U1", properties: { enabled: false, commandHz: 25 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
     ] : scenario.id === "plc-sensor" ? [
-      { name: "Sensor clear and output off", changes: [{ reference: "B1", properties: { detected: false } }, { reference: "PLC1", properties: { output: false } }, { reference: "Y1", properties: { returnSpring: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 OFF · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-      { name: "Detect workpiece", changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-      { name: "Command actuator", changes: [{ reference: "PLC1", properties: { output: true } }, { reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
-      { name: "Remove output", changes: [{ reference: "PLC1", properties: { output: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Sensor clear and output off", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: false } }, { reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 OFF · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Detect workpiece", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 ON" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Retain output after sensor clears", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Stop command", durationSeconds: 0.1, changes: [{ reference: "PLC1", properties: { inputB: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Release stop without restart", durationSeconds: 0.1, changes: [{ reference: "PLC1", properties: { inputB: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : scenario.id === "timed-relay" ? [
       { name: "Before delay", durationSeconds: 1, changes: [{ reference: "KT1", properties: { energized: true, delaySeconds: 2, elapsedSeconds: 0 } }, { reference: "Y1", properties: { returnSpring: true } }], expectations: [{ reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
       { name: "Delay expires", durationSeconds: 1, changes: [{ reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "CLOSED" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
