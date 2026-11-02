@@ -32,6 +32,7 @@ type Scenario = {
 };
 
 const levels: TemplateLevel[] = ["Beginner", "Intermediate", "Advanced", "Industrial", "Expert"];
+const profile = (...items: ComponentInstance["properties"][]) => items;
 const connectedMotorWires: Scenario["wires"] = [
   [0, "l1-out", 1, "l1-in"], [0, "l2-out", 1, "l2-in"], [0, "l3-out", 1, "l3-in"],
   [1, "l1-out", 2, "l1-in"], [1, "l2-out", 2, "l2-in"], [1, "l3-out", 2, "l3-in"],
@@ -43,35 +44,35 @@ const scenarios: Scenario[] = [
     id: "motor-feeder", name: "Motor feeder", category: "Motor Control",
     definitions: ["ac-supply", "circuit-breaker", "motor-starter", "induction-motor"], references: ["X1", "Q1", "KM1", "M1"], wires: connectedMotorWires,
     testSequence: (ordinal) => [`Enable the ${ordinal % 2 ? "50" : "60"} Hz supply.`, "Close Q1.", "Energize KM1 and confirm M1 reaches its nominal operating point."],
-    properties: () => [{ outputEnabled: true }, { closed: true }, { energized: true }, { energized: true }],
+    properties: () => profile({ outputEnabled: true }, { closed: true }, { energized: true }, { energized: true }),
     expectations: () => [{ reference: "Q1", label: "Breaker path", valueIncludes: "CLOSED" }, { reference: "KM1", label: "Starter contacts", valueIncludes: "CLOSED" }, { reference: "M1", label: "Nominal motor point", valueIncludes: "rpm" }],
   },
   {
     id: "drive-feeder", name: "Variable-speed drive feeder", category: "Drives",
     definitions: ["ac-supply", "circuit-breaker", "variable-frequency-drive", "induction-motor"], references: ["X1", "Q1", "U1", "M1"], wires: connectedMotorWires,
     testSequence: (ordinal) => ["Enable X1 and close Q1.", `Command U1 to ${25 + (ordinal % 20)} Hz.`, "Confirm the drive output and enabled motor model."],
-    properties: (ordinal) => [{ outputEnabled: true }, { closed: true }, { enabled: true, commandHz: 25 + (ordinal % 20) }, { energized: true }],
+    properties: (ordinal) => profile({ outputEnabled: true }, { closed: true }, { enabled: true, commandHz: 25 + (ordinal % 20) }, { energized: true }),
     expectations: () => [{ reference: "Q1", label: "Breaker path", valueIncludes: "CLOSED" }, { reference: "U1", label: "VFD output", valueIncludes: "Hz" }, { reference: "M1", label: "Nominal motor point", valueIncludes: "rpm" }],
   },
   {
     id: "plc-sensor", name: "PLC sensor and actuator", category: "Automation",
     definitions: ["proximity-sensor", "plc-digital-io", "solenoid-actuator"], references: ["B1", "PLC1", "Y1"], wires: [[0, "signal", 1, "in-0"], [0, "common", 1, "common"], [1, "out-0", 2, "a1"]],
     testSequence: () => ["Present a workpiece at B1.", "Set PLC1 Q0 for the detected condition.", "Confirm Y1 extends to its configured stroke."],
-    properties: () => [{ detected: true }, { inputA: true, output: true }, { energized: true }],
+    properties: () => profile({ detected: true }, { inputA: true, output: true }, { energized: true }),
     expectations: () => [{ reference: "B1", label: "Sensor output", valueIncludes: "ON" }, { reference: "PLC1", label: "I/O state", valueIncludes: "Q0 ON" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
   },
   {
     id: "timed-relay", name: "Timed relay control", category: "Control Circuit",
     definitions: ["on-delay-timer", "interface-relay", "solenoid-actuator"], references: ["KT1", "K1", "Y1"], wires: [[0, "18", 1, "a1"], [1, "14", 2, "a1"], [0, "a2", 1, "a2"]],
     testSequence: (ordinal) => [`Energize KT1 for ${1 + (ordinal % 5)} seconds.`, "Confirm the timed contact closes.", "Confirm K1 energizes Y1."],
-    properties: (ordinal) => [{ energized: true, elapsedSeconds: 1 + (ordinal % 5), delaySeconds: 1 + (ordinal % 5) }, { energized: true }, { energized: true }],
+    properties: (ordinal) => profile({ energized: true, elapsedSeconds: 1 + (ordinal % 5), delaySeconds: 1 + (ordinal % 5) }, { energized: true }, { energized: true }),
     expectations: () => [{ reference: "KT1", label: "Timer contact", valueIncludes: "CLOSED" }, { reference: "K1", label: "Relay contacts", valueIncludes: "ENERGIZED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
   },
   {
     id: "safety-output", name: "Safety relay output", category: "Safety",
     definitions: ["safety-relay", "feed-through-terminal", "solenoid-actuator"], references: ["KSR1", "X1", "Y1"], wires: [[0, "s11", 1, "1"], [1, "2", 2, "a1"], [0, "a2", 2, "a2"]],
     testSequence: () => ["Close both safety channels.", "Reset KSR1 and confirm its enable state.", "Confirm Y1 receives the enabled actuator command."],
-    properties: () => [{ channelAClosed: true, channelBClosed: true, reset: true }, { continuityClosed: true }, { energized: true }],
+    properties: () => profile({ channelAClosed: true, channelBClosed: true, reset: true }, { continuityClosed: true }, { energized: true }),
     expectations: () => [{ reference: "KSR1", label: "Safety enable", valueIncludes: "ENABLED" }, { reference: "X1", label: "Terminal continuity", valueIncludes: "CONNECTED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
   },
 ];

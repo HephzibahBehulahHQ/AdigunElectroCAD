@@ -1,11 +1,11 @@
-import { validateCircuit } from "../electrical/topology";
+import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { executeCircuitModels, type CircuitModelRun } from "../simulation/circuitModels";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 import type { ProjectTemplate } from "./templateLibrary";
 
 export interface TemplateVerification {
   passed: boolean;
-  topologyIssues: string[];
+  topologyIssues: TopologyIssue[];
   runs: CircuitModelRun[];
   failedExpectations: string[];
 }
