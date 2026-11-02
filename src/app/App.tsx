@@ -26,6 +26,7 @@ import { LiveCopilot } from "../components/LiveCopilot";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
+import { bindProjectExitSave } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
@@ -65,6 +66,8 @@ export function App() {
   const [dirty, setDirty] = useState(false);
   const [botOpen, setBotOpen] = useState(false);
   const [botEditsUnsaved, setBotEditsUnsaved] = useState(false);
+  const pendingLocalSave = useRef({ project, dirty, botEditsUnsaved });
+  pendingLocalSave.current = { project, dirty, botEditsUnsaved };
   const [notice, setNotice] = useState("DOL starter ready — local-only project storage.");
   const [simulation, setSimulation] = useState<DolSimulationState>(() => initialDolState());
   const [isRunning, setIsRunning] = useState(false);
@@ -202,6 +205,8 @@ export function App() {
     }, 650);
     return () => window.clearTimeout(timer);
   }, [dirty, project, botEditsUnsaved]);
+
+  useEffect(() => bindProjectExitSave(window, () => pendingLocalSave.current, (latest) => writeLocalProject(window.localStorage, STORAGE_KEY, latest)), []);
 
   const recordEdit = (next: ElectricalProject) => {
     setHistory((state) => recordProjectEdit(state, project));
