@@ -20,7 +20,7 @@ export function createAnalogLevelProject(): ProjectTemplate {
   return {
     id: "template-500", name: document.name, category: "Analog Instrumentation", level: "Expert", document,
     description: "Dedicated level-transmitter → ADC → scanned PLC → output-coil circuit. Q0 is ON strictly above 50% level.",
-    testSequence: ["Load and Run at 50%: AI0 is 13824 and Q0 is OFF.", "Select B1 and set Level Percent to 75, then Run: AI0 is 20736 and Q0 is ON.", "Set B1 back to 50 or 0, then Run: Q0 must turn OFF."],
+    testSequence: ["Load and Run at 50%: AI0 is 13824 and Q0 is OFF.", "Select B1 and move Live Level Percent to 75: AI0 is 20736 and Q0 is ON.", "Move the live level back to 50 or 0: Q0 must turn OFF. Stop restores the configured 50% level."],
     expectedOutputs: [
       { reference: "B1", label: "Level signal", valueIncludes: "12.00" },
       { reference: "ADC1", label: "PLC raw value", valueIncludes: "13824" },

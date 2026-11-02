@@ -9,6 +9,16 @@ export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<s
   const definition = component && catalog.get(component.definitionId);
   if (!component || !definition || typeof { ...definition.propertiesSchema, ...component.properties }[property] !== "boolean" || property.startsWith("runtime") || property === "scanOutput") throw new Error("Select a defined Boolean parameter.");
   const next = { ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, [property]: value } } : item) };
+  return latchSafetyFaults(next, catalog);
+}
+
+export function setCircuitLevelInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, levelPercent: number): CircuitDocument {
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component || catalog.get(component.definitionId)?.simulationModelId !== "sensor-level-4-20" || !Number.isFinite(levelPercent) || levelPercent < 0 || levelPercent > 100) throw new Error("Select a level sensor and enter 0–100 percent.");
+  return latchSafetyFaults({ ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, levelPercent } } : item) }, catalog);
+}
+
+function latchSafetyFaults(next: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): CircuitDocument {
   const faults = new Set(executeCircuitModels(next, catalog).filter((run) => ["catalog-safety-relay", "safety-dual-relay"].includes(run.modelId) && (run.evaluatedProperties.channelAClosed !== true || run.evaluatedProperties.channelBClosed !== true)).map((run) => run.componentId));
   return { ...next, components: next.components.map((item) => faults.has(item.id) ? { ...item, properties: { ...item.properties, runtimeSafetyArmed: false, runtimeResetReady: false } } : item) };
 }
