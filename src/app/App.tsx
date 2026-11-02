@@ -5,6 +5,7 @@ import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
+import { verifyProjectTemplate } from "../projects/templateVerification";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
@@ -77,6 +78,7 @@ export function App() {
   const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
   const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
   const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
+  const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
   const circuitModelRuns = useMemo(() => executeCircuitModels(document, catalogById), [document]);
@@ -403,7 +405,7 @@ export function App() {
     setWireMode(false);
     setWireStart(null);
     setDirty(true);
-    setNotice(`${selectedTemplate.name} loaded as a topology-validated template; no process simulation is assigned.`);
+    setNotice(`${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
   };
 
   const exportReport = (section: ReportSection) => {
@@ -617,7 +619,7 @@ export function App() {
       <section className="workspace">
         <aside className="panel component-panel">
           <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} catalog · {dolCatalog.length} DOL</span></div>
-          <section className="template-library"><div><strong>Project Library</strong><span>{templateLibrary.length} topology templates</span></div><select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} aria-label="Project template">{templateLibrary.map((template) => <option key={template.id} value={template.id}>{template.level} · {template.name}</option>)}</select><p>{selectedTemplate.description}</p><button className="wide" onClick={loadTemplate}>Load into free sheet</button></section>
+          <section className="template-library"><div><strong>Project Library</strong><span>{templateLibrary.length} executable projects</span></div><select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} aria-label="Project template">{templateLibrary.map((template) => <option key={template.id} value={template.id}>{template.level} · {template.name}</option>)}</select><p>{selectedTemplate.description}</p><p className="template-sequence"><b>Test:</b> {selectedTemplate.testSequence.join(" ")}</p><p className={selectedTemplateVerification.passed ? "template-verification pass" : "template-verification issue"}>{selectedTemplateVerification.passed ? "✓ Topology and expected model outputs verified." : `✕ ${selectedTemplateVerification.failedExpectations.join(" ")}`}</p><button className="wide" onClick={loadTemplate}>Load into free sheet</button></section>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
           <div className="catalog-list">
             {filteredCatalog.map((definition) => <button key={definition.id} className={definition.id === selectedDefinitionId ? "catalog-item selected" : "catalog-item"} onClick={() => setSelectedDefinitionId(definition.id)}>
@@ -684,3 +686,4 @@ function ProjectReports({ sheetName, report, onExport, onClose }: { sheetName: s
 function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>No entries on this sheet.</td></tr>}</tbody></table></div></section>;
 }
+

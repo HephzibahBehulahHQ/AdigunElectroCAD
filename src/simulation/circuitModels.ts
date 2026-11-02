@@ -41,7 +41,10 @@ function propagateWires(document: CircuitDocument, definitionsByComponent: Map<s
 
 export function executeCircuitModels(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): CircuitModelRun[] {
   const definitionsByComponent = definitions(document, catalog);
-  const properties = new Map(document.components.map((component) => [component.id, { ...component.properties }]));
+  const properties = new Map<string, Record<string, string | number | boolean>>(document.components.flatMap((component) => {
+    const definition = definitionsByComponent.get(component.id);
+    return definition ? [[component.id, { ...definition.propertiesSchema, ...component.properties }]] : [];
+  }));
   const signals = new Map<string, FunctionalSignal>();
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < 12; iteration += 1) {
@@ -77,3 +80,4 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output }] : [];
   });
 }
+
