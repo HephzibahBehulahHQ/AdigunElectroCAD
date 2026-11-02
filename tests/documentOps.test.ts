@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
+import { moveComponentToGrid } from "../src/cad/documentOps";
 
 describe("component movement", () => {
+  it("snaps a drag to the grid, preserves wired endpoints and rejects unsafe drops", () => {
+    const document = createAnalogLevelProject().document;
+    const moved = moveComponentToGrid(document, "level", 163, 279);
+    expect(moved.ok).toBe(true);
+    expect(moved.document.components[0]).toMatchObject({ x: 160, y: 280 });
+    expect(moved.document.wires).toEqual(document.wires);
+    expect(document.components[0]).toMatchObject({ x: 140, y: 300 });
+    for (const [x, y] of [[340, 300], [-20, 300], [140, 800], [NaN, 300]]) {
+      const rejected = moveComponentToGrid(document, "level", x, y);
+      expect(rejected.ok).toBe(false);
+      expect(rejected.document).toBe(document);
+    }
+  });
   it("reserves space for upright references below normal and rotated symbols", () => {
     const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 200, rotation: 0 as const, properties: {} };
     expect(canPlaceComponent([component], "new", 200, 300)).toBe(false);

@@ -4,8 +4,10 @@ import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets } from "../cad/componentGeometry";
+import { useRef, useState, type PointerEvent } from "react";
 
 interface Props {
+  onMove?: (componentId: string, x: number, y: number) => void;
   zoom?: number;
   showGrid?: boolean;
   document: CircuitDocument;
@@ -84,10 +86,35 @@ function SixTerminalWindings({ x, y }: { x: number; y: number }) {
   </g>;
 }
 
-function PlacedSymbol({ component, selectedComponentId, onSelect }: { component: CircuitDocument["components"][number]; selectedComponentId: string; onSelect: (componentId: string) => void }) {
+function PlacedSymbol({ component, selectedComponentId, onSelect, onMove, wireMode }: { component: CircuitDocument["components"][number]; selectedComponentId: string; onSelect: (componentId: string) => void; onMove?: Props["onMove"]; wireMode?: boolean }) {
   const definition = catalogById.get(component.definitionId);
   const labels = componentLabelOffsets(component.rotation);
-  return <g onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
+  const origin = useRef<{ x: number; y: number } | null>(null);
+  const [delta, setDelta] = useState({ x: 0, y: 0 });
+  const point = (event: PointerEvent<SVGGElement>) => {
+    const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
+    return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+  };
+  return <g onClick={() => onSelect(component.id)} transform={`translate(${delta.x} ${delta.y})`} style={{ touchAction: wireMode ? "auto" : "none", cursor: onMove && !wireMode ? "grab" : undefined }}
+    onPointerDown={(event) => {
+      if (!onMove || wireMode || event.button !== 0) return;
+      const start = point(event); if (!start) return;
+      event.stopPropagation(); onSelect(component.id); origin.current = { x: start.x, y: start.y };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }}
+    onPointerMove={(event) => {
+      const current = point(event); if (!origin.current || !current) return;
+      setDelta({ x: Math.round((current.x - origin.current.x) / 20) * 20, y: Math.round((current.y - origin.current.y) / 20) * 20 });
+    }}
+    onPointerUp={(event) => {
+      const current = point(event); const start = origin.current;
+      origin.current = null; setDelta({ x: 0, y: 0 });
+      if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) onMove?.(component.id, component.x + current.x - start.x, component.y + current.y - start.y);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    }}
+    onPointerCancel={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
+    onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
+    className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
     <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
     <text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
     <text x={component.x} y={component.y + labels.kind} className="free-kind" textAnchor="middle">{definition?.referencePrefix ?? "?"}</text>
@@ -109,7 +136,7 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, zoom = .85, showGrid = true }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
 
@@ -124,15 +151,15 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
         const to = anchorIndex.get(endpointKey(wire.to));
         return from && to ? <path key={wire.id} d={wirePath(from, to)} className={wire.id === selectedWireId ? "wire manual-wire selected-wire" : "wire manual-wire"} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
-      {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} />)}
+      {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} onMove={onMove} wireMode={wireMode} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
       {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
     </svg>
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, zoom = .85, showGrid = true }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} zoom={zoom} showGrid={showGrid} />;
+export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;

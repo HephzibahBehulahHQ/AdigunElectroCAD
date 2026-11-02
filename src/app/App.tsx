@@ -21,6 +21,7 @@ import { executeCircuitModels } from "../simulation/circuitModels";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../simulation/circuitClock";
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
+import { moveComponentToGrid } from "../cad/documentOps";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -689,6 +690,16 @@ export function App() {
     setNotice(`${selectedComponent.reference} moved; terminal-level wire topology is preserved.`);
   };
 
+  const dragComponent = (componentId: string, x: number, y: number) => {
+    if (isReferenceSheet) return;
+    const result = moveComponentToGrid(document, componentId, x, y);
+    if (!result.ok) { setNotice(result.reason ?? "Move rejected."); return; }
+    if (result.document === document) return;
+    updateDocument(result.document);
+    setSelectedComponentId(componentId);
+    setNotice("Component moved on the 20-unit grid; connected wire endpoints are preserved.");
+  };
+
   const removeSelectedComponent = () => {
     if (!selectedComponent) return;
     if (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id)) {
@@ -789,7 +800,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} zoom={schematicZoom} showGrid={showGrid} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
