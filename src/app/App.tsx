@@ -90,6 +90,7 @@ export function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [existingAccountMode, setExistingAccountMode] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [upgradeUserId, setUpgradeUserId] = useState(() => window.localStorage.getItem(UPGRADE_USER_KEY) ?? "");
   const [cloudSelection, setCloudSelection] = useState<CloudProjectSelection | null>(null);
@@ -302,6 +303,8 @@ export function App() {
     try {
       const user = mode === "sign-in" ? await signIn(authEmail, authPassword) : await signUp(authEmail, authPassword);
       setAuthUser(user);
+      setAuthPassword("");
+      setExistingAccountMode(false);
       setAuthMessage(mode === "sign-up" ? "Check your email to confirm the account before signing in." : "Signed in. Cloud project commands are now available.");
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Authentication failed.");
@@ -321,11 +324,12 @@ export function App() {
   const beginUpgrade = async () => {
     try {
       const result = await beginAnonymousUpgrade(authEmail);
+      if (result.existingEmail) { setExistingAccountMode(true); setAuthPassword(""); }
       if (result.sent && authUser) {
         window.localStorage.setItem(UPGRADE_USER_KEY, authUser.id);
         setUpgradeUserId(authUser.id);
       }
-      setAuthMessage(result.existingEmail ? "That email already has an account. Use Sign in to existing account with its password instead." : result.message);
+      setAuthMessage(result.existingEmail ? "That email already has an account. Enter its existing password and press Sign in to existing account." : result.message);
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Could not send the confirmation email. Try again.");
     }
@@ -773,8 +777,8 @@ export function App() {
       {authOpen && <section className="auth-panel" aria-label="Cloud account">
         <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
         {!authUser && <div className="auth-fields"><label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in</button><button onClick={() => void authenticate("sign-up")}>Create account</button><button onClick={() => void startPreview()}>Start preview</button></div></div>}
-        {anonymousSession && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div></div>}
-        {anonymousSession && <div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in to existing account</button><span>Use the email and password above. This switches accounts; guest data stays with the guest account.</span></div>}
+        {anonymousSession && !existingAccountMode && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button><button onClick={() => { setExistingAccountMode(true); setAuthPassword(""); setAuthMessage(""); }}>Use an existing account</button></div></div>}
+        {anonymousSession && existingAccountMode && <form className="auth-fields" onSubmit={(event) => { event.preventDefault(); void authenticate("sign-in"); }}><label>Account email<input type="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Existing password<input type="password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button type="submit">Sign in to existing account</button><button type="button" onClick={() => { setExistingAccountMode(false); setAuthPassword(""); setAuthMessage(""); }}>Back to guest upgrade</button><span>This switches accounts; guest data stays with the guest account.</span></div></form>}
         {authUser && !anonymousSession && upgradeUserId === authUser.id && <div className="auth-fields"><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div>}
         {authUser && !anonymousSession && <div className="auth-actions"><span>{authUser.email ?? "Confirmed account"}</span><button onClick={() => void signOut().then(() => { setAuthUser(null); setAuthMessage("Signed out."); }).catch((error) => setAuthMessage(error instanceof Error ? error.message : "Sign out failed."))}>Sign out</button></div>}
         {authMessage && <p className="auth-message">{authMessage}</p>}
