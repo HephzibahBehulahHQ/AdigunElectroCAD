@@ -17,7 +17,7 @@ it("loads only the named user's namespaced layout in this product schema", async
   expect(mock.schema).toHaveBeenCalledWith("adigunelectrocad");
   expect(mock.from).toHaveBeenCalledWith("my_data");
   expect(mock.eq).toHaveBeenCalledWith("user_id", "user-a");
-  expect(mock.like).toHaveBeenCalledWith("content", prefix + "%");
+  expect(mock.like).toHaveBeenCalledWith("content", "ADIGUN\\_ELECTROCAD\\_BOT\\_WINDOW\\_V1:%");
 });
 it("inserts a missing owned layout without writing another preference type", async () => {
   await saveAccountBotWindow("user-a", layout);

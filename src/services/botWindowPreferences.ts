@@ -2,9 +2,10 @@ import { parseBotWindow, type BotWindowLayout } from "../copilot/windowLayout";
 import { supabaseClient } from "./supabase";
 
 const prefix = "ADIGUN_ELECTROCAD_BOT_WINDOW_V1:";
+const contentPattern = prefix.replaceAll("_", "\\_") + "%";
 const table = () => supabaseClient().schema("adigunelectrocad").from("my_data");
 async function ownedWindowRow(userId: string) {
-  const { data, error } = await table().select("id, content").eq("user_id", userId).like("content", `${prefix}%`).order("id", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await table().select("id, content").eq("user_id", userId).like("content", contentPattern).order("id", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   if (data && (!Number.isSafeInteger(data.id) || data.id <= 0)) throw new Error("Account layout ID exceeds the supported numeric range.");
   if (data && !data.content?.startsWith(prefix)) throw new Error("The returned account row is not a Bot layout record.");

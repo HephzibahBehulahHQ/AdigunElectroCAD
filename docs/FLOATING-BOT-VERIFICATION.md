@@ -15,4 +15,6 @@ Local preview: http://127.0.0.1:5190/. Draft PR #62; not deployed.
 
 226 unit tests and production build passed. Geometry tests cover viewport limits, saved state, per-user isolation, maximize/restore, minimized movement, corrupt storage and storage failures. Account-query tests cover namespacing, ownership filters, unrelated-row protection and error handling. Draft CI passed for the implementation commit.
 
+Account lookup now escapes literal underscores in the namespace LIKE pattern. A read-only SQL expression check proved the unescaped pattern also matched a hyphenated non-layout string, whereas the escaped pattern rejected it and still matched the actual layout prefix. The existing returned-row guard already prevented unrelated-row updates. No account data, schema or policies were changed by this check.
+
 Remaining: authenticated account persistence against the real service, touch-device gestures, broader browser coverage and production verification. Account storage uses the inspected existing adigunelectrocad.my_data content column with a dedicated prefix. No schema or policy changes were made. Generative AI remains unconfigured. UI layout persistence does not save project edits.
