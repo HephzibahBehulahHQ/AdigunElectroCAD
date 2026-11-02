@@ -6,7 +6,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 `src/projects/templateLibrary.ts` generates 500 entries from five scenario families. These are parameter variants, not 500 independently engineered projects. The requested forward/reverse, star-delta, multi-motor sequence, and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
 
-`verifyProjectTemplate` checks topology and configured model snapshots. Motor-feeder variants now additionally execute breaker isolation, running, starter release, and restoration steps with exact stopped states and numeric speed expectations. Other families still rely on text-fragment snapshot expectations such as `rpm`. Sequence and fault verification must cover those families before claiming runnable project coverage.
+`verifyProjectTemplate` checks topology and configured model snapshots. All five generated families now carry operating steps: motor isolation/start/stop, drive frequency changes, explicit PLC commands, timer threshold changes, and safety-channel interruptions. Numeric motor expectations and exact actuator states are checked. These remain five parameterized scenario families; they do not establish the requested breadth of independently engineered projects. Time, PLC output commands, and safety enable/reset remain explicit inputs rather than complete stateful controller implementations.
 
 ## Authentication and persistence
 
@@ -18,7 +18,7 @@ The account panel layout was corrected after a production screenshot exposed too
 
 ## Next implementation priorities
 
-1. Execute project operating sequences with numeric and disconnected-power expectations.
+1. Add stateful timing, PLC program execution, and latched safety-reset behavior with fault tests.
 2. Add dedicated forward/reverse and star-delta circuits with interlocks and fault cases.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.
