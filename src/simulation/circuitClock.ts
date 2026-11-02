@@ -1,11 +1,13 @@
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
 import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
+import { scanPlcProgram } from "./plcProgram";
 
 export function resetCircuitClock(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): CircuitDocument {
   return { ...document, components: document.components.map((component) => {
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
+    delete properties.runtimeQ0; delete properties.runtimeError;
     if (catalog.get(component.definitionId)?.simulationModelId === "catalog-on-delay-timer") properties.elapsedSeconds = 0;
     return { ...component, properties };
   }) };
@@ -18,6 +20,11 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
+    if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
+      const active = evaluated.get(component.id)!;
+      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true);
+      return { ...component, properties: { ...component.properties, runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
+    }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       const previous = (typeof active.runtimePrevious === "boolean" ? active.runtimePrevious : active.previous) === true;

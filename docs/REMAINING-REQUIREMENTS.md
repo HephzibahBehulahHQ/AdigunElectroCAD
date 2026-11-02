@@ -22,7 +22,7 @@ Editable reversing circuits now propagate Boolean command signals through an ove
 
 ## Next implementation priorities
 
-1. Complete PLC program execution and latched safety-reset behavior with fault tests. Free-sheet on-delay timers, set/reset coil memory and one-scan edge pulses now advance through the runtime clock; this is not a complete PLC program engine.
+1. Complete graphical ladder programming, analog/register execution and latched safety-reset behavior with fault tests. PLC digital I/O now supports a limited two-input/one-output Boolean instruction interpreter with retained Q0 and shared SET/RESET. See `PLC-PROGRAMS.md` for its exact limits. Free-sheet on-delay timers, set/reset coil memory and one-scan edge pulses advance through the runtime clock; these features do not establish a complete PLC language implementation.
 2. Complete wired holding/interlock and protection circuits beyond the existing forward/reverse and star-delta state controllers.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.

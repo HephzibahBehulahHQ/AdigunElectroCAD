@@ -657,8 +657,8 @@ export function App() {
       if (typeof rawValue !== "boolean") return;
       value = rawValue;
     } else {
-      if (typeof rawValue !== "string" || !rawValue.trim() || rawValue.trim().length > 80) {
-        setNotice("Text parameters must contain 1–80 readable characters.");
+      if (typeof rawValue !== "string" || (property !== "program" && !rawValue.trim()) || rawValue.trim().length > 80) {
+        setNotice("Text parameters allow up to 80 characters; only Program may be empty.");
         return;
       }
       value = rawValue.trim();
