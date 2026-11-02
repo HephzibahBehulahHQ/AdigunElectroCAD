@@ -88,8 +88,21 @@ const models: Record<string, Model> = {
   "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "reset")) ? `ENABLED · Cat ${number(p, "safetyCategory", 1)}` : "INHIBITED" }),
 };
 
-export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined { return models[modelId]?.(properties); }
-export function hasFunctionalModel(modelId: string) { return modelId in models; }
+export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
+  if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
+  if (modelId === "six-terminal-windings") {
+    const connection = text(properties, "connection", "open");
+    const voltage = number(properties, "lineVoltageV");
+    const resistance = number(properties, "resistanceOhm");
+    const reactance = number(properties, "reactanceOhm");
+    if (resistance <= 0 || reactance < 0) return { label: "Winding operating point", value: "INVALID IMPEDANCE" };
+    const windingVoltage = connection === "star" ? voltage / Math.sqrt(3) : connection === "delta" ? voltage : 0;
+    const current = windingVoltage / Math.hypot(resistance, reactance) * (connection === "delta" ? Math.sqrt(3) : 1);
+    return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line` };
+  }
+  return models[modelId]?.(properties);
+}
+export function hasFunctionalModel(modelId: string) { return ["power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
   if (modelId === "catalog-safety-relay") return signal("boolean", safetyRelayEnergized(bool(properties, "channelAClosed"), bool(properties, "channelBClosed"), bool(properties, "reset")));

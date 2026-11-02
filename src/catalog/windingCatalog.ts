@@ -1,0 +1,14 @@
+import type { ElectricalComponentDefinition } from "../types/electrical";
+export const windingCatalog: ElectricalComponentDefinition[] = [{
+  id: "motor.six-terminal", name: "Six-terminal balanced winding motor", category: "Motors", referencePrefix: "M", symbolId: "motor",
+  description: "Six accessible winding terminals for star/delta connection analysis.",
+  terminals: [...["u1", "v1", "w1", "u2", "v2", "w2"].map((id) => ({ id, label: id.toUpperCase(), kind: "power" as const, direction: "bidirectional" as const })), { id: "pe", label: "PE", kind: "protective-earth", direction: "bidirectional" }],
+  propertiesSchema: { resistanceOhm: 10, reactanceOhm: 10 }, simulationModelId: "six-terminal-windings", simulationSupport: "numerical",
+  documentation: "Connection and balanced fixed-impedance current derive from circuit wires and closed contacts. Excludes motor dynamics.", standardsReferences: ["IEC 60034-1"],
+}, {
+  id: "junction.power", name: "Power conductor junction", category: "Terminal Blocks", referencePrefix: "X", symbolId: "terminal",
+  description: "Common electrical node joining attached power conductors.",
+  terminals: [{ id: "node", label: "J", kind: "power", direction: "bidirectional" }],
+  propertiesSchema: {}, simulationModelId: "power-junction", simulationSupport: "connectivity",
+  documentation: "All wires attached to J share the same electrical node. No impedance or isolation is introduced. IEC 60617 is a diagram-reference family, not certification of this rendering. Source: https://webstore.iec.ch/en/publication/2723", standardsReferences: ["IEC 60617 — conductors and connecting devices (diagram reference)"],
+}];

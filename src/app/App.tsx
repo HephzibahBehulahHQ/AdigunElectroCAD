@@ -797,7 +797,16 @@ export function App() {
       </section>
 
       <section className="engineering-console">
-        <StarDeltaLab />
+        <StarDeltaLab onLoadCircuit={(circuit) => {
+          const extended = addFreeSchematicSheet(project);
+          const sheet = extended.sheets.at(-1)!;
+          recordEdit(replaceSheetDocument(extended, sheet.id, circuit));
+          setActiveSheetId(sheet.id);
+          setSelectedComponentId("motor");
+          setSelectedWireId(""); setWireMode(false); setWireStart(null);
+          setDirty(true);
+          setNotice("Star–delta power circuit copied to a new editable sheet. Lab controls remain independent.");
+        }} />
         <ReversingLab onLoadCircuit={(circuit) => {
           const extended = addFreeSchematicSheet(project);
           const sheet = extended.sheets.at(-1)!;

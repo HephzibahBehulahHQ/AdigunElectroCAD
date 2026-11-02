@@ -1,6 +1,7 @@
 import type { ElectricalComponentDefinition } from "../types/electrical";
 import { functionalCatalog } from "./functionalCatalog";
 import { modeledCatalog } from "./modeledCatalog";
+import { windingCatalog } from "./windingCatalog";
 
 const terminals = (...items: ElectricalComponentDefinition["terminals"]): ElectricalComponentDefinition["terminals"] => items;
 const terminal = (id: string, label: string, kind: "power" | "control" | "protective-earth", direction: "input" | "output" | "bidirectional" = "bidirectional") => ({ id, label, kind, direction });
@@ -45,5 +46,5 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   }
 ];
 
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog];
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
