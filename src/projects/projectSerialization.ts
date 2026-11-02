@@ -1,6 +1,7 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
+import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
   let value: unknown;
@@ -11,7 +12,7 @@ export function parseProjectJson(text: string): ElectricalProject {
   }
   const root = object(value, "The selected file must contain a project object.");
   const sheetsValue = array(root.sheets, "The project must contain at least one sheet.");
-  if (sheetsValue.length === 0 || sheetsValue.length > 100) throw new Error("A project must contain between 1 and 100 sheets.");
+  if (sheetsValue.length === 0 || sheetsValue.length > MAX_PROJECT_SHEETS) throw new Error(`A project must contain between 1 and ${MAX_PROJECT_SHEETS} sheets.`);
   const project: ElectricalProject = {
     id: textValue(root.id, "project id", 96),
     name: textValue(root.name, "project name", 80),
