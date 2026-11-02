@@ -20,6 +20,7 @@ import type { FunctionalModelResult } from "../simulation/functionalModels";
 import { executeCircuitModels } from "../simulation/circuitModels";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../simulation/circuitClock";
 import { RuntimeControls } from "../components/RuntimeControls";
+import { CatalogTree } from "../components/CatalogTree";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { ReversingLab } from "../components/ReversingLab";
@@ -769,12 +770,7 @@ export function App() {
           <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} catalog · {dolCatalog.length} DOL</span></div>
           <section className="template-library"><div><strong>Project Library</strong><span>{templateLibrary.length} executable projects</span></div><select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)} aria-label="Project template">{templateLibrary.map((template) => <option key={template.id} value={template.id}>{template.level} · {template.name}</option>)}</select><p>{selectedTemplate.description}</p><p className="template-sequence"><b>Test:</b> {selectedTemplate.testSequence.join(" ")}</p><p className={selectedTemplateVerification.passed ? "template-verification pass" : "template-verification issue"}>{selectedTemplateVerification.passed ? "✓ Topology and expected model outputs verified." : `✕ ${selectedTemplateVerification.failedExpectations.join(" ")}`}</p><button className="wide" onClick={loadTemplate}>Load into free sheet</button></section>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
-          <div className="catalog-list">
-            {filteredCatalog.map((definition) => <button key={definition.id} className={definition.id === selectedDefinitionId ? "catalog-item selected" : "catalog-item"} onClick={() => setSelectedDefinitionId(definition.id)}>
-              <span className="symbol-glyph">{definition.symbolId.includes("motor") ? "Ⓜ" : definition.symbolId.includes("contactor") ? "⌇" : definition.symbolId.includes("pushbutton") ? "○" : "▣"}</span>
-              <span><strong>{definition.name}</strong><small>{definition.category} · {definition.simulationSupport}</small></span>
-            </button>)}
-          </div>
+          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={setSelectedDefinitionId} />
           <section className="component-card">
             <div className="card-heading"><strong>{selectedDefinition.name}</strong><button className={favorites.includes(selectedDefinition.id) ? "favorite active" : "favorite"} onClick={() => setFavorites((items) => items.includes(selectedDefinition.id) ? items.filter((id) => id !== selectedDefinition.id) : [...items, selectedDefinition.id])} aria-label="Toggle component favorite">★</button></div>
             <p>{selectedDefinition.description}</p>
