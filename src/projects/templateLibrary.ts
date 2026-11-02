@@ -46,7 +46,7 @@ const scenarios: Scenario[] = [
     id: "motor-feeder", name: "Motor feeder", category: "Motor Control",
     definitions: ["ac-supply", "circuit-breaker", "motor-starter", "induction-motor"], references: ["X1", "Q1", "KM1", "M1"], wires: connectedMotorWires,
     testSequence: (ordinal) => [`Enable the ${ordinal % 2 ? "50" : "60"} Hz supply.`, "Close Q1.", "Energize KM1 and confirm M1 reaches its nominal operating point."],
-    properties: () => profile({ outputEnabled: true }, { closed: true }, { energized: true }, { energized: true }),
+    properties: (ordinal) => profile({ outputEnabled: true, frequencyHz: ordinal % 2 ? 50 : 60 }, { closed: true }, { energized: true }, { energized: true }),
     expectations: () => [{ reference: "Q1", label: "Breaker path", valueIncludes: "CLOSED" }, { reference: "KM1", label: "Starter contacts", valueIncludes: "CLOSED" }, { reference: "M1", label: "Nominal motor point", valueIncludes: "rpm" }],
   },
   {
@@ -90,6 +90,7 @@ function createTemplate(index: number): ProjectTemplate {
   const wires = scenario.wires.map(([fromIndex, fromTerminal, toIndex, toTerminal], wireIndex) => wire(ordinal, wireIndex, components[fromIndex].id, fromTerminal, components[toIndex].id, toTerminal));
   const name = `${scenario.name} ${String(ordinal).padStart(3, "0")}`;
   const testSequence = scenario.testSequence(ordinal);
+  const motorSequenceSpeed = 1450 * (ordinal % 2 ? 50 : 60) / 50;
   return {
     id: `template-${String(ordinal).padStart(3, "0")}`,
     name,
@@ -100,9 +101,14 @@ function createTemplate(index: number): ProjectTemplate {
     expectedOutputs: scenario.expectations(ordinal),
     operatingSequence: scenario.id === "motor-feeder" ? [
       { name: "Isolate breaker", changes: [{ reference: "Q1", properties: { closed: false } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
-      { name: "Close breaker and run", changes: [{ reference: "Q1", properties: { closed: true } }, { reference: "M1", properties: { nominalSpeedRpm: 1450 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1450 }] },
+      { name: "Close breaker and run", changes: [{ reference: "Q1", properties: { closed: true } }, { reference: "M1", properties: { nominalSpeedRpm: 1450 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: motorSequenceSpeed }] },
       { name: "Release starter", changes: [{ reference: "KM1", properties: { energized: false } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
-      { name: "Restore starter", changes: [{ reference: "KM1", properties: { energized: true } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1450 }] },
+      { name: "Restore starter", changes: [{ reference: "KM1", properties: { energized: true } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: motorSequenceSpeed }] },
+    ] : scenario.id === "drive-feeder" ? [
+      { name: "Half-frequency run", changes: [{ reference: "U1", properties: { enabled: true, commandHz: 25 } }, { reference: "M1", properties: { nominalSpeedRpm: 1500 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 750 }] },
+      { name: "Full-frequency run", changes: [{ reference: "U1", properties: { commandHz: 50 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1500 }] },
+      { name: "Zero-frequency stop", changes: [{ reference: "U1", properties: { commandHz: 0 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
+      { name: "Disabled drive", changes: [{ reference: "U1", properties: { enabled: false, commandHz: 25 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
     ] : undefined,
     document: { id: `template-sheet-${String(ordinal).padStart(3, "0")}`, name, description: `Executable template ${name}. Test sequence: ${testSequence.join(" ")}`, components, wires, revision: 1 },
   };
