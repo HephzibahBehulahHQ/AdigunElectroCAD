@@ -5,6 +5,8 @@ import { catalogById } from "../catalog/dolCatalog";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 
 interface Props {
+  zoom?: number;
+  showGrid?: boolean;
   document: CircuitDocument;
   selectedComponentId: string;
   selectedWireId: string;
@@ -105,14 +107,14 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, zoom = .85, showGrid = true }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
 
   return <div className="schematic-wrap">
-    <svg className="schematic" viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"}>
+    <svg className="schematic" style={{ width: 1100 * zoom, height: 780 * zoom, minWidth: 0, minHeight: 0 }} viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"}>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
-      <rect width="1100" height="780" className="sheet-bg" /><rect width="1100" height="780" fill="url(#free-grid)" />
+      <rect width="1100" height="780" className="sheet-bg" />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" />}
       <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
       <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
       {document.wires.map((wire) => {
@@ -127,8 +129,8 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} />;
+export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, zoom = .85, showGrid = true }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} zoom={zoom} showGrid={showGrid} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;
@@ -138,9 +140,9 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
   const manualWires = document.wires.filter((wire) => wire.id.startsWith("manual-wire-"));
 
   return <div className="schematic-wrap">
-    <svg className="schematic" viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Direct-on-line motor starter power and control schematic"}>
+    <svg className="schematic" style={{ width: 1100 * zoom, height: 780 * zoom, minWidth: 0, minHeight: 0 }} viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Direct-on-line motor starter power and control schematic"}>
       <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
-      <rect width="1100" height="780" className="sheet-bg" /><rect width="1100" height="780" fill="url(#grid)" />
+      <rect width="1100" height="780" className="sheet-bg" />{showGrid && <rect width="1100" height="780" fill="url(#grid)" />}
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));

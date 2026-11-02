@@ -47,6 +47,8 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
   const [activeSheetId, setActiveSheetId] = useState("sheet-dol");
+  const [schematicZoom, setSchematicZoom] = useState(.85);
+  const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("contactor");
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
@@ -746,7 +748,7 @@ export function App() {
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
         <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
-        <button onClick={() => setNotice("Grid and terminal anchors are enabled on the current schematic.")}>View · Grid</button>
+        <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>View · Grid</button>
         <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
         <button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Electrical · Validate</button>
         <button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation</button>
@@ -760,6 +762,11 @@ export function App() {
         <button className="tool-button" onClick={undo} disabled={!history.undo.length}>↶<span>Undo</span></button>
         <button className="tool-button" onClick={redo} disabled={!history.redo.length}>↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
+        <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
+        <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
+        <button onClick={() => setSchematicZoom((value) => Math.min(2, Math.round((value + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
+        <button onClick={() => { const viewport = window.document.querySelector(".drawing-area .schematic-wrap"); if (viewport) { setSchematicZoom(Math.max(.25, Math.min(2, (viewport.clientWidth - 16) / 1100, (viewport.clientHeight - 16) / 780))); viewport.scrollTo(0, 0); } }} aria-label="Fit schematic sheet">Fit</button>
+        <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
         <span className="tool-divider" />
         <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
         <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
@@ -782,7 +789,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} zoom={schematicZoom} showGrid={showGrid} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
