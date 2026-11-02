@@ -15,6 +15,10 @@ describe("anonymous account upgrade", () => {
     await expect(finishAnonymousUpgrade("test-password")).rejects.toThrow("Confirm your email");
     expect(auth.updateUser).not.toHaveBeenCalled();
   });
+  it("directs an existing email to sign-in without marking confirmation sent", async () => {
+    auth.updateUser.mockResolvedValue({ error: { message: "Email already exists" } });
+    expect(await beginAnonymousUpgrade("existing@example.com")).toMatchObject({ sent: false, existingEmail: true });
+  });
   it("sets the password after the confirmed session becomes permanent", async () => {
     const user = { id: "same-user", is_anonymous: false, email_confirmed_at: "2026-11-02" };
     auth.getUser.mockResolvedValue({ data: { user }, error: null });
