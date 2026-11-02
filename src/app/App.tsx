@@ -18,6 +18,7 @@ import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBloc
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
 import { evaluateFunctionalModel } from "../simulation/functionalModels";
 import { executeCircuitModels } from "../simulation/circuitModels";
+import { advanceCircuitClock, resetCircuitClock } from "../simulation/circuitClock";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 
@@ -87,6 +88,7 @@ export function App() {
 
   const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
   const document = activeSheet.document;
+  const [runtimeDocument, setRuntimeDocument] = useState<CircuitDocument | null>(null);
   const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
@@ -95,7 +97,7 @@ export function App() {
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
-  const circuitModelRuns = useMemo(() => executeCircuitModels(document, catalogById), [document]);
+  const circuitModelRuns = useMemo(() => executeCircuitModels(runtimeDocument ?? document, catalogById), [document, runtimeDocument]);
   const controlLab = useMemo(() => {
     const milliamp = levelToMilliamp(levelPercent);
     const raw = milliampToPlcRaw(milliamp);
@@ -133,10 +135,18 @@ export function App() {
   }, [authUser, anonymousSession, favorites, locale, theme]);
 
   useEffect(() => {
+    setRuntimeDocument(null);
+    setIsRunning(false);
+  }, [document]);
+
+  useEffect(() => {
     if (!isRunning) return;
-    const timer = window.setInterval(() => setSimulation((state) => transitionDol(state, "tick", 100)), 100);
+    const timer = window.setInterval(() => {
+      if (isReferenceSheet) setSimulation((state) => transitionDol(state, "tick", 100));
+      else setRuntimeDocument((state) => advanceCircuitClock(state ?? resetCircuitClock(document, catalogById), catalogById, 0.1));
+    }, 100);
     return () => window.clearInterval(timer);
-  }, [isRunning]);
+  }, [isRunning, isReferenceSheet, document]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -745,9 +755,9 @@ export function App() {
         <button className="tool-button" onClick={redo} disabled={!history.redo.length}>↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         <span className="tool-divider" />
-        <button className="run" onClick={() => setIsRunning(true)} disabled={!isReferenceSheet}>▶ Run</button>
-        <button onClick={() => setIsRunning(false)} disabled={!isReferenceSheet}>Ⅱ Pause</button>
-        <button className="danger" onClick={() => { setIsRunning(false); runAction("reset"); }} disabled={!isReferenceSheet}>■ Stop</button>
+        <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
+        <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
+        <button className="danger" onClick={() => { setIsRunning(false); if (isReferenceSheet) runAction("reset"); else setRuntimeDocument(resetCircuitClock(document, catalogById)); }}>■ Stop</button>
         <button onClick={() => runAction("trip-overload")} disabled={!isReferenceSheet}>⚠ Trip F1</button>
       </section>
 
@@ -779,7 +789,7 @@ export function App() {
         <aside className="panel properties-panel">
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? "—"}</span></div>
           {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component or manual wire to inspect and edit it.</p>}
-          {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>Simulation is not assigned to this schematic sheet.</div><div>Use the DOL reference sheet for the supported motor model.</div></section>}
+          {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Timer runtime running." : runtimeDocument ? "Timer runtime paused or reset." : "Ready for runtime simulation."}</div><div>Run advances catalog timers; Pause retains their state; Stop resets timing.</div></section>}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
         </aside>
       </section>
