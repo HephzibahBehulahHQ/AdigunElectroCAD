@@ -35,7 +35,7 @@ const families: ModeledFamily[] = [
 export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap((family) => Array.from({ length: family.count }, (_, index) => {
   const variant = index + 1;
   const propertiesSchema = family.properties(variant);
-  if (family.id === "plc-digital-io") propertiesSchema.program = "";
+  if (family.id === "plc-digital-io") { propertiesSchema.program = ""; propertiesSchema.analogInput0 = 0; }
   if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
@@ -44,7 +44,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     referencePrefix: family.referencePrefix,
     description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
     symbolId: `${family.symbolId}-${String(variant).padStart(2, "0")}`,
-    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : [])],
+    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }] : [])],
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,

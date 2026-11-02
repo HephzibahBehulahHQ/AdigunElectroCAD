@@ -20,4 +20,16 @@ Shared set/reset output, with reset priority:
 LD I0; SET Q0; LD I1; RESET Q0
 ```
 
-This is a limited educational Boolean instruction interpreter. It does not provide a full IEC 61131-3 language implementation, graphical ladder programming, analog PLC registers, vendor execution compatibility, physical I/O voltages, or safety-controller certification.
+This is a limited educational instruction interpreter. It does not provide a full IEC 61131-3 language implementation, graphical ladder programming, a general register bank, vendor execution compatibility, physical I/O voltages, or safety-controller certification.
+
+## Analog threshold input
+
+AI0 accepts the ADC block's `plc-raw` output (integer 0–27648). Wire a level sensor's 4–20 mA signal to ADC IN, ADC OUT to PLC AI0 raw, and PLC Q0 to the controlled Boolean block. Four milliamps maps to 0; 12 mA to 13824; 20 mA to 27648.
+
+`GT AI0 13824`, `LT AI0 13824` and `EQ AI0 13824` load a comparison result into the accumulator. Thresholds must be integer raw values in 0–27648. Invalid analog inputs or comparison instructions force Q0 off with an error. For example:
+
+```text
+GT AI0 13824; OUT Q0
+```
+
+This switches Q0 on above 50% level. AI0 is the only supported analog register; arithmetic, additional registers, physical input diagnostics and wire-break/overrange faults remain unimplemented.
