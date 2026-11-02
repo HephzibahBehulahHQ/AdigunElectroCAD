@@ -5,6 +5,19 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("holds a wired relay and actuator off until the timer expires", () => {
+    const document = structuredClone(templateLibrary[3].document);
+    const timer = document.components[0];
+    timer.properties.delaySeconds = 2;
+    timer.properties.elapsedSeconds = 1;
+    document.components[2].properties.returnSpring = true;
+    const actuator = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "Y1")!.output.value;
+    expect(actuator()).toBe("RETRACTED");
+    timer.properties.elapsedSeconds = 2;
+    expect(actuator()).toContain("EXTENDED");
+    timer.properties.energized = false;
+    expect(actuator()).toBe("RETRACTED");
+  });
   it("propagates sensor inputs and PLC output commands through catalog wires", () => {
     const document = structuredClone(templateLibrary[2].document);
     document.components[0].properties.detected = false;

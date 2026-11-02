@@ -114,6 +114,10 @@ function createTemplate(index: number): ProjectTemplate {
       { name: "Detect workpiece", changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
       { name: "Command actuator", changes: [{ reference: "PLC1", properties: { output: true } }, { reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
       { name: "Remove output", changes: [{ reference: "PLC1", properties: { output: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+    ] : scenario.id === "timed-relay" ? [
+      { name: "Before delay", changes: [{ reference: "KT1", properties: { energized: true, delaySeconds: 2, elapsedSeconds: 1 } }, { reference: "Y1", properties: { returnSpring: true } }], expectations: [{ reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Delay expires", changes: [{ reference: "KT1", properties: { elapsedSeconds: 2 } }, { reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "CLOSED" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Timer de-energized", changes: [{ reference: "KT1", properties: { energized: false } }], expectations: [{ reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : undefined,
     document: { id: `template-sheet-${String(ordinal).padStart(3, "0")}`, name, description: `Executable template ${name}. Test sequence: ${testSequence.join(" ")}`, components, wires, revision: 1 },
   };
