@@ -18,7 +18,7 @@ An offered wire fix names its source and destination and previews that one wire 
 
 Guests can receive explanations, preview offers and apply a fix to the canvas. Bot edits never auto-save. Autosave remains paused until an explicit save; saving Bot edits to local storage or cloud requires a permanent signed-in account. Sign in, then use File → Save locally or Save to cloud. Closing or refreshing without saving can discard those edits.
 
-Enter **Project goal** and choose **Remember project goal** to keep an answer for this project during the current session. Select a component and choose **What does this do?**, or ask about it in **Ask about this canvas**, to see its catalog explanation, actual connected terminals and live result. Goals and dismissals are session-only. A secure generative AI service is not configured: broad natural-language planning, automatic multi-component completion and general intent inference remain unsupported. The panel identifies this limitation rather than pretending to provide those capabilities.
+Enter **Project goal** and choose **Remember project goal** to keep an answer for this project during the current session. Select a component and choose **What does this do?**, or ask about it in **Ask about this canvas**, to see its catalog explanation, actual connected terminals and live result. Goals and dismissals reset on page refresh. A secure generative AI service is not configured: broad natural-language planning, automatic multi-component completion and general intent inference remain unsupported. The panel identifies this limitation rather than pretending to provide those capabilities.
 
 ## Graphical PLC programming
 
