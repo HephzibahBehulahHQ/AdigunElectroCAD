@@ -4,6 +4,7 @@
 
 - [The live co-pilot](#the-live-co-pilot)
 - [Graphical PLC programming](#graphical-plc-programming)
+- [Wiring signals](#wiring-signals)
 - [Saving and recovery](#saving-and-recovery)
 
 ## The live co-pilot
@@ -25,6 +26,10 @@ Enter **Project goal** and choose **Remember project goal** to keep an answer fo
 ## Graphical PLC programming
 
 See [PLC programs](PLC-PROGRAMS.md) for contact/coil editing, branch compilation, numeric registers, supported instructions and execution limits. Apply a graphical draft to commit it; ordinary draft changes do not alter the running design until Apply.
+
+## Wiring signals
+
+One modeled signal output can drive multiple compatible inputs. Multiple modeled outputs on the same wire net are unsupported, even when their present values match. The connection and import validators reject these nets, including indirect connections through bidirectional control terminals. Use separate inputs of an appropriate processing block to combine signals. This signal rule does not reject parallel power contactors and does not certify physical wiring, protection or safety.
 
 ## Saving and recovery
 

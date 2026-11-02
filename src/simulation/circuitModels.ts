@@ -1,6 +1,7 @@
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
+import { functionalOutputTerminal } from "../electrical/signalContracts";
 
 export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; evaluatedProperties: Readonly<Record<string, string | number | boolean>>; }
 
@@ -78,9 +79,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         }
       }
       const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties);
-      const contactOutput = definition.simulationModelId === "catalog-on-delay-timer" ? "18" : definition.simulationModelId === "catalog-interface-relay" ? "14" : definition.simulationModelId === "catalog-feed-through-terminal" ? "2" : undefined;
-      const outputId = definition.simulationModelId === "thermal-overload-dol-v1" ? "aux-96" : contactOutput;
-      const output = definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
+      const output = functionalOutputTerminal(definition);
       if (signal !== undefined && output) {
         const key = endpointKey(component.id, output.id);
         if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }

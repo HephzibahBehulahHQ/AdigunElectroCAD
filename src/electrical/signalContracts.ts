@@ -1,7 +1,13 @@
-import type { ElectricalComponentDefinition } from "../types/electrical";
+import type { ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import type { SignalUnit } from "../simulation/functionalModels";
 
 const numeric: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
+
+export function functionalOutputTerminal(definition: ElectricalComponentDefinition): TerminalDefinition | undefined {
+  const model = definition.simulationModelId;
+  const outputId = model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
+  return definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
+}
 
 /** Known simulated signal contracts; undefined leaves physical/unsupported terminals unclassified. */
 export function terminalSignalUnits(definition: ElectricalComponentDefinition, terminalId: string): SignalUnit[] | undefined {
