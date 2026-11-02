@@ -1,4 +1,5 @@
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalEndpoint } from "../types/electrical";
+import { terminalSignalUnits } from "./signalContracts";
 
 export interface TopologyIssue {
   severity: "error" | "warning";
@@ -17,6 +18,8 @@ export function canConnectTerminals(document: CircuitDocument, definitions: Map<
   const toTerminal = resolveTerminal(to, document, definitions);
   if (!fromTerminal || !toTerminal) return { ok: false, reason: "Both wire endpoints must be valid catalog terminals." };
   if (fromTerminal.kind !== toTerminal.kind) return { ok: false, reason: `${fromTerminal.kind} and ${toTerminal.kind} terminals cannot be wired together.` };
+  const signalIssue = incompatibleSignal(document, definitions, from, to);
+  if (signalIssue) return { ok: false, reason: signalIssue };
   if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) return { ok: false, reason: "Two input terminals or two output terminals cannot be wired together." };
   const duplicate = document.wires.some((wire) => sameConnection(wire.from, wire.to, from, to));
   return duplicate ? { ok: false, reason: "Those terminals are already connected." } : { ok: true };
@@ -46,6 +49,8 @@ export function validateCircuit(document: CircuitDocument, definitions: Map<stri
     const fromTerminal = resolveTerminal(wire.from, document, definitions);
     const toTerminal = resolveTerminal(wire.to, document, definitions);
     if (!fromTerminal || !toTerminal) continue;
+    const signalIssue = incompatibleSignal(document, definitions, wire.from, wire.to);
+    if (signalIssue) issues.push({ severity: "error", code: "incompatible-signal-unit", message: `${wire.id}: ${signalIssue}` });
     if (fromTerminal.kind !== toTerminal.kind) issues.push({ severity: "error", code: "incompatible-terminal-kind", message: `${wire.id} joins incompatible ${fromTerminal.kind} and ${toTerminal.kind} terminals.` });
     if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) issues.push({ severity: "error", code: "incompatible-terminal-direction", message: `${wire.id} joins two ${fromTerminal.direction} terminals.` });
     const connectionId = [endpointId(wire.from), endpointId(wire.to)].sort().join("|");
@@ -79,4 +84,14 @@ function sameConnection(from: TerminalEndpoint, to: TerminalEndpoint, expectedFr
 
 function endpointId(endpoint: TerminalEndpoint) {
   return `${endpoint.componentId}.${endpoint.terminalId}`;
+}
+
+function incompatibleSignal(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>, from: TerminalEndpoint, to: TerminalEndpoint): string | undefined {
+  const units = (endpoint: TerminalEndpoint) => {
+    const component = document.components.find((item) => item.id === endpoint.componentId);
+    const definition = component && definitions.get(component.definitionId);
+    return definition && terminalSignalUnits(definition, endpoint.terminalId);
+  };
+  const left = units(from); const right = units(to);
+  return left && right && !left.some((unit) => right.includes(unit)) ? `Incompatible simulated signals: ${left.join("/")} and ${right.join("/")}. Use a matching converter.` : undefined;
 }
