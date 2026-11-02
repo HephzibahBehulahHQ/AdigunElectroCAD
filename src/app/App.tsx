@@ -21,6 +21,7 @@ import { executeCircuitModels } from "../simulation/circuitModels";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../simulation/circuitClock";
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
+import { LadderEditor } from "../components/LadderEditor";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
@@ -692,8 +693,8 @@ export function App() {
       if (typeof rawValue !== "boolean") return;
       value = rawValue;
     } else {
-      if (typeof rawValue !== "string" || (property !== "program" && !rawValue.trim()) || rawValue.trim().length > 80) {
-        setNotice("Text parameters allow up to 80 characters; only Program may be empty.");
+      if (typeof rawValue !== "string" || (property !== "program" && !rawValue.trim()) || rawValue.trim().length > (property === "program" ? 2048 : 80)) {
+        setNotice("Program allows up to 2048 characters; other text parameters require 1–80 characters.");
         return;
       }
       value = rawValue.trim();
@@ -838,6 +839,7 @@ export function App() {
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
           {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component or manual wire to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Timer runtime running." : runtimeDocument ? "Timer runtime paused or reset." : "Ready for runtime simulation."}</div><div>Run advances catalog timers; Pause retains their state; Stop resets timing.</div></section>}
+          {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} onApply={(program) => updateSelectedProperty("program", program)} />}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
         </aside>
         <ProjectLibraryPanel templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} />

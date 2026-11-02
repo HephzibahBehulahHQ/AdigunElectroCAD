@@ -9,6 +9,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
   let accumulator: boolean | undefined;
   let output = previousOutput;
   let assigned = false;
+  const stack: boolean[] = [];
   const registers = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => previousRegisters?.[index] ?? 0);
   let usesRegisters = previousRegisters !== undefined;
   const validNumber = (value: number) => Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER;
@@ -23,6 +24,18 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
   for (const instruction of instructions) {
     const parts = instruction.split(/\s+/);
     const [operation, address] = parts;
+    if (["PUSH", "ANDPOP", "ORPOP"].includes(operation)) {
+      if (parts.length !== 1 || accumulator === undefined) return fail("Branch instructions require a Boolean accumulator and no operands.");
+      if (operation === "PUSH") {
+        if (stack.length >= 8) return fail("Boolean branch nesting exceeds eight levels.");
+        stack.push(accumulator);
+      } else {
+        const saved = stack.pop();
+        if (saved === undefined) return fail("Boolean branch stack is empty.");
+        accumulator = operation === "ANDPOP" ? saved && accumulator : saved || accumulator;
+      }
+      continue;
+    }
     if (["MOV", "ADD", "SUB", "MUL", "DIV"].includes(operation)) {
       const move = operation === "MOV";
       const destination = registerIndex(parts[move ? 2 : 3] ?? "");
@@ -64,5 +77,6 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       if (operation === "XOR") accumulator = accumulator !== value;
     }
   }
+  if (stack.length) return fail("Boolean branch stack is not balanced.");
   return assigned ? { ok: true, output, ...(usesRegisters ? { registers } : {}) } : fail("Program must assign Q0.");
 }

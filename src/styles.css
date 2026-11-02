@@ -94,5 +94,20 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
   .workspace > .panel { max-height: 780px; }
   .workspace > .drawing-area { min-height: 700px; }
 }
+.ladder-editor { min-width: 0; padding: 12px; border-top: 1px solid var(--border); }
+.ladder-editor p, .ladder-editor label { font-size: .72rem; line-height: 1.5; overflow-wrap: anywhere; }
+.ladder-editor fieldset { min-width: 0; margin: 12px 0; padding: 8px; border: 1px solid var(--border); }
+.ladder-editor legend, .ladder-stage > strong { font-size: .74rem; }
+.ladder-editor label { display: grid; gap: 4px; min-width: 0; }
+.ladder-editor select { width: 100%; min-width: 0; padding: 6px; }
+.ladder-contact { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; margin: 8px 0; }
+.ladder-contact > button { grid-column: 1 / -1; }
+.ladder-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.ladder-editor button { max-width: 100%; padding: 7px; border: 1px solid var(--border); border-radius: 4px; white-space: normal; overflow-wrap: anywhere; }
+.ladder-preview { max-width: 100%; overflow-x: auto; background: var(--bg); border: 1px solid var(--border); margin-top: 8px; }
+.ladder-preview svg { width: 100%; display: block; color: var(--text); }
+.ladder-preview path { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.ladder-preview text { fill: currentColor; font: 11px sans-serif; }
+.ladder-editor pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .68rem; }
 @media print { .project-library-panel { display: none; } }
 @media print { :root, body { background: #fff; color: #13233b; } .app-shell { display: block; background: #fff; } .app-header { display: block; padding: 8px 12px; border: 0; background: #fff; } .header-actions, .project-status, .menu-row, .tool-row, .component-panel, .properties-panel, .engineering-console, footer, .sheet-tabs, .canvas-caption { display: none; } .workspace { display: block; padding: 0; } .drawing-area { display: block; border: 0; overflow: visible; } .schematic-wrap { min-height: 0; overflow: visible; } .schematic { min-width: 0; width: 100%; height: auto; } }
