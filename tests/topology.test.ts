@@ -2,8 +2,26 @@ import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { canConnectTerminals, validateCircuit } from "../src/electrical/topology";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 
 describe("circuit topology validation", () => {
+  it.each([["level", "signal", "plc", "ai-0"], ["level", "signal", "plc", "in-0"], ["adc", "out", "plc", "in-0"]])("rejects incompatible signal wiring %s.%s to %s.%s", (source, sourceTerminal, target, targetTerminal) => {
+    const document = createAnalogLevelProject().document;
+    document.wires = [];
+    const from = { componentId: source, terminalId: sourceTerminal };
+    const to = { componentId: target, terminalId: targetTerminal };
+    expect(canConnectTerminals(document, catalogById, from, to)).toMatchObject({ ok: false, reason: expect.stringContaining("Incompatible simulated signals") });
+    document.wires.push({ id: "bad-signal", from, to, points: [] });
+    expect(validateCircuit(document, catalogById)).toContainEqual(expect.objectContaining({ code: "incompatible-signal-unit" }));
+  });
+  it("accepts the converter stages of the analog PLC example", () => {
+    const document = createAnalogLevelProject().document;
+    expect(validateCircuit(document, catalogById)).toEqual([]);
+    for (const wire of [...document.wires]) {
+      document.wires = document.wires.filter((item) => item.id !== wire.id);
+      expect(canConnectTerminals(document, catalogById, wire.from, wire.to)).toEqual({ ok: true });
+    }
+  });
   it("accepts the DOL reference project terminal wiring", () => {
     expect(validateCircuit(createDolMotorStarter(), catalogById)).toEqual([]);
   });
