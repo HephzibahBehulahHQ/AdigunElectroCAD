@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../cad/documentOps";
@@ -24,6 +24,7 @@ import { CatalogTree } from "../components/CatalogTree";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
+import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -43,7 +44,6 @@ const copy = {
 } as const;
 
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
-const CLOUD_PROJECT_KEY = "adigun-electro-cad.cloud-project-id.v1";
 const UPGRADE_USER_KEY = "adigun-electro-cad.upgrade-user.v1";
 const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
@@ -92,7 +92,10 @@ export function App() {
   const [authPassword, setAuthPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [upgradeUserId, setUpgradeUserId] = useState(() => window.localStorage.getItem(UPGRADE_USER_KEY) ?? "");
-  const [cloudProjectId, setCloudProjectId] = useState(() => window.localStorage.getItem(CLOUD_PROJECT_KEY) ?? "");
+  const [cloudSelection, setCloudSelection] = useState<CloudProjectSelection | null>(null);
+  const activeAuthUserId = useRef<string | null>(null);
+  const authEventVersion = useRef(0);
+  const cloudProjectId = selectedCloudProjectId(cloudSelection, authUser?.id);
   const t = copy[locale];
   const anonymousSession = isAnonymousUser(authUser);
 
@@ -134,10 +137,16 @@ export function App() {
   useEffect(() => {
     const client = supabaseClient();
     let active = true;
-    void client.auth.getUser().then(({ data }) => { if (active) setAuthUser(data.user); });
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => setAuthUser(session?.user ?? null));
+    const initialVersion = authEventVersion.current;
+    void client.auth.getUser().then(({ data }) => { if (active && authEventVersion.current === initialVersion) { activeAuthUserId.current = data.user?.id ?? null; setAuthUser(data.user); } });
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => { authEventVersion.current++; activeAuthUserId.current = session?.user.id ?? null; setAuthUser(session?.user ?? null); });
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    try { setCloudSelection(readCloudProjectSelection(window.localStorage, authUser?.id)); }
+    catch { setCloudSelection(authUser ? { userId: authUser.id, projectId: "" } : null); }
+  }, [authUser?.id]);
 
   useEffect(() => {
     if (!authUser || anonymousSession) return;
@@ -246,8 +255,10 @@ export function App() {
     }
     try {
       const saved = await saveCloudProject(authUser.id, project, cloudProjectId || undefined);
-      window.localStorage.setItem(CLOUD_PROJECT_KEY, saved.id);
-      setCloudProjectId(saved.id);
+      if (activeAuthUserId.current !== authUser.id) { setNotice("Cloud save finished for the previous account. Sign back in to load it."); return; }
+      const selection = { userId: authUser.id, projectId: saved.id };
+      setCloudSelection(selection);
+      try { rememberCloudProjectSelection(window.localStorage, selection); } catch { /* The current session still retains its selection. */ }
       setDirty(false);
       setNotice(`${project.name} saved to the authenticated cloud account.`);
     } catch (error) {
@@ -263,6 +274,7 @@ export function App() {
     }
     try {
       const saved = await loadLatestCloudProject(authUser.id);
+      if (activeAuthUserId.current !== authUser.id) { setNotice("Cloud load ignored because the active account changed."); return; }
       if (!saved) {
         setNotice("No cloud project is available for this account.");
         return;
@@ -276,8 +288,9 @@ export function App() {
       setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
-      window.localStorage.setItem(CLOUD_PROJECT_KEY, saved.id);
-      setCloudProjectId(saved.id);
+      const selection = { userId: authUser.id, projectId: saved.id };
+      setCloudSelection(selection);
+      try { rememberCloudProjectSelection(window.localStorage, selection); } catch { /* The current session still retains its selection. */ }
       setDirty(false);
       setNotice(`${restored.name} loaded from the authenticated cloud account.`);
     } catch (error) {
