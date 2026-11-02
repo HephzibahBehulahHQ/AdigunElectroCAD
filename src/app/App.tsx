@@ -717,6 +717,7 @@ export function App() {
       <header className="app-header">
         <div className="brand-lockup">
           <img src={`${import.meta.env.BASE_URL}assets/hephzibah-behulah-official.jpg`} alt="Hephzibah Behulah" />
+          <div className="brand-identity"><strong>Hephzibah Behulah</strong><small>GLOBAL · HB ELEKTRONIKER</small></div>
           <div className="product-brand"><strong>⚡ Adigun<span>ElectroCAD</span></strong><small>BY HB ELEKTRONIKER</small></div>
         </div>
         <div className="project-status"><strong>{project.name}</strong><span className={dirty ? "dirty" : "saved"}>{dirty ? "Unsaved local changes" : "Saved locally"}</span></div>

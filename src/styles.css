@@ -50,6 +50,22 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .catalog-category > summary small { margin-left: auto; color: var(--muted); font-size: .68rem; }
 .catalog-category .catalog-item { width: 100%; padding-left: 18px; }
 .catalog-empty { padding: 12px; font-size: .75rem; color: var(--muted); }
+.brand-lockup { flex-wrap: wrap; }
+.brand-identity { display: grid; gap: 5px; min-width: 0; }
+.brand-identity strong { font-size: .95rem; line-height: 1.2; overflow-wrap: anywhere; }
+.brand-identity small { color: #f4bd22; font-size: .6rem; letter-spacing: .06em; line-height: 1.35; }
+@media (min-width: 1450px) {
+  .app-header { grid-template-columns: minmax(600px, 1.6fr) minmax(160px, .7fr) auto; }
+  .brand-lockup { flex-wrap: nowrap; }
+  .brand-identity { flex: 0 0 165px; }
+  .brand-identity strong { font-size: 1rem; }
+  .product-brand strong { font-size: 1.3rem; }
+}
+@media (max-width: 760px) {
+  .brand-lockup { align-items: center; gap: 12px; }
+  .brand-identity { flex: 1 1 160px; }
+  .brand-lockup .product-brand { flex: 1 0 100%; }
+}
 .project-library-panel { grid-column: 1 / -1; min-width: 0; }
 .project-browser-controls { display: grid; gap: 8px; padding: 9px; }
 .project-browser-controls input, .project-filters select { width: 100%; min-width: 0; padding: 7px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font-size: .72rem; }
