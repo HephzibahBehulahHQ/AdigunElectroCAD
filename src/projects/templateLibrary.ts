@@ -109,6 +109,11 @@ function createTemplate(index: number): ProjectTemplate {
       { name: "Full-frequency run", changes: [{ reference: "U1", properties: { commandHz: 50 } }], expectations: [{ reference: "M1", label: "Nominal motor point", numeric: 1500 }] },
       { name: "Zero-frequency stop", changes: [{ reference: "U1", properties: { commandHz: 0 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
       { name: "Disabled drive", changes: [{ reference: "U1", properties: { enabled: false, commandHz: 25 } }], expectations: [{ reference: "M1", label: "Nominal motor point", exact: "STANDBY" }] },
+    ] : scenario.id === "plc-sensor" ? [
+      { name: "Sensor clear and output off", changes: [{ reference: "B1", properties: { detected: false } }, { reference: "PLC1", properties: { output: false } }, { reference: "Y1", properties: { returnSpring: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 OFF · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Detect workpiece", changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Command actuator", changes: [{ reference: "PLC1", properties: { output: true } }, { reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Remove output", changes: [{ reference: "PLC1", properties: { output: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : undefined,
     document: { id: `template-sheet-${String(ordinal).padStart(3, "0")}`, name, description: `Executable template ${name}. Test sequence: ${testSequence.join(" ")}`, components, wires, revision: 1 },
   };

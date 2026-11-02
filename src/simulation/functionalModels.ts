@@ -92,6 +92,8 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 export function hasFunctionalModel(modelId: string) { return modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+  if (modelId === "catalog-proximity-sensor") return signal("boolean", bool(properties, "detected"));
+  if (modelId === "catalog-plc-digital-io") return signal("boolean", bool(properties, "output"));
   if (modelId === "logic-no") return signal("boolean", normallyOpen(bool(properties, "input")));
   if (modelId === "logic-nc") return signal("boolean", normallyClosed(bool(properties, "input")));
   if (modelId === "logic-output-coil") return signal("boolean", outputCoil(bool(properties, "input")));
@@ -117,4 +119,3 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   return undefined;
 }
-

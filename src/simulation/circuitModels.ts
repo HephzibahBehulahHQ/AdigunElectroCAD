@@ -9,6 +9,8 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
+  if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (terminalId === "in") {
     if (modelId === "signal-adc") return { property: "milliamp", acceptedUnits: ["milliamp"] };
     if (modelId === "signal-dac") return { property: "raw", acceptedUnits: ["plc-raw"] };
