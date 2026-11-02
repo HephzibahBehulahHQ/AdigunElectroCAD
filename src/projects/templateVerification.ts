@@ -30,7 +30,7 @@ export function verifyCircuitSequence(document: CircuitDocument, steps: CircuitS
       const value = runs.find((run) => run.reference === expected.reference && run.output.label === expected.label)?.output.value;
       const numeric = value === undefined ? NaN : Number.parseFloat(value);
       if (value === undefined || (expected.exact !== undefined && value !== expected.exact) ||
-        (expected.numeric !== undefined && (!Number.isFinite(numeric) || Math.abs(numeric - expected.numeric) > (expected.tolerance ?? 0))) ||
+        (expected.numeric !== undefined && (!Number.isFinite(expected.numeric) || !Number.isFinite(expected.tolerance ?? 0) || (expected.tolerance ?? 0) < 0 || !Number.isFinite(numeric) || Math.abs(numeric - expected.numeric) > (expected.tolerance ?? 0))) ||
         (expected.exact === undefined && expected.numeric === undefined)) failures.push(`${expected.reference}: ${expected.label} failed`);
     }
     if (step.expectations.length === 0) failures.push("Step has no expectations");
