@@ -16,4 +16,6 @@ The explicit corporate header in `b9473dfce3b286d878b3de0e3b80e3d5aef1d910` was 
 
 Release `def456a3ff5c6450d8fa84144ccb45fba12bc2ca` was checked at 1672 × 941. Q1, KM1 and F1 references and descriptions render to the right of the PE conductor, with x=475 versus PE x=445. The screenshot confirms clear spacing.
 
-Zoom/Fit/Grid controls introduced after these checks still require separate rendered verification.
+The following view-control check covers the reference sheet; free-sheet and zoom-limit rendered checks remain separate work.
+
+Release `cf39250740e0a02bf6ed46a8938d0d9b30575f7f` was checked for reference-sheet view controls. Zoom increased from 85% / 935px sheet width to 95% / 1045px, with the 1100 × 780 viewBox unchanged. Fit produced a 628 × 445px sheet inside a 659 × 504px viewport. Toolbar Grid removed the grid rectangle and updated the menu pressed state; the menu restored it.

@@ -3,6 +3,14 @@ import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, rem
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 
 describe("component movement", () => {
+  it("reserves space for upright references below normal and rotated symbols", () => {
+    const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 200, rotation: 0 as const, properties: {} };
+    expect(canPlaceComponent([component], "new", 200, 300)).toBe(false);
+    expect(canPlaceComponent([component], "new", 200, 320)).toBe(true);
+    const rotated = { ...component, rotation: 90 as const };
+    expect(canPlaceComponent([rotated], "new", 200, 320)).toBe(false);
+    expect(canPlaceComponent([rotated], "new", 200, 380)).toBe(true);
+  });
   it("moves a placed component without altering terminal-level wire topology", () => {
     const project = createDolMotorStarter();
     project.components.push({ id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 900, y: 180, rotation: 0, properties: {} });
@@ -14,7 +22,7 @@ describe("component movement", () => {
 
   it("allocates clear grid positions and rejects an overlapping move", () => {
     const placed = [] as ReturnType<typeof createDolMotorStarter>["components"];
-    for (let index = 0; index < 15; index += 1) {
+    for (let index = 0; index < 12; index += 1) {
       const position = findOpenPlacement(placed, "reference");
       expect(position).not.toBeNull();
       placed.push({ id: `placed-${index}`, definitionId: "motor.three-phase", reference: `M${index + 1}`, x: position!.x, y: position!.y, rotation: 0, properties: {} });

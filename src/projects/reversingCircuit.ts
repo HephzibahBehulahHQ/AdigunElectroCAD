@@ -5,7 +5,7 @@ export function createReversingCircuit(): CircuitDocument {
   const component = (id: string, definitionId: string, reference: string, x: number, y: number, properties: ComponentInstance["properties"]): ComponentInstance => ({ id, definitionId, reference, x, y, rotation: 0, properties });
   const components = [
     component("supply", "iec.ac-supply.01", "X1", 120, 160, { outputEnabled: true, frequencyHz: 50 }),
-    component("breaker", "iec.circuit-breaker.01", "Q1", 120, 260, { closed: false }),
+    component("breaker", "iec.circuit-breaker.01", "Q1", 120, 280, { closed: false }),
     component("forward", "iec.motor-starter.01", "KM1", 360, 140, { energized: false }),
     component("reverse", "iec.motor-starter.01", "KM2", 360, 420, { energized: false }),
     component("motor", "iec.induction-motor.01", "M1", 680, 260, { energized: true, nominalSpeedRpm: 1440 }),
