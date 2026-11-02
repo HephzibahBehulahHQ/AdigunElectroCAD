@@ -5,6 +5,21 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("scales motor speed with drive frequency and stops at zero command", () => {
+    const document = structuredClone(templateLibrary[1].document);
+    document.components[3].properties.nominalSpeedRpm = 1500;
+    const drive = document.components[2];
+    const speed = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
+    drive.properties.commandHz = 25;
+    expect(speed()).toMatch(/^750 rpm/);
+    drive.properties.commandHz = 50;
+    expect(speed()).toMatch(/^1500 rpm/);
+    drive.properties.commandHz = 0;
+    expect(speed()).toBe("STANDBY");
+    drive.properties.commandHz = 25;
+    drive.properties.enabled = false;
+    expect(speed()).toBe("STANDBY");
+  });
   it("removes motor power when the source or starter is switched off", () => {
     const document = structuredClone(templateLibrary[0].document);
     const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;

@@ -56,12 +56,17 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     link(from, to); link(to, from);
   }
   const powered = new Map<string, Set<string>>();
-  const queue: Array<[string, string]> = [];
+  const frequencies = new Map<string, number>();
+  const driveOutputs = new Map<string, number>();
+  const queue: Array<[string, string, number]> = [];
   for (const component of document.components) {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     const p = properties.get(component.id) ?? {};
     if (model === "catalog-ac-supply" && p.outputEnabled === true) {
-      for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`]);
+      for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
+    }
+    if (model === "catalog-variable-frequency-drive") for (const phase of ["l1", "l2", "l3"]) {
+      driveOutputs.set(endpointKey(component.id, `${phase}-out`), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
     }
     const conducting = model === "catalog-circuit-breaker" ? p.closed === true
       : model === "catalog-motor-starter" ? p.energized === true
@@ -71,12 +76,14 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     }
   }
   while (queue.length) {
-    const [terminal, phase] = queue.shift()!;
+    const [terminal, phase, incomingFrequency] = queue.shift()!;
+    const frequency = driveOutputs.get(terminal) ?? incomingFrequency;
     const phases = powered.get(terminal) ?? new Set<string>();
     if (phases.has(phase)) continue;
     phases.add(phase);
     powered.set(terminal, phases);
-    queue.push(...(powerEdges.get(terminal) ?? []).map((next): [string, string] => [next, phase]));
+    frequencies.set(`${terminal}|${phase}`, frequency);
+    queue.push(...(powerEdges.get(terminal) ?? []).map((next): [string, string, number] => [next, phase, frequency]));
   }
   for (const component of document.components) {
     if (definitionsByComponent.get(component.id)?.simulationModelId !== "catalog-induction-motor") continue;
@@ -84,7 +91,11 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const feeds = ["u1", "v1", "w1"].map((terminal) => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
     const uniqueFeeds = feeds.every((feed) => feed.length === 1) && new Set(feeds.map((feed) => feed[0])).size === 3;
     const sameSource = new Set(feeds.flat().map((feed) => feed.slice(0, feed.lastIndexOf(":")))).size === 1;
-    p.energized = p.energized === true && uniqueFeeds && sameSource;
+    const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
+    const frequency = motorFrequencies[0];
+    const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
+    p.energized = p.energized === true && uniqueFeeds && sameSource && validFrequency;
+    if (p.energized) p.nominalSpeedRpm = Number(p.nominalSpeedRpm) * frequency! / Number(p.ratedFrequencyHz ?? 50);
   }
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < 12; iteration += 1) {
