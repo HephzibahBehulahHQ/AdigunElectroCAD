@@ -58,11 +58,16 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       continue;
     }
     if (parts.length !== 2) return fail(`Expected operation and address: ${instruction}`);
-    if (operation === "LDP" || operation === "LDF") {
+    if (["LDP", "LDF", "ANDP", "ANDF", "ORP", "ORF"].includes(operation)) {
       if (!["I0", "I1"].includes(address)) return fail("Edge contacts require I0 or I1.");
       const current = address === "I0" ? inputA : inputB;
       const previous = previousInputs[address === "I0" ? 0 : 1] === true;
-      accumulator = operation === "LDP" ? current && !previous : previous && !current;
+      const pulse = operation.endsWith("P") ? current && !previous : previous && !current;
+      if (operation.startsWith("LD")) accumulator = pulse;
+      else {
+        if (accumulator === undefined) return fail("Logic instructions require a preceding LD/LDN.");
+        accumulator = operation.startsWith("AND") ? accumulator && pulse : accumulator || pulse;
+      }
       continue;
     }
     if (["OUT", "SET", "RESET"].includes(operation)) {

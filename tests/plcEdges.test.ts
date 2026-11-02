@@ -24,6 +24,16 @@ it("uses one input snapshot for repeated edge reads within a scan", () => {
   expect(scanPlcProgram("LDF I0; ANDN I1; OUT Q0", false, true, true, 0, undefined, [true, false])).toEqual({ ok: true, output: false });
 });
 
+it.each(["ANDP", "ANDF", "ORP", "ORF"])("combines %s with the current Boolean accumulator", (operation) => {
+  for (const accumulator of [false, true]) for (const current of [false, true]) for (const previous of [false, true]) {
+    const pulse = operation.endsWith("P") ? current && !previous : previous && !current;
+    const expected = operation.startsWith("AND") ? accumulator && pulse : accumulator || pulse;
+    expect(scanPlcProgram(`LD I0; ${operation} I1; OUT Q0`, accumulator, current, false, 0, undefined, [false, previous])).toEqual({ ok: true, output: expected });
+  }
+  expect(scanPlcProgram(`${operation} I0; OUT Q0`, true, false, true)).toMatchObject({ ok: false, output: false });
+  expect(scanPlcProgram(`LD I0; ${operation} Q0; OUT Q0`, true, false, true)).toMatchObject({ ok: false, output: false });
+});
+
 it.each(["LDP", "LDF"])("runs %s from a wired input to a wired coil with pause and reset", (operation) => {
   const design: CircuitDocument = {
     id: "plc-edges", name: "Input transition pulse", description: "Wired scan-based input edge", revision: 1,
