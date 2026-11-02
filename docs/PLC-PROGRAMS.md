@@ -6,7 +6,7 @@ An empty Program retains the existing manual Output mode. Nonempty programs begi
 
 Use **Operate** controls above the selected component's design properties to change live Boolean parameters while retaining scan memory. For example, toggle a sensor's **Live Detected** input for START and the PLC's unwired **Live Input B** for STOP. Wired input signals override local parameters. These controls change only the runtime document; Stop discards their changes and restores the configured design. Design-property edits continue to reset runtime state.
 
-Supported instructions are `LD`, `LDN`, `AND`, `ANDN`, `OR`, `ORN`, `XOR`, `OUT`, `SET` and `RESET`. Separate instructions with semicolons. Logic instructions read I0, I1 or Q0; output instructions write Q0. LD/LDN must precede logic or output operations. SET and RESET share Q0; later instructions take priority. The interpreter accepts at most 32 instructions; the property editor accepts up to 80 characters.
+Supported Boolean instructions are `LD`, `LDN`, `AND`, `ANDN`, `OR`, `ORN`, `XOR`, `OUT`, `SET` and `RESET`. Separate instructions with semicolons. Logic instructions read I0, I1 or Q0; output instructions write Q0. LD/LDN must precede logic or output operations. SET and RESET share Q0; later instructions take priority. The interpreter accepts at most 32 instructions; the Program property editor accepts up to 2048 characters.
 
 Start/stop holding circuit, with I0 as START and I1 as STOP:
 
@@ -20,7 +20,19 @@ Shared set/reset output, with reset priority:
 LD I0; SET Q0; LD I1; RESET Q0
 ```
 
-This is a limited educational instruction interpreter. It does not provide a full IEC 61131-3 language implementation, graphical ladder programming, vendor execution compatibility, physical I/O voltages, or safety-controller certification.
+This is a limited educational instruction interpreter. It does not provide a full IEC 61131-3 language implementation, vendor execution compatibility, physical I/O voltages, or safety-controller certification.
+
+## Graphical contact/coil editor
+
+Select a placed PLC on a free sheet and open Graphical ladder in its properties panel. The editor supports one to four rungs, each with up to four series stages. Each stage can have up to four parallel NO/NC contacts reading I0, I1 or retained Q0. Choose an output, set or reset Q0 coil per rung. Later rungs take priority. The diagram shows the actual branch structure; it does not highlight live power flow.
+
+Add/remove contacts, stages and rungs to edit a draft. Apply ladder program compiles the draft into the same Program executed by the PLC runtime and commits one undoable design edit. Discard ladder draft restores the saved Program. Design edits reset simulation memory. The 32-instruction limit still applies, so large branch combinations can be rejected before Apply. The diagram scrolls within its panel when wider than the available space.
+
+Existing programs are imported only when the editor can reproduce their exact instruction order. Arithmetic, XOR, arbitrary instruction combinations and ambiguous precedence remain in the text editor. Create ladder draft prepares a replacement without modifying the saved Program; only Apply replaces it. For example, the holding circuit above becomes a parallel I0/Q0 stage followed in series by NC I1 and an output Q0 coil.
+
+Compiled parallel groups after the first series stage use PUSH, a new LD/LDN expression, and ANDPOP. The text interpreter also supports ORPOP. These no-operand Boolean stack instructions require an initialized accumulator, a balanced stack and at most eight nested levels. Invalid branch instructions force Q0 off. The graphical editor accepts its own canonical contact/coil subset and rejects other stack layouts rather than guessing their meaning.
+
+Automated tests cover branch truth tables, exact import/compile round trips, rejection of ambiguous text, reset priority, instruction limits and a compiled start/stop ladder driving a wired coil through start/release/stop/release. Production graphical-editor interaction remains unverified.
 
 ## Analog threshold input
 
