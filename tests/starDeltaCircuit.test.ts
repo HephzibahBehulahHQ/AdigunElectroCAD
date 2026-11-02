@@ -14,6 +14,12 @@ it("derives star/delta current and invalid overlap from actual power wiring", ()
   expect(output()).toBe("OPEN · 0.00 V/winding · 0.00 A line");
   state = transitionStarDelta(state, "tick", 200);
   expect(output()).toBe("DELTA · 400.00 V/winding · 48.99 A line");
+  const isolated = applyStarDeltaState(document, state);
+  isolated.components.find((component) => component.id === "supply")!.properties.outputEnabled = false;
+  expect(output(isolated)).toBe("DELTA · 0.00 V/winding · 0.00 A line");
+  const missingPhase = applyStarDeltaState(document, state);
+  missingPhase.wires = missingPhase.wires.filter((wire) => !(wire.from.componentId === "supply" && wire.from.terminalId === "l1-out"));
+  expect(output(missingPhase)).toBe("DELTA · 0.00 V/winding · 0.00 A line");
   const invalid = applyStarDeltaState(document, state);
   invalid.components.find((component) => component.id === "star")!.properties.energized = true;
   expect(output(invalid)).toContain("INVALID");
