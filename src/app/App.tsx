@@ -22,6 +22,7 @@ import { advanceCircuitClock, resetCircuitClock } from "../simulation/circuitClo
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { ReversingLab } from "../components/ReversingLab";
+import { StarDeltaLab } from "../components/StarDeltaLab";
 
 type Locale = "en" | "de";
 type Theme = "dark" | "light";
@@ -796,6 +797,7 @@ export function App() {
       </section>
 
       <section className="engineering-console">
+        <StarDeltaLab />
         <ReversingLab onLoadCircuit={(circuit) => {
           const extended = addFreeSchematicSheet(project);
           const sheet = extended.sheets.at(-1)!;

@@ -1,0 +1,40 @@
+import { useEffect, useState } from "react";
+import { initialStarDeltaState, starDeltaContacts, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
+
+export function StarDeltaLab() {
+  const [state, setState] = useState(initialStarDeltaState);
+  const [running, setRunning] = useState(false);
+  const contacts = starDeltaContacts(state);
+  const act = (action: StarDeltaAction) => setState((previous) => transitionStarDelta(previous, action));
+  useEffect(() => {
+    if (!running) return;
+    const interval = window.setInterval(() => setState((previous) => transitionStarDelta(previous, "tick", 100)), 100);
+    return () => window.clearInterval(interval);
+  }, [running]);
+  return <section className="console-section" aria-label="Star delta starter laboratory" style={{ gridColumn: "1 / -1", minWidth: 0 }}>
+    <strong>Star–Delta Starter · Open Transition</strong>
+    <p>5 s star period · 200 ms break before delta · educational switching model.</p>
+    <svg viewBox="0 0 600 300" role="img" aria-label={`Motor winding connections: ${state.stage}`} style={{ width: "100%", maxWidth: 600, background: "#f4f8fc", borderRadius: 6 }}>
+      <g stroke="#24456b" strokeWidth="3" fill="none">
+        {[150, 300, 450].map((x) => <g key={x}><path d={`M${x} 50V100M${x} 175V220`} stroke={contacts.main ? "#15803d" : "#64748b"} /><rect x={x - 15} y="100" width="30" height="75" /></g>)}
+        {contacts.star && <path d="M150 220V250H450V220M300 220V250" stroke="#15803d" />}
+        {contacts.delta && <g stroke="#b45309"><path d="M150 220H90V70H450M300 220H240V80H150M450 220H510V90H300" /></g>}
+      </g>
+      <g fill="#102a43" fontSize="14" textAnchor="middle" fontWeight="700">
+        <text x="150" y="30">L1 / U1</text><text x="300" y="30">L2 / V1</text><text x="450" y="30">L3 / W1</text>
+        <text x="175" y="215">U2</text><text x="325" y="215">V2</text><text x="475" y="215">W2</text>
+        <text x="300" y="283">{contacts.star ? "U2–V2–W2 joined" : contacts.delta ? "U2–W1 · V2–U1 · W2–V1" : "Star and delta connections open"}</text>
+      </g>
+    </svg>
+    <div className="auth-actions">
+      <button onClick={() => act(state.breakerClosed ? "open-breaker" : "close-breaker")}>{state.breakerClosed ? "Open Q1" : "Close Q1"}</button>
+      <button onClick={() => act("start")}>START Star–Delta</button>
+      <button onClick={() => act("stop")}>STOP Star–Delta</button>
+      <button onClick={() => setRunning((value) => !value)}>{running ? "Pause sequence clock" : "Run sequence clock"}</button>
+      <button onClick={() => act("trip-overload")}>Trip starter overload</button>
+      <button onClick={() => act("reset-overload")}>Reset starter overload</button>
+    </div>
+    <p aria-live="polite">Stage: {state.stage} · Main KM1: {contacts.main ? "ON" : "OFF"} · Star KM2: {contacts.star ? "ON" : "OFF"} · Delta KM3: {contacts.delta ? "ON" : "OFF"}</p>
+    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. This view shows switching connections; winding current, torque, and acceleration are not yet calculated.</p>
+  </section>;
+}
