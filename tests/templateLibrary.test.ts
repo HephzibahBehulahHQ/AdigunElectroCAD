@@ -6,6 +6,18 @@ import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 
 describe("project template library", () => {
+  it("fails invalid numeric expectations, unknown changes, and unchecked steps", () => {
+    const document = templateLibrary[0].document;
+    const expectation = { reference: "M1", label: "Nominal motor point", numeric: 1450 };
+    const results = verifyCircuitSequence(document, [
+      { name: "NaN target", changes: [], expectations: [{ ...expectation, numeric: NaN }] },
+      { name: "Infinite tolerance", changes: [], expectations: [{ ...expectation, tolerance: Infinity }] },
+      { name: "Negative tolerance", changes: [], expectations: [{ ...expectation, tolerance: -1 }] },
+      { name: "Unknown component", changes: [{ reference: "MISSING", properties: {} }], expectations: [{ ...expectation, numeric: 9999 }] },
+      { name: "No check", changes: [], expectations: [] },
+    ], catalogById);
+    expect(results.every((result) => !result.passed)).toBe(true);
+  });
   it("enforces recorded operating steps for motor-feeder variants", () => {
     const template = structuredClone(templateLibrary[0]);
     expect(template.operatingSequence).toHaveLength(4);
