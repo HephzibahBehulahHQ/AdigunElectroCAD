@@ -11,3 +11,9 @@ export function componentFootprint(x: number, y: number, rotation: ComponentInst
   const halfWidth = Math.max(sideways ? 35 : 55, 55) + 6;
   return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 55 : 35) - 6, bottom: y + componentLabelOffsets(rotation).kind + 8 };
 }
+
+export function componentFitsSheet(x: number, y: number, rotation: ComponentInstance["rotation"]): boolean {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+  const bounds = componentFootprint(x, y, rotation);
+  return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
+}

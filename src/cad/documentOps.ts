@@ -1,5 +1,5 @@
 import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
-import { componentFootprint } from "./componentGeometry";
+import { componentFootprint, componentFitsSheet } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
 
@@ -7,8 +7,7 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(x) || !Number.isFinite(y)) return { document, ok: false, reason: "Invalid component position." };
   const snappedX = Math.round(x / 20) * 20; const snappedY = Math.round(y / 20) * 20;
-  const bounds = componentFootprint(snappedX, snappedY, component.rotation);
-  if (bounds.left < 10 || bounds.right > 1090 || bounds.top < 90 || bounds.bottom > 770) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
+  if (!componentFitsSheet(snappedX, snappedY, component.rotation)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
   if (!canPlaceComponent(document.components, componentId, snappedX, snappedY)) return { document, ok: false, reason: "Move blocked: symbol or label clearance overlaps another component." };
   if (component.x === snappedX && component.y === snappedY) return { document, ok: true };
   return { document: moveComponent(document, componentId, snappedX - component.x, snappedY - component.y), ok: true };
@@ -72,6 +71,7 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
 
 export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number): boolean {
   const rotation = components.find((component) => component.id === componentId)?.rotation ?? 0;
+  if (!componentFitsSheet(x, y, rotation)) return false;
   return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, component.x, component.y, component.rotation));
 }
 
