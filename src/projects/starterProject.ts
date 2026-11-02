@@ -1,6 +1,7 @@
 import { createDolMotorStarter } from "./dolMotorStarter";
 import type { ProjectTemplate } from "./templateLibrary";
 import type { CircuitDocument, CircuitSheet, ElectricalProject } from "../types/electrical";
+import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export const createStarterProject = (): ElectricalProject => ({
   id: "reference-dol-project",
@@ -11,7 +12,10 @@ export const createStarterProject = (): ElectricalProject => ({
 });
 
 export function addFreeSchematicSheet(project: ElectricalProject): ElectricalProject {
-  const ordinal = project.sheets.filter((sheet) => sheet.kind === "free-schematic").length + 1;
+  if (project.sheets.length >= MAX_PROJECT_SHEETS) throw new Error(`A project supports at most ${MAX_PROJECT_SHEETS} sheets.`);
+  const usedIds = new Set(project.sheets.map((sheet) => sheet.id));
+  let ordinal = project.sheets.filter((sheet) => sheet.kind === "free-schematic").length + 1;
+  while (usedIds.has(`sheet-free-${ordinal}`)) ordinal++;
   const sheet: CircuitSheet = {
     id: `sheet-free-${ordinal}`,
     name: `Free schematic ${ordinal}`,

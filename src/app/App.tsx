@@ -22,6 +22,7 @@ import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCirc
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
 import { moveComponentToGrid } from "../cad/documentOps";
+import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -507,8 +508,14 @@ export function App() {
     setNotice(`${selectedDefinition.name} inserted as ${instance.reference}.`);
   };
 
+  const tryAddFreeSheet = (source: ElectricalProject) => {
+    if (source.sheets.length >= MAX_PROJECT_SHEETS) { setNotice(`This project has reached its ${MAX_PROJECT_SHEETS}-sheet limit. Create a new project to add more sheets.`); return null; }
+    return addFreeSchematicSheet(source);
+  };
+
   const addSheet = () => {
-    const next = addFreeSchematicSheet(project);
+    const next = tryAddFreeSheet(project);
+    if (!next) return;
     const sheet = next.sheets.at(-1)!;
     recordEdit(next);
     setActiveSheetId(sheet.id);
@@ -535,7 +542,9 @@ export function App() {
     let targetProject = project;
     let targetSheetId = activeSheet.id;
     if (isReferenceSheet) {
-      targetProject = addFreeSchematicSheet(project);
+      const extended = tryAddFreeSheet(project);
+      if (!extended) return;
+      targetProject = extended;
       targetSheetId = targetProject.sheets.at(-1)!.id;
     }
     const next = loadTemplateIntoSheet(targetProject, targetSheetId, selectedTemplate);
@@ -816,7 +825,8 @@ export function App() {
 
       <section className="engineering-console">
         <StarDeltaLab onLoadCircuit={(circuit) => {
-          const extended = addFreeSchematicSheet(project);
+          const extended = tryAddFreeSheet(project);
+          if (!extended) return;
           const sheet = extended.sheets.at(-1)!;
           recordEdit(replaceSheetDocument(extended, sheet.id, circuit));
           setActiveSheetId(sheet.id);
@@ -826,7 +836,8 @@ export function App() {
           setNotice("Star–delta power circuit copied to a new editable sheet. Lab controls remain independent.");
         }} />
         <ReversingLab onLoadCircuit={(circuit) => {
-          const extended = addFreeSchematicSheet(project);
+          const extended = tryAddFreeSheet(project);
+          if (!extended) return;
           const sheet = extended.sheets.at(-1)!;
           const next = replaceSheetDocument(extended, sheet.id, circuit);
           recordEdit(next);
