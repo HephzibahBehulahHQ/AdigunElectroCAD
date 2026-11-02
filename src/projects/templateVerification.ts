@@ -1,5 +1,6 @@
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { executeCircuitModels, type CircuitModelRun } from "../simulation/circuitModels";
+import { advanceCircuitClock } from "../simulation/circuitClock";
 import type { CircuitDocument, ElectricalComponentDefinition, ComponentInstance } from "../types/electrical";
 import type { ProjectTemplate } from "./templateLibrary";
 
@@ -12,18 +13,23 @@ export interface TemplateVerification {
 
 export interface CircuitSequenceStep {
   name: string;
+  durationSeconds?: number;
   changes: Array<{ reference: string; properties: ComponentInstance["properties"] }>;
   expectations: Array<{ reference: string; label: string; exact?: string; numeric?: number; tolerance?: number }>;
 }
 
 export function verifyCircuitSequence(document: CircuitDocument, steps: CircuitSequenceStep[], catalog: Map<string, ElectricalComponentDefinition>) {
-  const working = structuredClone(document);
+  let working = structuredClone(document);
   return steps.map((step) => {
     const failures: string[] = [];
     for (const change of step.changes) {
       const component = working.components.find((item) => item.reference === change.reference);
       if (!component) { failures.push(`Unknown component ${change.reference}`); continue; }
       Object.assign(component.properties, change.properties);
+    }
+    if (step.durationSeconds !== undefined) {
+      if (!Number.isFinite(step.durationSeconds) || step.durationSeconds < 0) failures.push("Invalid step duration");
+      else working = advanceCircuitClock(working, catalog, step.durationSeconds);
     }
     const runs = executeCircuitModels(working, catalog);
     for (const expected of step.expectations) {

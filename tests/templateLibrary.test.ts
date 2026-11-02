@@ -6,6 +6,17 @@ import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 
 describe("project template library", () => {
+  it("advances real timer runtime in recorded operating steps without changing the design", () => {
+    const template = structuredClone(templateLibrary[3]);
+    const before = JSON.stringify(template.document);
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
+    expect(JSON.stringify(template.document)).toBe(before);
+    template.operatingSequence![1].durationSeconds = 0.5;
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
+    for (const durationSeconds of [-1, NaN, Infinity]) {
+      expect(verifyCircuitSequence(template.document, [{ name: "Invalid duration", durationSeconds, changes: [], expectations: [{ reference: "KT1", label: "Timer contact", exact: "CLOSED" }] }], catalogById)[0].failures).toContain("Invalid step duration");
+    }
+  });
   it("fails invalid numeric expectations, unknown changes, and unchecked steps", () => {
     const document = templateLibrary[0].document;
     const expectation = { reference: "M1", label: "Nominal motor point", numeric: 1450 };
