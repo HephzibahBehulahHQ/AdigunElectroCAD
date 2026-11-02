@@ -38,7 +38,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     }
     if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
-      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true);
+      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0));
       return { ...component, properties: { ...component.properties, runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
     }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {

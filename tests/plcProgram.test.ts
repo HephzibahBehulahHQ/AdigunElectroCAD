@@ -1,6 +1,18 @@
 import { expect, it } from "vitest";
 import { scanPlcProgram } from "../src/simulation/plcProgram";
 
+it.each([["GT", 13825, true], ["GT", 13824, false], ["LT", 13823, true], ["LT", 13824, false], ["EQ", 13824, true], ["EQ", 13825, false]])("compares AI0 using %s at raw %s", (operation, raw, expected) => {
+  expect(scanPlcProgram(`${operation} AI0 13824; OUT Q0`, false, false, false, raw as number)).toEqual({ ok: true, output: expected });
+});
+
+it.each(["GT AI1 0; OUT Q0", "GT AI0 NaN; OUT Q0", "GT AI0 -1; OUT Q0", "GT AI0 27649; OUT Q0", "GT AI0 1.5; OUT Q0"])("rejects invalid analog instruction %s", (program) => {
+  expect(scanPlcProgram(program, false, false, true, 0)).toMatchObject({ ok: false, output: false });
+});
+
+it.each([NaN, Infinity, -1, 27649, 0.5])("fails closed for invalid AI0 raw value %s", (raw) => {
+  expect(scanPlcProgram("GT AI0 13824; OUT Q0", false, false, true, raw)).toMatchObject({ ok: false, output: false });
+});
+
 it("runs a start/stop holding program with stop priority", () => {
   const program = "LD I0; OR Q0; ANDN I1; OUT Q0";
   let output = false;

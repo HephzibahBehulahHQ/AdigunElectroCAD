@@ -22,7 +22,7 @@ Editable reversing circuits now propagate Boolean command signals through an ove
 
 ## Next implementation priorities
 
-1. Complete graphical ladder programming and analog/register execution. PLC digital I/O supports a limited two-input/one-output Boolean interpreter with retained Q0 and shared SET/RESET. See `PLC-PROGRAMS.md` for its exact limits. On-delay timers, logic memory, edge pulses and educational dual-channel reset behavior advance through the runtime clock; these features do not establish a complete PLC implementation or certified safety controller.
+1. Complete graphical ladder programming and general register/arithmetic execution. PLC digital I/O supports two Boolean inputs, one retained output and one ADC raw input (AI0) with GT/LT/EQ comparisons. See `PLC-PROGRAMS.md` for exact limits. On-delay timers, logic memory, edge pulses and educational dual-channel reset behavior advance through the runtime clock; these features do not establish a complete PLC implementation or certified safety controller.
 2. Complete wired holding/interlock and protection circuits beyond the existing forward/reverse and star-delta state controllers.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.

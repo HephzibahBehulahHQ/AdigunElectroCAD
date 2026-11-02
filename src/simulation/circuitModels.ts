@@ -10,6 +10,7 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"] };
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") {
     if (["s11", "in-a"].includes(terminalId)) return { property: "channelAClosed", acceptedUnits: ["boolean"] };
     if (["s12", "in-b"].includes(terminalId)) return { property: "channelBClosed", acceptedUnits: ["boolean"] };
