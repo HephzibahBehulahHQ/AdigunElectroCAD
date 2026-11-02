@@ -1,3 +1,5 @@
+import { typeKThermocoupleMillivolt } from "./thermocouple";
+
 export type LogicGate = "and" | "or" | "not" | "nand" | "nor" | "xor";
 export type Comparator = "greater-than" | "less-than" | "equal-to";
 export type MathOperation = "add" | "subtract" | "multiply" | "divide";
@@ -42,7 +44,7 @@ export function rawToEngineering(raw: number, minimum: number, maximum: number, 
 export function dacMilliamp(raw: number, rawFullScale = 27_648) { return plcRawToMilliamp(raw, rawFullScale); }
 
 export function pt100ResistanceOhm(temperatureC: number) { return 100 * (1 + 0.00385 * temperatureC); }
-export function thermocoupleMillivolt(temperatureC: number) { return temperatureC * 0.041; }
+export function thermocoupleMillivolt(temperatureC: number, referenceJunctionC = 0) { return typeKThermocoupleMillivolt(temperatureC, referenceJunctionC); }
 export function flowPulseHz(flowLitresPerMinute: number, pulsesPerLitre: number) { return Math.max(0, flowLitresPerMinute) * Math.max(0, pulsesPerLitre) / 60; }
 export function vibrationRms(accelerationSamples: number[]) {
   if (!accelerationSamples.length) return 0;

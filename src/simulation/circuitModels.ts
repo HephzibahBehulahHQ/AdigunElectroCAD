@@ -33,7 +33,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   return undefined;
 }
 
-const sameSignal = (left: FunctionalSignal | undefined, right: FunctionalSignal) => left?.unit === right.unit && left.value === right.value;
+const sameSignal = (left: FunctionalSignal | undefined, right: FunctionalSignal) => left?.unit === right.unit && left.value === right.value && left.error === right.error;
 
 function definitions(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>) {
   return new Map(document.components.flatMap((component) => { const definition = catalog.get(component.definitionId); return definition ? [[component.id, definition] as const] : []; }));
@@ -70,6 +70,11 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
         const incoming = signals.get(endpointKey(component.id, terminal.id));
         const binding = inputBinding(definition.simulationModelId, terminal.id);
+        if (incoming?.error && binding) {
+          if (activeProperties.runtimeSignalError !== incoming.error) { activeProperties.runtimeSignalError = incoming.error; changed = true; }
+          if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
+          continue;
+        }
         const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
         const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
         if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
