@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { templateLibrary } from "../src/projects/templateLibrary";
-import { advanceCircuitClock, resetCircuitClock } from "../src/simulation/circuitClock";
+import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("circuit simulation clock", () => {
@@ -13,10 +13,10 @@ describe("circuit simulation clock", () => {
     let runtime = advanceCircuitClock(design, catalogById, 0.1);
     const actuator = () => executeCircuitModels(runtime, catalogById).find((run) => run.reference === "Y1")!.output.value;
     expect(actuator()).toContain("EXTENDED");
-    runtime.components[0].properties.detected = false;
+    runtime = setCircuitBooleanInput(runtime, catalogById, runtime.components[0].id, "detected", false);
     runtime = advanceCircuitClock(runtime, catalogById, 0.1);
     expect(actuator()).toContain("EXTENDED");
-    runtime.components[1].properties.inputB = true;
+    runtime = setCircuitBooleanInput(runtime, catalogById, runtime.components[1].id, "inputB", true);
     runtime = advanceCircuitClock(runtime, catalogById, 0.1);
     expect(actuator()).toBe("RETRACTED");
     runtime.components[1].properties.program = "LD I0; INVALID Q0";
@@ -25,6 +25,8 @@ describe("circuit simulation clock", () => {
     expect(executeCircuitModels(runtime, catalogById).find((run) => run.reference === "PLC1")!.output.value).toContain("ERROR: Unsupported operation");
     expect(resetCircuitClock(runtime, catalogById).components[1].properties.runtimeQ0).toBeUndefined();
     expect(plc.properties.runtimeQ0).toBeUndefined();
+    expect(design.components[0].properties.detected).toBe(true);
+    for (const property of ["program", "runtimeQ0", "missing"]) expect(() => setCircuitBooleanInput(runtime, catalogById, plc.id, property, true)).toThrow();
   });
   it.each(["positive", "negative"])("emits a single wired %s edge pulse per transition", (kind) => {
     let runtime = structuredClone(templateLibrary[3].document);
