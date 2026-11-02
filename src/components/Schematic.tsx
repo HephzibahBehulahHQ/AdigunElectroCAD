@@ -38,7 +38,10 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   for (const component of document.components.filter((item) => document.id !== "reference-dol-motor-starter" || !staticComponentIds.has(item.id))) {
     const definition = catalogById.get(component.definitionId);
     definition?.terminals.forEach((terminal, index) => {
-      const offset = rotateOffset(index % 2 ? 32 : -32, -15 + Math.floor(index / 2) * 12, component.rotation);
+      const sixTerminal = definition.id === "motor.six-terminal";
+      const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
+      const y = sixTerminal ? index < 3 ? -27 : index < 6 ? 27 : 0 : -15 + Math.floor(index / 2) * 12;
+      const offset = rotateOffset(x, y, component.rotation);
       anchors.push(anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y));
     });
   }
@@ -67,10 +70,21 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
   children: <rect x={x} y={y} width={width} height={height} rx="6" className="selection-boundary" />,
 });
 
+function SixTerminalWindings({ x, y }: { x: number; y: number }) {
+  return <g aria-label="Six winding terminals U1 V1 W1 U2 V2 W2">
+    {[-30, 0, 30].map((offset, index) => <g key={offset}>
+      <path d={`M${x + offset} ${y - 27}V${y - 5}M${x + offset} ${y + 5}V${y + 27}`} stroke="#24456b" strokeWidth="2" />
+      <rect x={x + offset - 5} y={y - 5} width="10" height="10" fill="none" stroke="#24456b" strokeWidth="2" />
+      <text x={x + offset} y={y - 14} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U1", "V1", "W1"][index]}</text>
+      <text x={x + offset} y={y + 20} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U2", "V2", "W2"][index]}</text>
+    </g>)}
+  </g>;
+}
+
 function PlacedSymbol({ component, selectedComponentId, onSelect }: { component: CircuitDocument["components"][number]; selectedComponentId: string; onSelect: (componentId: string) => void }) {
   const definition = catalogById.get(component.definitionId);
   return <g onClick={() => onSelect(component.id)} className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
-    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</g>
+    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
     <text x={component.x} y={component.y + 45} className="free-reference" textAnchor="middle" textLength={component.reference.length > 9 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
     <text x={component.x} y={component.y + 62} className="free-kind" textAnchor="middle">{definition?.referencePrefix ?? "?"}</text>
   </g>;
