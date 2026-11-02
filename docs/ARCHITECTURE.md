@@ -24,5 +24,4 @@ The DOL motor project is an educational, simplified model. It validates terminal
 
 ## Not in this increment
 
-The 638-entry catalog is not presented as manufacturer certified; the 500 templates are not presented as runnable simulations. PLC/Ladder integration, cloud accounts, advanced reports beyond the current sheet BOM/wire/terminal lists, measured hardware characteristics and an Adigun BOT service are not present. No Supabase project has been provisioned for this product.
-
+The 640-entry catalog is not manufacturer certified; the 500 project entries are mostly parameter variants rather than independently engineered projects. A limited scanned PLC interpreter, graphical contact/coil editor and account-scoped Supabase persistence are implemented; their exact verification boundaries are recorded in PLC-PROGRAMS.md and AUTH-RLS-VERIFICATION-2026-11-02.md. Local-rule Adigun Bot analysis uses the current canvas, explicit wire previews and atomic validation; Bot edits pause autosave. A generative Bot service, full IEC PLC execution, advanced reports beyond current sheet lists and measured hardware characteristics remain incomplete. The product uses only the adigunelectrocad schema.

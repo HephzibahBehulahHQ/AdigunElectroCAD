@@ -22,6 +22,7 @@ import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCirc
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
 import { LadderEditor } from "../components/LadderEditor";
+import { LiveCopilot } from "../components/LiveCopilot";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
@@ -50,6 +51,8 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
+  const latestProject = useRef(project);
+  latestProject.current = project;
   const [activeSheetId, setActiveSheetId] = useState("sheet-dol");
   const [schematicZoom, setSchematicZoom] = useState(.85);
   const [showGrid, setShowGrid] = useState(true);
@@ -60,6 +63,8 @@ export function App() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [locale, setLocale] = useState<Locale>("en");
   const [dirty, setDirty] = useState(false);
+  const [botOpen, setBotOpen] = useState(false);
+  const [botEditsUnsaved, setBotEditsUnsaved] = useState(false);
   const [notice, setNotice] = useState("DOL starter ready — local-only project storage.");
   const [simulation, setSimulation] = useState<DolSimulationState>(() => initialDolState());
   const [isRunning, setIsRunning] = useState(false);
@@ -186,7 +191,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || botEditsUnsaved) return;
     const timer = window.setTimeout(() => {
       try {
         writeLocalProject(window.localStorage, STORAGE_KEY, project);
@@ -196,7 +201,7 @@ export function App() {
       }
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [dirty, project]);
+  }, [dirty, project, botEditsUnsaved]);
 
   const recordEdit = (next: ElectricalProject) => {
     setHistory((state) => recordProjectEdit(state, project));
@@ -234,9 +239,11 @@ export function App() {
   };
 
   const saveLocally = () => {
+    if (botEditsUnsaved && (!authUser || anonymousSession)) { setAuthOpen(true); setAuthMessage("Sign in to a permanent account before saving Bot edits. They remain on the canvas without autosave."); return; }
     try {
       writeLocalProject(window.localStorage, STORAGE_KEY, project);
       setDirty(false);
+      setBotEditsUnsaved(false);
       setNotice(t.projectSaved);
     } catch {
       setDirty(true);
@@ -245,6 +252,7 @@ export function App() {
   };
 
   const saveToCloud = async () => {
+    if (botEditsUnsaved && (!authUser || anonymousSession)) { setAuthOpen(true); setAuthMessage("Sign in to a permanent account before saving Bot edits."); return; }
     if (!authUser) {
       setAuthOpen(true);
       setAuthMessage("Sign in or create an account before saving a new cloud project.");
@@ -261,7 +269,9 @@ export function App() {
       const selection = { userId: authUser.id, projectId: saved.id };
       setCloudSelection(selection);
       try { rememberCloudProjectSelection(window.localStorage, selection); } catch { /* The current session still retains its selection. */ }
+      if (latestProject.current !== project) { setNotice("The cloud saved the earlier project snapshot. Newer edits remain unsaved."); return; }
       setDirty(false);
+      setBotEditsUnsaved(false);
       setNotice(`${project.name} saved to the authenticated cloud account.`);
     } catch (error) {
       setNotice(`Cloud save failed: ${error instanceof Error ? error.message : "unknown error"}`);
@@ -294,6 +304,7 @@ export function App() {
       setCloudSelection(selection);
       try { rememberCloudProjectSelection(window.localStorage, selection); } catch { /* The current session still retains its selection. */ }
       setDirty(false);
+      setBotEditsUnsaved(false);
       setNotice(`${restored.name} loaded from the authenticated cloud account.`);
     } catch (error) {
       setNotice(`Cloud load failed: ${error instanceof Error ? error.message : "unknown error"}`);
@@ -770,7 +781,7 @@ export function App() {
           <button className="icon-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷</button>
           <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)} aria-label="Interface language"><option value="en">EN</option><option value="de">DE</option></select>
           <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)} aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select>
-          <button className="bot-button" onClick={() => setNotice("Adigun BOT requires a separately configured secure service; it is not enabled in this foundation.")}>◌ Adigun BOT</button>
+          <button className="bot-button" onClick={() => setBotOpen((value) => !value)} aria-expanded={botOpen}>◌ Adigun BOT</button>
           <button className="account-button" onClick={() => setAuthOpen((open) => !open)}>{authUser ? anonymousSession ? "Guest preview" : "Account" : "Sign in"}</button>
         </div>
       </header>
@@ -836,6 +847,8 @@ export function App() {
 
         <aside className="panel properties-panel">
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? "—"}</span></div>
+          <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={circuitModelRuns.find((run) => run.componentId === selectedComponentId)?.output} open={botOpen} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); setBotEditsUnsaved(true); updateDocument(next); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />
+          {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
           {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : <p className="empty">Select a component or manual wire to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Timer runtime running." : runtimeDocument ? "Timer runtime paused or reset." : "Ready for runtime simulation."}</div><div>Run advances catalog timers; Pause retains their state; Stop resets timing.</div></section>}

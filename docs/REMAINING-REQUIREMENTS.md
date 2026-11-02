@@ -4,7 +4,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 ## Live Adigun Bot addendum
 
-The active goal also includes the user's full live co-pilot request, retained verbatim in `ADIGUN-BOT-LIVE-COPILOT-REQUEST.txt`. Its implementation and required tests remain pending. This adds live canvas observation, evidence-based assistance, user-approved preview/rollback actions, quiet-time controls, guest assistance with authenticated saving, and the requested HELP documentation. It does not replace the existing CAD, simulation, library, authentication, visual or deployment requirements.
+The active goal also includes the user's full live co-pilot request, retained verbatim in `ADIGUN-BOT-LIVE-COPILOT-REQUEST.txt`. A local-rule foundation now implements canvas observation, selected-component explanations, supported wiring findings, preview/atomic acceptance, quiet-time controls and session goals/dismissals. Bot changes pause autosave and require a permanent account for explicit local/cloud saving. See `HELP.md`. Unit tests cover findings, ambiguity, branch-input selection, stale/invalid-preview rollback, activity suppression and rate limiting. Browser co-pilot interaction remains unverified. Generative AI, broader goal-dependent planning, missing physical power/ground analysis, and general multi-component completion remain incomplete. The addendum does not replace the existing CAD, simulation, library, authentication, visual or deployment requirements.
 
 ## Project library
 
