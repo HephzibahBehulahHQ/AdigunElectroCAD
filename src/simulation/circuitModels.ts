@@ -102,7 +102,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (p.energized) p.nominalSpeedRpm = Number(p.nominalSpeedRpm) * frequency! / Number(p.ratedFrequencyHz ?? 50);
   }
   const inputUnits = new Map<string, SignalUnit>();
-  for (let iteration = 0; iteration < 12; iteration += 1) {
+  for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
     let changed = false;
     for (const component of document.components) {
       const definition = definitionsByComponent.get(component.id);

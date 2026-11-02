@@ -5,6 +5,14 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("propagates a signal through more than twelve reverse-ordered blocks", () => {
+    const document = createDolMotorStarter();
+    const chain = Array.from({ length: 24 }, (_, index) => ({ id: `chain-${index}`, reference: `K${index}`, definitionId: "logic.no-contact", x: index * 100, y: 100, rotation: 0 as const, properties: { input: index === 0 } }));
+    document.components.push(...chain.reverse());
+    for (let index = 0; index < 23; index++) document.wires.push({ id: `chain-wire-${index}`, from: { componentId: `chain-${index}`, terminalId: "out" }, to: { componentId: `chain-${index + 1}`, terminalId: "in" }, points: [], netName: "CHAIN" });
+    const run = executeCircuitModels(document, catalogById).find((item) => item.componentId === "chain-23");
+    expect(run?.output.value).toBe("ON");
+  });
   it("drops the wired actuator when either safety channel opens", () => {
     const document = structuredClone(templateLibrary[4].document);
     document.components[2].properties.returnSpring = true;
