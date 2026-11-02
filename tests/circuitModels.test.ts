@@ -5,6 +5,19 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("drops the wired actuator when either safety channel opens", () => {
+    const document = structuredClone(templateLibrary[4].document);
+    document.components[2].properties.returnSpring = true;
+    const actuator = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "Y1")!.output.value;
+    expect(actuator()).toContain("EXTENDED");
+    for (const channel of ["channelAClosed", "channelBClosed"]) {
+      document.components[0].properties[channel] = false;
+      expect(actuator()).toBe("RETRACTED");
+      document.components[0].properties[channel] = true;
+    }
+    document.components[1].properties.continuityClosed = false;
+    expect(actuator()).toBe("RETRACTED");
+  });
   it("holds a wired relay and actuator off until the timer expires", () => {
     const document = structuredClone(templateLibrary[3].document);
     const timer = document.components[0];

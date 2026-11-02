@@ -9,6 +9,7 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
@@ -119,7 +120,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         }
       }
       const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties);
-      const contactOutput = definition.simulationModelId === "catalog-on-delay-timer" ? "18" : definition.simulationModelId === "catalog-interface-relay" ? "14" : undefined;
+      const contactOutput = definition.simulationModelId === "catalog-on-delay-timer" ? "18" : definition.simulationModelId === "catalog-interface-relay" ? "14" : definition.simulationModelId === "catalog-feed-through-terminal" ? "2" : undefined;
       const output = definition.terminals.find((terminal) => contactOutput ? terminal.id === contactOutput : terminal.direction === "output");
       if (signal !== undefined && output) {
         const key = endpointKey(component.id, output.id);
