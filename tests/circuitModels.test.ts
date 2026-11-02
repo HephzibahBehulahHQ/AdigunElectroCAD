@@ -5,6 +5,15 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("propagates sensor inputs and PLC output commands through catalog wires", () => {
+    const document = structuredClone(templateLibrary[2].document);
+    document.components[0].properties.detected = false;
+    document.components[1].properties.output = false;
+    document.components[2].properties.returnSpring = true;
+    const runs = executeCircuitModels(document, catalogById);
+    expect(runs.find((run) => run.reference === "PLC1")?.output.value).toContain("I0 OFF");
+    expect(runs.find((run) => run.reference === "Y1")?.output.value).toBe("RETRACTED");
+  });
   it("scales motor speed with drive frequency and stops at zero command", () => {
     const document = structuredClone(templateLibrary[1].document);
     document.components[3].properties.nominalSpeedRpm = 1500;
