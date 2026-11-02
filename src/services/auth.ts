@@ -25,11 +25,16 @@ export async function signUp(email: string, password: string) {
 
 export async function beginAnonymousUpgrade(email: string) {
   const { error } = await supabaseClient().auth.updateUser({ email });
-  if (error) return { existingEmail: existingEmail(error.message), message: error.message };
-  return { existingEmail: false, message: "Confirmation email sent. Open it, return to this session, then set a password." };
+  if (error) return { sent: false, existingEmail: existingEmail(error.message), message: error.message };
+  return { sent: true, existingEmail: false, message: "Confirmation email sent. Open it, return to this session, then set a password." };
 }
 
 export async function finishAnonymousUpgrade(password: string) {
+  const { data: current, error: userError } = await supabaseClient().auth.getUser();
+  if (userError) throw userError;
+  if (!current.user?.email_confirmed_at || isAnonymousUser(current.user)) {
+    throw new Error("Confirm your email before setting a password.");
+  }
   const { data, error } = await supabaseClient().auth.updateUser({ password });
   if (error) throw error;
   return data.user;
@@ -39,4 +44,3 @@ export async function signOut() {
   const { error } = await supabaseClient().auth.signOut();
   if (error) throw error;
 }
-

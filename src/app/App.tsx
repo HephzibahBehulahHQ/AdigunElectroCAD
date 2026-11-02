@@ -35,6 +35,7 @@ const copy = {
 
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
 const CLOUD_PROJECT_KEY = "adigun-electro-cad.cloud-project-id.v1";
+const UPGRADE_USER_KEY = "adigun-electro-cad.upgrade-user.v1";
 const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
 export function App() {
@@ -79,6 +80,7 @@ export function App() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const [upgradeUserId, setUpgradeUserId] = useState(() => window.localStorage.getItem(UPGRADE_USER_KEY) ?? "");
   const [cloudProjectId, setCloudProjectId] = useState(() => window.localStorage.getItem(CLOUD_PROJECT_KEY) ?? "");
   const t = copy[locale];
   const anonymousSession = isAnonymousUser(authUser);
@@ -280,12 +282,18 @@ export function App() {
 
   const beginUpgrade = async () => {
     const result = await beginAnonymousUpgrade(authEmail);
+    if (result.sent && authUser) {
+      window.localStorage.setItem(UPGRADE_USER_KEY, authUser.id);
+      setUpgradeUserId(authUser.id);
+    }
     setAuthMessage(result.existingEmail ? "That email already has an account. Use Sign in with password instead." : result.message);
   };
 
   const finishUpgrade = async () => {
     try {
       const user = await finishAnonymousUpgrade(authPassword);
+      window.localStorage.removeItem(UPGRADE_USER_KEY);
+      setUpgradeUserId("");
       setAuthUser(user);
       setAuthMessage("Password set. The anonymous account is now linked to the confirmed email.");
     } catch (error) {
@@ -708,6 +716,7 @@ export function App() {
         <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
         {!authUser && <div className="auth-fields"><label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in</button><button onClick={() => void authenticate("sign-up")}>Create account</button><button onClick={() => void startPreview()}>Start preview</button></div></div>}
         {anonymousSession && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div></div>}
+        {authUser && !anonymousSession && upgradeUserId === authUser.id && <div className="auth-fields"><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div>}
         {authUser && !anonymousSession && <div className="auth-actions"><span>{authUser.email ?? "Confirmed account"}</span><button onClick={() => void signOut().then(() => { setAuthUser(null); setAuthMessage("Signed out."); }).catch((error) => setAuthMessage(error instanceof Error ? error.message : "Sign out failed."))}>Sign out</button></div>}
         {authMessage && <p className="auth-message">{authMessage}</p>}
       </section>}
@@ -807,4 +816,3 @@ function ProjectReports({ sheetName, report, onExport, onClose }: { sheetName: s
 function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>No entries on this sheet.</td></tr>}</tbody></table></div></section>;
 }
-
