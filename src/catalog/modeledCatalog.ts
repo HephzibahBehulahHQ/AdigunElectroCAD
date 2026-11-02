@@ -35,6 +35,7 @@ const families: ModeledFamily[] = [
 export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap((family) => Array.from({ length: family.count }, (_, index) => {
   const variant = index + 1;
   const propertiesSchema = family.properties(variant);
+  if (family.id === "plc-digital-io") propertiesSchema.program = "";
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
     name: `${family.name} ${family.series} · ${propertiesSchema.nominalVoltageV} V / ${propertiesSchema.ratedCurrentA} A`,
@@ -46,7 +47,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,
-    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.`,
+    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: LD/LDN, AND/ANDN, OR/ORN, XOR with I0/I1/Q0; OUT/SET/RESET Q0. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0. Empty Program uses manual Output." : ""}`,
     standardsReferences: [family.standardsReference],
   };
 }));
