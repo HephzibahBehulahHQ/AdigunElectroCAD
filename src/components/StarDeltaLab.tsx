@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { initialStarDeltaState, starDeltaContacts, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
+import { initialStarDeltaState, starDeltaContacts, starDeltaWindingPoint, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
 
 export function StarDeltaLab() {
   const [state, setState] = useState(initialStarDeltaState);
   const [running, setRunning] = useState(false);
+  const [voltage, setVoltage] = useState("400");
+  const [resistance, setResistance] = useState("10");
+  const [reactance, setReactance] = useState("10");
+  const values = [voltage, resistance, reactance].map(Number);
+  const valid = [voltage, resistance, reactance].every((value) => value.trim() !== "") && values.every(Number.isFinite) && values[0] >= 0 && values[1] > 0 && values[2] >= 0;
+  const winding = valid ? starDeltaWindingPoint(state, values[0], values[1], values[2]) : null;
   const contacts = starDeltaContacts(state);
   const act = (action: StarDeltaAction) => setState((previous) => transitionStarDelta(previous, action));
   useEffect(() => {
@@ -14,6 +20,12 @@ export function StarDeltaLab() {
   return <section className="console-section" aria-label="Star delta starter laboratory" style={{ gridColumn: "1 / -1", minWidth: 0 }}>
     <strong>Star–Delta Starter · Open Transition</strong>
     <p>5 s star period · 200 ms break before delta · educational switching model.</p>
+    <div className="auth-fields">
+      <label>Line voltage (V)<input type="number" min="0" value={voltage} onChange={(event) => setVoltage(event.target.value)} /></label>
+      <label>Resistance per winding (Ω)<input type="number" min="0.001" step="0.1" value={resistance} onChange={(event) => setResistance(event.target.value)} /></label>
+      <label>Reactance per winding (Ω)<input type="number" min="0" step="0.1" value={reactance} onChange={(event) => setReactance(event.target.value)} /></label>
+    </div>
+    {winding ? <p>Winding voltage: {winding.windingVoltageV.toFixed(2)} V · Winding current: {winding.windingCurrentA.toFixed(2)} A · Line current: {winding.lineCurrentA.toFixed(2)} A · Real power: {(winding.realPowerW / 1000).toFixed(2)} kW</p> : <p role="alert">Enter finite values: voltage and reactance ≥ 0; winding resistance &gt; 0.</p>}
     <svg viewBox="0 0 600 300" role="img" aria-label={`Motor winding connections: ${state.stage}`} style={{ width: "100%", maxWidth: 600, background: "#f4f8fc", borderRadius: 6 }}>
       <g stroke="#24456b" strokeWidth="3" fill="none">
         {[150, 300, 450].map((x) => <g key={x}><path d={`M${x} 50V100M${x} 175V220`} stroke={contacts.main ? "#15803d" : "#64748b"} /><rect x={x - 15} y="100" width="30" height="75" /></g>)}
@@ -35,6 +47,6 @@ export function StarDeltaLab() {
       <button onClick={() => act("reset-overload")}>Reset starter overload</button>
     </div>
     <p aria-live="polite">Stage: {state.stage} · Main KM1: {contacts.main ? "ON" : "OFF"} · Star KM2: {contacts.star ? "ON" : "OFF"} · Delta KM3: {contacts.delta ? "ON" : "OFF"}</p>
-    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. This view shows switching connections; winding current, torque, and acceleration are not yet calculated.</p>
+    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Balanced fixed-impedance winding calculation; slip, torque, and acceleration are not modeled.</p>
   </section>;
 }
