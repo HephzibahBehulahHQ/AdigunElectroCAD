@@ -11,15 +11,17 @@ const bool = (properties: Properties, key: string) => properties[key] === true;
 const text = (properties: Properties, key: string, fallback = "") => typeof properties[key] === "string" ? properties[key] : fallback;
 const binary = (value: boolean) => value ? "ON" : "OFF";
 const signal = (unit: SignalUnit, value: boolean | number): FunctionalSignal => ({ unit, value });
+const memory = (p: Properties) => bool(p, typeof p.runtimePrevious === "boolean" ? "runtimePrevious" : "previous");
+const edgeOutput = (p: Properties, kind: "positive" | "negative") => typeof p.scanOutput === "boolean" ? p.scanOutput : edgeTrigger(memory(p), bool(p, "input"))[kind];
 
 const models: Record<string, Model> = {
   "logic-no": (p) => ({ label: "NO output", value: binary(normallyOpen(bool(p, "input"))) }),
   "logic-nc": (p) => ({ label: "NC output", value: binary(normallyClosed(bool(p, "input"))) }),
   "logic-output-coil": (p) => ({ label: "Coil", value: binary(outputCoil(bool(p, "input"))) }),
-  "logic-set-coil": (p) => ({ label: "Latch", value: binary(setResetLatch(bool(p, "previous"), bool(p, "input"), false)) }),
-  "logic-reset-coil": (p) => ({ label: "Latch", value: binary(setResetLatch(bool(p, "previous"), false, bool(p, "input"))) }),
-  "logic-edge-positive": (p) => ({ label: "Positive edge", value: binary(edgeTrigger(bool(p, "previous"), bool(p, "input")).positive) }),
-  "logic-edge-negative": (p) => ({ label: "Negative edge", value: binary(edgeTrigger(bool(p, "previous"), bool(p, "input")).negative) }),
+  "logic-set-coil": (p) => ({ label: "Latch", value: binary(setResetLatch(memory(p), bool(p, "input"), false)) }),
+  "logic-reset-coil": (p) => ({ label: "Latch", value: binary(setResetLatch(memory(p), false, bool(p, "input"))) }),
+  "logic-edge-positive": (p) => ({ label: "Positive edge", value: binary(edgeOutput(p, "positive")) }),
+  "logic-edge-negative": (p) => ({ label: "Negative edge", value: binary(edgeOutput(p, "negative")) }),
   ...Object.fromEntries((["and", "or", "not", "nand", "nor", "xor"] as const).map((kind) => [`logic-gate-${kind}`, (p: Properties) => ({ label: `${kind.toUpperCase()} output`, value: binary(logicGate(kind, [bool(p, "inputA"), bool(p, "inputB")])) })])),
   ...Object.fromEntries((["greater-than", "less-than", "equal-to"] as const).map((kind) => [`logic-comparator-${kind}`, (p: Properties) => ({ label: "Comparator", value: binary(compare(kind, number(p, "left"), number(p, "right"))) })])),
   ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, number(p, "left"), number(p, "right")); return { label: "Math output", value: result.ok ? String(result.value) : result.reason }; }])),
@@ -116,10 +118,10 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "logic-no") return signal("boolean", normallyOpen(bool(properties, "input")));
   if (modelId === "logic-nc") return signal("boolean", normallyClosed(bool(properties, "input")));
   if (modelId === "logic-output-coil") return signal("boolean", outputCoil(bool(properties, "input")));
-  if (modelId === "logic-set-coil") return signal("boolean", setResetLatch(bool(properties, "previous"), bool(properties, "input"), false));
-  if (modelId === "logic-reset-coil") return signal("boolean", setResetLatch(bool(properties, "previous"), false, bool(properties, "input")));
-  if (modelId === "logic-edge-positive") return signal("boolean", edgeTrigger(bool(properties, "previous"), bool(properties, "input")).positive);
-  if (modelId === "logic-edge-negative") return signal("boolean", edgeTrigger(bool(properties, "previous"), bool(properties, "input")).negative);
+  if (modelId === "logic-set-coil") return signal("boolean", setResetLatch(memory(properties), bool(properties, "input"), false));
+  if (modelId === "logic-reset-coil") return signal("boolean", setResetLatch(memory(properties), false, bool(properties, "input")));
+  if (modelId === "logic-edge-positive") return signal("boolean", edgeOutput(properties, "positive"));
+  if (modelId === "logic-edge-negative") return signal("boolean", edgeOutput(properties, "negative"));
   const gate = modelId.replace("logic-gate-", "");
   if (["and", "or", "not", "nand", "nor", "xor"].includes(gate)) return signal("boolean", logicGate(gate as "and" | "or" | "not" | "nand" | "nor" | "xor", [bool(properties, "inputA"), bool(properties, "inputB")]));
   const comparator = modelId.replace("logic-comparator-", "");
