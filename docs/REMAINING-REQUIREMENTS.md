@@ -2,6 +2,10 @@
 
 The master goal remains incomplete. Passing the current tests does not establish the full requested application.
 
+## Live Adigun Bot addendum
+
+The active goal also includes the user's full live co-pilot request, retained verbatim in `ADIGUN-BOT-LIVE-COPILOT-REQUEST.txt`. Its implementation and required tests remain pending. This adds live canvas observation, evidence-based assistance, user-approved preview/rollback actions, quiet-time controls, guest assistance with authenticated saving, and the requested HELP documentation. It does not replace the existing CAD, simulation, library, authentication, visual or deployment requirements.
+
 ## Project library
 
 `src/projects/templateLibrary.ts` contains 499 parameter variants from five scenario families and one dedicated analog level/ADC/PLC project. This is not 500 independently engineered projects. Separate forward/reverse and star-delta laboratories provide stateful sequences and editable power circuits. Multi-motor sequences and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
