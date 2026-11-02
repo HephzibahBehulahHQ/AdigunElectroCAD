@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { acceptCopilotPreview, analyzeCanvas, describeCanvasChange, nextCopilotFinding, previewCopilotConnection, type CopilotFinding, type CopilotPreview } from "../copilot/canvasAnalysis";
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
+import { observeUnconnectedTimers } from "../copilot/timerObservation";
 
 export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulationState, liveOutput, open, onOpen, onApply, editable }: {
   canvas: CircuitDocument; projectId: string; catalog: Map<string, ElectricalComponentDefinition>; selectedId: string;
@@ -31,6 +32,7 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
   useEffect(() => { analyzeAfter.current = Date.now() + 700; }, [canvas, goal]);
   useEffect(() => { setLastChange(describeCanvasChange(previousCanvas.current, canvas)); previousCanvas.current = canvas; }, [canvas]);
   useEffect(() => { currentOffer.current = null; setOffer(null); setPreview(null); unconnectedSince.current.clear(); }, [canvas.id]);
+  useEffect(() => { unconnectedSince.current = observeUnconnectedTimers(canvas, catalog, unconnectedSince.current, Date.now(), enabled).since; }, [canvas, catalog, enabled]);
   useEffect(() => {
     const touch = () => { activity.current.lastInteractionAt = Date.now(); };
     const down = () => { touch(); activity.current.dragging = true; };
@@ -44,15 +46,9 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
 
   const findings = (now: number) => {
     const state = latest.current;
-    const durations = new Map<string, number>();
-    for (const component of state.canvas.components) {
-      const key = `${state.canvas.id}:${component.id}`;
-      if (state.catalog.get(component.definitionId)?.simulationModelId !== "catalog-on-delay-timer") continue;
-      const connected = state.canvas.wires.some((wire) => [wire.from, wire.to].some((endpoint) => endpoint.componentId === component.id && endpoint.terminalId === "18"));
-      if (connected) unconnectedSince.current.delete(key);
-      else { if (!unconnectedSince.current.has(key)) unconnectedSince.current.set(key, now); durations.set(component.id, now - unconnectedSince.current.get(key)!); }
-    }
-    return analyzeCanvas(state.canvas, state.catalog, state.goal, durations).map((finding) => ({ ...finding, id: `${state.canvas.id}:${finding.id}` }));
+    const observed = observeUnconnectedTimers(state.canvas, state.catalog, unconnectedSince.current, now, enabled);
+    unconnectedSince.current = observed.since;
+    return analyzeCanvas(state.canvas, state.catalog, state.goal, observed.elapsed).map((finding) => ({ ...finding, id: `${state.canvas.id}:${finding.id}` }));
   };
   const show = (finding: CopilotFinding) => {
     currentOffer.current = finding; setOffer(finding); setMore(false); setMessage(""); setPreview(null);
