@@ -94,6 +94,17 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
   .workspace > .panel { max-height: 780px; }
   .workspace > .drawing-area { min-height: 700px; }
 }
+.copilot-panel { min-width: 0; border-bottom: 1px solid var(--border); }
+.copilot-panel:empty { display: none; }
+.copilot-panel > :not(.copilot-peek) { margin: 10px; }
+.copilot-panel p, .copilot-panel span { font-size: .73rem; line-height: 1.5; overflow-wrap: anywhere; }
+.copilot-panel label { display: grid; gap: 5px; min-width: 0; font-size: .72rem; }
+.copilot-panel input:not([type=checkbox]) { min-width: 0; width: 100%; padding: 7px; color: var(--text); background: var(--bg); border: 1px solid var(--border); }
+.copilot-heading, .copilot-actions, .copilot-peek { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.copilot-peek { padding: 10px; }
+.copilot-heading strong { font-size: .78rem; }
+.copilot-panel button { max-width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; white-space: normal; overflow-wrap: anywhere; }
+.copilot-offer { padding: 8px; border: 1px solid var(--border); background: var(--surface-2); }
 .ladder-editor { min-width: 0; padding: 12px; border-top: 1px solid var(--border); }
 .ladder-editor p, .ladder-editor label { font-size: .72rem; line-height: 1.5; overflow-wrap: anywhere; }
 .ladder-editor fieldset { min-width: 0; margin: 12px 0; padding: 8px; border: 1px solid var(--border); }

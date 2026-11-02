@@ -1,0 +1,29 @@
+# AdigunElectroCAD help
+
+## Table of contents
+
+- [The live co-pilot](#the-live-co-pilot)
+- [Graphical PLC programming](#graphical-plc-programming)
+- [Saving and recovery](#saving-and-recovery)
+
+## The live co-pilot
+
+Open **Adigun BOT** in the header. Its panel sits in the Properties column and leaves the drawing accessible. Toggle **Live co-pilot** to enable or disable proactive offers. A small inline offer can appear while the full panel is closed; open it or dismiss it without interrupting the canvas.
+
+The current co-pilot uses local canvas rules. It receives design changes with a short debounce, tracks the latest placement/move/wire/delete, and displays the selected component's current model result and simulation state. It can identify an unwired coil input, an AND gate with one connected input, multiple output drivers, topology errors and a timer output left unconnected for 20 seconds. Unwired model inputs may still use manual parameters; a missing wire alone is not proof that an output can never turn on. The co-pilot does not certify physical power, grounding or safety.
+
+Proactive offers wait until editing is quiet. They are suppressed during pointer operations or focused text/control editing and are spaced at least 25 seconds apart. Dismissed findings stay suppressed for the current project session. **Inspect current sheet** requests an immediate supported check.
+
+An offered wire fix names its source and destination and previews that one wire will be added. **Accept wire fix** applies it only after checking that the sheet still matches the preview and that the proposed topology is valid. A stale or invalid preview leaves the original sheet unchanged; use **Refresh preview** to review the current sheet. **Undo** reverses a successfully applied fix. No components or existing wires are changed by this fix. The co-pilot offers a source only when exactly one unused compatible Boolean output exists; choosing the intended circuit remains the user's decision. **Tell me more** explains the evidence behind an offer.
+
+Guests can receive explanations, preview offers and apply a fix to the canvas. Bot edits never auto-save. Autosave remains paused until an explicit save; saving Bot edits to local storage or cloud requires a permanent signed-in account. Sign in, then use File → Save locally or Save to cloud. Closing or refreshing without saving can discard those edits.
+
+Enter **Project goal** and choose **Remember project goal** to keep an answer for this project during the current session. Select a component and choose **What does this do?**, or ask about it in **Ask about this canvas**, to see its catalog explanation, actual connected terminals and live result. Goals and dismissals are session-only. A secure generative AI service is not configured: broad natural-language planning, automatic multi-component completion and general intent inference remain unsupported. The panel identifies this limitation rather than pretending to provide those capabilities.
+
+## Graphical PLC programming
+
+See [PLC programs](PLC-PROGRAMS.md) for contact/coil editing, branch compilation, numeric registers, supported instructions and execution limits. Apply a graphical draft to commit it; ordinary draft changes do not alter the running design until Apply.
+
+## Saving and recovery
+
+See [local recovery](LOCAL-RECOVERY.md) for current/previous saves and [cloud project selection](CLOUD-PROJECT-SELECTION.md) for account-scoped cloud IDs. Cloud authentication and verification boundaries are recorded in [auth/RLS verification](AUTH-RLS-VERIFICATION-2026-11-02.md).

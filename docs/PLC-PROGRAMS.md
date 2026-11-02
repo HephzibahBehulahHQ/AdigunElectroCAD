@@ -32,7 +32,7 @@ Existing programs are imported only when the editor can reproduce their exact in
 
 Compiled parallel groups after the first series stage use PUSH, a new LD/LDN expression, and ANDPOP. The text interpreter also supports ORPOP. These no-operand Boolean stack instructions require an initialized accumulator, a balanced stack and at most eight nested levels. Invalid branch instructions force Q0 off. The graphical editor accepts its own canonical contact/coil subset and rejects other stack layouts rather than guessing their meaning.
 
-Automated tests cover branch truth tables, exact import/compile round trips, rejection of ambiguous text, reset priority, instruction limits and a compiled start/stop ladder driving a wired coil through start/release/stop/release. Production graphical-editor interaction remains unverified.
+Automated tests cover branch truth tables, exact import/compile round trips, rejection of ambiguous text, reset priority, instruction limits and a compiled start/stop ladder driving a wired coil through start/release/stop/release. Production release 672dfc36 was checked by adding a parallel I0 contact to the second stage of the holding ladder. Apply saved the matching PUSH/LDN/OR/ANDPOP program. One Undo restored the original program; Redo restored the branch. Run energized Q0, releasing the wired sensor retained Q0, and Input B stopped it. The checked diagram had no overlapping text labels or page-level horizontal overflow; its 370px diagram scrolled inside a 263px preview. This is not exhaustive coverage of all rung sizes or mobile layouts.
 
 ## Analog threshold input
 
