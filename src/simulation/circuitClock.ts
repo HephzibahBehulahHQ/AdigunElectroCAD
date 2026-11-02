@@ -1,7 +1,7 @@
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
 import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
-import { scanPlcProgram } from "./plcProgram";
+import { PLC_REGISTER_COUNT, scanPlcProgram } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
 
 export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
@@ -28,6 +28,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeQ0; delete properties.runtimeError;
+    for (let index = 0; index < PLC_REGISTER_COUNT; index++) delete properties[`runtimeD${index}`];
     delete properties.runtimeSafetyArmed; delete properties.runtimeResetReady; delete properties.runtimeResetPrevious;
     if (catalog.get(component.definitionId)?.simulationModelId === "catalog-on-delay-timer") properties.elapsedSeconds = 0;
     return { ...component, properties };
@@ -48,8 +49,10 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     }
     if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
-      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0));
-      return { ...component, properties: { ...component.properties, runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
+      const previousRegisters = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => Number(active[`runtimeD${index}`] ?? 0));
+      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters);
+      const registers = result.ok ? result.registers ?? previousRegisters : previousRegisters;
+      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
     }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
