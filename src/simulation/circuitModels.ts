@@ -2,7 +2,7 @@ import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModel
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
 
-export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; }
+export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; evaluatedProperties: Readonly<Record<string, string | number | boolean>>; }
 
 const endpointKey = (componentId: string, terminalId: string) => `${componentId}.${terminalId}`;
 
@@ -11,6 +11,7 @@ type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedPrope
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
   if (modelId === "catalog-motor-starter" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
+  if (modelId === "catalog-on-delay-timer" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
@@ -152,6 +153,6 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       active.lineVoltageV = supplied && new Set(sourceIds).size === 1 ? Number(properties.get(sourceIds[0])?.nominalVoltageV ?? 0) : 0;
     }
     const output = evaluateFunctionalModel(definition.simulationModelId, active);
-    return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output }] : [];
+    return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output, evaluatedProperties: { ...active } }] : [];
   });
 }
