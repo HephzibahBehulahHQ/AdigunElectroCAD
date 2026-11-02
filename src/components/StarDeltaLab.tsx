@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { applyStarDeltaState, createStarDeltaCircuit } from "../projects/starDeltaCircuit";
+import type { CircuitDocument } from "../types/electrical";
 import { initialStarDeltaState, starDeltaContacts, starDeltaWindingPoint, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
 
-export function StarDeltaLab() {
+export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: CircuitDocument) => void }) {
   const [state, setState] = useState(initialStarDeltaState);
   const [running, setRunning] = useState(false);
   const [voltage, setVoltage] = useState("400");
@@ -39,6 +41,12 @@ export function StarDeltaLab() {
       </g>
     </svg>
     <div className="auth-actions">
+      <button onClick={() => {
+        const circuit = applyStarDeltaState(createStarDeltaCircuit(), state);
+        circuit.components.find((component) => component.id === "supply")!.properties.nominalVoltageV = values[0];
+        Object.assign(circuit.components.find((component) => component.id === "motor")!.properties, { resistanceOhm: values[1], reactanceOhm: values[2] });
+        onLoadCircuit(circuit);
+      }} disabled={!valid}>Copy power circuit to new editable sheet</button>
       <button onClick={() => act(state.breakerClosed ? "open-breaker" : "close-breaker")}>{state.breakerClosed ? "Open Q1" : "Close Q1"}</button>
       <button onClick={() => act("start")}>START Star–Delta</button>
       <button onClick={() => act("stop")}>STOP Star–Delta</button>
@@ -47,6 +55,7 @@ export function StarDeltaLab() {
       <button onClick={() => act("reset-overload")}>Reset starter overload</button>
     </div>
     <p aria-live="polite">Stage: {state.stage} · Main KM1: {contacts.main ? "ON" : "OFF"} · Star KM2: {contacts.star ? "ON" : "OFF"} · Delta KM3: {contacts.delta ? "ON" : "OFF"}</p>
+    <p>The copied sheet is an independent switching snapshot. Its winding result follows its edited wires and contactor states; control/protection wiring is not included.</p>
     <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Balanced fixed-impedance winding calculation; slip, torque, and acceleration are not modeled.</p>
   </section>;
 }

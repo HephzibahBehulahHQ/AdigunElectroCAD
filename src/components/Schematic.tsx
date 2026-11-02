@@ -26,7 +26,7 @@ const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload"
 const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${endpoint.terminalId}`;
 const isSameEndpoint = (left: TerminalEndpoint | null, right: TerminalEndpoint) => Boolean(left && left.componentId === right.componentId && left.terminalId === right.terminalId);
 
-function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
+export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   const anchors: TerminalAnchor[] = document.id === "reference-dol-motor-starter" ? [
     anchor("supply", "l1", 165, 100), anchor("supply", "l2", 255, 100), anchor("supply", "l3", 345, 100), anchor("supply", "pe", 445, 100),
     anchor("breaker", "l1-in", 165, 146), anchor("breaker", "l2-in", 255, 146), anchor("breaker", "l3-in", 345, 146), anchor("breaker", "l1-out", 165, 252), anchor("breaker", "l2-out", 255, 252), anchor("breaker", "l3-out", 345, 252),
@@ -35,7 +35,7 @@ function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
     anchor("motor", "u1", 165, 516), anchor("motor", "v1", 255, 516), anchor("motor", "w1", 345, 516), anchor("motor", "pe", 445, 540),
     anchor("control", "line", 130, 730), anchor("control", "neutral", 130, 765), anchor("stop", "21", 170, 730), anchor("stop", "22", 280, 730), anchor("start", "13", 440, 730), anchor("start", "14", 548, 730),
   ] : [];
-  for (const component of document.components.filter((item) => !staticComponentIds.has(item.id))) {
+  for (const component of document.components.filter((item) => document.id !== "reference-dol-motor-starter" || !staticComponentIds.has(item.id))) {
     const definition = catalogById.get(component.definitionId);
     definition?.terminals.forEach((terminal, index) => {
       const offset = rotateOffset(index % 2 ? 32 : -32, -15 + Math.floor(index / 2) * 12, component.rotation);

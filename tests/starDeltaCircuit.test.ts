@@ -1,0 +1,20 @@
+import { expect, it } from "vitest";
+import { catalogById } from "../src/catalog/dolCatalog";
+import { validateCircuit } from "../src/electrical/topology";
+import { createStarDeltaCircuit, applyStarDeltaState } from "../src/projects/starDeltaCircuit";
+import { initialStarDeltaState, transitionStarDelta } from "../src/simulation/starDeltaStarter";
+import { executeCircuitModels } from "../src/simulation/circuitModels";
+it("derives star/delta current and invalid overlap from actual power wiring", () => {
+  const document = createStarDeltaCircuit();
+  expect(validateCircuit(document, catalogById)).toEqual([]);
+  let state = transitionStarDelta(transitionStarDelta(initialStarDeltaState(), "close-breaker"), "start");
+  const output = (circuit = applyStarDeltaState(document, state)) => executeCircuitModels(circuit, catalogById).find((run) => run.reference === "M1")!.output.value;
+  expect(output()).toBe("STAR · 230.94 V/winding · 16.33 A line");
+  state = transitionStarDelta(state, "tick", 5000);
+  expect(output()).toBe("OPEN · 0.00 V/winding · 0.00 A line");
+  state = transitionStarDelta(state, "tick", 200);
+  expect(output()).toBe("DELTA · 400.00 V/winding · 48.99 A line");
+  const invalid = applyStarDeltaState(document, state);
+  invalid.components.find((component) => component.id === "star")!.properties.energized = true;
+  expect(output(invalid)).toContain("INVALID");
+});
