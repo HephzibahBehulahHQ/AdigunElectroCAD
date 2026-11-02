@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { initialReversingState, transitionReversing, type ReversingAction } from "../simulation/reversingStarter";
+import { applyReversingState, createReversingCircuit } from "../projects/reversingCircuit";
+import type { CircuitDocument } from "../types/electrical";
 
-export function ReversingLab() {
+export function ReversingLab({ onLoadCircuit }: { onLoadCircuit: (document: CircuitDocument) => void }) {
   const [state, setState] = useState(initialReversingState);
   const [running, setRunning] = useState(false);
   const act = (action: ReversingAction) => setState((previous) => transitionReversing(previous, action));
@@ -30,6 +32,7 @@ export function ReversingLab() {
       </g>
     </svg>
     <div className="auth-actions">
+      <button onClick={() => onLoadCircuit(applyReversingState(createReversingCircuit(), state))}>Copy power circuit to new editable sheet</button>
       <button onClick={() => act(state.breakerClosed ? "open-breaker" : "close-breaker")}>{state.breakerClosed ? "Open Q1" : "Close Q1"}</button>
       <button onClick={() => act("start-forward")}>START Forward</button>
       <button onClick={() => act("start-reverse")}>START Reverse</button>
@@ -39,6 +42,7 @@ export function ReversingLab() {
       <button onClick={() => act("reset-overload")}>Reset overload</button>
     </div>
     <p aria-live="polite">{state.notice}</p>
+    <p>The copied sheet is an independent power-circuit snapshot. Control wiring and overload-device wiring are not included.</p>
     <p>KM1: {state.contactor === "forward" ? "ON" : "OFF"} · KM2: {state.contactor === "reverse" ? "ON" : "OFF"} · Speed: {state.speedRpm.toFixed(0)} rpm · Time: {(state.elapsedMs / 1000).toFixed(1)} s</p>
   </section>;
 }

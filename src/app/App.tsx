@@ -796,7 +796,19 @@ export function App() {
       </section>
 
       <section className="engineering-console">
-        <ReversingLab />
+        <ReversingLab onLoadCircuit={(circuit) => {
+          const extended = addFreeSchematicSheet(project);
+          const sheet = extended.sheets.at(-1)!;
+          const next = replaceSheetDocument(extended, sheet.id, circuit);
+          recordEdit(next);
+          setActiveSheetId(sheet.id);
+          setSelectedComponentId("breaker");
+          setSelectedWireId("");
+          setWireMode(false);
+          setWireStart(null);
+          setDirty(true);
+          setNotice("Reversing power circuit copied to a new editable sheet. Lab controls remain independent.");
+        }} />
         <div className="console-section"><strong>Simulation</strong><span className={simulation.motorState === "running" ? "badge running" : "badge"}>{simulation.motorState.toUpperCase()}</span><dl><dt>Voltage</dt><dd>{simulation.lineVoltageV.toFixed(0)} V</dd><dt>Current</dt><dd>{simulation.lineCurrentA.toFixed(1)} A</dd><dt>Speed</dt><dd>{simulation.motorSpeedRpm.toFixed(0)} rpm</dd><dt>Time</dt><dd>{(simulation.elapsedMs / 1000).toFixed(1)} s</dd></dl></div>
         <div className="console-section"><strong>{t.validation}</strong>{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}{circuitModelRuns.length > 0 && <p className="pass">✓ {circuitModelRuns.length} placed model{circuitModelRuns.length === 1 ? "" : "s"} executed: {circuitModelRuns.slice(0, 2).map((run) => `${run.reference} ${run.output.value}`).join(" · ")}{circuitModelRuns.length > 2 ? " …" : ""}</p>}<p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
         <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>

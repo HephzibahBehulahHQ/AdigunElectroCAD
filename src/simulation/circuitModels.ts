@@ -99,7 +99,13 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const frequency = motorFrequencies[0];
     const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
     p.energized = p.energized === true && uniqueFeeds && sameSource && validFrequency;
-    if (p.energized) p.nominalSpeedRpm = Number(p.nominalSpeedRpm) * frequency! / Number(p.ratedFrequencyHz ?? 50);
+    if (p.energized) {
+      const order = feeds.map((feed) => Number(feed[0].slice(-1)));
+      let inversions = 0;
+      for (let left = 0; left < order.length; left++) for (let right = left + 1; right < order.length; right++) if (order[left] > order[right]) inversions++;
+      const direction = inversions % 2 ? -1 : 1;
+      p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / Number(p.ratedFrequencyHz ?? 50) * direction;
+    }
   }
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
