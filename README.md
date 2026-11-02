@@ -7,7 +7,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Typed IEC-oriented DOL component definitions with terminals.
 - 67 executable PLC, instrumentation, pneumatic, hydraulic, HVAC, renewable, safety, panel and cable definitions with editable input parameters and per-instance live model output.
 - Placed executable components are evaluated from the active schematic document; unit-compatible functional terminal outputs propagate over direct wires, including level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil paths.
-- 520 schema-validated, IEC-oriented generic symbol templates across 16 categories; these are explicitly distinct from manufacturer-certified records.
+- 563 parameterized, IEC-oriented engineering entries: 520 across the required catalog distribution, with additional variants needed by the supplied projects and 32 dual-channel safety entries. Each has terminals, editable engineering assumptions and an executable control, numerical or connectivity abstraction; none is manufacturer-certified.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
@@ -28,7 +28,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.
 - Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
 
-The catalog contains eight supported DOL simulation definitions, 67 executable component definitions and 512 generic symbol templates, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
+The catalog contains eight supported DOL simulation definitions, 67 executable component definitions and 563 parameterized IEC engineering entries, alongside 500 topology-validated templates. It does not claim manufacturer certification, 500 runnable simulations, or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
 ## Development
 
@@ -39,3 +39,4 @@ npm run build
 ```
 
 Production target: [adigunelectrocad.hephzibahbehulah.com](https://adigunelectrocad.hephzibahbehulah.com/). Builds use root-domain asset paths.
+

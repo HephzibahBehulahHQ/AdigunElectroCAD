@@ -3,7 +3,7 @@
 | Item | Evidence | Status |
 | --- | --- | --- |
 | DOL terminal definitions | `tests/dolSimulator.test.ts` | Automated |
-| Generic catalog schema | 512 generic IEC-oriented entries across 16 categories, each with terminals and standards metadata; they are not manufacturer-certified | Automated |
+| IEC engineering catalog | 563 parameterized entries, including the required 520-category distribution, supplied-project variants and 32 safety entries, each have terminals, editable assumptions and an executable declared abstraction; they are not manufacturer-certified | Automated |
 | Executable component catalog | 67 requested component records resolve to registered models and produce a live output using their editable defaults | Automated + build validation |
 | Placed schematic execution | Functional instances placed in a circuit document execute through the registered model engine | Automated + build validation |
 | Functional signal propagation | Level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil signals propagate through direct terminal wires; incompatible units are rejected | Automated + build validation |
@@ -27,6 +27,7 @@
 | Industrial Device Lab | Pneumatic/hydraulic, HVAC, renewable-energy, safety and cable calculations execute from readable live inputs | Automated + build validation |
 | Invalid wiring detection | `tests/topology.test.ts` | Automated |
 | Production base path | `vite.config.ts` | Build validation |
+| Production custom domain | The built artifact was republished through GitHub Pages Actions and the custom address rendered the complete workspace | Automated + manually verified in browser |
 | Local workspace interaction | Breaker, START/holding, Run/Stop, catalog insertion and undo | Manually verified in browser |
 | Terminal-click wiring | Compatible terminal-to-terminal connection creates a persisted circuit wire; cross-domain wiring is rejected | Automated + manually verified in browser |
 | Wire editing | A wire can be renamed, target-reconnected with orthogonal geometry reset, and deleted without changing its source endpoint | Automated + build validation |
@@ -38,3 +39,4 @@
 | Schematic annotations | Control title and device labels are separated and fully visible | Manually verified in browser |
 
 This manifest only records checks that have been executed. It is not a claim that catalog or project-library release targets have been met.
+
