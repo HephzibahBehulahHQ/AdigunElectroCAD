@@ -14,6 +14,7 @@ const signal = (unit: SignalUnit, value: boolean | number): FunctionalSignal => 
 const memory = (p: Properties) => bool(p, typeof p.runtimePrevious === "boolean" ? "runtimePrevious" : "previous");
 const edgeOutput = (p: Properties, kind: "positive" | "negative") => typeof p.scanOutput === "boolean" ? p.scanOutput : edgeTrigger(memory(p), bool(p, "input"))[kind];
 const plcOutput = (p: Properties) => text(p, "program").trim() ? bool(p, "runtimeQ0") : bool(p, "output");
+const safetyOutput = (p: Properties) => safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "runtimeSafetyArmed"));
 
 const models: Record<string, Model> = {
   "logic-no": (p) => ({ label: "NO output", value: binary(normallyOpen(bool(p, "input"))) }),
@@ -56,7 +57,7 @@ const models: Record<string, Model> = {
   "renewable-battery-bank": (p) => ({ label: "State of charge", value: `${batteryStateOfCharge(number(p, "previousPercent"), number(p, "currentA"), number(p, "capacityAh"), number(p, "elapsedHours")).toFixed(2)}%` }),
   "renewable-inverter": (p) => ({ label: "AC output", value: `${inverterAcPowerW(number(p, "dcPowerW"), number(p, "efficiency"), number(p, "ratedPowerW")).toFixed(1)} W` }),
   "renewable-grid-tie": (p) => ({ label: "Grid tie", value: binary(gridTieClosed(bool(p, "gridPresent"), number(p, "frequencyDifferenceHz"))) }),
-  "safety-dual-relay": (p) => ({ label: "Safety relay", value: binary(safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "reset"))) }),
+  "safety-dual-relay": (p) => ({ label: "Safety relay", value: binary(safetyOutput(p)) }),
   "safety-light-curtain": (p) => ({ label: "Protected field", value: lightCurtainClear(bool(p, "interrupted")) ? "CLEAR" : "BLOCKED" }),
   "safety-pull-cord": (p) => ({ label: "Pull cord", value: pullCordHealthy(bool(p, "pulled")) ? "HEALTHY" : "TRIPPED" }),
   "safety-zero-speed": (p) => ({ label: "Zero speed", value: binary(zeroSpeedDetected(number(p, "rpm"), number(p, "thresholdRpm", 5))) }),
@@ -88,7 +89,7 @@ const models: Record<string, Model> = {
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
   "catalog-variable-frequency-drive": (p) => ({ label: "VFD output", value: bool(p, "enabled") ? `${Math.min(number(p, "commandHz"), number(p, "maximumFrequencyHz")).toFixed(1)} Hz` : "DISABLED" }),
   "catalog-solenoid-actuator": (p) => ({ label: "Actuator position", value: bool(p, "energized") ? `EXTENDED ${number(p, "strokeMm")} mm` : bool(p, "returnSpring") ? "RETRACTED" : "HOLD" }),
-  "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "reset")) ? `ENABLED · Cat ${number(p, "safetyCategory", 1)}` : "INHIBITED" }),
+  "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyOutput(p) ? "ENABLED · educational reset model" : "INHIBITED" }),
 };
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
@@ -110,7 +111,7 @@ export function hasFunctionalModel(modelId: string) { return ["thermal-overload-
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
-  if (modelId === "catalog-safety-relay") return signal("boolean", safetyRelayEnergized(bool(properties, "channelAClosed"), bool(properties, "channelBClosed"), bool(properties, "reset")));
+  if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", safetyOutput(properties));
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
   if (modelId === "catalog-on-delay-timer") return signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
   if (modelId === "catalog-interface-relay") return signal("boolean", bool(properties, "energized"));

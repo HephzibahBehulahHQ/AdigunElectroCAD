@@ -36,6 +36,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
   const variant = index + 1;
   const propertiesSchema = family.properties(variant);
   if (family.id === "plc-digital-io") propertiesSchema.program = "";
+  if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
     name: `${family.name} ${family.series} · ${propertiesSchema.nominalVoltageV} V / ${propertiesSchema.ratedCurrentA} A`,
@@ -43,7 +44,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     referencePrefix: family.referencePrefix,
     description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
     symbolId: `${family.symbolId}-${String(variant).padStart(2, "0")}`,
-    terminals: family.terminals.map((terminal) => ({ ...terminal })),
+    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : [])],
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,

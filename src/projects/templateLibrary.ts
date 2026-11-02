@@ -73,9 +73,9 @@ const scenarios: Scenario[] = [
   {
     id: "safety-output", name: "Safety relay output", category: "Safety",
     definitions: ["safety-relay", "feed-through-terminal", "solenoid-actuator"], references: ["KSR1", "X1", "Y1"], wires: [[0, "14", 1, "1"], [1, "2", 2, "a1"], [0, "a2", 2, "a2"]],
-    testSequence: () => ["Close both safety channels.", "Reset KSR1 and confirm its enable state.", "Confirm Y1 receives the enabled actuator command."],
-    properties: () => profile({ channelAClosed: true, channelBClosed: true, reset: true }, { continuityClosed: true }, { energized: true }),
-    expectations: () => [{ reference: "KSR1", label: "Safety enable", valueIncludes: "ENABLED" }, { reference: "X1", label: "Terminal continuity", valueIncludes: "CONNECTED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
+    testSequence: () => ["Run with both channels healthy and Live Reset released.", "Press Live Reset, then release it; Y1 must remain enabled.", "Open either channel, restore it with reset held, and confirm Y1 stays off until a fresh release/press reset."],
+    properties: () => profile({ channelAClosed: true, channelBClosed: true, reset: false }, { continuityClosed: true }, { energized: false, returnSpring: true }),
+    expectations: () => [{ reference: "KSR1", label: "Safety enable", valueIncludes: "INHIBITED" }, { reference: "X1", label: "Terminal continuity", valueIncludes: "CONNECTED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "RETRACTED" }],
   },
 ];
 
@@ -120,11 +120,15 @@ function createTemplate(index: number): ProjectTemplate {
       { name: "Delay expires", durationSeconds: 1, changes: [{ reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "CLOSED" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
       { name: "Timer de-energized", durationSeconds: 0.1, changes: [{ reference: "KT1", properties: { energized: false } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "0.0 / 2.0 s" }, { reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : scenario.id === "safety-output" ? [
-      { name: "Both channels healthy", changes: [{ reference: "KSR1", properties: { channelAClosed: true, channelBClosed: true, reset: true } }, { reference: "Y1", properties: { returnSpring: true, strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
-      { name: "Channel A open", changes: [{ reference: "KSR1", properties: { channelAClosed: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-      { name: "Channel B open", changes: [{ reference: "KSR1", properties: { channelAClosed: true, channelBClosed: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-      { name: "Enable absent", changes: [{ reference: "KSR1", properties: { channelBClosed: true, reset: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-      { name: "Restore enable", changes: [{ reference: "KSR1", properties: { reset: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Reset released", durationSeconds: 0.1, changes: [{ reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Accept fresh reset", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { reset: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Release reset retains enable", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { reset: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Channel A open", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { channelAClosed: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Restore A with reset held", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { channelAClosed: true, reset: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Release reset after recovery", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { reset: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Reset after recovery", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { reset: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
+      { name: "Channel B open", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { channelBClosed: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Restore B with reset held", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { channelBClosed: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : undefined,
     document: { id: `template-sheet-${String(ordinal).padStart(3, "0")}`, name, description: `Executable template ${name}. Test sequence: ${testSequence.join(" ")}`, components, wires, revision: 1 },
   };
