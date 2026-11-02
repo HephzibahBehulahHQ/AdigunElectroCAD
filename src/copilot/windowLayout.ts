@@ -2,6 +2,8 @@ export interface WindowRect { x: number; y: number; width: number; height: numbe
 export interface BotWindowLayout { version: 1; rect: WindowRect; open: boolean; mode: "normal" | "minimized" | "maximized"; restoreMode: "normal" | "maximized"; updatedAt: number; }
 export interface Viewport { width: number; height: number; }
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+// An edit must advance the revision even when the wall clock repeats or moves back.
+const nextRevision = (layout: BotWindowLayout, now: number) => Math.max(now, layout.updatedAt + 1);
 export const botWindowStorageKey = (owner: string) => `adigun-electro-cad.bot-window.v1.${encodeURIComponent(owner)}`;
 export function defaultBotWindow(viewport: Viewport): BotWindowLayout {
   return { version: 1, rect: fitWindow({ x: viewport.width - 460, y: 80, width: 420, height: 580 }, viewport), open: false, mode: "normal", restoreMode: "normal", updatedAt: 0 };
@@ -20,16 +22,19 @@ export function displayedWindow(layout: BotWindowLayout, viewport: Viewport): Wi
 }
 export function moveBotWindow(layout: BotWindowLayout, viewport: Viewport, dx: number, dy: number, now: number): BotWindowLayout {
   if (layout.mode === "maximized" || viewport.width <= 600) return layout;
+  now = nextRevision(layout, now);
   const rect = fitWindow(layout.rect, viewport);
   if (layout.mode === "minimized") return { ...layout, rect: { ...rect, x: clamp(rect.x + dx, 8, Math.max(8, viewport.width - rect.width - 8)), y: clamp(layout.rect.y + dy, 8, Math.max(8, viewport.height - 64)) }, updatedAt: now };
   return { ...layout, rect: fitWindow({ ...rect, x: rect.x + dx, y: rect.y + dy }, viewport), updatedAt: now };
 }
 export function resizeBotWindow(layout: BotWindowLayout, viewport: Viewport, dx: number, dy: number, now: number): BotWindowLayout {
   if (layout.mode !== "normal" || viewport.width <= 600) return layout;
+  now = nextRevision(layout, now);
   const rect = fitWindow(layout.rect, viewport);
   return { ...layout, rect: { ...rect, width: clamp(rect.width + dx, Math.min(320, viewport.width - 16), Math.min(900, viewport.width - rect.x - 8)), height: clamp(rect.height + dy, Math.min(400, viewport.height - 16), Math.min(800, viewport.height - rect.y - 8)) }, updatedAt: now };
 }
 export function botWindowAction(layout: BotWindowLayout, action: "open" | "close" | "minimize" | "maximize" | "restore", now: number): BotWindowLayout {
+  now = nextRevision(layout, now);
   if (action === "close") return { ...layout, open: false, updatedAt: now };
   if (action === "open") return { ...layout, open: true, mode: layout.mode === "minimized" ? layout.restoreMode : layout.mode, updatedAt: now };
   if (action === "minimize") return { ...layout, mode: "minimized", restoreMode: layout.mode === "maximized" ? "maximized" : "normal", updatedAt: now };

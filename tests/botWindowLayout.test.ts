@@ -3,6 +3,25 @@ import { botWindowAction, defaultBotWindow, displayedWindow, fitWindow, moveBotW
 const desktop = { width: 1440, height: 1000 };
 const storage = () => { const rows = new Map<string, string>(); return { getItem: (key: string) => rows.get(key) ?? null, setItem: (key: string, value: string) => { rows.set(key, value); } }; };
 
+it("advances every local edit revision during repeated or rolled-back clock readings", () => {
+  let layout = botWindowAction(defaultBotWindow(desktop), "open", 100);
+  const pendingCloudVersion = layout.updatedAt;
+  layout = botWindowAction(layout, "close", 100);
+  // The pending cloud-load guard must detect this edit even in the same millisecond.
+  expect(layout.updatedAt).toBeGreaterThan(pendingCloudVersion);
+  for (const action of ["open", "minimize", "restore", "maximize", "restore"] as const) {
+    const previous = layout.updatedAt;
+    layout = botWindowAction(layout, action, 50);
+    expect(layout.updatedAt).toBeGreaterThan(previous);
+  }
+  const beforeMove = layout.updatedAt;
+  layout = moveBotWindow(layout, desktop, -20, 20, 50);
+  expect(layout.updatedAt).toBeGreaterThan(beforeMove);
+  const beforeResize = layout.updatedAt;
+  layout = resizeBotWindow(layout, desktop, 20, 20, 50);
+  expect(layout.updatedAt).toBeGreaterThan(beforeResize);
+});
+
 it("restores a moved and resized open window from per-user storage", () => {
   const store = storage();
   let layout = botWindowAction(defaultBotWindow(desktop), "open", 1);

@@ -13,7 +13,7 @@ Local preview: http://127.0.0.1:5190/. Draft PR #62; not deployed.
 - At 390 × 844, the window occupied the full viewport, had no page overflow and closed successfully. Header controls were separate 28px squares.
 - Keyboard Enter opened/reopened the window; opening focused the input. Title-bar arrow movement and Tab navigation to Minimize worked. Enter minimized; Escape closed; Enter reopened.
 
-226 unit tests and production build passed. Geometry tests cover viewport limits, saved state, per-user isolation, maximize/restore, minimized movement, corrupt storage and storage failures. Account-query tests cover namespacing, ownership filters, unrelated-row protection and error handling. Draft CI passed for the implementation commit.
+227 unit tests and production build passed. Geometry tests cover viewport limits, saved state, per-user isolation, maximize/restore, minimized movement, corrupt storage and storage failures. Local layout revisions advance even when wall-clock readings repeat or roll back, so a pending cloud load can detect intervening edits. Pointer moves also advance relative to the latest frame while retaining the gesture's starting geometry. Account-query tests cover namespacing, ownership filters, unrelated-row protection and error handling. Draft CI passed for the initial implementation commit.
 
 Account lookup now escapes literal underscores in the namespace LIKE pattern. A read-only SQL expression check proved the unescaped pattern also matched a hyphenated non-layout string, whereas the escaped pattern rejected it and still matched the actual layout prefix. The existing returned-row guard already prevented unrelated-row updates. No account data, schema or policies were changed by this check.
 
