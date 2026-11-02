@@ -19,3 +19,9 @@ Release `def456a3ff5c6450d8fa84144ccb45fba12bc2ca` was checked at 1672 × 941. Q
 The following view-control check covers the reference sheet; free-sheet and zoom-limit rendered checks remain separate work.
 
 Release `cf39250740e0a02bf6ed46a8938d0d9b30575f7f` was checked for reference-sheet view controls. Zoom increased from 85% / 935px sheet width to 95% / 1045px, with the 1100 × 780 viewBox unchanged. Fit produced a 628 × 445px sheet inside a 659 × 504px viewport. Toolbar Grid removed the grid rectangle and updated the menu pressed state; the menu restored it.
+
+Release `0f59ef07dca61d574dc52fe968830b0e75048a64` was checked with a fresh analog project at 85% zoom. A pointer drag moved B1 from (140, 300) to snapped (180, 380). Its connected wire path changed from `M 172 285 H 240 V 285 H 308` to `M 212 365 H 260 V 285 H 308`. One Undo restored both the original component position and wire path. Rotating B1 to 90° kept its reference upright at y=375 and kind label at y=392, below the rotated body; the screenshot showed clear spacing.
+
+This does not establish pointer behavior at every zoom, touch-device interaction, rejected-drop rendering, or live checks of the subsequent shared arrow/rotation bounds change.
+
+Release `be24e11b2fe811920b428fd428896d8ad38000ce` was checked on a fresh analog project. Repeated left-arrow moves stopped B1 at X=80 and displayed the bounds/clearance rejection. Moving the unrotated component to Y=680 remained valid; Rotate 90° was then rejected, leaving R=0° and displaying the rotation bounds message. These checks cover arrow/rotation rejection, not every pointer-drop case.
