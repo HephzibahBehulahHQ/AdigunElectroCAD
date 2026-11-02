@@ -6,6 +6,13 @@ import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 
 describe("project template library", () => {
+  it("rejects a dedicated analog project with reversed threshold logic", () => {
+    const template = structuredClone(templateLibrary[499]);
+    expect(template.category).toBe("Analog Instrumentation");
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
+    template.document.components.find((component) => component.reference === "PLC1")!.properties.program = "LT AI0 13824; OUT Q0";
+    expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
+  });
   it.each(["LD I0; OUT Q0", "LD I0; OR Q0; OUT Q0"])("rejects PLC templates that lose holding or STOP behavior: %s", (program) => {
     const template = structuredClone(templateLibrary[2]);
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);

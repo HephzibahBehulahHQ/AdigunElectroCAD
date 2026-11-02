@@ -4,7 +4,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 ## Project library
 
-`src/projects/templateLibrary.ts` generates 500 entries from five scenario families. These are parameter variants, not 500 independently engineered projects. Separate forward/reverse and star-delta laboratories now provide stateful sequences and editable power circuits. Multi-motor sequences and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
+`src/projects/templateLibrary.ts` contains 499 parameter variants from five scenario families and one dedicated analog level/ADC/PLC project. This is not 500 independently engineered projects. Separate forward/reverse and star-delta laboratories provide stateful sequences and editable power circuits. Multi-motor sequences and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
 
 `verifyProjectTemplate` checks topology, configured model snapshots and operating steps. The five families cover motor isolation/start/stop, drive frequency changes, a scanned PLC holding program, elapsed timer behavior and safety reset/channel sequences. PLC examples execute START, release, STOP and release-without-restart rather than assigning Q0 manually. Safety examples require a fresh reset after either channel opens and reject held reset on recovery. These remain five parameterized scenario families; they do not establish 500 independently engineered projects. See `SAFETY-RESET-MODEL.md` for unmodeled safety-device behavior.
 
