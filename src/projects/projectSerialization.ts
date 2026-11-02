@@ -19,6 +19,7 @@ export function parseProjectJson(text: string): ElectricalProject {
     revision: integer(root.revision, "project revision"),
     sheets: sheetsValue.map(parseSheet),
   };
+  if (new Set(project.sheets.map((sheet) => sheet.id)).size !== project.sheets.length) throw new Error("Every sheet must have a unique sheet id.");
   return project;
 }
 
@@ -27,6 +28,7 @@ function parseSheet(value: unknown, index: number): CircuitSheet {
   const kind = sheet.kind;
   if (kind !== "reference-dol" && kind !== "free-schematic") throw new Error(`Sheet ${index + 1} has an unsupported type.`);
   const document = parseDocument(sheet.document, index);
+  if ((kind === "reference-dol") !== (document.id === "reference-dol-motor-starter")) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
   return { id: textValue(sheet.id, `sheet ${index + 1} id`, 96), name: textValue(sheet.name, `sheet ${index + 1} name`, 80), kind, document };
 }
 
