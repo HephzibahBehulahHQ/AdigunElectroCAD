@@ -3,13 +3,24 @@
 ## Table of contents
 
 - [The live co-pilot](#the-live-co-pilot)
+- [Using the Bot window](#using-the-bot-window)
 - [Graphical PLC programming](#graphical-plc-programming)
 - [Wiring signals](#wiring-signals)
 - [Saving and recovery](#saving-and-recovery)
 
 ## The live co-pilot
 
-Open **Adigun BOT** in the header. Its panel sits in the Properties column and leaves the drawing accessible. Toggle **Live co-pilot** to enable or disable proactive offers. A small inline offer can appear while the full panel is closed; open it or dismiss it without interrupting the canvas.
+Open **Adigun BOT** beside the CAD tools. Its floating window leaves the drawing interactive. Toggle **Live co-pilot** to enable or disable proactive offers. A badge and small toast can appear while the window is closed or minimized; suggestions never open it or steal focus.
+
+## Using the Bot window
+
+Drag the title bar to move the window, or focus the title bar and use arrow keys. Drag the bottom-right handle to resize, or focus it and use arrow keys. Movement and size stay within viewport limits. Pointer gestures support mouse and touch on larger screens; small screens use a full-screen surface with a clear close control.
+
+The title bar offers Minimize, Maximize/Restore and Close, each with a tooltip. The Bot launcher reopens a closed window or restores a minimized one. Escape closes it and returns focus to the launcher. Opening focuses the question input; Enter submits a question. Clear chat clears the current transcript without changing the project.
+
+Window position, size, open/closed state and minimized/maximized mode are stored separately for each local user identity. Signed-in permanent accounts also synchronize namespaced layout records in the existing adigunelectrocad.my_data table; guests use local storage. This saves UI preferences, not project edits. No new table or policy is required. Account sync failures retain the local layout.
+
+The draft implementation passed geometry/storage and account-query tests. Local browser checks verified drag/reload, resize/reload and maximize/restore. Remaining keyboard/mobile/badge checks and real authenticated account-sync verification are pending; it has not been deployed under the user's no-deployment instruction.
 
 The current co-pilot uses local canvas rules. It receives design changes with a short debounce, tracks the latest placement/move/wire/delete, and displays the selected component's current model result and simulation state. It can identify an unwired coil input, an AND gate with one connected input, multiple output drivers, topology errors and a timer output left unconnected for 20 seconds. Unwired model inputs may still use manual parameters; a missing wire alone is not proof that an output can never turn on. The co-pilot does not certify physical power, grounding or safety.
 
