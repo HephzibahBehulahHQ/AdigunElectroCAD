@@ -10,7 +10,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 ## Authentication and persistence
 
-Unit tests cover the email/password upgrade calls and confirmation guard. A rejected frontend API key was replaced and deployed with the project's active publishable key. Real anonymous sign-ins and ten ownership/INSERT-restriction checks passed; test project rows were removed. Production browser guest sign-in and the existing-email upgrade fallback were verified. See `AUTH-RLS-VERIFICATION-2026-11-02.md` for the interrupted harness-cleanup boundary. Permanent-account INSERT, email confirmation/upgrade, and browser cloud save/reload remain unverified. Deployment success does not prove those flows.
+Unit tests cover the email/password upgrade calls and confirmation guard. A rejected frontend API key was replaced and deployed with the project's active publishable key. Real anonymous sign-ins and ten ownership/INSERT-restriction checks passed; test project rows were removed. Production browser guest sign-in, the existing-email upgrade fallback, permanent-account sign-in and project creation/load were verified, including retained authentication and cloud load after refresh. See `AUTH-RLS-VERIFICATION-2026-11-02.md` for the interrupted harness-cleanup boundary. Email confirmation/upgrade and browser switching between two permanent accounts remain unverified.
 
 ## Visual verification
 
@@ -22,7 +22,7 @@ Editable reversing circuits now propagate Boolean command signals through an ove
 
 ## Next implementation priorities
 
-1. Complete graphical ladder programming and broader PLC execution. PLC digital I/O supports two Boolean inputs, one retained output, one ADC raw input (AI0), eight retained numeric registers and MOV/ADD/SUB/MUL/DIV with GT/LT/EQ comparisons. Wired analog scaling through the PLC to an output coil is covered by automated tests; production arithmetic interaction remains unverified. See `PLC-PROGRAMS.md` for exact limits. On-delay timers, logic memory, edge pulses and educational dual-channel reset behavior advance through the runtime clock; these features do not establish a complete PLC implementation or certified safety controller.
+1. Complete graphical ladder programming and broader PLC execution. PLC digital I/O supports two Boolean inputs, one retained output, one ADC raw input (AI0), eight retained numeric registers and MOV/ADD/SUB/MUL/DIV with GT/LT/EQ comparisons. Wired analog scaling through the PLC to an output coil is covered by automated tests and production checks at 0/50/100 percent, including a division fault. See `PLC-PROGRAMS.md` for exact limits. On-delay timers, logic memory, edge pulses and educational dual-channel reset behavior advance through the runtime clock; these features do not establish a complete PLC implementation or certified safety controller.
 2. Complete wired holding/interlock and protection circuits beyond the existing forward/reverse and star-delta state controllers.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.
