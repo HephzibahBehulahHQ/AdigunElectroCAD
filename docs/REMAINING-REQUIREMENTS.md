@@ -10,7 +10,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 ## Authentication and persistence
 
-Unit tests cover the email/password upgrade calls and confirmation guard. A rejected frontend API key was replaced locally with the project's active publishable key. Real anonymous sign-ins and ten ownership/INSERT-restriction checks passed; test project rows were removed. See `AUTH-RLS-VERIFICATION-2026-11-02.md` for the interrupted harness-cleanup boundary. Permanent-account INSERT, email confirmation/upgrade, and browser cloud save/reload remain unverified. Deployment success does not prove those flows.
+Unit tests cover the email/password upgrade calls and confirmation guard. A rejected frontend API key was replaced and deployed with the project's active publishable key. Real anonymous sign-ins and ten ownership/INSERT-restriction checks passed; test project rows were removed. Production browser guest sign-in and the existing-email upgrade fallback were verified. See `AUTH-RLS-VERIFICATION-2026-11-02.md` for the interrupted harness-cleanup boundary. Permanent-account INSERT, email confirmation/upgrade, and browser cloud save/reload remain unverified. Deployment success does not prove those flows.
 
 ## Visual verification
 
