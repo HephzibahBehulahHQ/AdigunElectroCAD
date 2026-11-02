@@ -5,6 +5,13 @@ import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { moveComponentToGrid } from "../src/cad/documentOps";
 
 describe("component movement", () => {
+  it("keeps arrow movement and rotated labels inside the sheet", () => {
+    const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 680, rotation: 0 as const, properties: {} };
+    expect(canPlaceComponent([component], component.id, 200, 680)).toBe(true);
+    expect(canPlaceComponent([{ ...component, rotation: 90 }], component.id, 200, 680)).toBe(false);
+    expect(canPlaceComponent([component], component.id, 1100, 300)).toBe(false);
+    expect(canPlaceComponent([component], component.id, 200, -20)).toBe(false);
+  });
   it("snaps a drag to the grid, preserves wired endpoints and rejects unsafe drops", () => {
     const document = createAnalogLevelProject().document;
     const moved = moveComponentToGrid(document, "level", 163, 279);

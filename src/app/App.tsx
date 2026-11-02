@@ -683,7 +683,7 @@ export function App() {
     const nextY = selectedComponent.y + deltaY;
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
     if (!canPlaceComponent(movableComponents, selectedComponent.id, nextX, nextY)) {
-      setNotice("Move blocked to keep component symbols clear and non-overlapping.");
+      setNotice("Move blocked: keep symbols and labels inside the sheet and clear of neighbors.");
       return;
     }
     updateDocument(moveComponent(document, selectedComponent.id, deltaX, deltaY));
@@ -718,7 +718,7 @@ export function App() {
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
     const rotatedComponents = movableComponents.map((component) => component.id === selectedComponent.id ? { ...component, rotation: nextRotation } : component);
     if (!canPlaceComponent(rotatedComponents, selectedComponent.id, selectedComponent.x, selectedComponent.y)) {
-      setNotice("Rotation blocked to keep component symbols clear and non-overlapping.");
+      setNotice("Rotation blocked by sheet bounds or symbol/label clearance.");
       return;
     }
     updateDocument(rotateComponent(document, selectedComponent.id));
