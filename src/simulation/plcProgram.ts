@@ -2,7 +2,7 @@ export const PLC_REGISTER_COUNT = 8;
 export type PlcScanResult = { ok: true; output: boolean; registers?: number[] } | { ok: false; output: false; error: string };
 
 /** Educational instruction-list scan with Boolean I/O and eight numeric registers. */
-export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[]): PlcScanResult {
+export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[], previousInputs: readonly boolean[] = []): PlcScanResult {
   const instructions = program.split(/[;\n]/).map((line) => line.trim().toUpperCase()).filter(Boolean);
   const fail = (error: string): PlcScanResult => ({ ok: false, output: false, error });
   if (!instructions.length || instructions.length > 32) return fail("Program requires 1–32 instructions.");
@@ -58,6 +58,18 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       continue;
     }
     if (parts.length !== 2) return fail(`Expected operation and address: ${instruction}`);
+    if (["LDP", "LDF", "ANDP", "ANDF", "ORP", "ORF"].includes(operation)) {
+      if (!["I0", "I1"].includes(address)) return fail("Edge contacts require I0 or I1.");
+      const current = address === "I0" ? inputA : inputB;
+      const previous = previousInputs[address === "I0" ? 0 : 1] === true;
+      const pulse = operation.endsWith("P") ? current && !previous : previous && !current;
+      if (operation.startsWith("LD")) accumulator = pulse;
+      else {
+        if (accumulator === undefined) return fail("Logic instructions require a preceding LD/LDN.");
+        accumulator = operation.startsWith("AND") ? accumulator && pulse : accumulator || pulse;
+      }
+      continue;
+    }
     if (["OUT", "SET", "RESET"].includes(operation)) {
       if (address !== "Q0" || accumulator === undefined) return fail("Output instructions require Q0 and a preceding LD/LDN.");
       output = operation === "OUT" ? accumulator : operation === "SET" ? output || accumulator : output && !accumulator;
