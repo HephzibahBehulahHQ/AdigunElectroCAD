@@ -6,7 +6,7 @@ The master goal remains incomplete. Passing the current tests does not establish
 
 `src/projects/templateLibrary.ts` generates 500 entries from five scenario families. These are parameter variants, not 500 independently engineered projects. Separate forward/reverse and star-delta laboratories now provide stateful sequences and editable power circuits. Multi-motor sequences and broader industrial circuits still require dedicated topology, operating sequences, and fault tests.
 
-`verifyProjectTemplate` checks topology, configured model snapshots and operating steps. The five families cover motor isolation/start/stop, drive frequency changes, a scanned PLC holding program, elapsed timer behavior and safety-channel interruptions. PLC examples now execute their program through START, release, STOP and release-without-restart rather than assigning Q0 manually. These remain five parameterized scenario families; they do not establish 500 independently engineered projects. Free-sheet timers use wired Boolean coil inputs. Safety enable/reset still needs a stateful reset controller.
+`verifyProjectTemplate` checks topology, configured model snapshots and operating steps. The five families cover motor isolation/start/stop, drive frequency changes, a scanned PLC holding program, elapsed timer behavior and safety reset/channel sequences. PLC examples execute START, release, STOP and release-without-restart rather than assigning Q0 manually. Safety examples require a fresh reset after either channel opens and reject held reset on recovery. These remain five parameterized scenario families; they do not establish 500 independently engineered projects. See `SAFETY-RESET-MODEL.md` for unmodeled safety-device behavior.
 
 ## Authentication and persistence
 
@@ -22,7 +22,7 @@ Editable reversing circuits now propagate Boolean command signals through an ove
 
 ## Next implementation priorities
 
-1. Complete graphical ladder programming, analog/register execution and latched safety-reset behavior with fault tests. PLC digital I/O now supports a limited two-input/one-output Boolean instruction interpreter with retained Q0 and shared SET/RESET. See `PLC-PROGRAMS.md` for its exact limits. Free-sheet on-delay timers, set/reset coil memory and one-scan edge pulses advance through the runtime clock; these features do not establish a complete PLC language implementation.
+1. Complete graphical ladder programming and analog/register execution. PLC digital I/O supports a limited two-input/one-output Boolean interpreter with retained Q0 and shared SET/RESET. See `PLC-PROGRAMS.md` for its exact limits. On-delay timers, logic memory, edge pulses and educational dual-channel reset behavior advance through the runtime clock; these features do not establish a complete PLC implementation or certified safety controller.
 2. Complete wired holding/interlock and protection circuits beyond the existing forward/reverse and star-delta state controllers.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.

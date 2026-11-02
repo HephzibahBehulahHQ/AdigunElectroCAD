@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import { advanceCircuitClock } from "../src/simulation/circuitClock";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
@@ -23,7 +24,10 @@ describe("placed functional component execution", () => {
     expect(run?.output.value).toBe("ON");
   });
   it("drops the wired actuator when either safety channel opens", () => {
-    const document = structuredClone(templateLibrary[4].document);
+    let document = structuredClone(templateLibrary[4].document);
+    document = advanceCircuitClock(document, catalogById, 0.1);
+    document.components[0].properties.reset = true;
+    document = advanceCircuitClock(document, catalogById, 0.1);
     document.components[2].properties.returnSpring = true;
     const actuator = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "Y1")!.output.value;
     expect(actuator()).toContain("EXTENDED");
