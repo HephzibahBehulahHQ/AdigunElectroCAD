@@ -5,6 +5,15 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("uses the wired coil command before tracing motor power", () => {
+    const document = structuredClone(templateLibrary[0].document);
+    document.components.push({ id: "coil-command", definitionId: "logic.no-contact", reference: "S2", x: 100, y: 600, rotation: 0, properties: { input: false } });
+    document.wires.push({ id: "coil-control", from: { componentId: "coil-command", terminalId: "out" }, to: { componentId: document.components[2].id, terminalId: "a1" }, points: [], netName: "COIL" });
+    const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
+    expect(motor()).toBe("STANDBY");
+    document.components.at(-1)!.properties.input = true;
+    expect(motor()).toContain("rpm");
+  });
   it("propagates a signal through more than twelve reverse-ordered blocks", () => {
     const document = createDolMotorStarter();
     const chain = Array.from({ length: 24 }, (_, index) => ({ id: `chain-${index}`, reference: `K${index}`, definitionId: "logic.no-contact", x: index * 100, y: 100, rotation: 0 as const, properties: { input: index === 0 } }));

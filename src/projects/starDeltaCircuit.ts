@@ -4,7 +4,8 @@ import type { CircuitDocument, Wire } from "../types/electrical";
 
 export function createStarDeltaCircuit(): CircuitDocument {
   const base = createReversingCircuit();
-  const components = base.components.filter((component) => component.id !== "reverse").map((component) => ({ ...component, properties: { ...component.properties } }));
+  const powerIds = new Set(["supply", "breaker", "forward", "motor"]);
+  const components = base.components.filter((component) => powerIds.has(component.id)).map((component) => ({ ...component, properties: { ...component.properties } }));
   const main = components.find((component) => component.id === "forward")!;
   main.reference = "KM1"; main.x = 340; main.y = 200;
   const motor = components.find((component) => component.id === "motor")!;
@@ -12,7 +13,7 @@ export function createStarDeltaCircuit(): CircuitDocument {
   motor.properties = { resistanceOhm: 10, reactanceOhm: 10 };
   components.find((component) => component.id === "supply")!.properties.nominalVoltageV = 400;
   components.push({ ...main, id: "star", reference: "KM2", x: 340, y: 420, properties: { energized: false } }, { ...main, id: "delta", reference: "KM3", x: 620, y: 420, properties: { energized: false } });
-  const wires = base.wires.filter((wire) => wire.from.componentId !== "reverse" && wire.to.componentId !== "reverse");
+  const wires = base.wires.filter((wire) => powerIds.has(wire.from.componentId) && powerIds.has(wire.to.componentId));
   const connect = (from: string, source: string, to: string, target: string) => wires.push({ id: `sd-wire-${wires.length + 1}`, from: { componentId: from, terminalId: source }, to: { componentId: to, terminalId: target }, points: [], netName: `SD_${wires.length + 1}` } as Wire);
   for (let index = 0; index < 3; index++) {
     const phase = ["l1", "l2", "l3"][index];

@@ -42,7 +42,8 @@ export function ReversingLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
       <button onClick={() => act("reset-overload")}>Reset overload</button>
     </div>
     <p aria-live="polite">{state.notice}</p>
-    <p>The copied sheet is an independent power-circuit snapshot. Control wiring and overload-device wiring are not included.</p>
+    <p>The copied sheet is independent and includes Boolean commands through the overload NC permit. Physical coil-voltage, holding/interlock wiring and overload power poles remain incomplete.</p>
     <p>KM1: {state.contactor === "forward" ? "ON" : "OFF"} · KM2: {state.contactor === "reverse" ? "ON" : "OFF"} · Speed: {state.speedRpm.toFixed(0)} rpm · Time: {(state.elapsedMs / 1000).toFixed(1)} s</p>
   </section>;
 }
+

@@ -10,6 +10,7 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if (modelId === "catalog-motor-starter" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
@@ -51,6 +52,35 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return definition ? [[component.id, { ...definition.propertiesSchema, ...component.properties }]] : [];
   }));
   const signals = new Map<string, FunctionalSignal>();
+  const inputUnits = new Map<string, SignalUnit>();
+  for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
+    let changed = false;
+    for (const component of document.components) {
+      const definition = definitionsByComponent.get(component.id);
+      const activeProperties = properties.get(component.id);
+      if (!definition || !activeProperties) continue;
+      for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
+        const incoming = signals.get(endpointKey(component.id, terminal.id));
+        const binding = inputBinding(definition.simulationModelId, terminal.id);
+        const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
+        const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
+        if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
+          activeProperties[binding.property] = incoming.value;
+          inputUnits.set(inputUnitKey, incoming.unit);
+          changed = true;
+        }
+      }
+      const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties);
+      const contactOutput = definition.simulationModelId === "catalog-on-delay-timer" ? "18" : definition.simulationModelId === "catalog-interface-relay" ? "14" : definition.simulationModelId === "catalog-feed-through-terminal" ? "2" : undefined;
+      const outputId = definition.simulationModelId === "thermal-overload-dol-v1" ? "aux-96" : contactOutput;
+      const output = definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
+      if (signal !== undefined && output) {
+        const key = endpointKey(component.id, output.id);
+        if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
+      }
+    }
+    if (!propagateWires(document, definitionsByComponent, signals) && !changed) break;
+  }
   // Trace each phase through actual wires and closed switching paths.
   // Component commands alone cannot supply a motor with power.
   const powerEdges = new Map<string, string[]>();
@@ -107,34 +137,6 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       const direction = inversions % 2 ? -1 : 1;
       p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / Number(p.ratedFrequencyHz ?? 50) * direction;
     }
-  }
-  const inputUnits = new Map<string, SignalUnit>();
-  for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
-    let changed = false;
-    for (const component of document.components) {
-      const definition = definitionsByComponent.get(component.id);
-      const activeProperties = properties.get(component.id);
-      if (!definition || !activeProperties) continue;
-      for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
-        const incoming = signals.get(endpointKey(component.id, terminal.id));
-        const binding = inputBinding(definition.simulationModelId, terminal.id);
-        const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
-        const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
-        if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
-          activeProperties[binding.property] = incoming.value;
-          inputUnits.set(inputUnitKey, incoming.unit);
-          changed = true;
-        }
-      }
-      const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties);
-      const contactOutput = definition.simulationModelId === "catalog-on-delay-timer" ? "18" : definition.simulationModelId === "catalog-interface-relay" ? "14" : definition.simulationModelId === "catalog-feed-through-terminal" ? "2" : undefined;
-      const output = definition.terminals.find((terminal) => contactOutput ? terminal.id === contactOutput : terminal.direction === "output");
-      if (signal !== undefined && output) {
-        const key = endpointKey(component.id, output.id);
-        if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
-      }
-    }
-    if (!propagateWires(document, definitionsByComponent, signals) && !changed) break;
   }
   return document.components.flatMap((component) => {
     const definition = catalog.get(component.definitionId);
