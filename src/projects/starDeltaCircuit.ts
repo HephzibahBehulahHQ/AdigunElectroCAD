@@ -6,9 +6,9 @@ export function createStarDeltaCircuit(): CircuitDocument {
   const base = createReversingCircuit();
   const components = base.components.filter((component) => component.id !== "reverse").map((component) => ({ ...component, properties: { ...component.properties } }));
   const main = components.find((component) => component.id === "forward")!;
-  main.reference = "KM1"; main.x = 340; main.y = 120;
+  main.reference = "KM1"; main.x = 340; main.y = 200;
   const motor = components.find((component) => component.id === "motor")!;
-  motor.definitionId = "motor.six-terminal"; motor.x = 620; motor.y = 120;
+  motor.definitionId = "motor.six-terminal"; motor.x = 620; motor.y = 200;
   motor.properties = { resistanceOhm: 10, reactanceOhm: 10 };
   components.find((component) => component.id === "supply")!.properties.nominalVoltageV = 400;
   components.push({ ...main, id: "star", reference: "KM2", x: 340, y: 420, properties: { energized: false } }, { ...main, id: "delta", reference: "KM3", x: 620, y: 420, properties: { energized: false } });
