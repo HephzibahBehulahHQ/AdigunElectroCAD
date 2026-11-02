@@ -5,6 +5,28 @@ import { advanceCircuitClock, resetCircuitClock } from "../src/simulation/circui
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("circuit simulation clock", () => {
+  it("uses the wired coil signal for timing and drops the actuator on signal loss", () => {
+    const design = structuredClone(templateLibrary[3].document);
+    const timer = design.components[0];
+    timer.properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
+    design.components[2].properties.returnSpring = true;
+    design.components.push({ id: "timer-enable", definitionId: "logic.no-contact", reference: "S2", x: 100, y: 600, rotation: 0, properties: { input: false } });
+    design.wires.push({ id: "timer-enable-wire", from: { componentId: "timer-enable", terminalId: "out" }, to: { componentId: timer.id, terminalId: "a1" }, points: [], netName: "ENABLE" });
+    let runtime = advanceCircuitClock(design, catalogById, 2);
+    const actuator = () => executeCircuitModels(runtime, catalogById).find((run) => run.reference === "Y1")!.output.value;
+    expect(runtime.components[0].properties.elapsedSeconds).toBe(0);
+    expect(actuator()).toBe("RETRACTED");
+    runtime.components.at(-1)!.properties.input = true;
+    runtime = advanceCircuitClock(runtime, catalogById, 0.5);
+    expect(actuator()).toBe("RETRACTED");
+    runtime = advanceCircuitClock(runtime, catalogById, 0.5);
+    expect(actuator()).toContain("EXTENDED");
+    runtime.components.at(-1)!.properties.input = false;
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(runtime.components[0].properties.elapsedSeconds).toBe(0);
+    expect(actuator()).toBe("RETRACTED");
+    expect(timer.properties.elapsedSeconds).toBe(0);
+  });
   it("expires at the exact threshold after ten 100 ms steps", () => {
     let runtime = structuredClone(templateLibrary[3].document);
     runtime.components[0].properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
