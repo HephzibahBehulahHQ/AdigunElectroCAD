@@ -7,7 +7,7 @@ The initial delivery implements the documented vertical slice: a typed catalog, 
 - `src/catalog`: immutable component definitions and terminal data. The 638-entry catalog contains eight DOL entries, 67 component entries with supported simulation behavior, and 563 parameterized IEC engineering entries. The first 520 satisfy the required category distribution; additional project variants and 32 dual-channel safety entries remain executable control, numerical or connectivity abstractions. None is a vendor-certified record.
 - `src/projects`: editable circuit documents built from catalog instances.
 - `src/projects/starterProject.ts`: multi-sheet project state, including the DOL reference sheet and independent free schematic sheets.
-- `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated generic starter templates. These templates are not process-simulation projects.
+- `src/projects/templateLibrary.ts`: 500 loadable, terminal-topology-validated engineering projects. Every project carries a recorded test sequence, expected component-abstraction outputs, parameterized component state, and is verified by `src/projects/templateVerification.ts`.
 - `src/projects/projectSerialization.ts`: bounded local JSON import/recovery validation for project structure, catalog identities, terminal topology and readable label lengths.
 - `src/projects/schematicExport.ts`: standalone SVG preparation with embedded drawing styles; the browser canvas path can render it to PNG.
 - `src/reports`: derivation of BOM, wire-list and terminal-list data from the active circuit document.
