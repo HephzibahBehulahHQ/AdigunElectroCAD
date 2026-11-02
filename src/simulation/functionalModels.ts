@@ -92,6 +92,8 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 export function hasFunctionalModel(modelId: string) { return modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+  if (modelId === "catalog-safety-relay") return signal("boolean", safetyRelayEnergized(bool(properties, "channelAClosed"), bool(properties, "channelBClosed"), bool(properties, "reset")));
+  if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
   if (modelId === "catalog-on-delay-timer") return signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
   if (modelId === "catalog-interface-relay") return signal("boolean", bool(properties, "energized"));
   if (modelId === "catalog-proximity-sensor") return signal("boolean", bool(properties, "detected"));
