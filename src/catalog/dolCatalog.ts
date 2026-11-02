@@ -25,7 +25,7 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   {
     id: "overload.thermal", name: "Three-phase thermal overload relay", category: "Protection Devices", referencePrefix: "F", description: "Thermal overload with an NC 95–96 control contact.", symbolId: "overload-3p",
     terminals: terminals(terminal("l1-in", "L1", "power"), terminal("l2-in", "L2", "power"), terminal("l3-in", "L3", "power"), terminal("t1", "T1", "power"), terminal("t2", "T2", "power"), terminal("t3", "T3", "power"), terminal("aux-95", "95", "control"), terminal("aux-96", "96", "control")),
-    propertiesSchema: { settingA: 12.5, tripClass: 10, resetMode: "manual" }, simulationModelId: "thermal-overload-dol-v1", simulationSupport: "control-logic", documentation: "Manual trip/reset state is modelled in this increment.", standardsReferences: ["IEC 60947-4-1"]
+    propertiesSchema: { settingA: 12.5, tripClass: 10, resetMode: "manual", tripped: false }, simulationModelId: "thermal-overload-dol-v1", simulationSupport: "control-logic", documentation: "Manual trip/reset state is modelled in this increment. On free sheets, Tripped opens the Boolean NC permit; current-driven thermal tripping is not modeled.", standardsReferences: ["IEC 60947-4-1"]
   },
   {
     id: "motor.three-phase", name: "Three-phase induction motor", category: "Motors", referencePrefix: "M", description: "Simplified 7.5 kW, 400 V induction-motor model with acceleration and coast-down.", symbolId: "motor-3p",
