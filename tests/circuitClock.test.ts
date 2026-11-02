@@ -5,6 +5,45 @@ import { advanceCircuitClock, resetCircuitClock } from "../src/simulation/circui
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("circuit simulation clock", () => {
+  it.each(["positive", "negative"])("emits a single wired %s edge pulse per transition", (kind) => {
+    let runtime = structuredClone(templateLibrary[3].document);
+    runtime.components = [
+      { id: "input", definitionId: "logic.no-contact", reference: "S1", x: 100, y: 100, rotation: 0, properties: { input: kind === "negative" } },
+      { id: "edge", definitionId: `logic.edge-${kind}`, reference: "E1", x: 300, y: 100, rotation: 0, properties: { previous: kind === "negative", input: false } },
+      { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 500, y: 100, rotation: 0, properties: { input: false } },
+    ];
+    runtime.wires = [
+      { id: "w1", from: { componentId: "input", terminalId: "out" }, to: { componentId: "edge", terminalId: "in" }, points: [], netName: "INPUT" },
+      { id: "w2", from: { componentId: "edge", terminalId: "out" }, to: { componentId: "coil", terminalId: "in" }, points: [], netName: "PULSE" },
+    ];
+    const output = () => executeCircuitModels(runtime, catalogById).find((run) => run.reference === "K1")!.output.value;
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(output()).toBe("OFF");
+    runtime.components[0].properties.input = kind === "positive";
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(output()).toBe("ON");
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(output()).toBe("OFF");
+    runtime.components[0].properties.input = kind === "negative";
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(output()).toBe("OFF");
+    runtime.components[0].properties.input = kind === "positive";
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(output()).toBe("ON");
+  });
+  it.each(["set", "reset"])("retains the %s latch state after its command is released", (kind) => {
+    const design = structuredClone(templateLibrary[3].document);
+    design.components = [{ id: "latch", definitionId: `logic.${kind}-coil`, reference: "K1", x: 100, y: 100, rotation: 0, properties: { previous: kind === "reset", input: true } }];
+    design.wires = [];
+    let runtime = advanceCircuitClock(design, catalogById, 0.1);
+    runtime.components[0].properties.input = false;
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    expect(executeCircuitModels(runtime, catalogById)[0].output.value).toBe(kind === "set" ? "ON" : "OFF");
+    const reset = resetCircuitClock(runtime, catalogById);
+    expect(reset.components[0].properties.runtimePrevious).toBeUndefined();
+    expect(executeCircuitModels(reset, catalogById)[0].output.value).toBe(kind === "set" ? "OFF" : "ON");
+    expect(design.components[0].properties.runtimePrevious).toBeUndefined();
+  });
   it("uses the wired coil signal for timing and drops the actuator on signal loss", () => {
     const design = structuredClone(templateLibrary[3].document);
     const timer = design.components[0];
