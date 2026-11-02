@@ -153,21 +153,21 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
       <text x="435" y="82" className="phase-label pe">PE</text><path d="M 445 100 V 540 H 390" className="wire pe-wire" />
 
       <g {...componentBox("breaker", selectedComponentId, onSelect, 120, 140, 280, 94)}>
-        <g className="device"><text x="425" y="184" className="reference-label">{references.get("breaker") ?? "Q1"}</text><text x="425" y="205" className="device-label">3-pole breaker</text>
+        <g className="device"><text x="475" y="184" className="reference-label">{references.get("breaker") ?? "Q1"}</text><text x="475" y="205" className="device-label">3-pole breaker</text>
           {[165, 255, 345].map((x) => <g key={x}><path d={`M ${x} 146 v 10 l 24 30`} className="contact-blade" /><path d={`M ${x} 197 V 252`} className={lineClass(switched)} /></g>)}
           <path d="M 142 220 H 368" className="mechanical-link" />
         </g>
       </g>
 
       <g {...componentBox("contactor", selectedComponentId, onSelect, 120, 245, 280, 112)}>
-        <g className="device"><text x="425" y="284" className="reference-label">{references.get("contactor") ?? "KM1"}</text><text x="425" y="305" className="device-label">main contactor</text>
+        <g className="device"><text x="475" y="284" className="reference-label">{references.get("contactor") ?? "KM1"}</text><text x="475" y="305" className="device-label">main contactor</text>
           {[165, 255, 345].map((x) => <g key={x}><path d={`M ${x} 252 v 14 l 24 ${energized ? "0" : "32"}`} className={energized ? "contact-blade closed" : "contact-blade"} /><path d={`M ${x} 303 V 370`} className={lineClass(energized)} /></g>)}
           <path d="M 142 336 H 368" className="mechanical-link" />
         </g>
       </g>
 
       <g {...componentBox("overload", selectedComponentId, onSelect, 120, 365, 280, 104)}>
-        <g className="device"><text x="425" y="405" className="reference-label">{references.get("overload") ?? "F1"}</text><text x="425" y="426" className="device-label">thermal overload</text>
+        <g className="device"><text x="475" y="405" className="reference-label">{references.get("overload") ?? "F1"}</text><text x="475" y="426" className="device-label">thermal overload</text>
           {[165, 255, 345].map((x) => <g key={x}><rect x={x - 15} y="372" width="30" height="29" className={simulation.overloadTripped ? "overload tripped" : "overload"} /><path d={`M ${x} 401 V 516`} className={lineClass(energized)} /></g>)}
         </g>
       </g>
