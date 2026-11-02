@@ -3,6 +3,13 @@ import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { scanPlcProgram } from "./plcProgram";
 
+export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
+  const component = document.components.find((item) => item.id === componentId);
+  const definition = component && catalog.get(component.definitionId);
+  if (!component || !definition || typeof { ...definition.propertiesSchema, ...component.properties }[property] !== "boolean" || property.startsWith("runtime") || property === "scanOutput") throw new Error("Select a defined Boolean parameter.");
+  return { ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, [property]: value } } : item) };
+}
+
 export function resetCircuitClock(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): CircuitDocument {
   return { ...document, components: document.components.map((component) => {
     const properties = { ...component.properties };
