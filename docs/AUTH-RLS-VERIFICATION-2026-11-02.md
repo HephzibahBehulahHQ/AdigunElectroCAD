@@ -20,4 +20,6 @@ The terminal run stalled while reporting/finishing cleanup and was interrupted a
 
 Read-only inspection confirmed RLS enabled on my_data, projects and user_preferences. The tested new-table owner policies contain both USING and WITH CHECK, with restrictive non-anonymous INSERT policies. The existing my_data policy was retained.
 
+Production browser verification after deployment of PR #49 confirmed that Start preview establishes a guest account. The account panel states that preview access is not time-limited and only new inserts are blocked. Sending an upgrade request for the authorized test mailbox returned the existing-account case and displayed the sign-in fallback. No confirmation email was sent in that case. This verifies the browser fallback, not email delivery or a successful upgrade.
+
 This proves the listed anonymous-session and ownership cases, not permanent-account INSERT, email delivery/confirmation, anonymous upgrade/password completion, or browser cloud save/reload. Those remain pending. The [Supabase anonymous sign-in guide](https://supabase.com/docs/guides/auth/auth-anonymous) documents the authenticated role and is_anonymous claim used by these policies.
