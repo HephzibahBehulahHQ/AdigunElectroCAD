@@ -23,6 +23,7 @@ import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
 import { LadderEditor } from "../components/LadderEditor";
 import { LiveCopilot } from "../components/LiveCopilot";
+import { HeaderUtilities } from "../components/HeaderUtilities";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
@@ -774,16 +775,8 @@ export function App() {
           <div className="brand-identity"><strong>Hephzibah Behulah</strong><small>GLOBAL · HB ELEKTRONIKER</small></div>
           <div className="product-brand"><strong>⚡ Adigun<span>ElectroCAD</span></strong><small>BY HB ELEKTRONIKER</small></div>
         </div>
-        <div className="project-status"><strong>{project.name}</strong><span className={dirty ? "dirty" : "saved"}>{dirty ? "Unsaved local changes" : "Saved locally"}</span></div>
-        <div className="header-actions">
-          <span className={isRunning ? "simulation-pill active" : "simulation-pill"}>{isRunning ? t.running : t.stopped}</span>
-          <button className="icon-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶</button>
-          <button className="icon-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷</button>
-          <select value={locale} onChange={(event) => setLocale(event.target.value as Locale)} aria-label="Interface language"><option value="en">EN</option><option value="de">DE</option></select>
-          <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)} aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select>
-          <button className="bot-button" onClick={() => setBotOpen((value) => !value)} aria-expanded={botOpen}>◌ Adigun BOT</button>
-          <button className="account-button" onClick={() => setAuthOpen((open) => !open)}>{authUser ? anonymousSession ? "Guest preview" : "Account" : "Sign in"}</button>
-        </div>
+        <div className="project-status"><strong>{project.name}</strong><span className={isRunning ? "simulation-pill active" : "simulation-pill"}>{isRunning ? t.running : t.stopped}</span></div>
+        <HeaderUtilities saved={!dirty && !botEditsUnsaved} signedIn={Boolean(authUser && !anonymousSession)} accountOpen={authOpen} locale={locale} theme={theme} search={search} grid={showGrid} onAccount={() => setAuthOpen((open) => !open)} onDismissAccount={() => setAuthOpen(false)} onLocale={(value) => setLocale(value as Locale)} onTheme={(value) => setTheme(value as Theme)} onSearch={setSearch} onGrid={setShowGrid} onBot={() => setBotOpen(true)} />
       </header>
 
       {authOpen && <section className="auth-panel" aria-label="Cloud account">
@@ -811,14 +804,15 @@ export function App() {
       <section className="tool-row" aria-label="CAD and simulation tools">
         <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
         <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
-        <button className="tool-button" onClick={undo} disabled={!history.undo.length}>↶<span>Undo</span></button>
-        <button className="tool-button" onClick={redo} disabled={!history.redo.length}>↷<span>Redo</span></button>
+        <button className="tool-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶<span>Undo</span></button>
+        <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
         <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
         <button onClick={() => setSchematicZoom((value) => Math.min(2, Math.round((value + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
         <button onClick={() => { const viewport = window.document.querySelector(".drawing-area .schematic-wrap"); if (viewport) { setSchematicZoom(Math.max(.25, Math.min(2, (viewport.clientWidth - 16) / 1100, (viewport.clientHeight - 16) / 780))); viewport.scrollTo(0, 0); } }} aria-label="Fit schematic sheet">Fit</button>
         <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
+        <button id="adigun-bot-launcher" className="bot-button" onClick={() => setBotOpen((value) => !value)} aria-expanded={botOpen}>◌ Adigun BOT</button>
         <span className="tool-divider" />
         <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
         <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
