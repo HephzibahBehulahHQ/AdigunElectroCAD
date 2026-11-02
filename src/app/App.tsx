@@ -23,6 +23,7 @@ import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
 import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
+import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
@@ -158,16 +159,16 @@ export function App() {
   }, [isRunning, isReferenceSheet, document]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
     try {
-      const restored = parseProjectJson(saved);
+      const saved = readLocalProject(window.localStorage, STORAGE_KEY);
+      if (!saved) return;
+      const restored = saved.project;
       const firstSheet = restored.sheets[0];
       setProject(restored);
       setActiveSheetId(firstSheet.id);
       setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
       setSelectedWireId("");
-      setNotice(`${restored.name} restored from local storage.`);
+      setNotice(`${restored.name} restored from ${saved.source === "previous" ? "the previous local save; the current record remains unchanged" : "local storage"}.`);
     } catch {
       setNotice("The saved local project could not be restored. It was left unchanged for manual review.");
     }
@@ -177,7 +178,7 @@ export function App() {
     if (!dirty) return;
     const timer = window.setTimeout(() => {
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+        writeLocalProject(window.localStorage, STORAGE_KEY, project);
         setDirty(false);
       } catch {
         setNotice("Local autosave could not complete. Use File → Export JSON to preserve this project.");
@@ -222,9 +223,14 @@ export function App() {
   };
 
   const saveLocally = () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
-    setDirty(false);
-    setNotice(t.projectSaved);
+    try {
+      writeLocalProject(window.localStorage, STORAGE_KEY, project);
+      setDirty(false);
+      setNotice(t.projectSaved);
+    } catch {
+      setDirty(true);
+      setNotice("The local save failed. Your current work remains in memory; export JSON to keep a copy.");
+    }
   };
 
   const saveToCloud = async () => {
@@ -325,13 +331,10 @@ export function App() {
   };
 
   const loadLocalSave = () => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
-      setNotice("No saved local project was found.");
-      return;
-    }
     try {
-      const restored = parseProjectJson(saved);
+      const saved = readLocalProject(window.localStorage, STORAGE_KEY);
+      if (!saved) { setNotice("No saved local project was found."); return; }
+      const restored = saved.project;
       const firstSheet = restored.sheets[0];
       recordEdit(restored);
       setActiveSheetId(firstSheet.id);
@@ -340,7 +343,7 @@ export function App() {
       setWireMode(false);
       setWireStart(null);
       setDirty(false);
-      setNotice(`${restored.name} restored from local storage.`);
+      setNotice(`${restored.name} restored from ${saved.source === "previous" ? "the previous local save; the current record remains unchanged" : "local storage"}.`);
     } catch {
       setNotice("The saved local project is invalid and was not loaded.");
     }
