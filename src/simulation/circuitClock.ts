@@ -13,7 +13,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     if (definition?.simulationModelId !== "catalog-on-delay-timer") return component;
     const properties = { ...definition.propertiesSchema, ...component.properties };
     const previous = Number(properties.elapsedSeconds ?? 0);
-    const elapsedSeconds = properties.energized === true ? (Number.isFinite(previous) ? Math.max(0, previous) : 0) + deltaSeconds : 0;
+    const elapsedSeconds = properties.energized === true ? Math.round(((Number.isFinite(previous) ? Math.max(0, previous) : 0) + deltaSeconds) * 1e9) / 1e9 : 0;
     return { ...component, properties: { ...component.properties, elapsedSeconds } };
   }) };
 }
