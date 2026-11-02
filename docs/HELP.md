@@ -14,6 +14,8 @@ The current co-pilot uses local canvas rules. It receives design changes with a 
 
 Proactive offers wait until editing is quiet. They are suppressed during pointer operations or focused text/control editing and are spaced at least 25 seconds apart. Dismissed findings stay suppressed for the current project session. **Inspect current sheet** requests an immediate supported check.
 
+The unconnected-timer check counts continuous observation on the current sheet. Connecting its output, removing the timer, switching sheets or turning live assistance off resets the observation interval. Re-enabling starts a fresh interval; time spent disabled does not count as being stuck.
+
 An offered wire fix names its source and destination and previews that one wire will be added. **Accept wire fix** applies it only after checking that the sheet still matches the preview and that the proposed topology is valid. A stale or invalid preview leaves the original sheet unchanged; use **Refresh preview** to review the current sheet. **Undo** reverses a successfully applied fix. No components or existing wires are changed by this fix. The co-pilot offers a source only when exactly one unused compatible Boolean output exists; choosing the intended circuit remains the user's decision. **Tell me more** explains the evidence behind an offer.
 
 Guests can receive explanations, preview offers and apply a fix to the canvas. Bot edits never auto-save. Autosave remains paused until an explicit save; saving Bot edits to local storage or cloud requires a permanent signed-in account. Sign in, then use File → Save locally or Save to cloud. Closing or refreshing without saving can discard those edits.
