@@ -5,6 +5,24 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { templateLibrary } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("removes motor power when the source or starter is switched off", () => {
+    const document = structuredClone(templateLibrary[0].document);
+    const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
+    document.components[0].properties.outputEnabled = false;
+    expect(motor()).toBe("STANDBY");
+    document.components[0].properties.outputEnabled = true;
+    document.components[2].properties.energized = false;
+    expect(motor()).toBe("STANDBY");
+    document.components[2].properties.energized = true;
+    expect(motor()).toContain("rpm");
+  });
+  it("rejects a motor supplied with phases from independent sources", () => {
+    const document = structuredClone(templateLibrary[0].document);
+    const source = { ...structuredClone(document.components[0]), id: "independent-source", reference: "X2" };
+    document.components.push(source);
+    document.wires[0].from.componentId = source.id;
+    expect(executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")?.output.value).toBe("STANDBY");
+  });
   it("does not run a motor whose three terminals receive the same phase", () => {
     const document = structuredClone(templateLibrary[0].document);
     for (const wire of document.wires.filter((wire) => wire.to.componentId === document.components[3].id)) wire.from.terminalId = "l1-out";
