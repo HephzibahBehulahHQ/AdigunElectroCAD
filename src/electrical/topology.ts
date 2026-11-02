@@ -1,5 +1,6 @@
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalEndpoint } from "../types/electrical";
 import { terminalSignalUnits } from "./signalContracts";
+import { signalDriverConflicts } from "./signalDrivers";
 
 export interface TopologyIssue {
   severity: "error" | "warning";
@@ -22,7 +23,9 @@ export function canConnectTerminals(document: CircuitDocument, definitions: Map<
   if (signalIssue) return { ok: false, reason: signalIssue };
   if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) return { ok: false, reason: "Two input terminals or two output terminals cannot be wired together." };
   const duplicate = document.wires.some((wire) => sameConnection(wire.from, wire.to, from, to));
-  return duplicate ? { ok: false, reason: "Those terminals are already connected." } : { ok: true };
+  if (duplicate) return { ok: false, reason: "Those terminals are already connected." };
+  const conflicts = signalDriverConflicts({ ...document, wires: [...document.wires, { id: "connection-check", from, to, points: [] }] }, definitions);
+  return conflicts.length ? { ok: false, reason: conflicts[0] } : { ok: true };
 }
 
 export function validateCircuit(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): TopologyIssue[] {
@@ -58,6 +61,7 @@ export function validateCircuit(document: CircuitDocument, definitions: Map<stri
     seenConnections.add(connectionId);
   }
 
+  for (const message of signalDriverConflicts(document, definitions)) issues.push({ severity: "error", code: "conflicting-signal-drivers", message });
   return issues;
 }
 
