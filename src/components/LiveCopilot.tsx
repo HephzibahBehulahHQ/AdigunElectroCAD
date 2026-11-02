@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { acceptCopilotPreview, analyzeCanvas, describeCanvasChange, nextCopilotFinding, previewCopilotConnection, type CopilotFinding, type CopilotPreview } from "../copilot/canvasAnalysis";
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
 import { observeUnconnectedTimers } from "../copilot/timerObservation";
+import { FloatingBotWindow } from "./FloatingBotWindow";
 
-export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulationState, liveOutput, open, onOpen, onApply, editable }: {
+export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulationState, liveOutput, owner, cloudOwner, activation, onShow, onUnread, onOpen, onApply, editable }: {
   canvas: CircuitDocument; projectId: string; catalog: Map<string, ElectricalComponentDefinition>; selectedId: string;
-  simulationState: string; liveOutput?: { label: string; value: string }; open: boolean; onOpen: (open: boolean) => void;
+  simulationState: string; liveOutput?: { label: string; value: string }; owner: string; cloudOwner: string | null; activation: number; onShow: () => void; onUnread: (unread: boolean) => void; onOpen: (open: boolean) => void;
   onApply: (document: CircuitDocument) => void; editable: boolean;
 }) {
   const [enabled, setEnabled] = useState(true);
@@ -14,9 +15,17 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
   const [offer, setOffer] = useState<CopilotFinding | null>(null);
   const [preview, setPreview] = useState<CopilotPreview | null>(null);
   const [more, setMore] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessageText] = useState("");
+  const [messageTick, setMessageTick] = useState(0);
+  const setMessage = (text: string) => { setMessageText(text); if (text) setMessageTick((value) => value + 1); };
   const [question, setQuestion] = useState("");
   const [lastChange, setLastChange] = useState("");
+  const [windowVisible, setWindowVisible] = useState(false);
+  const [transcript, setTranscript] = useState<{ role: "user" | "bot"; text: string }[]>([]);
+  const visibility = useCallback((open: boolean, visible: boolean) => { setWindowVisible(visible); onOpen(open); }, [onOpen]);
+  useEffect(() => { onUnread(Boolean(offer) && !windowVisible); }, [offer, windowVisible, onUnread]);
+  useEffect(() => { if (message) setTranscript((rows) => [...rows.slice(-49), { role: "bot", text: message }]); }, [message, messageTick]);
+  useEffect(() => { setTranscript([]); setMessageText(""); setQuestion(""); }, [owner]);
   const previousCanvas = useRef<CircuitDocument | null>(null);
   const goals = useRef(new Map<string, string>());
   const dismissed = useRef(new Set<string>());
@@ -28,10 +37,10 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
   const latest = useRef({ canvas, goal, catalog, editable });
   latest.current = { canvas, goal, catalog, editable };
 
-  useEffect(() => { const saved = goals.current.get(projectId) ?? ""; setGoal(saved); setGoalDraft(saved); dismissed.current.clear(); currentOffer.current = null; setOffer(null); setPreview(null); }, [projectId]);
+  useEffect(() => { const saved = goals.current.get(`${owner}:${projectId}`) ?? ""; setGoal(saved); setGoalDraft(saved); dismissed.current.clear(); currentOffer.current = null; setOffer(null); setPreview(null); }, [projectId, owner]);
   useEffect(() => { analyzeAfter.current = Date.now() + 700; }, [canvas, goal]);
   useEffect(() => { setLastChange(describeCanvasChange(previousCanvas.current, canvas)); previousCanvas.current = canvas; }, [canvas]);
-  useEffect(() => { currentOffer.current = null; setOffer(null); setPreview(null); unconnectedSince.current.clear(); }, [canvas.id]);
+  useEffect(() => { currentOffer.current = null; setOffer(null); setPreview(null); unconnectedSince.current.clear(); }, [canvas.id, owner]);
   useEffect(() => { unconnectedSince.current = observeUnconnectedTimers(canvas, catalog, unconnectedSince.current, Date.now(), enabled).since; }, [canvas, catalog, enabled]);
   useEffect(() => {
     const touch = () => { activity.current.lastInteractionAt = Date.now(); };
@@ -89,22 +98,21 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
     catch (error) { setMessage(error instanceof Error ? error.message : "The fix could not be committed; the original sheet was retained."); }
   };
 
-  return <section className="copilot-panel" aria-label="Adigun Bot live co-pilot">
-    {!open ? <>{offer && enabled && <div className="copilot-peek"><span>{offer.explanation}</span><button onClick={() => onOpen(true)}>Open Adigun Bot</button><button onClick={dismiss}>Dismiss</button></div>}</> : <>
-      <div className="copilot-heading"><strong>Adigun BOT · live canvas analysis</strong><button onClick={() => onOpen(false)}>Close Bot panel</button></div>
+  return <><FloatingBotWindow owner={owner} cloudOwner={cloudOwner} activation={activation} onVisibility={visibility}><section className="copilot-panel" aria-label="Adigun Bot live co-pilot">
+      <div className="copilot-heading"><strong>Live canvas analysis</strong></div>
       <label className="property-checkbox">Live co-pilot<input type="checkbox" checked={enabled} onChange={(event) => { setEnabled(event.target.checked); if (!event.target.checked) dismiss(); }} /></label>
       <p>Local rules inspect this sheet as you edit. No generative AI service is configured. Suggestions are offers, not safety certification. Bot edits never auto-save.</p>
       <p>{canvas.components.length} components · {canvas.wires.length} wires · simulation {simulationState}</p>
       <p>Latest edit: {lastChange}</p>
       {selectedId && <p>Selected {canvas.components.find((component) => component.id === selectedId)?.reference ?? "component"}{liveOutput ? ` · ${liveOutput.label}: ${liveOutput.value}` : " · no live model result"}</p>}
-      <form onSubmit={(event) => { event.preventDefault(); const answer = goalDraft.trim(); goals.current.set(projectId, answer); setGoal(answer); setMessage(answer ? "Project goal remembered for this session." : "Project goal cleared."); }}><label>Project goal<input value={goalDraft} maxLength={240} onChange={(event) => setGoalDraft(event.target.value)} /></label><button type="submit">Remember project goal</button></form>
+      <form onSubmit={(event) => { event.preventDefault(); const answer = goalDraft.trim(); goals.current.set(`${owner}:${projectId}`, answer); setGoal(answer); setMessage(answer ? "Project goal remembered for this session." : "Project goal cleared."); }}><label>Project goal<input value={goalDraft} maxLength={240} onChange={(event) => setGoalDraft(event.target.value)} /></label><button type="submit">Remember project goal</button></form>
       <div className="copilot-actions"><button onClick={inspect}>Inspect current sheet</button><button onClick={explain}>What does this do?</button></div>
       {offer && <article className="copilot-offer"><strong>{offer.kind === "problem" ? "Canvas finding" : offer.kind === "question" ? "Project question" : "Suggested next step"}</strong><p>{offer.explanation}</p>
         {preview && <p>Preview: add one signal wire. Components and existing wires stay unchanged. The edit is undoable and stays unsaved.</p>}
         <div className="copilot-actions">{preview && <button disabled={!editable} onClick={accept}>Accept wire fix</button>}<button onClick={dismiss}>Dismiss</button><button onClick={() => setMore((value) => !value)}>Tell me more</button><button onClick={() => { const fresh = findings(Date.now()).find((item) => item.id === offer.id); if (fresh) show(fresh); else dismiss(); }}>Refresh preview</button></div>{more && <p>{offer.detail}</p>}
       </article>}
-      <form onSubmit={(event) => { event.preventDefault(); if (/what|explain|connect|wired|off|on|do/i.test(question)) explain(); else { setMessage("I can explain the selected component, inspect this sheet and preview supported wire fixes. Broader natural-language tasks require a configured secure AI service."); } }}><label>Ask about this canvas<input value={question} maxLength={240} onChange={(event) => setQuestion(event.target.value)} /></label><button type="submit">Ask Adigun Bot</button></form>
-      {message && <p role="status">{message}</p>}
-    </>}
-  </section>;
+      <div className="bot-transcript" role="log" aria-label="Bot conversation" aria-live="polite">{transcript.map((row, index) => <p key={index}><strong>{row.role === "user" ? "You" : "Bot"}:</strong> {row.text}</p>)}</div>
+      <form onSubmit={(event) => { event.preventDefault(); if (!question.trim()) return; setTranscript((rows) => [...rows.slice(-49), { role: "user", text: question.trim() }]); if (/what|explain|connect|wired|off|on|do/i.test(question)) explain(); else { setMessage("I can explain the selected component, inspect this sheet and preview supported wire fixes. Broader natural-language tasks require a configured secure AI service."); } setQuestion(""); }}><label>Ask about this canvas<input data-bot-question value={question} maxLength={240} onChange={(event) => setQuestion(event.target.value)} /></label><button type="submit">Ask Adigun Bot</button></form>
+      <footer className="bot-window-footer"><span>Project context: {canvas.name}</span><button onClick={() => { setTranscript([]); setMessage(""); setQuestion(""); }}>Clear chat</button></footer>
+  </section></FloatingBotWindow>{offer && enabled && !windowVisible && <aside className="bot-suggestion-toast" role="status"><p>{offer.explanation}</p><button onClick={onShow}>Open Adigun Bot</button><button onClick={dismiss}>Dismiss</button></aside>}</>;
 }

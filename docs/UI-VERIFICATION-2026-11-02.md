@@ -1,5 +1,13 @@
 # Workstation browser verification — 2026-11-02
 
+## Header utilities — local build
+
+The revised utility row has Saved locally followed by profile, language, settings, search and help. At 1672px desktop and 390px/320px mobile widths, each icon button measured 40 × 40px with 12px gaps. Header blocks and branding did not overlap; the page had no horizontal overflow. Mobile hides the saved-state text. Buttons use normal flex flow; the profile dot uses an internal grid overlay.
+
+The unsigned local session showed the gray status dot and Sign In title tooltip. Theme switched to Light and back to Dark; language switched to DE and back to EN. Header search focused its input and filtered the catalog to the PT100 sensor; clear restored the catalog. Help opened its real guide/Bot controls. Signed-in green-dot and production-render checks remain pending for this revision. The local suite passed 206 tests and the production build passed with the existing bundle-size warning.
+
+## Earlier production workstation checks
+
 Checked production release `fc77eeed37c27f52d769e857e1896faea4c8e246` against the workstation reference.
 
 - At 1672 × 941, component browser, schematic, properties and project library occupy separate columns. Five project cards render. Page scroll width was 1657, within the 1672px viewport.
