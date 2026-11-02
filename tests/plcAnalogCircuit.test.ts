@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { advanceCircuitClock } from "../src/simulation/circuitClock";
+import { advanceCircuitClock, setCircuitLevelInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
@@ -24,11 +24,13 @@ it("reads converted 4–20 mA levels in the PLC program and switches a wired out
   const before = JSON.stringify(design);
   let runtime = structuredClone(design);
   for (const [level, raw, expected] of [[0, 0, "OFF"], [50, 13824, "OFF"], [75, 20736, "ON"], [100, 27648, "ON"], [25, 6912, "OFF"]] as const) {
-    runtime.components[0].properties.levelPercent = level;
+    runtime = setCircuitLevelInput(runtime, catalogById, "level", level);
     runtime = advanceCircuitClock(runtime, catalogById, 0.1);
     const runs = executeCircuitModels(runtime, catalogById);
     expect(runs.find((run) => run.reference === "PLC1")!.output.value).toContain(`AI0 ${raw}`);
     expect(runs.find((run) => run.reference === "K1")!.output.value).toBe(expected);
   }
   expect(JSON.stringify(design)).toBe(before);
+  for (const value of [-1, 101, NaN, Infinity]) expect(() => setCircuitLevelInput(runtime, catalogById, "level", value)).toThrow();
+  expect(() => setCircuitLevelInput(runtime, catalogById, "plc", 50)).toThrow();
 });

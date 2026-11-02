@@ -33,3 +33,5 @@ GT AI0 13824; OUT Q0
 ```
 
 This switches Q0 on above 50% level. AI0 is the only supported analog register; arithmetic, additional registers, physical input diagnostics and wire-break/overrange faults remain unimplemented.
+
+Select a placed level sensor and use its **Live Level Percent** slider to change the runtime input from 0 to 100% while scanning continues. The saved level stays unchanged, and Stop restores it. The dedicated analog-level example in the project library includes the complete wired chain.
