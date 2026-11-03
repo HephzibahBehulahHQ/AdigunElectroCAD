@@ -3,6 +3,7 @@ import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { PLC_REGISTER_COUNT, scanPlcProgram } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
+import { advanceCylinder, valve52Direction } from "./pneumaticState";
 
 export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
@@ -28,6 +29,8 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeQ0; delete properties.runtimeError;
+    delete properties.runtimeSpool; delete properties.runtimePositionPercent;
+    delete properties.runtimeInput0Previous; delete properties.runtimeInput1Previous;
     for (let index = 0; index < PLC_REGISTER_COUNT; index++) delete properties[`runtimeD${index}`];
     delete properties.runtimeSafetyArmed; delete properties.runtimeResetReady; delete properties.runtimeResetPrevious;
     if (catalog.get(component.definitionId)?.simulationModelId === "catalog-on-delay-timer") properties.elapsedSeconds = 0;
@@ -42,6 +45,14 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
+    if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
+      const active = evaluated.get(component.id)!;
+      if (active.runtimeSignalError) return component;
+      try {
+        const update: Record<string, string | number | boolean> = model === "pneumatic-valve-5-2" ? { runtimeSpool: valve52Direction(active) } : { runtimePositionPercent: advanceCylinder(active, model === "pneumatic-cylinder-single", deltaSeconds) };
+        return { ...component, properties: { ...component.properties, ...update } };
+      } catch { return component; } // The model result reports invalid parameters/commands; motion is not advanced.
+    }
     if ((model === "catalog-safety-relay" || model === "safety-dual-relay") && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       const state = scanSafetyReset({ armed: active.runtimeSafetyArmed === true, resetReady: active.runtimeResetReady === true, previousReset: active.runtimeResetPrevious === true }, active.channelAClosed === true, active.channelBClosed === true, active.reset === true);
@@ -50,9 +61,9 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       const previousRegisters = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => Number(active[`runtimeD${index}`] ?? 0));
-      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters);
+      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true]);
       const registers = result.ok ? result.registers ?? previousRegisters : previousRegisters;
-      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
+      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), runtimeInput0Previous: active.inputA === true, runtimeInput1Previous: active.inputB === true, runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
     }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;

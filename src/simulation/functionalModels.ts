@@ -1,16 +1,39 @@
 import { compare, currentTransformerSecondaryAmp, dacMilliamp, edgeTrigger, encoderPulses, flowPulseHz, levelToMilliamp, loadCellMillivolt, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, pt100ResistanceOhm, setResetLatch, thermocoupleMillivolt, vibrationRms } from "./controlLogic";
-import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve32, directionalValve52, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
+import { cylinderPositionPercent, valve52Direction } from "./pneumaticState";
+import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, damperPosition, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
 
 export interface FunctionalModelResult { label: string; value: string; }
-export type SignalUnit = "boolean" | "milliamp" | "plc-raw" | "ohm" | "millivolt" | "hertz" | "acceleration" | "pulse-count" | "ampere" | "scalar";
-export interface FunctionalSignal { unit: SignalUnit; value: boolean | number; }
+export type SignalUnit = "boolean" | "milliamp" | "plc-raw" | "ohm" | "millivolt" | "hertz" | "acceleration" | "pulse-count" | "ampere" | "scalar" | "motion";
+export interface FunctionalSignal { unit: SignalUnit; value: boolean | number | "extend" | "retract" | "hold"; error?: string; }
 type Properties = Record<string, string | number | boolean>;
 type Model = (properties: Properties) => FunctionalModelResult;
 const number = (properties: Properties, key: string, fallback = 0) => typeof properties[key] === "number" && Number.isFinite(properties[key]) ? properties[key] : fallback;
 const bool = (properties: Properties, key: string) => properties[key] === true;
 const text = (properties: Properties, key: string, fallback = "") => typeof properties[key] === "string" ? properties[key] : fallback;
 const binary = (value: boolean) => value ? "ON" : "OFF";
-const signal = (unit: SignalUnit, value: boolean | number): FunctionalSignal => ({ unit, value });
+const signal = (unit: SignalUnit, value: FunctionalSignal["value"]): FunctionalSignal => ({ unit, value });
+const fault = (error: string): FunctionalSignal => ({ unit: "boolean", value: false, error });
+function pneumaticSignal(model: string, p: Properties): FunctionalSignal {
+  try {
+    if (model === "pneumatic-valve-5-2") return signal("motion", valve52Direction(p));
+    if (model === "pneumatic-valve-3-2") return signal("motion", bool(p, "energized") ? "extend" : "retract");
+    return signal("scalar", cylinderPositionPercent(p, model === "pneumatic-cylinder-single"));
+  } catch (error) { return fault(error instanceof Error ? error.message : "Invalid pneumatic state."); }
+}
+function pneumaticDisplay(model: string, p: Properties): FunctionalModelResult {
+  const result = pneumaticSignal(model, p);
+  return { label: model.includes("cylinder") ? "Cylinder position" : "Valve motion command", value: result.error ? `ERROR: ${result.error}` : result.unit === "scalar" ? `${Number(result.value).toFixed(1)}%` : String(result.value) };
+}
+function pt100Signal(properties: Properties): FunctionalSignal {
+  const temperature = properties.temperatureC === undefined ? 20 : typeof properties.temperatureC === "number" ? properties.temperatureC : NaN;
+  try { return signal("ohm", pt100ResistanceOhm(temperature)); }
+  catch (error) { return fault(error instanceof Error ? error.message : "Invalid PT100 temperature."); }
+}
+function thermocoupleSignal(properties: Properties): FunctionalSignal {
+  const junction = (key: string, fallback: number) => properties[key] === undefined ? fallback : typeof properties[key] === "number" ? properties[key] as number : NaN;
+  try { return signal("millivolt", thermocoupleMillivolt(junction("temperatureC", 20), junction("referenceJunctionC", 0))); }
+  catch (error) { return fault(error instanceof Error ? error.message : "Invalid Type K junction temperature."); }
+}
 const memory = (p: Properties) => bool(p, typeof p.runtimePrevious === "boolean" ? "runtimePrevious" : "previous");
 const edgeOutput = (p: Properties, kind: "positive" | "negative") => typeof p.scanOutput === "boolean" ? p.scanOutput : edgeTrigger(memory(p), bool(p, "input"))[kind];
 const plcOutput = (p: Properties) => text(p, "program").trim() ? bool(p, "runtimeQ0") : bool(p, "output");
@@ -27,8 +50,8 @@ const models: Record<string, Model> = {
   ...Object.fromEntries((["and", "or", "not", "nand", "nor", "xor"] as const).map((kind) => [`logic-gate-${kind}`, (p: Properties) => ({ label: `${kind.toUpperCase()} output`, value: binary(logicGate(kind, [bool(p, "inputA"), bool(p, "inputB")])) })])),
   ...Object.fromEntries((["greater-than", "less-than", "equal-to"] as const).map((kind) => [`logic-comparator-${kind}`, (p: Properties) => ({ label: "Comparator", value: binary(compare(kind, number(p, "left"), number(p, "right"))) })])),
   ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, number(p, "left"), number(p, "right")); return { label: "Math output", value: result.ok ? String(result.value) : result.reason }; }])),
-  "sensor-pt100": (p) => ({ label: "PT100 resistance", value: `${pt100ResistanceOhm(number(p, "temperatureC", 20)).toFixed(2)} Ω` }),
-  "sensor-thermocouple": (p) => ({ label: "Thermocouple output", value: `${thermocoupleMillivolt(number(p, "temperatureC", 20)).toFixed(3)} mV` }),
+  "sensor-pt100": (p) => { const result = pt100Signal(p); return { label: "PT100 resistance", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(2)} Ω` }; },
+  "sensor-thermocouple": (p) => { const result = thermocoupleSignal(p); return { label: "Type K terminal EMF", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(3)} mV` }; },
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
   "sensor-level-4-20": (p) => ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
@@ -37,10 +60,10 @@ const models: Record<string, Model> = {
   "sensor-current-transformer": (p) => ({ label: "CT secondary", value: `${currentTransformerSecondaryAmp(number(p, "primaryA"), number(p, "ratedPrimaryA", 100)).toFixed(3)} A` }),
   "signal-adc": (p) => ({ label: "PLC raw value", value: String(milliampToPlcRaw(number(p, "milliamp", 4))) }),
   "signal-dac": (p) => ({ label: "DAC output", value: `${dacMilliamp(number(p, "raw")).toFixed(2)} mA` }),
-  "pneumatic-valve-5-2": (p) => ({ label: "Valve position", value: directionalValve52(bool(p, "extendCoil"), bool(p, "retractCoil")) }),
-  "pneumatic-valve-3-2": (p) => ({ label: "Valve path", value: directionalValve32(bool(p, "energized")) }),
-  "pneumatic-cylinder-single": (p) => ({ label: "Next position", value: `${cylinderPosition(number(p, "positionPercent"), text(p, "direction") === "retract" ? "retract" : "extend", number(p, "elapsedSeconds", 1), number(p, "travelSeconds", 4)).toFixed(1)}%` }),
-  "pneumatic-cylinder-double": (p) => ({ label: "Next position", value: `${cylinderPosition(number(p, "positionPercent"), text(p, "direction") === "retract" ? "retract" : text(p, "direction") === "hold" ? "hold" : "extend", number(p, "elapsedSeconds", 1), number(p, "travelSeconds", 4)).toFixed(1)}%` }),
+  "pneumatic-valve-5-2": (p) => pneumaticDisplay("pneumatic-valve-5-2", p),
+  "pneumatic-valve-3-2": (p) => pneumaticDisplay("pneumatic-valve-3-2", p),
+  "pneumatic-cylinder-single": (p) => pneumaticDisplay("pneumatic-cylinder-single", p),
+  "pneumatic-cylinder-double": (p) => pneumaticDisplay("pneumatic-cylinder-double", p),
   "hydraulic-pump": (p) => ({ label: "Pump flow", value: `${pumpFlowLpm(number(p, "displacementCcPerRev"), number(p, "rpm")).toFixed(2)} L/min` }),
   "hydraulic-cylinder": (p) => ({ label: "Cylinder force", value: `${hydraulicCylinderForceN(number(p, "pressureBar"), number(p, "boreDiameterMm")).toFixed(1)} N` }),
   "hydraulic-relief-valve": (p) => ({ label: "Relief valve", value: binary(reliefValveOpen(number(p, "pressureBar"), number(p, "settingBar"))) }),
@@ -93,6 +116,7 @@ const models: Record<string, Model> = {
 };
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
+  if (text(properties, "runtimeSignalError")) return { label: "Signal fault", value: `ERROR: ${text(properties, "runtimeSignalError")}` };
   if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
@@ -110,6 +134,9 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 export function hasFunctionalModel(modelId: string) { return ["thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+  if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
+  if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
+  if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", safetyOutput(properties));
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
@@ -130,8 +157,8 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (["greater-than", "less-than", "equal-to"].includes(comparator)) return signal("boolean", compare(comparator as "greater-than" | "less-than" | "equal-to", number(properties, "left"), number(properties, "right")));
   const math = modelId.replace("logic-math-", "");
   if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", number(properties, "left"), number(properties, "right")); return result.ok ? signal("scalar", result.value) : undefined; }
-  if (modelId === "sensor-pt100") return signal("ohm", pt100ResistanceOhm(number(properties, "temperatureC", 20)));
-  if (modelId === "sensor-thermocouple") return signal("millivolt", thermocoupleMillivolt(number(properties, "temperatureC", 20)));
+  if (modelId === "sensor-pt100") return pt100Signal(properties);
+  if (modelId === "sensor-thermocouple") return thermocoupleSignal(properties);
   if (modelId === "sensor-flow") return signal("hertz", flowPulseHz(number(properties, "flowLpm"), number(properties, "pulsesPerLitre", 100)));
   if (modelId === "sensor-level-4-20") return signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
   if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));

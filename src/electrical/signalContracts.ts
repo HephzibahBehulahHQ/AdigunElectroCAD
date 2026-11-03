@@ -5,13 +5,23 @@ const numeric: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz
 
 export function functionalOutputTerminal(definition: ElectricalComponentDefinition): TerminalDefinition | undefined {
   const model = definition.simulationModelId;
-  const outputId = model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
+  const outputId = model === "catalog-circuit-breaker" ? "aux-closed" : model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
   return definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
 }
 
 /** Known simulated signal contracts; undefined leaves physical/unsupported terminals unclassified. */
 export function terminalSignalUnits(definition: ElectricalComponentDefinition, terminalId: string): SignalUnit[] | undefined {
   const model = definition.simulationModelId;
+  if (model === "catalog-circuit-breaker" && terminalId === "aux-closed") return ["boolean"];
+  if (["pneumatic-valve-5-2", "pneumatic-valve-3-2"].includes(model)) {
+    if (terminalId === "out") return ["motion"];
+    if (["in", "in-a", "in-b"].includes(terminalId)) return ["boolean"];
+  }
+  if (["pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model)) {
+    if (terminalId === "motion") return ["motion"];
+    if (terminalId === "out") return ["scalar"];
+    if (["in", "in-a", "in-b"].includes(terminalId)) return ["boolean"];
+  }
   if (model === "catalog-plc-digital-io") {
     if (terminalId === "ai-0") return ["plc-raw"];
     if (["in-0", "in-1", "out-0"].includes(terminalId)) return ["boolean"];

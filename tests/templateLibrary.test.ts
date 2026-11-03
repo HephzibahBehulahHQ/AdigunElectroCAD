@@ -61,20 +61,18 @@ describe("project template library", () => {
     expect(steps.map((step) => step.passed)).toEqual([true, true, true]);
     expect(JSON.stringify(document)).toBe(before);
   });
-  it("contains 500 uniquely identified executable projects", () => {
-    expect(templateLibrary).toHaveLength(500);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(500);
+  it("contains the existing 500 entries, two pneumatic projects and a two-motor sequence", () => {
+    expect(templateLibrary).toHaveLength(503);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(503);
     expect(new Set(templateLibrary.map((template) => template.level)).size).toBe(5);
   });
 
-  it("keeps every template within known terminal topology and its declared model outcomes", () => {
-    for (const template of templateLibrary) {
+  it.each(templateLibrary)("validates topology and model outcomes for $id", (template) => {
       expect(template.document.components.length).toBeGreaterThanOrEqual(3);
       expect(validateCircuit(template.document, catalogById)).toEqual([]);
       expect(template.testSequence.length).toBeGreaterThanOrEqual(3);
       expect(template.expectedOutputs.length).toBeGreaterThanOrEqual(3);
       expect(verifyProjectTemplate(template, catalogById)).toMatchObject({ passed: true, topologyIssues: [], failedExpectations: [] });
-    }
   });
 
   it("loads a template into a free sheet without mutating the DOL reference sheet", () => {

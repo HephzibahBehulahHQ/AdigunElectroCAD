@@ -39,8 +39,8 @@ describe("PLC logic and analog signal models", () => {
   });
 
   it("calculates the implemented instrumentation signals", () => {
-    expect(pt100ResistanceOhm(100)).toBeCloseTo(138.5);
-    expect(thermocoupleMillivolt(100)).toBeCloseTo(4.1);
+    expect(pt100ResistanceOhm(100)).toBeCloseTo(138.5055, 4);
+    expect(thermocoupleMillivolt(100)).toBeCloseTo(4.096, 3);
     expect(flowPulseHz(60, 10)).toBe(10);
     expect(vibrationRms([3, 4])).toBeCloseTo(Math.sqrt(12.5));
     expect(encoderPulses(2.5, 100)).toBe(250);

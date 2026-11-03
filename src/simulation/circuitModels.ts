@@ -8,9 +8,16 @@ export interface CircuitModelRun { componentId: string; reference: string; model
 const endpointKey = (componentId: string, terminalId: string) => `${componentId}.${terminalId}`;
 
 const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
-type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; };
+type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if (modelId === "pneumatic-valve-5-2" && ["in-a", "in-b"].includes(terminalId)) return { property: terminalId === "in-a" ? "extendCoil" : "retractCoil", acceptedUnits: ["boolean"] };
+  if (modelId === "pneumatic-valve-3-2" && terminalId === "in") return { property: "energized", acceptedUnits: ["boolean"] };
+  if (["pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) {
+    if (terminalId === "motion") return { property: "motionCommand", acceptedUnits: ["motion"], boundProperty: "runtimeMotionBound" };
+    if (terminalId === "in" || terminalId === "in-a") return { property: "extendCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDirectBound" };
+    if (terminalId === "in-b") return { property: "retractCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDirectBound" };
+  }
   if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"] };
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") {
     if (["s11", "in-a"].includes(terminalId)) return { property: "channelAClosed", acceptedUnits: ["boolean"] };
@@ -33,7 +40,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   return undefined;
 }
 
-const sameSignal = (left: FunctionalSignal | undefined, right: FunctionalSignal) => left?.unit === right.unit && left.value === right.value;
+const sameSignal = (left: FunctionalSignal | undefined, right: FunctionalSignal) => left?.unit === right.unit && left.value === right.value && left.error === right.error;
 
 function definitions(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>) {
   return new Map(document.components.flatMap((component) => { const definition = catalog.get(component.definitionId); return definition ? [[component.id, definition] as const] : []; }));
@@ -71,9 +78,17 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const incoming = signals.get(endpointKey(component.id, terminal.id));
         const binding = inputBinding(definition.simulationModelId, terminal.id);
         const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
+        const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
+        const inputError = incoming?.error ?? unitError;
+        if (inputError && binding) {
+          if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
+          if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
+          continue;
+        }
         const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
         if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
           activeProperties[binding.property] = incoming.value;
+          if (binding.boundProperty) activeProperties[binding.boundProperty] = true;
           inputUnits.set(inputUnitKey, incoming.unit);
           changed = true;
         }
@@ -115,6 +130,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (conducting) for (const phase of ["l1", "l2", "l3"]) {
       link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
     }
+    if (model === "thermal-overload-dol-v1") for (let phase = 1; phase <= 3; phase++) link(endpointKey(component.id, `l${phase}-in`), endpointKey(component.id, `t${phase}`));
   }
   while (queue.length) {
     const [terminal, phase, incomingFrequency] = queue.shift()!;

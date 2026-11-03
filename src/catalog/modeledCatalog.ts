@@ -44,7 +44,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     referencePrefix: family.referencePrefix,
     description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
     symbolId: `${family.symbolId}-${String(variant).padStart(2, "0")}`,
-    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }] : [])],
+    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "circuit-breaker" ? [{ id: "aux-closed", label: "Q CLOSED", kind: "control" as const, direction: "output" as const }] : []), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }] : [])],
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,

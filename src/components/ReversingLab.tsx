@@ -46,4 +46,3 @@ export function ReversingLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
     <p>KM1: {state.contactor === "forward" ? "ON" : "OFF"} · KM2: {state.contactor === "reverse" ? "ON" : "OFF"} · Speed: {state.speedRpm.toFixed(0)} rpm · Time: {(state.elapsedMs / 1000).toFixed(1)} s</p>
   </section>;
 }
-

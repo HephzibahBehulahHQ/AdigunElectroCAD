@@ -28,4 +28,3 @@ describe("Supabase integration", () => {
     expect(isAnonymousUser({ is_anonymous: false } as never)).toBe(false);
   });
 });
-

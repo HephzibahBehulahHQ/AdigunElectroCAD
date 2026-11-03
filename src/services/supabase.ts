@@ -22,4 +22,3 @@ export function supabaseClient(): SupabaseClient<Database> {
   });
   return client;
 }
-

@@ -27,4 +27,3 @@ export async function saveUserPreferences(userId: string, preference: { theme: s
   const { error } = await table().from("user_preferences").upsert({ user_id: userId, theme: preference.theme, locale: preference.locale, favorites: preference.favorites as Json, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   if (error) throw error;
 }
-
