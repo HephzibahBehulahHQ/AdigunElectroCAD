@@ -12,7 +12,20 @@ export function FunctionalSymbol({ symbolId, x, y }: { symbolId: string; x: numb
   if (symbolId === "logic-no" || symbolId === "logic-nc") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 28}`} /><path d={symbolId === "logic-no" ? `M ${x - 6} ${cy + 10} L ${x + 6} ${cy - 10}` : `M ${x - 7} ${cy} H ${x + 7} M ${x - 8} ${cy + 11} L ${x + 8} ${cy - 11}`} /></g>;
   if (symbolId === "logic-coil" || symbolId === "logic-set" || symbolId === "logic-reset") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 15} M ${x + 15} ${cy} H ${x + 28}`} /><path d={`M ${x - 15} ${cy - 12} Q ${x} ${cy} ${x - 15} ${cy + 12} M ${x + 15} ${cy - 12} Q ${x} ${cy} ${x + 15} ${cy + 12}`} />{symbolId !== "logic-coil" && <text x={x} y={cy + 4} textAnchor="middle" className={text}>{symbolId === "logic-set" ? "S" : "R"}</text>}</g>;
   if (symbolId.startsWith("logic-edge-")) return <g className={mark}><path d={`M ${x - 27} ${cy + 8} H ${x - 6} V ${cy - 9} H ${x + 27}`} />{symbolId.endsWith("positive") ? <path d={`M ${x + 7} ${cy - 18} V ${cy - 5} M ${x + 2} ${cy - 10} L ${x + 7} ${cy - 5} L ${x + 12} ${cy - 10}`} /> : <path d={`M ${x + 7} ${cy + 18} V ${cy + 5} M ${x + 2} ${cy + 10} L ${x + 7} ${cy + 5} L ${x + 12} ${cy + 10}`} />}</g>;
-  if (symbolId.startsWith("logic-gate-")) { const label = symbolId.replace("logic-gate-", "").toUpperCase().replace("AND", "&").replace("OR", "≥1").replace("NOT", "1").replace("NAND", "&¬").replace("NOR", "≥1¬").replace("XOR", "=1"); return <g className={mark}><path d={`M ${x - 26} ${cy - 16} H ${x + 4} Q ${x + 26} ${cy} ${x + 4} ${cy + 16} H ${x - 26} Z`} /><text x={x - 1} y={cy + 4} textAnchor="middle" className={text}>{label}</text></g>; }
+  const gates: Record<string, { label: string; inverted: boolean }> = {
+    and: { label: "&", inverted: false },
+    or: { label: "≥1", inverted: false },
+    not: { label: "1", inverted: true },
+    nand: { label: "&", inverted: true },
+    nor: { label: "≥1", inverted: true },
+    xor: { label: "=1", inverted: false },
+  };
+  const gate = gates[symbolId.replace(/^logic-(gate-)?/, "")];
+  if (gate) return <g className={mark} aria-label={symbolId.replace(/^logic-(gate-)?/, "").toUpperCase() + " logic gate"}>
+    <rect x={x - 24} y={y - 22} width="44" height="32" />
+    <text x={x - 2} y={y - 2} textAnchor="middle" className={text}>{gate.label}</text>
+    {gate.inverted && <circle cx={x + 24} cy={y - 6} r="4" />}
+  </g>;
   if (symbolId.startsWith("logic-comparator-")) { const label = symbolId.endsWith("greater-than") ? ">" : symbolId.endsWith("less-than") ? "<" : "="; return <g className={mark}><rect x={x - 22} y={cy - 15} width="44" height="30" rx="3" /><text x={x} y={cy + 6} textAnchor="middle" className={text}>{label}</text></g>; }
   if (symbolId.startsWith("logic-math-")) { const label = symbolId.endsWith("add") ? "+" : symbolId.endsWith("subtract") ? "−" : symbolId.endsWith("multiply") ? "×" : "÷"; return <g className={mark}><rect x={x - 22} y={cy - 15} width="44" height="30" rx="3" /><text x={x} y={cy + 6} textAnchor="middle" className={text}>{label}</text></g>; }
 
