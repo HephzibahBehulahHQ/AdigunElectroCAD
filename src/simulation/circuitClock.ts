@@ -1,4 +1,5 @@
 import { evaluateWiredControl } from "./wiredControl";
+import { advanceCircuitThermal } from "./thermalRuntime";
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
 import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
@@ -11,7 +12,7 @@ export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<s
   const component = document.components.find((item) => item.id === componentId);
   const definition = component && catalog.get(component.definitionId);
   if (!component || !definition || typeof { ...definition.propertiesSchema, ...component.properties }[property] !== "boolean" || property.startsWith("runtime") || property === "scanOutput") throw new Error("Select a defined Boolean parameter.");
-  const next = { ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, [property]: value } } : item) };
+  const next = advanceCircuitThermal({ ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, [property]: value } } : item) }, catalog, 0);
   const coils = evaluateWiredControl(next, catalog);
   return latchSafetyFaults({ ...next, components: next.components.map(item => coils.has(item.id) ? { ...item, properties: { ...item.properties, runtimeCoilEnergized: coils.get(item.id)!.energized } } : item) }, catalog);
 }
@@ -32,6 +33,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeCoilEnergized;
+    delete properties.runtimeThermalLevel; delete properties.runtimeThermalTripped; delete properties.runtimeThermalResetPrevious; delete properties.runtimeThermalError; delete properties.runtimeLoadCurrentA;
     delete properties.runtimeQ0; delete properties.runtimeError;
     delete properties.runtimeSpool; delete properties.runtimePositionPercent;
     delete properties.runtimeInput0Previous; delete properties.runtimeInput1Previous;
@@ -45,6 +47,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
 /** Advance a runtime document; the saved design remains unchanged. */
 export function advanceCircuitClock(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, deltaSeconds: number): CircuitDocument {
   if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0) throw new Error("Simulation time step must be finite and non-negative.");
+  document = advanceCircuitThermal(document, catalog, deltaSeconds);
   const evaluated = new Map(executeCircuitModels(document, catalog).map((run) => [run.componentId, run.evaluatedProperties]));
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);

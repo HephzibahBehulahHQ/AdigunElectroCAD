@@ -8,6 +8,12 @@ import { catalogById } from "../src/catalog/dolCatalog";
 const relay = [{ id: "F1", poles: [{ input: "in", output: "out" }] }];
 const load = (reference: string, terminal: string, currentA: number) => ({ reference, currentA, feeds: [{ source: "source", terminal }] });
 
+it("rejects a converter before or after the relay on the actual load path", () => {
+  for (const graph of [new Map([["source", ["drive"]], ["drive", ["in"]], ["in", ["out"]], ["out", ["motor"]]]), new Map([["source", ["in"]], ["in", ["out"]], ["out", ["drive"]], ["drive", ["motor"]]])]) {
+    expect(traceOverloadCurrents(graph, relay, [load("M1", "motor", 10)], ["drive"]).get("F1")?.error).toContain("Unsupported power conversion");
+  }
+});
+
 it("sums distinct downstream loads through a shared relay pole", () => {
   const graph = new Map([["source", ["in"]], ["in", ["out"]], ["out", ["m1", "m2"]]]);
   expect(traceOverloadCurrents(graph, relay, [load("M1", "m1", 10), load("M2", "m2", 4)]).get("F1")).toEqual({ phaseCurrentsA: [14], currentA: 14 });

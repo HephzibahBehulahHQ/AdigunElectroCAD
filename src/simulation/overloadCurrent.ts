@@ -13,7 +13,7 @@ export interface OverloadCurrentResult { phaseCurrentsA: number[]; currentA: num
  * A pole gets a load's current only if removing it disconnects that load phase.
  * If it is on a conducting path but not necessary, current division is unknown.
  */
-export function traceOverloadCurrents(graph: ReadonlyMap<string, readonly string[]>, overloads: OverloadCurrentPath[], loads: NominalCurrentLoad[]): Map<string, OverloadCurrentResult> {
+export function traceOverloadCurrents(graph: ReadonlyMap<string, readonly string[]>, overloads: OverloadCurrentPath[], loads: NominalCurrentLoad[], unsupportedTransferNodes: string[] = []): Map<string, OverloadCurrentResult> {
   const reachable = (start: string, omitted?: { input: string; output: string }) => {
     const seen = new Set([start]);
     const queue = [start];
@@ -40,6 +40,8 @@ export function traceOverloadCurrents(graph: ReadonlyMap<string, readonly string
         if (!(graph.get(pole.input) ?? []).includes(pole.output)) return;
         if (reachable(feed.source, pole).has(feed.terminal)) {
           errors.add(`Parallel or bypassed power path to ${load.reference}; relay current division is not modeled.`);
+        } else if (unsupportedTransferNodes.some(node => fromSource.has(node) && reach(node).has(feed.terminal))) {
+          errors.add(`Unsupported power conversion on the feeder to ${load.reference}; nominal relay current is unavailable.`);
         } else if (!Number.isFinite(load.currentA) || load.currentA < 0) {
           errors.add(`Invalid nominal load current at ${load.reference}.`);
         } else {

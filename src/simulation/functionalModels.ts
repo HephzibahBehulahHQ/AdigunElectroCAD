@@ -133,7 +133,14 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   }
   if (text(properties, "runtimeSignalError")) return { label: "Signal fault", error: text(properties, "runtimeSignalError"), value: `ERROR: ${text(properties, "runtimeSignalError")}` };
   if (modelId === "contactor-dol-v1") return { label: "Wired control coil", value: `${number(properties, "runtimeCoilVoltageV")} V · ${bool(properties, "energized") ? "ENERGIZED" : "OFF"}` };
-  if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
+  if (modelId === "thermal-overload-dol-v1") {
+    if (bool(properties, "thermalEnabled")) {
+      const error = text(properties, "runtimeCurrentError");
+      if (error) return { label: "Thermal overload", error, value: `ERROR: ${error}` };
+      return { label: "Thermal overload", value: `${number(properties, "runtimeLoadCurrentA").toFixed(2)} A · ${(number(properties, "runtimeThermalLevel") * 100).toFixed(1)}% heat · ${bool(properties, "tripped") ? "TRIPPED" : "READY"}` };
+    }
+    return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
+  }
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
     const connection = text(properties, "connection", "open");
