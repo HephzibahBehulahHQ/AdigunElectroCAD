@@ -1,5 +1,20 @@
 import type { ComponentInstance } from "../types/electrical";
 
+/** Keep supported command wires outside the symbol body; COM is a distinct lower anchor. */
+export function controlTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+  const logic = modelId.startsWith("logic-");
+  const cylinder = modelId === "pneumatic-cylinder-single" || modelId === "pneumatic-cylinder-double";
+  const valve = modelId === "pneumatic-valve-5-2" || modelId === "pneumatic-valve-3-2";
+  if (!logic && !cylinder && !valve) return undefined;
+  if (terminalId === "common") return { x: 0, y: 27 };
+  if (terminalId === "out") return { x: 47, y: 0 };
+  if (terminalId === "motion") return { x: -47, y: modelId.endsWith("double") ? 18 : 14 };
+  if (terminalId === "in") return { x: -47, y: cylinder ? -14 : 0 };
+  if (terminalId === "in-a") return { x: -47, y: modelId.endsWith("double") ? -18 : -12 };
+  if (terminalId === "in-b") return { x: -47, y: modelId.endsWith("double") ? 0 : 12 };
+  return undefined;
+}
+
 export function componentLabelOffsets(rotation: ComponentInstance["rotation"]) {
   const reference = rotation === 90 || rotation === 270 ? 75 : 50;
   return { reference, kind: reference + 17 };

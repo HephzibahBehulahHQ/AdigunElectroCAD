@@ -3,7 +3,7 @@ import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
-import { componentLabelOffsets } from "../cad/componentGeometry";
+import { componentLabelOffsets, controlTerminalOffset } from "../cad/componentGeometry";
 import { useRef, useState, type PointerEvent } from "react";
 
 interface Props {
@@ -46,7 +46,8 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
       const y = sixTerminal ? index < 3 ? -27 : index < 6 ? 27 : 0 : -15 + Math.floor(index / 2) * 12;
-      const offset = rotateOffset(x, y, component.rotation);
+      const control = controlTerminalOffset(definition.simulationModelId, terminal.id);
+      const offset = rotateOffset(control?.x ?? x, control?.y ?? y, component.rotation);
       anchors.push(anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y));
     });
   }

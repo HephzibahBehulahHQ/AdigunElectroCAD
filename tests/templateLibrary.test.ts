@@ -61,9 +61,9 @@ describe("project template library", () => {
     expect(steps.map((step) => step.passed)).toEqual([true, true, true]);
     expect(JSON.stringify(document)).toBe(before);
   });
-  it("contains 500 uniquely identified executable projects", () => {
-    expect(templateLibrary).toHaveLength(500);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(500);
+  it("contains the existing 500 entries and two dedicated pneumatic project definitions", () => {
+    expect(templateLibrary).toHaveLength(502);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(502);
     expect(new Set(templateLibrary.map((template) => template.level)).size).toBe(5);
   });
 
