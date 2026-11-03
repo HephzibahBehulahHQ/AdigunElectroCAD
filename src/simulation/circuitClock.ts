@@ -61,6 +61,8 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     }
     if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
+      // Invalid wired inputs must not execute instructions or mutate retained registers.
+      if (active.runtimeSignalError) return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeError: String(active.runtimeSignalError) } };
       const previousRegisters = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => Number(active[`runtimeD${index}`] ?? 0));
       const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true]);
       const registers = result.ok ? result.registers ?? previousRegisters : previousRegisters;
