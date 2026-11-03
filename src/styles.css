@@ -122,3 +122,6 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .ladder-editor pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .68rem; }
 @media print { .project-library-panel { display: none; } }
 @media print { :root, body { background: #fff; color: #13233b; } .app-shell { display: block; background: #fff; } .app-header { display: block; padding: 8px 12px; border: 0; background: #fff; } .header-actions, .project-status, .menu-row, .tool-row, .component-panel, .properties-panel, .engineering-console, footer, .sheet-tabs, .canvas-caption { display: none; } .workspace { display: block; padding: 0; } .drawing-area { display: block; border: 0; overflow: visible; } .schematic-wrap { min-height: 0; overflow: visible; } .schematic { min-width: 0; width: 100%; height: auto; } }
+
+.wire.manual-wire.power-wire { stroke-dasharray: none; }
+.wire.manual-wire.power-wire:not(.selected-wire) { stroke: #991b1b; stroke-width: 2.4; }

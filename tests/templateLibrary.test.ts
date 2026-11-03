@@ -61,9 +61,9 @@ describe("project template library", () => {
     expect(steps.map((step) => step.passed)).toEqual([true, true, true]);
     expect(JSON.stringify(document)).toBe(before);
   });
-  it("contains the existing 500 entries and two dedicated pneumatic project definitions", () => {
-    expect(templateLibrary).toHaveLength(502);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(502);
+  it("contains the existing 500 entries, two pneumatic projects and a two-motor sequence", () => {
+    expect(templateLibrary).toHaveLength(503);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(503);
     expect(new Set(templateLibrary.map((template) => template.level)).size).toBe(5);
   });
 
