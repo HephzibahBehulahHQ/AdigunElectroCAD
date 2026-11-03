@@ -4,6 +4,7 @@ import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { PLC_REGISTER_COUNT, scanPlcProgram } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
 import { advanceCylinder, valve52Direction } from "./pneumaticState";
+import { timerParameterError } from "./functionalModels";
 
 export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
@@ -74,6 +75,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     }
     if (definition?.simulationModelId !== "catalog-on-delay-timer") return component;
     const properties = evaluated.get(component.id) ?? { ...definition.propertiesSchema, ...component.properties };
+    if (properties.runtimeSignalError || timerParameterError(properties)) return component;
     const previous = Number(properties.elapsedSeconds ?? 0);
     const elapsedSeconds = properties.energized === true ? Math.round(((Number.isFinite(previous) ? Math.max(0, previous) : 0) + deltaSeconds) * 1e9) / 1e9 : 0;
     return { ...component, properties: { ...component.properties, elapsedSeconds } };
