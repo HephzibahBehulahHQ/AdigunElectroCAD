@@ -12,7 +12,7 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 | M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Manual trip, DOL dynamics and starter laboratories exist; thermal overload integration and broader physical coupling remain open. |
 | M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
 | M06 | Component library | Every requested item, including categories 11–18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
-| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 505 entries currently include 499 variants from five scenario families and six dedicated additions. This gate is not satisfied by those counts. |
+| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 506 entries currently include 499 variants from five scenario families and seven dedicated additions. This gate is not satisfied by those counts. |
 | M08 | Identity and project data | Schema isolation, owner RLS, restrictive anonymous INSERT, confirmed email/password and two-step anonymous upgrade; local/cloud save/load and preferences work with refresh and two permanent accounts. | Partial. Existing sign-in, cloud and RLS evidence in AUTH-RLS-VERIFICATION-2026-11-02.md; email upgrade, two-account browser isolation and cross-device preferences remain unverified. |
 | M09 | Visual, responsive and language acceptance | Match supplied workstation target; legible branding and labels, no collisions at desktop/mobile sizes; usable keyboard flows, light/dark themes and reviewed English/German/Yoruba/Pidgin. | Partial. Checked header/footer layouts and compact account/status controls; full reference match, all views and translations remain open. See VISUAL-TARGET.md. |
 | M10 | Adigun Bot | Floating/resizable/dockable window and persistence; actual canvas-aware assistance, explanations, consented atomic edits, quiet/unread behavior and configured AI capabilities; test all requested addendum flows. | Partial. Rule-based assistance and floating window deployed; generative AI and broader engineering reasoning are not configured or verified. See both retained Bot request TXT files and verification docs. |
@@ -41,15 +41,15 @@ M03a was accepted in PR #76: synchronized head `2ef3fee`, main `484a69f`, succes
 
 Acceptance: PR #77, synchronized branch `77fae21`, merge `a1210ea`, successful Pages run `41593296828`, matching live assets `index-Bu23w5mA.js` and `index-BUIzYmxF.css`. All 859 tests and the production build passed. Canonical-domain browser checks verified forward +1440 rpm with KM2 off under an opposing command; STOP left STANDBY; reverse -1440 rpm with KM1 off under an opposing command; overload trip/reset left STANDBY. Undo/reload restored the original 14-sheet project without cloud writes. M03b is complete; electrical interlocking is not a mechanical or certified safety interlock.
 
-## Next increment: M04a — Current-driven thermal overload
+## Active increment: M04a — Current-driven thermal overload
 
-- [ ] Inspect existing load-current tracing, DOL thermal behavior and runtime-state/reset boundaries.
-- [ ] Specify a documented educational thermal model and wire current-driven trip into the existing power/control circuit.
-- [ ] Verify cold/hot trip, cooling/reset, time-step consistency, current interruption and saved-design immutability.
-- [ ] Add observable runtime state and meaningful local browser acceptance.
+- [x] Inspect existing load-current tracing, DOL thermal behavior and runtime-state/reset boundaries.
+- [x] Specify a documented educational thermal model and wire current-driven trip into the existing power/control circuit.
+- [x] Verify cold/hot trip, cooling/reset, time-step consistency, current interruption and saved-design immutability.
+- [x] Add observable runtime state and meaningful local browser acceptance.
 - [ ] Publish/synchronize, pass CI, deploy and verify the same behavior live.
 
-Scope and remaining hours will be estimated after the current-path and runtime integration audit.
+Local event-coupled thermal integration, nominal feeder-current tracing and browser acceptance are complete. Final publication and live acceptance remain open in draft PR #79. Approximately 80% of M04a is complete; 0.5–1 hour remaining is provisional. See THERMAL-OVERLOAD.md for supported current paths and limits.
 
 ## Per-increment publication rule
 
