@@ -3,6 +3,7 @@ import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { PLC_REGISTER_COUNT, scanPlcProgram } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
+import { advanceCylinder, valve52Direction } from "./pneumaticState";
 
 export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
@@ -28,6 +29,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeQ0; delete properties.runtimeError;
+    delete properties.runtimeSpool; delete properties.runtimePositionPercent;
     for (let index = 0; index < PLC_REGISTER_COUNT; index++) delete properties[`runtimeD${index}`];
     delete properties.runtimeSafetyArmed; delete properties.runtimeResetReady; delete properties.runtimeResetPrevious;
     if (catalog.get(component.definitionId)?.simulationModelId === "catalog-on-delay-timer") properties.elapsedSeconds = 0;
@@ -42,6 +44,14 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
+    if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
+      const active = evaluated.get(component.id)!;
+      if (active.runtimeSignalError) return component;
+      try {
+        const update: Record<string, string | number | boolean> = model === "pneumatic-valve-5-2" ? { runtimeSpool: valve52Direction(active) } : { runtimePositionPercent: advanceCylinder(active, model === "pneumatic-cylinder-single", deltaSeconds) };
+        return { ...component, properties: { ...component.properties, ...update } };
+      } catch { return component; } // The model result reports invalid parameters/commands; motion is not advanced.
+    }
     if ((model === "catalog-safety-relay" || model === "safety-dual-relay") && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       const state = scanSafetyReset({ armed: active.runtimeSafetyArmed === true, resetReady: active.runtimeResetReady === true, previousReset: active.runtimeResetPrevious === true }, active.channelAClosed === true, active.channelBClosed === true, active.reset === true);

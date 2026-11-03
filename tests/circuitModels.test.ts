@@ -167,7 +167,7 @@ describe("placed functional component execution", () => {
     document.components.push({ id: "adc-1", definitionId: "signal.adc", reference: "ADC1", x: 900, y: 260, rotation: 0, properties: { milliamp: 4 } });
     document.wires.push({ id: "invalid-rtd-to-adc", from: { componentId: "pt100-1", terminalId: "signal" }, to: { componentId: "adc-1", terminalId: "in" }, points: [], netName: "RTD_NOT_4_20" });
     expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ reference: "ADC1", output: { label: "PLC raw value", value: "0" } }),
+      expect.objectContaining({ reference: "ADC1", output: { label: "Signal fault", value: "ERROR: Signal unit ohm is not accepted at ADC1.in." } }),
     ]));
   });
 
@@ -179,7 +179,7 @@ describe("placed functional component execution", () => {
     document.wires.push({ id: "level-to-math", from: { componentId: "level-1", terminalId: "signal" }, to: { componentId: "math-1", terminalId: "in-a" }, points: [], netName: "LEVEL_DEFAULT" });
     document.wires.push({ id: "thermo-to-math", from: { componentId: "thermo-1", terminalId: "signal" }, to: { componentId: "math-1", terminalId: "in-b" }, points: [], netName: "THERMO_INCOMPATIBLE" });
     expect(executeCircuitModels(document, catalogById)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ reference: "MTH1", output: { label: "Math output", value: "4" } }),
+      expect.objectContaining({ reference: "MTH1", output: { label: "Signal fault", value: "ERROR: Mixed signal units milliamp/millivolt at MTH1." } }),
     ]));
   });
 });
