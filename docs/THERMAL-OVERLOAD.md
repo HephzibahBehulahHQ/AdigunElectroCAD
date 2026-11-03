@@ -1,6 +1,6 @@
 # Current-driven thermal overload — implementation in progress
 
-The thermal primitive is implemented and tested; it is **not yet connected to the application circuit clock, feeder current, inspector or project library**. Production retains manual overload trip/reset until that integration is complete and verified. M04a remains open.
+The thermal primitive and connected nominal feeder-current tracing are implemented and tested. They are **not yet coupled to the application thermal clock, trip state, inspector or project library**. Production retains manual overload trip/reset until that integration is complete and verified. M04a remains open.
 
 ## Model contract
 
@@ -14,4 +14,8 @@ Parameters are explicit; no manufacturer calibration or IEC trip-class conformit
 
 Nine focused tests cover analytic cold/hot trip timing, the rated-current asymptote across repeated intervals, exponential cooling, latched reset rejection, a fresh cool reset, continuing heating when current persists after trip, coarse/fine constant-current agreement and invalid input rejection. The original state is not mutated.
 
-Remaining: trace current through actual supported feeder paths (reject ambiguous parallel paths instead of inventing a split), couple thermal events to control continuity and motor supply, retain/reset runtime fields without changing saved designs, expose heat/current/trip/reset state, add a loadable example, then run regression and local/live acceptance through the configured publication workflow.
+The feeder tracer follows the existing conducting graph and assigns each energized nominal motor's configured RMS current only to relay poles whose removal disconnects that phase from its source. It sums distinct downstream loads per pole and uses the maximum pole current. Parallel and bypassed paths return an explicit current-division error; no partial sum is presented as valid. Forward and reverse wired circuits both produce 14.1 A per pole in the checked example. An open breaker or incomplete motor phase supply gives zero current under the existing balanced nominal motor model. This is not an impedance-network solve or a phase-loss heating model; other load families, drive-dependent currents and transient motor currents remain outside this checkpoint.
+
+Current checkpoint: 874 tests and the production build passed. Six feeder tests cover shared loads, disconnected/dead-end branches, explicit bypass wires, parallel paths, invalid current, both motor directions and phase interruption.
+
+Remaining: couple thermal events to control continuity and motor supply, retain/reset runtime fields without changing saved designs, expose heat/current/trip/reset state, add a loadable example, then run regression and local/live acceptance through the configured publication workflow. Unsupported loads must be identified explicitly before enabling thermal protection for them.

@@ -1,4 +1,5 @@
 import { evaluateWiredControl } from "./wiredControl";
+import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurrent";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
@@ -149,6 +150,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     frequencies.set(`${terminal}|${phase}`, frequency);
     queue.push(...(powerEdges.get(terminal) ?? []).map((next): [string, string, number] => [next, phase, frequency]));
   }
+  const currentLoads: NominalCurrentLoad[] = [];
   for (const component of document.components) {
     if (definitionsByComponent.get(component.id)?.simulationModelId !== "catalog-induction-motor") continue;
     const p = properties.get(component.id)!;
@@ -160,12 +162,23 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
     p.energized = p.energized === true && uniqueFeeds && sameSource && validFrequency;
     if (p.energized) {
+      currentLoads.push({ reference: component.reference, currentA: Number(p.ratedCurrentA), feeds: ["u1", "v1", "w1"].map((terminal, index) => {
+        const feed = feeds[index][0], separator = feed.lastIndexOf(":");
+        return { terminal: endpointKey(component.id, terminal), source: endpointKey(feed.slice(0, separator), `${feed.slice(separator + 1)}-out`) };
+      }) });
       const order = feeds.map((feed) => Number(feed[0].slice(-1)));
       let inversions = 0;
       for (let left = 0; left < order.length; left++) for (let right = left + 1; right < order.length; right++) if (order[left] > order[right]) inversions++;
       const direction = inversions % 2 ? -1 : 1;
       p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / Number(p.ratedFrequencyHz ?? 50) * direction;
     }
+  }
+  const overloads = document.components.filter(c => definitionsByComponent.get(c.id)?.simulationModelId === "thermal-overload-dol-v1").map(c => ({ id: c.id, poles: [1, 2, 3].map(phase => ({ input: endpointKey(c.id, `l${phase}-in`), output: endpointKey(c.id, `t${phase}`) })) }));
+  for (const [id, result] of traceOverloadCurrents(powerEdges, overloads, currentLoads)) {
+    const p = properties.get(id)!;
+    p.runtimeLoadCurrentA = result.currentA;
+    p.runtimeCurrentError = result.error ?? "";
+    for (let index = 0; index < 3; index++) p[`runtimePhase${index + 1}CurrentA`] = result.phaseCurrentsA[index] ?? 0;
   }
   return document.components.flatMap((component) => {
     const definition = catalog.get(component.definitionId);
