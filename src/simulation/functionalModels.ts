@@ -13,6 +13,7 @@ const text = (properties: Properties, key: string, fallback = "") => typeof prop
 const binary = (value: boolean) => value ? "ON" : "OFF";
 const signal = (unit: SignalUnit, value: FunctionalSignal["value"]): FunctionalSignal => ({ unit, value });
 const fault = (error: string): FunctionalSignal => ({ unit: "boolean", value: false, error });
+const mathInput = (properties: Properties, key: string) => properties[key] === undefined ? 0 : typeof properties[key] === "number" ? properties[key] : NaN;
 
 export function timerParameterError(properties: Properties): string | undefined {
   for (const key of ["delaySeconds", "elapsedSeconds"]) {
@@ -59,7 +60,7 @@ const models: Record<string, Model> = {
   "logic-edge-negative": (p) => ({ label: "Negative edge", value: binary(edgeOutput(p, "negative")) }),
   ...Object.fromEntries((["and", "or", "not", "nand", "nor", "xor"] as const).map((kind) => [`logic-gate-${kind}`, (p: Properties) => ({ label: `${kind.toUpperCase()} output`, value: binary(logicGate(kind, [bool(p, "inputA"), bool(p, "inputB")])) })])),
   ...Object.fromEntries((["greater-than", "less-than", "equal-to"] as const).map((kind) => [`logic-comparator-${kind}`, (p: Properties) => ({ label: "Comparator", value: binary(compare(kind, number(p, "left"), number(p, "right"))) })])),
-  ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, number(p, "left"), number(p, "right")); return { label: "Math output", value: result.ok ? String(result.value) : result.reason }; }])),
+  ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, mathInput(p, "left"), mathInput(p, "right")); return { label: "Math output", value: result.ok ? String(result.value) : `ERROR: ${result.reason}` }; }])),
   "sensor-pt100": (p) => { const result = pt100Signal(p); return { label: "PT100 resistance", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(2)} Ω` }; },
   "sensor-thermocouple": (p) => { const result = thermocoupleSignal(p); return { label: "Type K terminal EMF", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(3)} mV` }; },
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
@@ -173,7 +174,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   const comparator = modelId.replace("logic-comparator-", "");
   if (["greater-than", "less-than", "equal-to"].includes(comparator)) return signal("boolean", compare(comparator as "greater-than" | "less-than" | "equal-to", number(properties, "left"), number(properties, "right")));
   const math = modelId.replace("logic-math-", "");
-  if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", number(properties, "left"), number(properties, "right")); return result.ok ? signal("scalar", result.value) : undefined; }
+  if (["add", "subtract", "multiply", "divide"].includes(math)) { const result = mathBlock(math as "add" | "subtract" | "multiply" | "divide", mathInput(properties, "left"), mathInput(properties, "right")); return result.ok ? signal("scalar", result.value) : fault(result.reason); }
   if (modelId === "sensor-pt100") return pt100Signal(properties);
   if (modelId === "sensor-thermocouple") return thermocoupleSignal(properties);
   if (modelId === "sensor-flow") return signal("hertz", flowPulseHz(number(properties, "flowLpm"), number(properties, "pulsesPerLitre", 100)));
