@@ -50,4 +50,3 @@ drop policy if exists "Only permanent users can insert" on adigunelectrocad.user
 create policy "Only permanent users can insert"
 on adigunelectrocad.user_preferences as restrictive for insert to authenticated
 with check ( (select (auth.jwt()->>'is_anonymous')::boolean) is false );
-

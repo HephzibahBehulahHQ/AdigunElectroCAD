@@ -14,6 +14,43 @@ it("round-trips the start/stop ladder and compiles its actual holding program", 
   expect(parseLadder(program.toLowerCase().replaceAll("; ", "\n"))).toEqual(holding);
 });
 
+it.each(["positive", "negative"] as const)("compiles and imports %s edge contacts in series and parallel branches", (edge) => {
+  const pulse = { address: "I1" as const, inverted: false, edge };
+  const initial = { address: "I0" as const, inverted: false };
+  const suffix = edge === "positive" ? "P" : "F";
+  const rungs: LadderRung[] = [
+    { stages: [[pulse]], coil: "SET" },
+    { stages: [[initial], [pulse]], coil: "OUT" },
+    { stages: [[initial, pulse]], coil: "OUT" },
+    { stages: [[initial], [initial, pulse]], coil: "RESET" },
+  ];
+  const program = compileLadder(rungs);
+  expect(program).toContain(`LD${suffix} I1`);
+  expect(program).toContain(`AND${suffix} I1`);
+  expect(program).toContain(`OR${suffix} I1`);
+  expect(parseLadder(program)).toEqual(rungs);
+  for (const a of [false, true]) for (const b of [false, true]) for (const previousB of [false, true]) {
+    const transition = edge === "positive" ? b && !previousB : previousB && !b;
+    for (const [stages, expected] of [
+      [[[initial], [pulse]], a && transition],
+      [[[initial, pulse]], a || transition],
+      [[[initial], [{ ...initial, inverted: true }, pulse]], a && (!a || transition)],
+    ] as const) {
+      const expression: LadderRung[] = [{ stages: stages.map((stage) => [...stage]), coil: "OUT" }];
+      expect(scanPlcProgram(compileLadder(expression), a, b, false, 0, undefined, [false, previousB])).toEqual({ ok: true, output: expected });
+    }
+  }
+});
+
+it("rejects transition contacts on output addresses or inverted/unknown transition kinds", () => {
+  for (const contact of [
+    { address: "Q0", inverted: false, edge: "positive" },
+    { address: "I0", inverted: true, edge: "negative" },
+    { address: "I0", inverted: false, edge: "both" },
+  ]) expect(() => compileLadder([{ stages: [[contact]], coil: "OUT" }] as LadderRung[])).toThrow();
+  expect(parseLadder("LDP Q0; OUT Q0")).toBeNull();
+});
+
 it("executes parallel groups in series without changing Boolean precedence", () => {
   const rungs: LadderRung[] = [{ stages: [holding[0].stages[0], [{ address: "I1", inverted: true }, { address: "I0", inverted: false }]], coil: "OUT" }];
   const program = compileLadder(rungs);

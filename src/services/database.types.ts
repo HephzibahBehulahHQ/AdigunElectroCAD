@@ -3,6 +3,12 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   adigunelectrocad: {
     Tables: {
+      my_data: {
+        Row: { id: number; user_id: string; content: string | null; created_at: string | null; };
+        Insert: { user_id: string; content?: string | null; created_at?: string | null; };
+        Update: { content?: string | null; };
+        Relationships: [];
+      };
       projects: {
         Row: { id: string; user_id: string; name: string; description: string; document: Json; revision: number; created_at: string; updated_at: string; };
         Insert: { id?: string; user_id: string; name: string; description?: string; document: Json; revision?: number; created_at?: string; updated_at?: string; };
@@ -22,4 +28,3 @@ export interface Database {
     CompositeTypes: Record<string, never>;
   };
 }
-

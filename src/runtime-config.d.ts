@@ -8,4 +8,3 @@ interface AdigunElectroCadRuntimeConfig {
 interface Window {
   ADIGUN_ELECTRO_CAD_RUNTIME_CONFIG?: AdigunElectroCadRuntimeConfig;
 }
-

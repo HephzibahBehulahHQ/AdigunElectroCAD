@@ -33,4 +33,3 @@ describe("IEC-oriented component catalog", () => {
     }
   });
 });
-
