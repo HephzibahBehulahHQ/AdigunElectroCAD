@@ -13,6 +13,16 @@ const text = (properties: Properties, key: string, fallback = "") => typeof prop
 const binary = (value: boolean) => value ? "ON" : "OFF";
 const signal = (unit: SignalUnit, value: FunctionalSignal["value"]): FunctionalSignal => ({ unit, value });
 const fault = (error: string): FunctionalSignal => ({ unit: "boolean", value: false, error });
+
+export function timerParameterError(properties: Properties): string | undefined {
+  for (const key of ["delaySeconds", "elapsedSeconds"]) {
+    const value = properties[key] ?? 0;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      return `${key} must be a finite, non-negative number.`;
+    }
+  }
+  return undefined;
+}
 function pneumaticSignal(model: string, p: Properties): FunctionalSignal {
   try {
     if (model === "pneumatic-valve-5-2") return signal("motion", valve52Direction(p));
@@ -116,6 +126,10 @@ const models: Record<string, Model> = {
 };
 
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
+  if (modelId === "catalog-on-delay-timer") {
+    const error = timerParameterError(properties);
+    if (error) return { label: "Timer contact", value: `ERROR: ${error}` };
+  }
   if (text(properties, "runtimeSignalError")) return { label: "Signal fault", value: `ERROR: ${text(properties, "runtimeSignalError")}` };
   if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
@@ -140,7 +154,10 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", safetyOutput(properties));
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
-  if (modelId === "catalog-on-delay-timer") return signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
+  if (modelId === "catalog-on-delay-timer") {
+    const error = timerParameterError(properties);
+    return error ? fault(error) : signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
+  }
   if (modelId === "catalog-interface-relay") return signal("boolean", bool(properties, "energized"));
   if (modelId === "catalog-proximity-sensor") return signal("boolean", bool(properties, "detected"));
   if (modelId === "catalog-plc-digital-io") return signal("boolean", plcOutput(properties));
