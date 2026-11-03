@@ -1,3 +1,4 @@
+import { createWiredReversingTemplate } from "./wiredReversingCircuit";
 import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
 import type { CircuitDocument, ComponentInstance, Wire } from "../types/electrical";
 import type { CircuitSequenceStep } from "./templateVerification";
@@ -85,7 +86,7 @@ const scenarios: Scenario[] = [
 
 export const templateLibrary: ProjectTemplate[] = Array.from({ length: 500 }, (_, index) => createTemplate(index));
 templateLibrary[499] = createAnalogLevelProject();
-templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate(), createWiredHoldingTemplate());
+templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate(), createWiredHoldingTemplate(), createWiredReversingTemplate());
 
 function createTemplate(index: number): ProjectTemplate {
   const scenario = scenarios[index % scenarios.length];

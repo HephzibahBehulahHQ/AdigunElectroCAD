@@ -1,3 +1,4 @@
+import { componentFitsSheet } from "../src/cad/componentGeometry";
 import { expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
@@ -57,4 +58,16 @@ it("verifies the recorded operating sequence and is independent of component ord
   const result = verifyProjectTemplate(template, catalogById);
   expect(result.topologyIssues).toEqual([]);
   expect(result.failedExpectations).toEqual([]);
+});
+
+it("keeps all reversing symbols and labels inside the sheet", () => {
+  for (const c of createWiredReversingCircuit().components) expect(componentFitsSheet(c.x, c.y, c.rotation), c.reference).toBe(true);
+});
+
+it.each(["contactor", "reverse"])("requires the actual A2 return for %s", target => {
+  let runtime = createWiredReversingCircuit();
+  runtime.wires = runtime.wires.filter(w => !(w.to.componentId === target && w.to.terminalId === "a2"));
+  runtime = setCircuitBooleanInput(runtime, catalogById, target === "contactor" ? "start" : "reverse-start", "pressed", true);
+  expect(evaluateWiredControl(runtime, catalogById).get(target)?.energized).toBe(false);
+  expect(executeCircuitModels(runtime, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
 });
