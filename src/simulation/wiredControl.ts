@@ -38,6 +38,7 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       if (m === "pushbutton-stop-v1" && p.pressed !== true) link(key(c.id, "21"), key(c.id, "22"));
       if (m === "thermal-overload-dol-v1" && p.tripped !== true) link(key(c.id, "aux-95"), key(c.id, "aux-96"));
       if (m === "contactor-dol-v1" && state.get(c.id)) link(key(c.id, "aux-13"), key(c.id, "aux-14"));
+      if (m === "contactor-dol-v1" && !state.get(c.id) && isControl(c.id, "aux-21") && isControl(c.id, "aux-22")) link(key(c.id, "aux-21"), key(c.id, "aux-22"));
     }
     const reachable = (start: string) => {
       const visited = new Set<string>([start]);

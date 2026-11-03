@@ -1,3 +1,4 @@
+import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { orthogonalWirePath } from "../src/cad/wirePath";
 import { terminalAnchors } from "../src/components/Schematic";
@@ -22,8 +23,8 @@ it("rotates and translates power anchors without changing saved wire topology", 
   expect(JSON.stringify(document.wires)).toBe(wires);
 });
 
-it("keeps the two-motor routes clear of other component bodies and reference labels", () => {
-  const document = createTwoMotorSequence(), anchors = terminalAnchors(document);
+it.each([createTwoMotorSequence, createWiredReversingCircuit])("keeps routes clear of component bodies and reference labels (%#)", (create) => {
+  const document = create(), anchors = terminalAnchors(document);
   const conflicts: string[] = [];
   for (const wire of document.wires) {
     const find = (end: typeof wire.from) => anchors.find(a => a.endpoint.componentId === end.componentId && a.endpoint.terminalId === end.terminalId)!;

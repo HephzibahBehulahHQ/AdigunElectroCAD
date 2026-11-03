@@ -12,7 +12,7 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 | M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Manual trip, DOL dynamics and starter laboratories exist; thermal overload integration and broader physical coupling remain open. |
 | M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
 | M06 | Component library | Every requested item, including categories 11–18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
-| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 504 entries currently include 499 variants from five scenario families and five dedicated additions. This gate is not satisfied by those counts. |
+| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 505 entries currently include 499 variants from five scenario families and six dedicated additions. This gate is not satisfied by those counts. |
 | M08 | Identity and project data | Schema isolation, owner RLS, restrictive anonymous INSERT, confirmed email/password and two-step anonymous upgrade; local/cloud save/load and preferences work with refresh and two permanent accounts. | Partial. Existing sign-in, cloud and RLS evidence in AUTH-RLS-VERIFICATION-2026-11-02.md; email upgrade, two-account browser isolation and cross-device preferences remain unverified. |
 | M09 | Visual, responsive and language acceptance | Match supplied workstation target; legible branding and labels, no collisions at desktop/mobile sizes; usable keyboard flows, light/dark themes and reviewed English/German/Yoruba/Pidgin. | Partial. Checked header/footer layouts and compact account/status controls; full reference match, all views and translations remain open. See VISUAL-TARGET.md. |
 | M10 | Adigun Bot | Floating/resizable/dockable window and persistence; actual canvas-aware assistance, explanations, consented atomic edits, quiet/unread behavior and configured AI capabilities; test all requested addendum flows. | Partial. Rule-based assistance and floating window deployed; generative AI and broader engineering reasoning are not configured or verified. See both retained Bot request TXT files and verification docs. |
@@ -20,17 +20,26 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 
 Only M01 is fully evidenced as a release baseline (1 of 11 broad gates; approximately 10% by gate count, not effort or feature completion). Overall hours cannot yet be estimated responsibly: the remaining component/project breadth and acceptance work are substantial. Estimate each active delivery increment after inspecting its dependencies.
 
-## Active increment: M03a — Wired holding control
+## Completed increment: M03a — Wired holding control
 
 - [x] Inspect existing dry-contact, supply and coil terminals; preserve the reference DOL controller.
 - [x] Implement ideal isolated-source supply/return tracing and actual START/STOP/holding contact continuity.
 - [x] Test broken return/holding paths, overload interruption, voltage mismatch, short circuit and saved-design immutability (seven focused cases passed).
 - [x] Complete application integration and fault-boundary review; 849 tests and production build passed.
 - [x] Add an operable example and verify START/release/STOP/fault/recovery in the local browser; production acceptance remains below.
-- [ ] Review diff; commit/publish only this increment; verify identical local/remote SHA and green PR checks.
-- [ ] Merge/deploy through configured Pages workflow; verify the actual live behavior and record evidence.
+- [x] Review diff; commit/publish only this increment; verify identical local/remote SHA and green PR checks.
+- [x] Merge/deploy through configured Pages workflow; verify the actual live behavior and record evidence.
 
-M03a is in progress, approximately 75%; estimated 0.3–1 hour remaining, subject to integration failures. Completing it does not complete M03: reversing interlocks and broader coil/protection behavior remain separate increments.
+M03a was accepted in PR #76: synchronized head `2ef3fee`, main `484a69f`, successful Pages run `41590245813`, matching live asset `index-DzMtavmO.js`, live holding/STOP/overload recovery and restoration of the original 14-sheet project. This does not complete M03: reversing interlocks and broader coil/protection behavior remain separate increments.
+
+## Active increment: M03b — Wired reversing interlocks
+
+- [x] Add a real NC auxiliary contact path, with no change to the reference DOL controller.
+- [x] Verify forward and reverse holding, opposing-command inhibition, STOP/restart, overload, broken interlock/return wires and simultaneous-command faults.
+- [x] Provide a legible dedicated project; verify actual phase interchange and motor direction in the browser.
+- [ ] Run regression/build, review/publish/synchronize, pass CI, deploy and verify production before proceeding.
+
+Current evidence: 859 regression cases and the production build passed, including geometry, bounds and both A2 return faults. Local browser checks verified both directions, opposing-coil exclusion, STOP and overload recovery. Forward/reverse holding, opposing commands, simultaneous commands, broken NC series wires, overload recovery and order independence are covered. Final publication/deployment acceptance remains open. Approximately 85% of this increment is complete; estimate 0.2–0.5 hours remaining. Electrical interlocking is not a mechanical or certified safety interlock.
 
 ## Per-increment publication rule
 
