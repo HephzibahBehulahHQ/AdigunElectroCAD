@@ -132,6 +132,7 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
     if (error) return { label: "Timer contact", error, value: `ERROR: ${error}` };
   }
   if (text(properties, "runtimeSignalError")) return { label: "Signal fault", error: text(properties, "runtimeSignalError"), value: `ERROR: ${text(properties, "runtimeSignalError")}` };
+  if (modelId === "contactor-dol-v1") return { label: "Wired control coil", value: `${number(properties, "runtimeCoilVoltageV")} V · ${bool(properties, "energized") ? "ENERGIZED" : "OFF"}` };
   if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
@@ -146,7 +147,7 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   }
   return models[modelId]?.(properties);
 }
-export function hasFunctionalModel(modelId: string) { return ["thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
+export function hasFunctionalModel(modelId: string) { return ["contactor-dol-v1", "thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));

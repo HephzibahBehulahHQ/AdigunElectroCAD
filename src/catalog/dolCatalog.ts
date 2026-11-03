@@ -38,11 +38,11 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   },
   {
     id: "pushbutton.stop-nc", name: "STOP pushbutton (NC)", category: "Switches & Pushbuttons", referencePrefix: "S", description: "Momentary normally-closed STOP contact.", symbolId: "pushbutton-nc", terminals: terminals(terminal("21", "21", "control"), terminal("22", "22", "control")),
-    propertiesSchema: { contactType: "NC", momentary: true }, simulationModelId: "pushbutton-stop-v1", simulationSupport: "control-logic", documentation: "Opening STOP interrupts the contactor coil path.", standardsReferences: ["IEC 60947-5-1"]
+    propertiesSchema: { contactType: "NC", momentary: true, pressed: false }, simulationModelId: "pushbutton-stop-v1", simulationSupport: "control-logic", documentation: "Opening STOP interrupts the contactor coil path.", standardsReferences: ["IEC 60947-5-1"]
   },
   {
     id: "pushbutton.start-no", name: "START pushbutton (NO)", category: "Switches & Pushbuttons", referencePrefix: "S", description: "Momentary normally-open START contact.", symbolId: "pushbutton-no", terminals: terminals(terminal("13", "13", "control"), terminal("14", "14", "control")),
-    propertiesSchema: { contactType: "NO", momentary: true }, simulationModelId: "pushbutton-start-v1", simulationSupport: "control-logic", documentation: "Closing START energizes the contactor coil when the control path is healthy.", standardsReferences: ["IEC 60947-5-1"]
+    propertiesSchema: { contactType: "NO", momentary: true, pressed: false }, simulationModelId: "pushbutton-start-v1", simulationSupport: "control-logic", documentation: "Closing START energizes the contactor coil when the control path is healthy.", standardsReferences: ["IEC 60947-5-1"]
   }
 ];
 

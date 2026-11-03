@@ -1,3 +1,4 @@
+import { evaluateWiredControl } from "./wiredControl";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
@@ -66,6 +67,12 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const definition = definitionsByComponent.get(component.id);
     return definition ? [[component.id, { ...definition.propertiesSchema, ...component.properties }]] : [];
   }));
+  if (document.id !== "reference-dol-motor-starter") for (const [id, coil] of evaluateWiredControl(document, catalog)) {
+    const active = properties.get(id)!;
+    active.energized = coil.energized;
+    active.runtimeCoilVoltageV = coil.voltageV;
+    if (coil.error) active.runtimeSignalError = coil.error;
+  }
   const signals = new Map<string, FunctionalSignal>();
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
@@ -125,7 +132,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       driveOutputs.set(endpointKey(component.id, `${phase}-out`), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
     }
     const conducting = model === "catalog-circuit-breaker" ? p.closed === true
-      : model === "catalog-motor-starter" ? p.energized === true
+      : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
       : model === "catalog-variable-frequency-drive" ? p.enabled === true : false;
     if (conducting) for (const phase of ["l1", "l2", "l3"]) {
       link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
