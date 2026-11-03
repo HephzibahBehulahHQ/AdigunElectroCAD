@@ -2,7 +2,7 @@ import { compare, currentTransformerSecondaryAmp, dacMilliamp, edgeTrigger, enco
 import { cylinderPositionPercent, valve52Direction } from "./pneumaticState";
 import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, damperPosition, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
 
-export interface FunctionalModelResult { label: string; value: string; }
+export interface FunctionalModelResult { label: string; value: string; error?: string; }
 export type SignalUnit = "boolean" | "milliamp" | "plc-raw" | "ohm" | "millivolt" | "hertz" | "acceleration" | "pulse-count" | "ampere" | "scalar" | "motion";
 export interface FunctionalSignal { unit: SignalUnit; value: boolean | number | "extend" | "retract" | "hold"; error?: string; }
 type Properties = Record<string, string | number | boolean>;
@@ -33,7 +33,7 @@ function pneumaticSignal(model: string, p: Properties): FunctionalSignal {
 }
 function pneumaticDisplay(model: string, p: Properties): FunctionalModelResult {
   const result = pneumaticSignal(model, p);
-  return { label: model.includes("cylinder") ? "Cylinder position" : "Valve motion command", value: result.error ? `ERROR: ${result.error}` : result.unit === "scalar" ? `${Number(result.value).toFixed(1)}%` : String(result.value) };
+  return { label: model.includes("cylinder") ? "Cylinder position" : "Valve motion command", error: result.error, value: result.error ? `ERROR: ${result.error}` : result.unit === "scalar" ? `${Number(result.value).toFixed(1)}%` : String(result.value) };
 }
 function pt100Signal(properties: Properties): FunctionalSignal {
   const temperature = properties.temperatureC === undefined ? 20 : typeof properties.temperatureC === "number" ? properties.temperatureC : NaN;
@@ -60,9 +60,9 @@ const models: Record<string, Model> = {
   "logic-edge-negative": (p) => ({ label: "Negative edge", value: binary(edgeOutput(p, "negative")) }),
   ...Object.fromEntries((["and", "or", "not", "nand", "nor", "xor"] as const).map((kind) => [`logic-gate-${kind}`, (p: Properties) => ({ label: `${kind.toUpperCase()} output`, value: binary(logicGate(kind, [bool(p, "inputA"), bool(p, "inputB")])) })])),
   ...Object.fromEntries((["greater-than", "less-than", "equal-to"] as const).map((kind) => [`logic-comparator-${kind}`, (p: Properties) => ({ label: "Comparator", value: binary(compare(kind, number(p, "left"), number(p, "right"))) })])),
-  ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, mathInput(p, "left"), mathInput(p, "right")); return { label: "Math output", value: result.ok ? String(result.value) : `ERROR: ${result.reason}` }; }])),
-  "sensor-pt100": (p) => { const result = pt100Signal(p); return { label: "PT100 resistance", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(2)} Ω` }; },
-  "sensor-thermocouple": (p) => { const result = thermocoupleSignal(p); return { label: "Type K terminal EMF", value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(3)} mV` }; },
+  ...Object.fromEntries((["add", "subtract", "multiply", "divide"] as const).map((kind) => [`logic-math-${kind}`, (p: Properties) => { const result = mathBlock(kind, mathInput(p, "left"), mathInput(p, "right")); return { label: "Math output", error: result.ok ? undefined : result.reason, value: result.ok ? String(result.value) : `ERROR: ${result.reason}` }; }])),
+  "sensor-pt100": (p) => { const result = pt100Signal(p); return { label: "PT100 resistance", error: result.error, value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(2)} Ω` }; },
+  "sensor-thermocouple": (p) => { const result = thermocoupleSignal(p); return { label: "Type K terminal EMF", error: result.error, value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(3)} mV` }; },
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
   "sensor-level-4-20": (p) => ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
@@ -117,7 +117,7 @@ const models: Record<string, Model> = {
   "catalog-induction-motor": (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" }),
   "catalog-control-transformer": (p) => ({ label: "Ideal ratio output", value: `${(number(p, "secondaryVoltageV") * (1 - number(p, "loadPercent") / 2000)).toFixed(1)} V from ${number(p, "primaryVoltageV")} V` }),
   "catalog-proximity-sensor": (p) => ({ label: "Sensor output", value: bool(p, "detected") ? `${text(p, "outputType", "PNP")} ON` : `${text(p, "outputType", "PNP")} OFF` }),
-  "catalog-plc-digital-io": (p) => ({ label: "I/O state", value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p))}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${number(p, "analogInput0")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
+  "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p))}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${number(p, "analogInput0")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
   "catalog-on-delay-timer": (p) => ({ label: "Timer contact", value: bool(p, "energized") && number(p, "elapsedSeconds") >= number(p, "delaySeconds") ? "CLOSED" : `${number(p, "elapsedSeconds").toFixed(1)} / ${number(p, "delaySeconds").toFixed(1)} s` }),
   "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
@@ -129,9 +129,9 @@ const models: Record<string, Model> = {
 export function evaluateFunctionalModel(modelId: string, properties: Properties): FunctionalModelResult | undefined {
   if (modelId === "catalog-on-delay-timer") {
     const error = timerParameterError(properties);
-    if (error) return { label: "Timer contact", value: `ERROR: ${error}` };
+    if (error) return { label: "Timer contact", error, value: `ERROR: ${error}` };
   }
-  if (text(properties, "runtimeSignalError")) return { label: "Signal fault", value: `ERROR: ${text(properties, "runtimeSignalError")}` };
+  if (text(properties, "runtimeSignalError")) return { label: "Signal fault", error: text(properties, "runtimeSignalError"), value: `ERROR: ${text(properties, "runtimeSignalError")}` };
   if (modelId === "thermal-overload-dol-v1") return { label: "Overload NC contact", value: bool(properties, "tripped") ? "OPEN" : "CLOSED" };
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
@@ -139,7 +139,7 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
     const voltage = number(properties, "lineVoltageV");
     const resistance = number(properties, "resistanceOhm");
     const reactance = number(properties, "reactanceOhm");
-    if (resistance <= 0 || reactance < 0) return { label: "Winding operating point", value: "INVALID IMPEDANCE" };
+    if (resistance <= 0 || reactance < 0) return { label: "Winding operating point", value: "INVALID IMPEDANCE", error: "Winding resistance must be positive and reactance non-negative." };
     const windingVoltage = connection === "star" ? voltage / Math.sqrt(3) : connection === "delta" ? voltage : 0;
     const current = windingVoltage / Math.hypot(resistance, reactance) * (connection === "delta" ? Math.sqrt(3) : 1);
     return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line` };
