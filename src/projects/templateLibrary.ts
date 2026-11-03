@@ -1,3 +1,4 @@
+import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
 import type { CircuitDocument, ComponentInstance, Wire } from "../types/electrical";
 import type { CircuitSequenceStep } from "./templateVerification";
 import { createAnalogLevelProject } from "./analogLevelProject";
@@ -84,7 +85,7 @@ const scenarios: Scenario[] = [
 
 export const templateLibrary: ProjectTemplate[] = Array.from({ length: 500 }, (_, index) => createTemplate(index));
 templateLibrary[499] = createAnalogLevelProject();
-templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate());
+templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate(), createWiredHoldingTemplate());
 
 function createTemplate(index: number): ProjectTemplate {
   const scenario = scenarios[index % scenarios.length];

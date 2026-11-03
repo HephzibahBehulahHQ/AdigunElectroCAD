@@ -1,3 +1,4 @@
+import { evaluateWiredControl } from "./wiredControl";
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
 import { executeCircuitModels } from "./circuitModels";
 import { edgeTrigger, setResetLatch } from "./controlLogic";
@@ -11,7 +12,8 @@ export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<s
   const definition = component && catalog.get(component.definitionId);
   if (!component || !definition || typeof { ...definition.propertiesSchema, ...component.properties }[property] !== "boolean" || property.startsWith("runtime") || property === "scanOutput") throw new Error("Select a defined Boolean parameter.");
   const next = { ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, [property]: value } } : item) };
-  return latchSafetyFaults(next, catalog);
+  const coils = evaluateWiredControl(next, catalog);
+  return latchSafetyFaults({ ...next, components: next.components.map(item => coils.has(item.id) ? { ...item, properties: { ...item.properties, runtimeCoilEnergized: coils.get(item.id)!.energized } } : item) }, catalog);
 }
 
 export function setCircuitLevelInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, levelPercent: number): CircuitDocument {
@@ -29,6 +31,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
   return { ...document, components: document.components.map((component) => {
     const properties = { ...component.properties };
     delete properties.runtimePrevious; delete properties.scanOutput;
+    delete properties.runtimeCoilEnergized;
     delete properties.runtimeQ0; delete properties.runtimeError;
     delete properties.runtimeSpool; delete properties.runtimePositionPercent;
     delete properties.runtimeInput0Previous; delete properties.runtimeInput1Previous;
@@ -46,6 +49,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
+    if (model === "contactor-dol-v1") return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
     if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       if (active.runtimeSignalError) return component;

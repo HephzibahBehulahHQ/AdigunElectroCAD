@@ -2,7 +2,7 @@ import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
 export function powerTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
-  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1"].includes(modelId)) return undefined;
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
   const phase = /^l([123])-(in|out)$/.exec(terminalId);
   if (phase) return { x: [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
   const motor = ["u1", "v1", "w1"].indexOf(terminalId);
@@ -10,6 +10,7 @@ export function powerTerminalOffset(modelId: string, terminalId: string): { x: n
   const overload = /^t([123])$/.exec(terminalId);
   if (overload) return { x: [-32, 0, 32][Number(overload[1]) - 1], y: 27 };
   if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
+  if (modelId === "contactor-dol-v1" && ["aux-13", "aux-14"].includes(terminalId)) return { x: 47, y: terminalId === "aux-13" ? -12 : 12 };
   if (terminalId === "aux-closed" || terminalId === "aux-96" || terminalId === "pe") return { x: 47, y: 0 };
   if (terminalId === "aux-95") return { x: -47, y: 0 };
   return undefined;
@@ -17,6 +18,8 @@ export function powerTerminalOffset(modelId: string, terminalId: string): { x: n
 
 /** Keep supported command wires outside the symbol body; COM is a distinct lower anchor. */
 export function controlTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+  if (modelId === "control-supply-v1") return { x: 47, y: terminalId === "line" ? -12 : 12 };
+  if (modelId === "pushbutton-start-v1" || modelId === "pushbutton-stop-v1") return { x: ["13", "21"].includes(terminalId) ? -47 : 47, y: 0 };
   if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
   if (modelId === "catalog-on-delay-timer") {
     if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
