@@ -135,6 +135,7 @@ export function hasFunctionalModel(modelId: string) { return ["thermal-overload-
 
 export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
+  if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", safetyOutput(properties));

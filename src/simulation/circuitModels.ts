@@ -130,6 +130,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (conducting) for (const phase of ["l1", "l2", "l3"]) {
       link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
     }
+    if (model === "thermal-overload-dol-v1") for (let phase = 1; phase <= 3; phase++) link(endpointKey(component.id, `l${phase}-in`), endpointKey(component.id, `t${phase}`));
   }
   while (queue.length) {
     const [terminal, phase, incomingFrequency] = queue.shift()!;

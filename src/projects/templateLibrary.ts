@@ -2,6 +2,7 @@ import type { CircuitDocument, ComponentInstance, Wire } from "../types/electric
 import type { CircuitSequenceStep } from "./templateVerification";
 import { createAnalogLevelProject } from "./analogLevelProject";
 import { createPneumaticTemplate } from "./pneumaticCircuit";
+import { createTwoMotorTemplate } from "./twoMotorSequence";
 
 export type TemplateLevel = "Beginner" | "Intermediate" | "Advanced" | "Industrial" | "Expert";
 
@@ -83,7 +84,7 @@ const scenarios: Scenario[] = [
 
 export const templateLibrary: ProjectTemplate[] = Array.from({ length: 500 }, (_, index) => createTemplate(index));
 templateLibrary[499] = createAnalogLevelProject();
-templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true));
+templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate());
 
 function createTemplate(index: number): ProjectTemplate {
   const scenario = scenarios[index % scenarios.length];

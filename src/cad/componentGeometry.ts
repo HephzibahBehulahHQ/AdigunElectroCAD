@@ -1,7 +1,33 @@
 import type { ComponentInstance } from "../types/electrical";
 
+/** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
+export function powerTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1"].includes(modelId)) return undefined;
+  const phase = /^l([123])-(in|out)$/.exec(terminalId);
+  if (phase) return { x: [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
+  const motor = ["u1", "v1", "w1"].indexOf(terminalId);
+  if (motor >= 0) return { x: [-32, 0, 32][motor], y: -27 };
+  const overload = /^t([123])$/.exec(terminalId);
+  if (overload) return { x: [-32, 0, 32][Number(overload[1]) - 1], y: 27 };
+  if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
+  if (terminalId === "aux-closed" || terminalId === "aux-96" || terminalId === "pe") return { x: 47, y: 0 };
+  if (terminalId === "aux-95") return { x: -47, y: 0 };
+  return undefined;
+}
+
 /** Keep supported command wires outside the symbol body; COM is a distinct lower anchor. */
 export function controlTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+  if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
+  if (modelId === "catalog-on-delay-timer") {
+    if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
+    if (terminalId === "18") return { x: 47, y: 0 };
+    if (terminalId === "15") return { x: 0, y: 27 };
+  }
+  if (modelId === "catalog-plc-digital-io") {
+    if (terminalId === "in-0" || terminalId === "in-1" || terminalId === "ai-0") return { x: -47, y: terminalId === "in-0" ? -18 : terminalId === "in-1" ? 0 : 18 };
+    if (terminalId === "out-0") return { x: 47, y: 0 };
+    if (terminalId === "a1" || terminalId === "a2") return { x: terminalId === "a1" ? -16 : 16, y: -27 };
+  }
   const logic = modelId.startsWith("logic-");
   const cylinder = modelId === "pneumatic-cylinder-single" || modelId === "pneumatic-cylinder-double";
   const valve = modelId === "pneumatic-valve-5-2" || modelId === "pneumatic-valve-3-2";

@@ -3,7 +3,8 @@ import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
-import { componentLabelOffsets, controlTerminalOffset } from "../cad/componentGeometry";
+import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
+import { orthogonalWirePath } from "../cad/wirePath";
 import { useRef, useState, type PointerEvent } from "react";
 
 interface Props {
@@ -25,6 +26,8 @@ interface TerminalAnchor {
   endpoint: TerminalEndpoint;
   x: number;
   y: number;
+  power?: boolean;
+  vertical?: boolean;
 }
 
 const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
@@ -46,9 +49,10 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
       const y = sixTerminal ? index < 3 ? -27 : index < 6 ? 27 : 0 : -15 + Math.floor(index / 2) * 12;
-      const control = controlTerminalOffset(definition.simulationModelId, terminal.id);
+      const power = component.properties.powerLayout === "vertical" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
+      const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const offset = rotateOffset(control?.x ?? x, control?.y ?? y, component.rotation);
-      anchors.push(anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y));
+      anchors.push({ ...anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y), power: terminal.kind === "power", vertical: Boolean(power && terminal.kind === "power" && component.rotation % 180 === 0) });
     });
   }
   return anchors;
@@ -65,10 +69,7 @@ function anchor(componentId: string, terminalId: string, x: number, y: number): 
   return { endpoint: { componentId, terminalId }, x, y };
 }
 
-function wirePath(from: TerminalAnchor, to: TerminalAnchor): string {
-  const middleX = Math.round((from.x + to.x) / 2);
-  return `M ${from.x} ${from.y} H ${middleX} V ${to.y} H ${to.x}`;
-}
+function wirePath(from: TerminalAnchor, to: TerminalAnchor, points: readonly { x: number; y: number }[] = []): string { return orthogonalWirePath(from, to, points, from.vertical, to.vertical); }
 
 const componentBox = (id: string, selected: string, onSelect: (componentId: string) => void, x: number, y: number, width: number, height: number) => ({
   onClick: () => onSelect(id),
@@ -123,6 +124,7 @@ function PlacedSymbol({ component, selectedComponentId, onSelect, onMove, wireMo
 }
 
 function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
+  if (symbolId.startsWith("motor-ac-") || /^motor-\d+$/.test(symbolId) || symbolId === "motor-3phase") return <g className="generic-symbol-mark"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 2} textAnchor="middle" className="functional-symbol-text">M</text><text x={x} y={y + 12} textAnchor="middle" className="functional-symbol-text">3~</text></g>;
   if (symbolId.includes("motor")) return <circle cx={x + 25} cy={y - 9} r="12" className="generic-symbol-mark" />;
   if (symbolId.includes("supply")) return <g className="generic-symbol-mark">{[-14, 0, 14].map((offset) => <path key={offset} d={`M ${x + offset} ${y - 20} V ${y - 5}`} />)}</g>;
   if (symbolId.includes("breaker") || symbolId.includes("fuse")) return <g className="generic-symbol-mark">{[-16, 0, 16].map((offset) => <path key={offset} d={`M ${x + offset - 5} ${y - 20} L ${x + offset + 5} ${y - 7}`} />)}</g>;
@@ -150,7 +152,7 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to)} className={wire.id === selectedWireId ? "wire manual-wire selected-wire" : "wire manual-wire"} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} onMove={onMove} wireMode={wireMode} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
@@ -176,7 +178,7 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to)} className={wire.id === selectedWireId ? "wire manual-wire selected-wire" : "wire manual-wire"} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>
