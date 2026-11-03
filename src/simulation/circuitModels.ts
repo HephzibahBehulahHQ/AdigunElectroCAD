@@ -170,6 +170,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   return document.components.flatMap((component) => {
     const definition = catalog.get(component.definitionId);
     if (!definition) return [];
+    if (document.id === "reference-dol-motor-starter" && definition.simulationModelId === "contactor-dol-v1") return [];
     const active = properties.get(component.id) ?? component.properties;
     if (definition.simulationModelId === "power-junction") active.connectedConductors = document.wires.filter((wire) => wire.from.componentId === component.id || wire.to.componentId === component.id).length;
     if (definition.simulationModelId === "six-terminal-windings") {

@@ -2,13 +2,16 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p"].includes(symbolId) || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
   const cy = y - 13;
   if (!hasDedicatedFunctionalSymbol(symbolId)) return null;
 
+  if (symbolId === "control-supply") return <g className={mark} aria-label="Isolated AC control supply"><circle cx={x} cy={cy} r="13" /><path d={`M ${x - 9} ${cy} Q ${x - 4} ${cy - 12} ${x} ${cy} T ${x + 9} ${cy}`} /></g>;
+  if (symbolId === "contactor-3p") return <g className={mark} aria-label="Contactor coil and three main contacts"><rect x={x - 16} y={y - 4} width="32" height="16" />{[-24, 0, 24].map(offset => <path key={offset} d={`M ${x + offset - 5} ${y - 22} L ${x + offset + 5} ${y - 10}`} />)}</g>;
+  if (symbolId === "pushbutton-no" || symbolId === "pushbutton-nc") return <g className={mark} aria-label={symbolId === "pushbutton-no" ? "Normally open pushbutton" : "Normally closed pushbutton"}><path d={`M ${x - 28} ${cy} H ${x - 9} M ${x + 9} ${cy} H ${x + 28} M ${x} ${cy - 6} V ${cy - 14} M ${x - 8} ${cy - 14} H ${x + 8}`} /><path d={symbolId === "pushbutton-no" ? `M ${x - 9} ${cy - 6} H ${x + 9}` : `M ${x - 9} ${cy} H ${x + 9} M ${x - 10} ${cy + 8} L ${x + 10} ${cy - 8}`} /></g>;
   if (symbolId === "logic-no" || symbolId === "logic-nc") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 28}`} /><path d={symbolId === "logic-no" ? `M ${x - 6} ${cy + 10} L ${x + 6} ${cy - 10}` : `M ${x - 7} ${cy} H ${x + 7} M ${x - 8} ${cy + 11} L ${x + 8} ${cy - 11}`} /></g>;
   if (symbolId === "logic-coil" || symbolId === "logic-set" || symbolId === "logic-reset") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 15} M ${x + 15} ${cy} H ${x + 28}`} /><path d={`M ${x - 15} ${cy - 12} Q ${x} ${cy} ${x - 15} ${cy + 12} M ${x + 15} ${cy - 12} Q ${x} ${cy} ${x + 15} ${cy + 12}`} />{symbolId !== "logic-coil" && <text x={x} y={cy + 4} textAnchor="middle" className={text}>{symbolId === "logic-set" ? "S" : "R"}</text>}</g>;
   if (symbolId.startsWith("logic-edge-")) return <g className={mark}><path d={`M ${x - 27} ${cy + 8} H ${x - 6} V ${cy - 9} H ${x + 27}`} />{symbolId.endsWith("positive") ? <path d={`M ${x + 7} ${cy - 18} V ${cy - 5} M ${x + 2} ${cy - 10} L ${x + 7} ${cy - 5} L ${x + 12} ${cy - 10}`} /> : <path d={`M ${x + 7} ${cy + 18} V ${cy + 5} M ${x + 2} ${cy + 10} L ${x + 7} ${cy + 5} L ${x + 12} ${cy + 10}`} />}</g>;

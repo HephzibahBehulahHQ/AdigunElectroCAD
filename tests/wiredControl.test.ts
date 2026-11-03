@@ -1,3 +1,5 @@
+import { createWiredHoldingTemplate } from "../src/projects/wiredHoldingCircuit";
+import { verifyProjectTemplate } from "../src/projects/templateVerification";
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { catalogById } from "../src/catalog/dolCatalog";
@@ -57,4 +59,11 @@ it("inhibits a control circuit with line and neutral shorted", () => {
   const runtime = design();
   runtime.wires.push({ id: "short", from: { componentId: "control", terminalId: "line" }, to: { componentId: "control", terminalId: "neutral" }, points: [], netName: "FAULT" });
   expect(coil(press(runtime, "start", true))).toMatchObject({ energized: false, error: expect.stringContaining("shorted") });
+});
+
+it("runs the dedicated wired starter operating sequence", () => {
+  const result = verifyProjectTemplate(createWiredHoldingTemplate(), catalogById);
+  expect(result.topologyIssues).toEqual([]);
+  expect(result.failedExpectations).toEqual([]);
+  expect(result.passed).toBe(true);
 });
