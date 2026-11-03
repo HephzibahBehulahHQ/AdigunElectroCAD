@@ -31,11 +31,9 @@ export function compare(kind: Comparator, left: number, right: number, tolerance
 
 export function mathBlock(kind: MathOperation, left: number, right: number): { ok: true; value: number } | { ok: false; reason: string } {
   if (!Number.isFinite(left) || !Number.isFinite(right)) return { ok: false, reason: "Math inputs must be finite." };
-  if (kind === "add") return { ok: true, value: left + right };
-  if (kind === "subtract") return { ok: true, value: left - right };
-  if (kind === "multiply") return { ok: true, value: left * right };
-  if (right === 0) return { ok: false, reason: "Division by zero is invalid." };
-  return { ok: true, value: left / right };
+  if (kind === "divide" && right === 0) return { ok: false, reason: "Division by zero is invalid." };
+  const value = kind === "add" ? left + right : kind === "subtract" ? left - right : kind === "multiply" ? left * right : left / right;
+  return Number.isFinite(value) ? { ok: true, value } : { ok: false, reason: "Math result exceeds the finite numeric range." };
 }
 
 export function levelToMilliamp(levelPercent: number) { return 4 + clamp(levelPercent, 0, 100) * 0.16; }
