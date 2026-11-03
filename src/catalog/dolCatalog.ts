@@ -46,5 +46,15 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   }
 ];
 
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog];
+const holdingContactor = dolCatalog.find(definition => definition.id === "contactor.three-pole")!;
+export const interlockedContactor: ElectricalComponentDefinition = {
+  ...holdingContactor,
+  id: "contactor.three-pole-no-nc",
+  name: "Three-pole contactor with NO/NC auxiliaries",
+  description: "Three main contacts, 230 V coil, NO 13–14 holding and NC 21–22 electrical interlock contacts.",
+  terminals: [...holdingContactor.terminals, terminal("aux-21", "21", "control"), terminal("aux-22", "22", "control")],
+  propertiesSchema: { ...holdingContactor.propertiesSchema, auxiliaryContacts: "1 NO + 1 NC" },
+  documentation: "Wire the opposite contactor's NC 21–22 in series with A1 to create an electrical interlock. Ideal contacts; no mechanical interlock, contact timing, pickup curve or safety certification.",
+};
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, interlockedContactor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));

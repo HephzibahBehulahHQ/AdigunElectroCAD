@@ -11,6 +11,7 @@ export function powerTerminalOffset(modelId: string, terminalId: string): { x: n
   if (overload) return { x: [-32, 0, 32][Number(overload[1]) - 1], y: 27 };
   if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
   if (modelId === "contactor-dol-v1" && ["aux-13", "aux-14"].includes(terminalId)) return { x: 47, y: terminalId === "aux-13" ? -12 : 12 };
+  if (modelId === "contactor-dol-v1" && ["aux-21", "aux-22"].includes(terminalId)) return { x: 47, y: terminalId === "aux-21" ? -24 : 24 };
   if (terminalId === "aux-closed" || terminalId === "aux-96" || terminalId === "pe") return { x: 47, y: 0 };
   if (terminalId === "aux-95") return { x: -47, y: 0 };
   return undefined;
