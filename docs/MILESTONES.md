@@ -6,9 +6,9 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 
 | Gate | Category / milestone | Verifiable completion criteria | Current state / evidence |
 | --- | --- | --- | --- |
-| M01 | Repository and deployment baseline | Reviewed project-only commits; matching local/remote branch SHA; CI test/build green; configured Pages deployment green; canonical domain renders matching assets. | Complete for PRs #69–75. Latest main `350c255`, Pages run `41587886401` green; executable release `b3486f4` verified in browser. Recheck for every subsequent release. |
+| M01 | Repository and deployment baseline | Reviewed project-only commits; matching local/remote branch SHA; CI test/build green; configured Pages deployment green; canonical domain renders matching assets. | Complete through PR #77. Latest main `a1210ea`, Pages run `41593296828` green; matching assets and wired reversing controls verified on the canonical domain. Recheck for every subsequent release. |
 | M02 | CAD editing and deliverables | Create/edit multi-sheet circuits, place/rotate/move devices, connect/reconnect/delete wires, Undo/Redo, import/export JSON/SVG/PNG/PDF workflow and BOM/wire/terminal reports; verify round trips and rendered legibility. | Partial. Existing editing/export tests and docs cover subsets; full format and report acceptance remains open. See CAD-INTERACTION.md and PROJECT-IMPORT.md. |
-| M03 | Wired controls and power | Actual wired supply/return, START/STOP, holding and reversing interlock contacts drive coils and motor power; broken wires, conflicting commands and restoration have tested outcomes. | Partial. Boolean and power tracing are deployed; real wired holding-control increment is local and not released. |
+| M03 | Wired controls and power | Actual wired supply/return, START/STOP, holding and reversing interlock contacts drive coils and motor power; broken wires, conflicting commands and restoration have tested outcomes. | Partial. Wired holding and reversing control increments are deployed and browser-verified in PRs #76–77. Full gate review remains open. |
 | M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Manual trip, DOL dynamics and starter laboratories exist; thermal overload integration and broader physical coupling remain open. |
 | M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
 | M06 | Component library | Every requested item, including categories 11–18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
@@ -32,14 +32,24 @@ Only M01 is fully evidenced as a release baseline (1 of 11 broad gates; approxim
 
 M03a was accepted in PR #76: synchronized head `2ef3fee`, main `484a69f`, successful Pages run `41590245813`, matching live asset `index-DzMtavmO.js`, live holding/STOP/overload recovery and restoration of the original 14-sheet project. This does not complete M03: reversing interlocks and broader coil/protection behavior remain separate increments.
 
-## Active increment: M03b — Wired reversing interlocks
+## Completed increment: M03b — Wired reversing interlocks
 
 - [x] Add a real NC auxiliary contact path, with no change to the reference DOL controller.
 - [x] Verify forward and reverse holding, opposing-command inhibition, STOP/restart, overload, broken interlock/return wires and simultaneous-command faults.
 - [x] Provide a legible dedicated project; verify actual phase interchange and motor direction in the browser.
-- [ ] Run regression/build, review/publish/synchronize, pass CI, deploy and verify production before proceeding.
+- [x] Run regression/build, review/publish/synchronize, pass CI, deploy and verify production before proceeding.
 
-Current evidence: 859 regression cases and the production build passed, including geometry, bounds and both A2 return faults. Local browser checks verified both directions, opposing-coil exclusion, STOP and overload recovery. Forward/reverse holding, opposing commands, simultaneous commands, broken NC series wires, overload recovery and order independence are covered. Final publication/deployment acceptance remains open. Approximately 85% of this increment is complete; estimate 0.2–0.5 hours remaining. Electrical interlocking is not a mechanical or certified safety interlock.
+Acceptance: PR #77, synchronized branch `77fae21`, merge `a1210ea`, successful Pages run `41593296828`, matching live assets `index-Bu23w5mA.js` and `index-BUIzYmxF.css`. All 859 tests and the production build passed. Canonical-domain browser checks verified forward +1440 rpm with KM2 off under an opposing command; STOP left STANDBY; reverse -1440 rpm with KM1 off under an opposing command; overload trip/reset left STANDBY. Undo/reload restored the original 14-sheet project without cloud writes. M03b is complete; electrical interlocking is not a mechanical or certified safety interlock.
+
+## Next increment: M04a — Current-driven thermal overload
+
+- [ ] Inspect existing load-current tracing, DOL thermal behavior and runtime-state/reset boundaries.
+- [ ] Specify a documented educational thermal model and wire current-driven trip into the existing power/control circuit.
+- [ ] Verify cold/hot trip, cooling/reset, time-step consistency, current interruption and saved-design immutability.
+- [ ] Add observable runtime state and meaningful local browser acceptance.
+- [ ] Publish/synchronize, pass CI, deploy and verify the same behavior live.
+
+Scope and remaining hours will be estimated after the current-path and runtime integration audit.
 
 ## Per-increment publication rule
 
