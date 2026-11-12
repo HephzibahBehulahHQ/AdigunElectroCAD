@@ -23,6 +23,7 @@
 | Placed-symbol rendering | Category-aware SVG glyphs render below the fitted upright reference label | Build validation |
 | Component rotation | Right-angle component rotation persists in the document model | Automated + build validation |
 | Placed-component parameters | A targeted property update persists without changing another component | Automated + build validation |
+| User-configurable indicator placeholders | H1/H2/H3 retain stable T1/T2 terminal IDs while color, indication text, terminal display labels and reference tags persist per instance; symbols are unconnected and unsimulated by default | Automated + production visual inspection |
 | DOL sequence | `tests/dolSimulator.test.ts` | Automated |
 | PLC and analog laboratory | Contact, coil, latch, edge, all logic gates, comparators, math operations, 4–20 mA/ADC/DAC and implemented instrumentation functions | Automated + build validation |
 | Industrial Device Lab | Pneumatic/hydraulic, HVAC, renewable-energy, safety and cable calculations execute from readable live inputs | Automated + build validation |
@@ -40,3 +41,4 @@
 | Schematic annotations | Control title and device labels are separated and fully visible | Manually verified in browser |
 
 This manifest only records checks that have been executed. Component and project models are documented engineering abstractions, not manufacturer-certified or physical commissioning results.
+
