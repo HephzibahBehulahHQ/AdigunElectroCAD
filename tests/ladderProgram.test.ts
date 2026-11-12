@@ -35,6 +35,27 @@ it("round-trips TON timer coils and preview timer contacts", () => {
   expect(() => compileLadder([{ stages: [[{ address: "I0", inverted: false }]], coil: { type: "TON", timer: "T0", presetSeconds: -1 } }, { stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }])).toThrow();
 });
 
+it("round-trips internal relay contacts and coils and previews retained logic", () => {
+  const rungs: LadderRung[] = [
+    { stages: [[{ address: "I0", inverted: false }]], coil: { type: "MEMORY", address: "M0", operation: "SET" } },
+    { stages: [[{ address: "I1", inverted: false }]], coil: { type: "MEMORY", address: "M0", operation: "RESET" } },
+    { stages: [[{ address: "M0", inverted: false }]], coil: "OUT" },
+  ];
+  const program = compileLadder(rungs);
+  expect(program).toBe("LD I0; SET M0; LD I1; RESET M0; LD M0; OUT Q0");
+  expect(parseLadder(program)).toEqual(rungs);
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain("Internal memory coil");
+  expect(markup).toContain("M0");
+  const first = previewLadder(rungs, { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [], memory: Array(8).fill(false) });
+  expect(first).toMatchObject({ output: true, memory: [true, false, false, false, false, false, false, false] });
+  const reset = previewLadder(rungs, { input0: false, input1: true, q0: true, previousInput0: true, previousInput1: false, analogInput0: 0, registers: [], memory: first.memory });
+  expect(reset).toMatchObject({ output: false, memory: Array(8).fill(false) });
+  const scan = scanPlcProgram(program, true, false, false, 0, undefined, [], undefined, 0.1, Array(8).fill(false));
+  expect(scan).toMatchObject({ ok: true, output: first.output, memory: first.memory });
+  expect(() => compileLadder([{ stages: [[{ address: "I0", inverted: false }]], coil: { type: "MEMORY", address: "M0", operation: "SET" } }])).toThrow(/assign Q0/);
+});
+
 it("previews conducting contacts against the next scan and retained Q0", () => {
   const inputs = { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: Array(8).fill(0) };
   const preview = previewLadder(holding, inputs);

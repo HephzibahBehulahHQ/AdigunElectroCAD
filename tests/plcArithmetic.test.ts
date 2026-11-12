@@ -90,3 +90,39 @@ it("persists TON state in runtime properties and clears it on Stop", () => {
   expect(resetCircuitClock(second, catalogById).components.find((component) => component.id === "plc")!.properties.runtimeT0Done).toBeUndefined();
 });
 
+it("retains internal memory relays across scans and applies OUT, SET and RESET", () => {
+  const setProgram = "LD I0; SET M0; LD M0; OUT Q0";
+  const set = scanPlcProgram(setProgram, true, false, false, 0, undefined, [], undefined, 0.1, Array(8).fill(false));
+  expect(set).toMatchObject({ ok: true, output: true, memory: [true, false, false, false, false, false, false, false] });
+  if (!set.ok) throw new Error(set.error);
+  const held = scanPlcProgram(setProgram, false, false, set.output, 0, undefined, [], undefined, 0.1, set.memory);
+  expect(held).toMatchObject({ ok: true, output: true, memory: set.memory });
+  if (!held.ok) throw new Error(held.error);
+  const reset = scanPlcProgram("LD I1; RESET M0; LD M0; OUT Q0", false, true, held.output, 0, undefined, [], undefined, 0.1, held.memory);
+  expect(reset).toMatchObject({ ok: true, output: false, memory: Array(8).fill(false) });
+  expect(scanPlcProgram("LD I0; OUT M1; LD M1; OUT Q0", true, false, false, 0, undefined, [], undefined, 0.1, Array(8).fill(false))).toMatchObject({ ok: true, output: true, memory: [false, true, false, false, false, false, false, false] });
+});
+
+it("does not commit memory relay changes from a faulting PLC scan", () => {
+  const previous = [false, true, false, false, false, false, false, false];
+  const result = scanPlcProgram("LD I0; SET M0; DIV 1 0 D0; LD M0; OUT Q0", true, false, false, 0, undefined, [], undefined, 0.1, previous);
+  expect(result).toMatchObject({ ok: false, output: false });
+  expect(previous).toEqual([false, true, false, false, false, false, false, false]);
+});
+
+it("persists PLC memory relays in runtime properties and clears them on Stop", () => {
+  const design = createAnalogLevelProject().document;
+  const plc = design.components.find((component) => component.id === "plc")!;
+  plc.properties = { ...plc.properties, inputA: true, program: "LD I0; SET M0; LD M0; OUT Q0" };
+  const first = advanceCircuitClock(design, catalogById, 0.1);
+  const paused = advanceCircuitClock(first, catalogById, 0);
+  expect(paused.components.find((component) => component.id === "plc")!.properties.runtimeM0).toBe(true);
+  const second = advanceCircuitClock(first, catalogById, 0.1);
+  expect(second.components.find((component) => component.id === "plc")!.properties).toMatchObject({ runtimeM0: true, runtimeQ0: true });
+  const faulted = second.components.find((component) => component.id === "plc")!;
+  faulted.properties.program = "LD I0; RESET M0; DIV 1 0 D0; LD M0; OUT Q0";
+  const afterFault = advanceCircuitClock(second, catalogById, 0.1);
+  expect(afterFault.components.find((component) => component.id === "plc")!.properties).toMatchObject({ runtimeM0: true, runtimeQ0: false });
+  expect(resetCircuitClock(afterFault, catalogById).components.find((component) => component.id === "plc")!.properties.runtimeM0).toBeUndefined();
+});
+

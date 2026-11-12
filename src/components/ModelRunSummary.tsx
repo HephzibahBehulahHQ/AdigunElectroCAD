@@ -20,6 +20,7 @@ export function ModelRunSummary({ runs }: { runs: readonly CircuitModelRun[] }) 
       ...(String(p.program ?? "").toUpperCase().includes("AI0") ? [["AI0", String(p.analogInput0 ?? 0)] as string[]] : []),
       ["Q0", p.runtimeQ0 === true ? "ON" : "OFF"],
       ...Array.from({ length: 8 }, (_, index) => [`D${index}`, String(p[`runtimeD${index}`] ?? 0)]),
+      ...Array.from({ length: 8 }, (_, index) => index).filter((index) => new RegExp(`\\bM${index}\\b`).test(String(p.program ?? "").toUpperCase())).map((index) => [`M${index}`, p[`runtimeM${index}`] === true ? "ON" : "OFF"]),
       ...[0, 1, 2, 3].filter((index) => new RegExp(`\\bT${index}\\b`).test(String(p.program ?? "").toUpperCase())).flatMap((index) => [[`T${index}.Q`, p[`runtimeT${index}Done`] === true ? "ON" : "OFF"], [`T${index}.ET`, `${Number(p[`runtimeT${index}Elapsed`] ?? 0).toFixed(1)} s`]]),
     ];
     return <section className="plc-watch" aria-label={`${run.reference} PLC watch table`} key={run.componentId}>

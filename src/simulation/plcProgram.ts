@@ -1,10 +1,12 @@
 export const PLC_REGISTER_COUNT = 8;
+export const PLC_MEMORY_COUNT = 8;
+export type PlcMemoryState = boolean[];
 export type PlcTimerState = { elapsedSeconds: number; done: boolean };
 export type PlcTimerStates = Record<`T${0 | 1 | 2 | 3}`, PlcTimerState>;
-export type PlcScanResult = { ok: true; output: boolean; registers?: number[]; timers?: PlcTimerStates } | { ok: false; output: false; error: string };
+export type PlcScanResult = { ok: true; output: boolean; registers?: number[]; memory?: PlcMemoryState; timers?: PlcTimerStates } | { ok: false; output: false; error: string };
 
-/** Educational instruction-list scan with Boolean I/O and eight numeric registers. */
-export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[], previousInputs: readonly boolean[] = [], previousTimers?: Partial<PlcTimerStates>, deltaSeconds = 0.1): PlcScanResult {
+/** Educational instruction-list scan with Boolean I/O, eight registers and eight internal memory relays. */
+export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[], previousInputs: readonly boolean[] = [], previousTimers?: Partial<PlcTimerStates>, deltaSeconds = 0.1, previousMemory?: readonly boolean[]): PlcScanResult {
   const instructions = program.split(/[;\n]/).map((line) => line.trim().toUpperCase()).filter(Boolean);
   const fail = (error: string): PlcScanResult => ({ ok: false, output: false, error });
   if (!instructions.length || instructions.length > 32) return fail("Program requires 1–32 instructions.");
@@ -13,7 +15,9 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
   let assigned = false;
   const stack: boolean[] = [];
   const registers = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => previousRegisters?.[index] ?? 0);
+  const memory = Array.from({ length: PLC_MEMORY_COUNT }, (_, index) => previousMemory?.[index] ?? false);
   let usesRegisters = previousRegisters !== undefined;
+  let usesMemory = previousMemory !== undefined;
   let usesTimers = previousTimers !== undefined;
   const timers = Object.fromEntries([0, 1, 2, 3].map((index) => {
     const timer = previousTimers?.[`T${index}` as keyof PlcTimerStates];
@@ -29,6 +33,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
     return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(operand) ? Number(operand) : NaN;
   };
   if (!registers.every(validNumber)) return fail("Register state must contain finite numbers within the safe numeric range.");
+  if ((previousMemory && (previousMemory.length !== PLC_MEMORY_COUNT || previousMemory.some((value) => typeof value !== "boolean"))) || !memory.every((value) => typeof value === "boolean")) return fail("Memory state must contain eight Boolean values.");
   if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 || Object.values(timers).some((timer) => !validNumber(timer.elapsedSeconds) || timer.elapsedSeconds < 0 || typeof timer.done !== "boolean")) return fail("Timer state and scan time step must be finite and non-negative.");
   for (const instruction of instructions) {
     const parts = instruction.split(/\s+/);
@@ -91,15 +96,22 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       continue;
     }
     if (["OUT", "SET", "RESET"].includes(operation)) {
-      if (address !== "Q0" || accumulator === undefined) return fail("Output instructions require Q0 and a preceding LD/LDN.");
-      output = operation === "OUT" ? accumulator : operation === "SET" ? output || accumulator : output && !accumulator;
-      assigned = true;
+      if (accumulator === undefined || (address !== "Q0" && !/^M[0-7]$/.test(address ?? ""))) return fail("Output instructions require Q0 or M0–M7 and a preceding LD/LDN.");
+      if (address === "Q0") {
+        output = operation === "OUT" ? accumulator : operation === "SET" ? output || accumulator : output && !accumulator;
+        assigned = true;
+      } else {
+        const index = Number(address.slice(1));
+        memory[index] = operation === "OUT" ? accumulator : operation === "SET" ? memory[index] || accumulator : memory[index] && !accumulator;
+        usesMemory = true;
+      }
       continue;
     }
     if (!["LD", "LDN", "AND", "ANDN", "OR", "ORN", "XOR"].includes(operation)) return fail(`Unsupported operation: ${operation}`);
-    if (!["I0", "I1", "Q0", "T0", "T1", "T2", "T3"].includes(address)) return fail(`Unsupported address: ${address}`);
-    const value = address === "I0" ? inputA : address === "I1" ? inputB : address === "Q0" ? output : timers[address as keyof PlcTimerStates].done;
+    if (!["I0", "I1", "Q0", "T0", "T1", "T2", "T3"].includes(address) && !/^M[0-7]$/.test(address ?? "")) return fail(`Unsupported address: ${address}`);
+    const value = address === "I0" ? inputA : address === "I1" ? inputB : address === "Q0" ? output : address?.startsWith("T") ? timers[address as keyof PlcTimerStates].done : memory[Number(address?.slice(1))];
     if (address?.startsWith("T")) usesTimers = true;
+    if (address?.startsWith("M")) usesMemory = true;
     if (operation === "LD" || operation === "LDN") accumulator = operation === "LD" ? value : !value;
     else {
       if (accumulator === undefined) return fail("Logic instructions require a preceding LD/LDN.");
@@ -111,6 +123,6 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
     }
   }
   if (stack.length) return fail("Boolean branch stack is not balanced.");
-  return assigned ? { ok: true, output, ...(usesRegisters ? { registers } : {}), ...(usesTimers ? { timers } : {}) } : fail("Program must assign Q0.");
+  return assigned ? { ok: true, output, ...(usesRegisters ? { registers } : {}), ...(usesMemory ? { memory } : {}), ...(usesTimers ? { timers } : {}) } : fail("Program must assign Q0.");
 }
 
