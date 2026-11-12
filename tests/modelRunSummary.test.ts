@@ -42,7 +42,7 @@ it("shows the live PLC watch table and recent scan trace for I/O and retained re
   const runtimeScanTrace = JSON.stringify([{ scan: 4, elapsedSeconds: 0.4, input0: true, input1: false, analogInput0: 13824, output: true, registers: [50, 0, 0, 0, 0, 0, 0, -2], status: "ok" }]);
   const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
     componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io", output: result!,
-    evaluatedProperties: { inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true, runtimeD0: 50, runtimeD7: -2, program: "LD AI0; MOV AI0 D0; OUT Q0", runtimeScanTrace },
+    evaluatedProperties: { inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true, runtimeD0: 50, runtimeD7: -2, runtimeT0Elapsed: 0.4, runtimeT0Done: true, program: "LD AI0; MOV AI0 D0; TON T0 1; LD T0; OUT Q0", runtimeScanTrace },
   }] }));
   expect(summary).toContain('aria-label="PLC1 PLC watch table"');
   expect(summary).toContain("AI0");
@@ -51,6 +51,9 @@ it("shows the live PLC watch table and recent scan trace for I/O and retained re
   expect(summary).toContain("50");
   expect(summary).toContain("D7");
   expect(summary).toContain("-2");
+  expect(summary).toContain("T0.Q");
+  expect(summary).toContain("T0.ET");
+  expect(summary).toContain("0.4 s");
   expect(summary).toContain('aria-label="PLC1 recent PLC scan trace"');
   expect(summary).toContain("Recent scan trace");
   expect(summary).toContain("0.4");
@@ -75,4 +78,5 @@ it("shows faults beyond the first two models and restores success after correcti
   expect(recovered).toContain("K1 OFF");
   expect(recovered).not.toContain('role="alert"');
 });
+
 
