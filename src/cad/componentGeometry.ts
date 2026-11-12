@@ -2,7 +2,7 @@ import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
 export function powerTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
-  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
   const phase = /^l([123])-(in|out)$/.exec(terminalId);
   if (phase) return { x: [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
   const motor = ["u1", "v1", "w1"].indexOf(terminalId);
@@ -65,5 +65,6 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   const bounds = componentFootprint(x, y, rotation, definitionId);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
+
 
 

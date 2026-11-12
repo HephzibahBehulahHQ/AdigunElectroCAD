@@ -49,7 +49,7 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
       const y = sixTerminal ? index < 3 ? -42 : index < 6 ? 42 : 0 : -15 + Math.floor(index / 2) * 12;
-      const power = component.properties.powerLayout === "vertical" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
+      const power = terminal.kind === "power" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const offset = rotateOffset(control?.x ?? x, control?.y ?? y, component.rotation);
       anchors.push({ ...anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y), power: terminal.kind === "power", vertical: Boolean(power && terminal.kind === "power" && component.rotation % 180 === 0) });
@@ -124,7 +124,7 @@ function PlacedSymbol({ component, selectedComponentId, onSelect, onMove, wireMo
     onPointerCancel={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
     onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
     className={component.id === selectedComponentId ? "schematic-component selected" : "schematic-component"}>
-    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
+    <g transform={`rotate(${component.rotation} ${component.x} ${component.y})`}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} properties={component.properties} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
     <text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
     <text x={component.x} y={component.y + labels.kind} className="free-kind" textAnchor="middle">{definition?.referencePrefix ?? "?"}</text>
   </g>;
