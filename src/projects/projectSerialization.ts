@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, TerminalEndpoint, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -37,7 +37,8 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const document = object(value, `Sheet ${sheetIndex + 1} document is invalid.`);
   const componentsValue = array(document.components, `Sheet ${sheetIndex + 1} components are invalid.`);
   const wiresValue = array(document.wires, `Sheet ${sheetIndex + 1} wires are invalid.`);
-  if (componentsValue.length > 2000 || wiresValue.length > 5000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
+  const annotationsValue = document.annotations === undefined ? [] : array(document.annotations, `Sheet ${sheetIndex + 1} annotations are invalid.`);
+  if (componentsValue.length > 2000 || wiresValue.length > 5000 || annotationsValue.length > 1000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
   const parsed: CircuitDocument = {
     id: textValue(document.id, `sheet ${sheetIndex + 1} document id`, 96),
     name: textValue(document.name, `sheet ${sheetIndex + 1} document name`, 80),
@@ -45,10 +46,22 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     revision: integer(document.revision, `sheet ${sheetIndex + 1} document revision`),
     components: componentsValue.map((component, componentIndex) => parseComponent(component, sheetIndex, componentIndex)),
     wires: wiresValue.map((wire, wireIndex) => parseWire(wire, sheetIndex, wireIndex)),
+    ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
   };
+  if (parsed.annotations && new Set(parsed.annotations.map((annotation) => annotation.id)).size !== parsed.annotations.length) throw new Error(`Sheet ${sheetIndex + 1} annotations must have unique ids.`);
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
+}
+
+function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: number): SchematicAnnotation {
+  const annotation = object(value, `Sheet ${sheetIndex + 1} annotation ${annotationIndex + 1} is invalid.`);
+  const x = finiteNumber(annotation.x, "annotation x");
+  const y = finiteNumber(annotation.y, "annotation y");
+  if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Annotation position must be inside the schematic sheet.");
+  const color = textValue(annotation.color, "annotation color", 7);
+  if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Annotation color must be a six-digit hex color.");
+  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
@@ -121,3 +134,4 @@ function integer(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) throw new Error(`The ${label} must be a non-negative integer.`);
   return value;
 }
+

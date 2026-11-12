@@ -48,12 +48,21 @@ export interface Wire {
   netName?: string;
 }
 
+export interface SchematicAnnotation {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
 export interface CircuitDocument {
   id: string;
   name: string;
   description: string;
   components: ComponentInstance[];
   wires: Wire[];
+  annotations?: SchematicAnnotation[];
   revision: number;
 }
 
@@ -73,3 +82,4 @@ export interface ElectricalProject {
   sheets: CircuitSheet[];
   revision: number;
 }
+
