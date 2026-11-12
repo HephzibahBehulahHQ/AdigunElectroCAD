@@ -52,6 +52,20 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Component drafting color");
   });
 
+  it("persists optional wire drafting colors and accepts older projects without them", () => {
+    const input = createStarterProject();
+    input.sheets[0].document.wires[0].draftingColor = "#7b3fa1";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[0].document.wires[0].draftingColor).toBe("#7b3fa1");
+    delete input.sheets[0].document.wires[0].draftingColor;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+  });
+
+  it("rejects malformed wire drafting colors", () => {
+    const input = createStarterProject();
+    input.sheets[0].document.wires[0].draftingColor = "violet";
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Wire drafting color");
+  });
+
   it("persists editable text annotations and accepts older projects without annotations", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = input.sheets[1].document;

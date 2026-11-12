@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { Schematic } from "../src/components/Schematic";
+import { catalogById } from "../src/catalog/dolCatalog";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
@@ -52,4 +53,25 @@ it("renders a user-selected component drafting color without changing its catalo
   }));
   expect(markup).toContain('style="--component-ink:#7b3fa1"');
   expect(document.components[0].properties).not.toHaveProperty("draftingColor");
+});
+
+it("renders editable electrical wire colors separately from terminal topology", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  const seed = { ...createStarterProject().sheets[0].document.components[0], id: "wire-color-test", x: 300, y: 300 };
+  document.components.push(seed);
+  const terminals = catalogById.get(seed.definitionId)!.terminals;
+  document.wires = [{
+    id: "wire-color-1",
+    from: { componentId: seed.id, terminalId: terminals[0].id },
+    to: { componentId: seed.id, terminalId: terminals[1].id },
+    points: [], netName: "TEST_NET", draftingColor: "#c62828",
+  }];
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: seed.id, simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toContain('style="stroke:#c62828"');
+  expect(document.wires[0]).toMatchObject({ netName: "TEST_NET", draftingColor: "#c62828" });
+  expect(document.wires[0].from).toEqual({ componentId: seed.id, terminalId: terminals[0].id });
 });

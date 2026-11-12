@@ -277,7 +277,7 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
@@ -306,7 +306,7 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>
