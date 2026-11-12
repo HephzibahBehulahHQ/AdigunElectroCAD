@@ -213,9 +213,17 @@ PR #125 merged as `e049920`. Verify runs `43320113513` and `43320106081` passed;
 - [x] Add corner handles to resize rectangles and ellipses, plus endpoint handles to reshape lines on the grid.
 - [x] Keep edits within sheet bounds, enforce the 4-unit minimum span, and record them through project history.
 - [x] Pass the full local suite (934 tests), production build, GitHub Verify, merge, Pages deployment and local browser interaction.
-- [ ] Inspect the served custom-domain build after DNS resolution returns; this environment could not resolve the production host during this turn.
+- [x] Inspect the served custom-domain build after DNS resolution returned; production page and bundle returned HTTP 200 and the bundle includes resize-handle markup.
 
-PR #127 merged as `8bd10b0`. Verify run `43321985037` and Pages deployment `43322087430` succeeded; a Pages artifact was produced for the merged commit. Local browser inspection confirmed resizing a rectangle corner and either line endpoint. The custom domain could not be resolved from this environment, so live bundle inspection remains pending.
+PR #127 merged as `8bd10b0`. Verify run `43321985037` and Pages deployment `43322087430` succeeded; a Pages artifact was produced for the merged commit. Local browser inspection confirmed resizing a rectangle corner and either line endpoint. After DNS resolution returned during the M06m rollout, the production page and bundle both returned HTTP 200 and the current bundle contained the resize-handle markup.
+
+## Completed increment: M06m — Editable component drafting colors
+
+- [x] Let users set a custom or palette drafting color on placed components and reset to the default.
+- [x] Keep drafting color separate from engineering properties and simulation behavior; validate and persist it while accepting older project files.
+- [x] Pass focused local checks (19 tests), build, GitHub Verify, merge, Pages deployment and production bundle inspection.
+
+PR #129 merged as `a7f2210`. GitHub Verify runs `43325008843` and `43325040088` and Pages deployment `43325171843` succeeded. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the component color picker, palette/reset control and custom symbol ink rendering.
 
 ## Per-increment publication rule
 
