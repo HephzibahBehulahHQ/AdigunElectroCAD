@@ -112,10 +112,10 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove }: { graphic: Schem
   const x = Math.min(graphic.x1, graphic.x2); const y = Math.min(graphic.y1, graphic.y2);
   const width = Math.abs(graphic.x2 - graphic.x1); const height = Math.abs(graphic.y2 - graphic.y1);
   const shape = graphic.kind === "line"
-    ? <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} />
+    ? <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} fill="none" />
     : graphic.kind === "rectangle"
-      ? <rect x={x} y={y} width={width} height={height} />
-      : <ellipse cx={(graphic.x1 + graphic.x2) / 2} cy={(graphic.y1 + graphic.y2) / 2} rx={width / 2} ry={height / 2} />;
+      ? <rect x={x} y={y} width={width} height={height} fill={graphic.fillColor ?? "none"} />
+      : <ellipse cx={(graphic.x1 + graphic.x2) / 2} cy={(graphic.y1 + graphic.y2) / 2} rx={width / 2} ry={height / 2} fill={graphic.fillColor ?? "none"} />;
   return <g data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id); }} onPointerDown={(event) => {
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(graphic.id); origin.current = point(event) ?? null;

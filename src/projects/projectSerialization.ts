@@ -69,9 +69,12 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number):
   if (graphic.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
   const color = textValue(graphic.color, "graphic color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Graphic color must be a six-digit hex color.");
+  if (graphic.kind === "line" && graphic.fillColor != null) throw new Error("Only rectangles and ellipses support a fill color.");
+  const fillColor = graphic.fillColor === undefined ? undefined : graphic.fillColor === null ? null : textValue(graphic.fillColor, "graphic fill color", 7);
+  if (typeof fillColor === "string" && !/^#[0-9a-f]{6}$/i.test(fillColor)) throw new Error("Graphic fill color must be a six-digit hex color.");
   const strokeWidth = finiteNumber(graphic.strokeWidth, "graphic stroke width");
   if (strokeWidth < 1 || strokeWidth > 12) throw new Error("Graphic stroke width must be between 1 and 12.");
-  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind: graphic.kind, x1, y1, x2, y2, color, strokeWidth };
+  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind: graphic.kind, x1, y1, x2, y2, color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
 }
 
 function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: number): SchematicAnnotation {

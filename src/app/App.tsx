@@ -298,16 +298,16 @@ export function App() {
   const addGraphic = (kind: SchematicGraphicKind, x1: number, y1: number, x2: number, y2: number) => {
     if (isReferenceSheet) return;
     if ((document.graphics?.length ?? 0) >= 2000) { setNotice("This sheet has reached the 2,000 drawing-graphic limit."); return; }
-    const graphic: SchematicGraphic = { id: `graphic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: `${kind[0].toUpperCase()}${kind.slice(1)} ${(document.graphics?.length ?? 0) + 1}`, kind, x1, y1, x2, y2, color: "#1565c0", strokeWidth: 2 };
+    const graphic: SchematicGraphic = { id: `graphic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: `${kind[0].toUpperCase()}${kind.slice(1)} ${(document.graphics?.length ?? 0) + 1}`, kind, x1, y1, x2, y2, color: "#1565c0", fillColor: null, strokeWidth: 2 };
     updateDocument({ ...document, graphics: [...(document.graphics ?? []), graphic], revision: document.revision + 1 });
     selectGraphic(graphic.id);
     setNotice(`${graphic.name} drawn. It is drafting geometry and does not create an electrical connection.`);
   };
 
-  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "strokeWidth">>) => {
+  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth">>) => {
     if (!selectedGraphic) return;
     const next = { ...selectedGraphic, ...patch };
-    if (!next.name.trim() || next.name.length > 80 || !/^#[0-9a-f]{6}$/i.test(next.color) || !Number.isFinite(next.strokeWidth) || next.strokeWidth < 1 || next.strokeWidth > 12) {
+    if (!next.name.trim() || next.name.length > 80 || !/^#[0-9a-f]{6}$/i.test(next.color) || (next.fillColor !== null && next.fillColor !== undefined && !/^#[0-9a-f]{6}$/i.test(next.fillColor)) || !Number.isFinite(next.strokeWidth) || next.strokeWidth < 1 || next.strokeWidth > 12) {
       setNotice("Graphic names are limited to 80 characters; color and stroke width must be valid.");
       return;
     }
@@ -1053,12 +1053,16 @@ function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: 
   </section>;
 }
 
-function GraphicProperties({ graphic, onChange, onRemove }: { graphic: SchematicGraphic; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "strokeWidth">>) => void; onRemove: () => void }) {
+function GraphicProperties({ graphic, onChange, onRemove }: { graphic: SchematicGraphic; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth">>) => void; onRemove: () => void }) {
   const palette = ["#1565c0", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"];
   return <section className="properties-form graphic-properties" aria-label="Drawing graphic properties">
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
     <label>Color<input type="color" value={graphic.color} onChange={(event) => onChange({ color: event.target.value })} /></label>
     <div className="annotation-palette" aria-label="Graphic color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ color })} />)}</div>
+    {graphic.kind !== "line" && <>
+      <label>Fill color<input type="color" value={graphic.fillColor ?? "#ffffff"} onChange={(event) => onChange({ fillColor: event.target.value })} /></label>
+      <div className="annotation-palette" aria-label="Graphic fill palette"><button type="button" aria-label="Set graphic fill to none" title="No fill" onClick={() => onChange({ fillColor: null })}>∅</button>{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic fill ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ fillColor: color })} />)}</div>
+    </>}
     <label>Stroke width · units<input type="number" min="1" max="12" step="1" defaultValue={graphic.strokeWidth} key={`${graphic.id}:${graphic.strokeWidth}`} onBlur={(event) => onChange({ strokeWidth: Number(event.target.value) })} /></label>
     <p>{graphic.kind[0].toUpperCase() + graphic.kind.slice(1)} · drafting geometry; it does not connect electrical terminals. Drag the shape to move it.</p>
     <button className="remove-component" onClick={onRemove}>Remove drawing graphic</button>

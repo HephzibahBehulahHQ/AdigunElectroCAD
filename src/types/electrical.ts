@@ -68,6 +68,7 @@ export interface SchematicGraphic {
   x2: number;
   y2: number;
   color: string;
+  fillColor?: string | null;
   strokeWidth: number;
 }
 
