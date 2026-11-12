@@ -50,6 +50,33 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("six-digit hex color");
   });
 
+  it("persists user-drawn graphics and accepts earlier projects without graphics", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.graphics = [
+      { id: "line-1", name: "Control boundary", kind: "line", x1: 100, y1: 120, x2: 200, y2: 180, color: "#1565c0", strokeWidth: 2 },
+      { id: "rect-1", name: "Panel outline", kind: "rectangle", x1: 240, y1: 160, x2: 440, y2: 320, color: "#16814b", strokeWidth: 3 },
+      { id: "ellipse-1", name: "User mark", kind: "ellipse", x1: 500, y1: 160, x2: 620, y2: 240, color: "#7b3fa1", strokeWidth: 1 },
+    ];
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics).toEqual(input.sheets[1].document.graphics);
+    delete input.sheets[0].document.graphics;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+  });
+
+  it("rejects malformed user-drawn graphics", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.graphics = [{ id: "shape-1", name: "Bad shape", kind: "polygon" as never, x1: 0, y1: 0, x2: 200, y2: 200, color: "#1565c0", strokeWidth: 2 }];
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Graphic kind");
+    input.sheets[1].document.graphics[0].kind = "rectangle";
+    input.sheets[1].document.graphics[0].x2 = 2;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("span at least 4 units");
+  });
+
+  it("rejects user-drawn graphics on the fixed reference sheet where they would not render", () => {
+    const input = createStarterProject();
+    input.sheets[0].document.graphics = [{ id: "line-1", name: "Draft line", kind: "line", x1: 10, y1: 10, x2: 80, y2: 80, color: "#1565c0", strokeWidth: 2 }];
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("free schematic sheets only");
+  });
+
   it("rejects unknown device definitions", () => {
     const input = JSON.parse(JSON.stringify(createStarterProject()));
     input.sheets[0].document.components[0].definitionId = "unknown.device";

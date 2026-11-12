@@ -56,6 +56,21 @@ export interface SchematicAnnotation {
   color: string;
 }
 
+export type SchematicGraphicKind = "line" | "rectangle" | "ellipse";
+
+/** Visual drafting geometry; it does not represent electrical connectivity. */
+export interface SchematicGraphic {
+  id: string;
+  name: string;
+  kind: SchematicGraphicKind;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  color: string;
+  strokeWidth: number;
+}
+
 export interface CircuitDocument {
   id: string;
   name: string;
@@ -63,6 +78,7 @@ export interface CircuitDocument {
   components: ComponentInstance[];
   wires: Wire[];
   annotations?: SchematicAnnotation[];
+  graphics?: SchematicGraphic[];
   revision: number;
 }
 

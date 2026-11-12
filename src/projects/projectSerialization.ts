@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, TerminalEndpoint, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -30,6 +30,7 @@ function parseSheet(value: unknown, index: number): CircuitSheet {
   if (kind !== "reference-dol" && kind !== "free-schematic") throw new Error(`Sheet ${index + 1} has an unsupported type.`);
   const document = parseDocument(sheet.document, index);
   if ((kind === "reference-dol") !== (document.id === "reference-dol-motor-starter")) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
+  if (kind === "reference-dol" && (document.graphics?.length ?? 0) > 0) throw new Error(`Sheet ${index + 1} user-drawn graphics are supported on free schematic sheets only.`);
   return { id: textValue(sheet.id, `sheet ${index + 1} id`, 96), name: textValue(sheet.name, `sheet ${index + 1} name`, 80), kind, document };
 }
 
@@ -38,7 +39,8 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const componentsValue = array(document.components, `Sheet ${sheetIndex + 1} components are invalid.`);
   const wiresValue = array(document.wires, `Sheet ${sheetIndex + 1} wires are invalid.`);
   const annotationsValue = document.annotations === undefined ? [] : array(document.annotations, `Sheet ${sheetIndex + 1} annotations are invalid.`);
-  if (componentsValue.length > 2000 || wiresValue.length > 5000 || annotationsValue.length > 1000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
+  const graphicsValue = document.graphics === undefined ? [] : array(document.graphics, `Sheet ${sheetIndex + 1} graphics are invalid.`);
+  if (componentsValue.length > 2000 || wiresValue.length > 5000 || annotationsValue.length > 1000 || graphicsValue.length > 2000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
   const parsed: CircuitDocument = {
     id: textValue(document.id, `sheet ${sheetIndex + 1} document id`, 96),
     name: textValue(document.name, `sheet ${sheetIndex + 1} document name`, 80),
@@ -47,11 +49,29 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     components: componentsValue.map((component, componentIndex) => parseComponent(component, sheetIndex, componentIndex)),
     wires: wiresValue.map((wire, wireIndex) => parseWire(wire, sheetIndex, wireIndex)),
     ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
+    ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
   };
   if (parsed.annotations && new Set(parsed.annotations.map((annotation) => annotation.id)).size !== parsed.annotations.length) throw new Error(`Sheet ${sheetIndex + 1} annotations must have unique ids.`);
+  if (parsed.graphics && new Set(parsed.graphics.map((graphic) => graphic.id)).size !== parsed.graphics.length) throw new Error(`Sheet ${sheetIndex + 1} graphics must have unique ids.`);
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
+}
+
+function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number): SchematicGraphic {
+  const graphic = object(value, `Sheet ${sheetIndex + 1} graphic ${graphicIndex + 1} is invalid.`);
+  if (graphic.kind !== "line" && graphic.kind !== "rectangle" && graphic.kind !== "ellipse") throw new Error("Graphic kind must be line, rectangle or ellipse.");
+  const x1 = finiteNumber(graphic.x1, "graphic x1");
+  const y1 = finiteNumber(graphic.y1, "graphic y1");
+  const x2 = finiteNumber(graphic.x2, "graphic x2");
+  const y2 = finiteNumber(graphic.y2, "graphic y2");
+  if ([x1, x2].some((x) => x < 0 || x > 1100) || [y1, y2].some((y) => y < 0 || y > 780)) throw new Error("Graphic coordinates must be inside the schematic sheet.");
+  if (graphic.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
+  const color = textValue(graphic.color, "graphic color", 7);
+  if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Graphic color must be a six-digit hex color.");
+  const strokeWidth = finiteNumber(graphic.strokeWidth, "graphic stroke width");
+  if (strokeWidth < 1 || strokeWidth > 12) throw new Error("Graphic stroke width must be between 1 and 12.");
+  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind: graphic.kind, x1, y1, x2, y2, color, strokeWidth };
 }
 
 function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: number): SchematicAnnotation {
