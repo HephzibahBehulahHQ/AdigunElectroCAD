@@ -144,12 +144,21 @@ PR #108 merged as `be8368e`; both remote verification runs `43285335212` and `43
 
 PR #110 merged as `4966118`. CI runs `43289702910` and `43289692073` passed, and Pages deployment `43289863977` passed. Production inspection confirmed the three heater paths and trip contacts at 85% zoom; the full sheet was clear at 57% Fit. Visual review found no menu/icon, component or wire overlaps. This schematic remains an educational abstraction and does not claim manufacturer-specific overload geometry.
 
-## Active increment: M06e — Visible breaker and contactor terminal identities
+## Completed increment: M06e — Visible breaker and contactor terminal identities
 
-- [ ] Label the reference DOL breaker poles 1/3/5 and 2/4/6 using the model's terminal identities.
-- [ ] Label the contactor poles 1/L1, 3/L2, 5/L3 and 2/T1, 4/T2, 6/T3.
-- [ ] Render and review at normal and fit zoom for label-to-wire and label-to-symbol clearance.
-- [ ] Pass focused render tests, CI, merge and deployed production verification.
+- [x] Label the reference DOL breaker poles 1/3/5 and 2/4/6 using the model's terminal identities.
+- [x] Label the contactor poles 1/L1, 3/L2, 5/L3 and 2/T1, 4/T2, 6/T3.
+- [x] Render and review at 85% and 57% Fit zoom; labels remain beside their wires with no visible collisions.
+- [x] Pass focused render tests, CI, merge and deployed production verification.
+
+PR #112 merged as `28b1860`. CI runs `43290846303` and `43290838032` passed, and Pages deployment `43290966721` succeeded. The live canvas showed each terminal label on the corresponding breaker/contactor pole at both zoom levels.
+
+## Active increment: M06f — Visible overload pole terminal identities
+
+- [ ] Label the three overload heater inputs and outputs as 1/2, 3/4 and 5/6, aligned to their actual terminal anchors.
+- [ ] Keep the overload terminal numbers clear of the heater zigzags, trip contacts, output conductors and F1 95–96 control contact.
+- [ ] Add focused render and anchor assertions; inspect production at normal and fit zoom.
+- [ ] Pass CI, merge and deployment verification.
 
 ## Per-increment publication rule
 
