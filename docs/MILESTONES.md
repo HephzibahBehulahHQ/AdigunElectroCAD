@@ -95,6 +95,14 @@ PR #100 merged as `27ece71`; CI run `43268432156` and Pages run `43268563768` pa
 
 Model structure follows the balanced induction-motor T-equivalent circuit and Thevenin method described in [IET Electric Power Applications](https://ietresearch.onlinelibrary.wiley.com/doi/10.1049/iet-epa.2019.0822). The explicit circuit inputs are required motor data; the unit-test values are synthetic and are not presented as a real motor.
 
+## Active increment: M04e — Star-delta lab motor operating point
+
+- [x] Expose explicit per-phase stator/rotor resistances and reactances, magnetizing reactance, frequency, pole pairs and slip in the star-delta lab.
+- [x] Use the active star or delta stage to calculate phase current, line current, electromagnetic torque and synchronous speed.
+- [x] Keep inputs empty until supplied by the user and clearly label the output as a balanced steady-state operating point.
+- [x] State that the operating-point current remains separate from the copied sheet and overload runtime.
+- [ ] Verify the UI in production; couple the calculated current to the copied sheet and overload runtime in the next increment.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
