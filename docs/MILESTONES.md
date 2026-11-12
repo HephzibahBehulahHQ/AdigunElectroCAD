@@ -208,6 +208,15 @@ PR #123 merged as `568fab2`. GitHub Verify run `43318329213` and Pages deploymen
 
 PR #125 merged as `e049920`. Verify runs `43320113513` and `43320106081` passed; Pages deployment `43320223240` succeeded. Local browser inspection confirmed a palette-filled ellipse. Production page and JavaScript bundle returned HTTP 200, with the served bundle containing both the fill palette and no-fill option.
 
+## Increment M06l — Resizeable free-sheet drawing graphics
+
+- [x] Add corner handles to resize rectangles and ellipses, plus endpoint handles to reshape lines on the grid.
+- [x] Keep edits within sheet bounds, enforce the 4-unit minimum span, and record them through project history.
+- [x] Pass the full local suite (934 tests), production build, GitHub Verify, merge, Pages deployment and local browser interaction.
+- [ ] Inspect the served custom-domain build after DNS resolution returns; this environment could not resolve the production host during this turn.
+
+PR #127 merged as `8bd10b0`. Verify run `43321985037` and Pages deployment `43322087430` succeeded; a Pages artifact was produced for the merged commit. Local browser inspection confirmed resizing a rectangle corner and either line endpoint. The custom domain could not be resolved from this environment, so live bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
