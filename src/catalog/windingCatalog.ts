@@ -3,8 +3,12 @@ export const windingCatalog: ElectricalComponentDefinition[] = [{
   id: "motor.six-terminal", name: "Six-terminal balanced winding motor", category: "Motors", referencePrefix: "M", symbolId: "motor",
   description: "Six accessible winding terminals for star/delta connection analysis.",
   terminals: [...["u1", "v1", "w1", "u2", "v2", "w2"].map((id) => ({ id, label: id.toUpperCase(), kind: "power" as const, direction: "bidirectional" as const })), { id: "pe", label: "PE", kind: "protective-earth", direction: "bidirectional" }],
-  propertiesSchema: { resistanceOhm: 10, reactanceOhm: 10 }, simulationModelId: "six-terminal-windings", simulationSupport: "numerical",
-  documentation: "Connection and balanced fixed-impedance current derive from circuit wires and closed contacts. Excludes motor dynamics.", standardsReferences: ["IEC 60034-1"],
+  propertiesSchema: {
+    resistanceOhm: 10, reactanceOhm: 10, equivalentCircuitEnabled: false,
+    statorResistanceOhm: 0, statorReactanceOhm: 0, rotorResistanceOhm: 0, rotorReactanceOhm: 0,
+    magnetizingReactanceOhm: 0, frequencyHz: 50, polePairs: 1, slip: 0,
+  }, simulationModelId: "six-terminal-windings", simulationSupport: "numerical",
+  documentation: "Connection and current derive from circuit wires and closed contacts. Fixed balanced impedance remains the default. Optional T-equivalent mode requires explicit motor parameters and positive slip; its current can drive the connected thermal overload. No acceleration or flux transients are modeled.", standardsReferences: ["IEC 60034-1"],
 }, {
   id: "junction.power", name: "Power conductor junction", category: "Terminal Blocks", referencePrefix: "X", symbolId: "terminal",
   description: "Common electrical node joining attached power conductors.",
