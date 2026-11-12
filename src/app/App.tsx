@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
+import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
@@ -340,15 +341,28 @@ export function App() {
 
   const moveGraphicVertex = (id: string, index: number, x: number, y: number) => {
     const graphic = document.graphics?.find((item) => item.id === id);
-    if (!graphic?.points?.[index]) return;
-    const points = graphic.points.map((point, pointIndex) => pointIndex === index ? { x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : point);
-    if (points.some((point, pointIndex) => pointIndex > 0 && point.x === points[pointIndex - 1].x && point.y === points[pointIndex - 1].y)) return;
-    if (graphic.kind === "polygon") {
-      const twiceArea = points.reduce((sum, point, pointIndex) => { const next = points[(pointIndex + 1) % points.length]; return sum + point.x * next.y - next.x * point.y; }, 0);
-      if (Math.abs(twiceArea) < 8) return;
-    }
-    const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
-    const next = { ...graphic, points, x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
+    if (!graphic?.points || (graphic.kind !== "polyline" && graphic.kind !== "polygon")) return;
+    const points = moveGraphicPathVertex(graphic.points, graphic.kind, index, x, y); if (!points) return;
+    const next = { ...graphic, points, ...graphicPathBounds(points) };
+    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? next : item), revision: document.revision + 1 });
+  };
+
+  const insertGraphicVertex = (id: string, x: number, y: number) => {
+    const graphic = document.graphics?.find((item) => item.id === id);
+    if (!graphic?.points || (graphic.kind !== "polyline" && graphic.kind !== "polygon")) return;
+    const updated = insertGraphicPathVertex(graphic.points, graphic.kind, x, y); if (!updated) return;
+    const next = { ...graphic, points: updated, ...graphicPathBounds(updated) };
+    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? next : item), revision: document.revision + 1 });
+  };
+
+  const deleteGraphicVertex = (id: string, index: number) => {
+    const graphic = document.graphics?.find((item) => item.id === id);
+    if (!graphic?.points || (graphic.kind !== "polyline" && graphic.kind !== "polygon")) return;
+    const minimum = graphic.kind === "polygon" ? 3 : 2;
+    if (graphic.points.length <= minimum) { setNotice(`${graphic.kind} requires at least ${minimum} vertices.`); return; }
+    const points = deleteGraphicPathVertex(graphic.points, graphic.kind, index);
+    if (!points) { setNotice("That vertex cannot be removed because it would collapse the polygon."); return; }
+    const next = { ...graphic, points, ...graphicPathBounds(points) };
     updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? next : item), revision: document.revision + 1 });
   };
 
@@ -1020,7 +1034,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
@@ -1119,7 +1133,7 @@ function GraphicProperties({ graphic, onChange, onRemove }: { graphic: Schematic
       <div className="annotation-palette" aria-label="Graphic fill palette"><button type="button" aria-label="Set graphic fill to none" title="No fill" onClick={() => onChange({ fillColor: null })}>∅</button>{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic fill ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ fillColor: color })} />)}</div>
     </>}
     <label>Stroke width · units<input type="number" min="1" max="12" step="1" defaultValue={graphic.strokeWidth} key={`${graphic.id}:${graphic.strokeWidth}`} onBlur={(event) => onChange({ strokeWidth: Number(event.target.value) })} /></label>
-    <p>{graphic.kind[0].toUpperCase() + graphic.kind.slice(1)} · drafting geometry; it does not connect electrical terminals. Drag the shape to move it.</p>
+    <p>{graphic.kind[0].toUpperCase() + graphic.kind.slice(1)} · drafting geometry; it does not connect electrical terminals. {graphic.points ? "Double-click an edge to insert a vertex; drag vertices to reshape and right-click a handle to remove it." : "Drag the shape to move it."}</p>
     <button className="remove-component" onClick={onRemove}>Remove drawing graphic</button>
   </section>;
 }

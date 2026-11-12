@@ -32,6 +32,8 @@ interface Props {
   onGraphicMove?: (id: string, dx: number, dy: number) => void;
   onGraphicResize?: (id: string, x1: number, y1: number, x2: number, y2: number) => void;
   onGraphicVertexMove?: (id: string, index: number, x: number, y: number) => void;
+  onGraphicVertexInsert?: (id: string, x: number, y: number) => void;
+  onGraphicVertexDelete?: (id: string, index: number) => void;
 }
 
 interface TerminalAnchor {
@@ -105,7 +107,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
   </g>;
 }
 
-function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove }: { graphic: SchematicGraphic; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"] }) {
+function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete }: { graphic: SchematicGraphic; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
   const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; handle?: string; index?: number } | null>(null);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
@@ -127,7 +129,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const handles = graphic.kind === "line"
     ? [{ id: "start", x: graphic.x1, y: graphic.y1 }, { id: "end", x: graphic.x2, y: graphic.y2 }]
     : [{ id: "nw", x, y }, { id: "ne", x: x + width, y }, { id: "sw", x, y: y + height }, { id: "se", x: x + width, y: y + height }];
-  return <g data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id); }} onPointerDown={(event) => {
+  return <g data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(graphic.id); const start = point(event);
     gesture.current = start ? { mode: "move", start } : null;
@@ -160,7 +162,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "resize", start, handle: handle.id } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
-    {selected && onVertexMove && graphic.points?.map((vertex, index) => <circle key={index} data-vertex-handle={index} cx={vertex.x} cy={vertex.y} r="6" fill="#fff" stroke="#e0a526" strokeWidth="2" aria-label={`Move ${graphic.name} vertex ${index + 1}`} onPointerDown={(event) => {
+    {selected && onVertexMove && graphic.points?.map((vertex, index) => <circle key={index} data-vertex-handle={index} cx={vertex.x} cy={vertex.y} r="6" fill="#fff" stroke="#e0a526" strokeWidth="2" aria-label={`Drag to move ${graphic.name} vertex ${index + 1}; right-click to remove`} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onVertexDelete?.(graphic.id, index); }} onPointerDown={(event) => {
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, index } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
@@ -244,7 +246,7 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
   const graphicStart = useRef<{ x: number; y: number } | null>(null);
@@ -329,7 +331,7 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
         const to = anchorIndex.get(endpointKey(wire.to));
         return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
-      {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} />)}
+      {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} onMove={onMove} wireMode={wireMode} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
@@ -339,8 +341,8 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} />;
+export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;
