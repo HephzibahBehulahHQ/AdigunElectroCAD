@@ -49,7 +49,8 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
       const y = sixTerminal ? index < 3 ? -42 : index < 6 ? 42 : 0 : -15 + Math.floor(index / 2) * 12;
-      const power = terminal.kind === "power" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
+      const statefulProtection = ["catalog-circuit-breaker", "breaker-3p-v1", "thermal-overload-dol-v1"].includes(definition.simulationModelId);
+      const power = statefulProtection || component.properties.powerLayout === "vertical" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const offset = rotateOffset(control?.x ?? x, control?.y ?? y, component.rotation);
       anchors.push({ ...anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y), power: terminal.kind === "power", vertical: Boolean(power && terminal.kind === "power" && component.rotation % 180 === 0) });
