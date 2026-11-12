@@ -18,6 +18,23 @@ it("round-trips the start/stop ladder and compiles its actual holding program", 
   expect(parseLadder(program.toLowerCase().replaceAll("; ", "\n"))).toEqual(holding);
 });
 
+it("round-trips TON timer coils and preview timer contacts", () => {
+  const rungs: LadderRung[] = [
+    { stages: [[{ address: "I0", inverted: false }]], coil: { type: "TON", timer: "T0", presetSeconds: 0.2 } },
+    { stages: [[{ address: "T0", inverted: false }]], coil: "OUT" },
+  ];
+  const program = compileLadder(rungs);
+  expect(program).toBe("LD I0; TON T0 0.2; LD T0; OUT Q0");
+  expect(parseLadder(program)).toEqual(rungs);
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain("On-delay timer");
+  const first = previewLadder(rungs, { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [], deltaSeconds: 0.1 });
+  expect(first.output).toBe(false);
+  const second = previewLadder(rungs, { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [], timers: { T0: { elapsedSeconds: 0.1, done: false } }, deltaSeconds: 0.1 });
+  expect(second.output).toBe(true);
+  expect(() => compileLadder([{ stages: [[{ address: "I0", inverted: false }]], coil: { type: "TON", timer: "T0", presetSeconds: -1 } }, { stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }])).toThrow();
+});
+
 it("previews conducting contacts against the next scan and retained Q0", () => {
   const inputs = { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: Array(8).fill(0) };
   const preview = previewLadder(holding, inputs);
@@ -149,4 +166,5 @@ it("drives a wired coil through start, release, stop and release using compiled 
   }
   expect(JSON.stringify(design)).toBe(original);
 });
+
 

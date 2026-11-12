@@ -4,6 +4,7 @@ import { catalogById } from "../src/catalog/dolCatalog";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { advanceCircuitClock, resetCircuitClock, setCircuitLevelInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import type { PlcTimerStates } from "../src/simulation/plcProgram";
 
 it.each([["ADD", 8], ["SUB", 4], ["MUL", 12], ["DIV", 3]])("executes %s with numeric operands and a register destination", (operation, expected) => {
   const result = scanPlcProgram(`MOV 6 D0; ${operation} D0 2 D1; GT D1 3; OUT Q0`, false, false, false);
@@ -59,3 +60,33 @@ it("fails Q0 off on arithmetic faults and preserves the last committed register 
   expect(properties.runtimeD0).toBe(12);
   expect(properties.runtimeError).toContain("division by zero");
 });
+
+it("accumulates TON time across scans, exposes done contacts, and resets on a false enable", () => {
+  const program = "LD I0; TON T0 0.2; LD T0; OUT Q0";
+  let timers: PlcTimerStates | undefined;
+  const first = scanPlcProgram(program, true, false, false, 0, undefined, [], timers, 0.1);
+  expect(first).toMatchObject({ ok: true, output: false, timers: { T0: { elapsedSeconds: 0.1, done: false } } });
+  if (!first.ok) throw new Error(first.error);
+  timers = first.timers;
+  const second = scanPlcProgram(program, true, false, first.output, 0, undefined, [], timers, 0.1);
+  expect(second).toMatchObject({ ok: true, output: true, timers: { T0: { elapsedSeconds: 0.2, done: true } } });
+  if (!second.ok) throw new Error(second.error);
+  const reset = scanPlcProgram(program, false, false, second.output, 0, undefined, [], second.timers, 0.1);
+  expect(reset).toMatchObject({ ok: true, output: false, timers: { T0: { elapsedSeconds: 0, done: false } } });
+});
+
+it.each(["TON T4 1", "TON T0 -1", "TON T0 1; TON T0 1", "LD I0; TON T0 1; DIV 1 0 D0; OUT Q0"]) ("rejects invalid or faulting timer scan %s without committing timer state", (tail) => {
+  const program = tail.includes("DIV") ? tail : `LD I0; ${tail}; LD I0; OUT Q0`;
+  expect(scanPlcProgram(program, true, false, false, 0, undefined, [], { T0: { elapsedSeconds: 0.1, done: false } }, 0.1)).toMatchObject({ ok: false, output: false });
+});
+
+it("persists TON state in runtime properties and clears it on Stop", () => {
+  const design = createAnalogLevelProject().document;
+  const plc = design.components.find((component) => component.id === "plc")!;
+  plc.properties = { ...plc.properties, inputA: true, program: "LD I0; TON T0 0.2; LD T0; OUT Q0" };
+  const first = advanceCircuitClock(design, catalogById, 0.1);
+  const second = advanceCircuitClock(first, catalogById, 0.1);
+  expect(second.components.find((component) => component.id === "plc")!.properties).toMatchObject({ runtimeT0Elapsed: 0.2, runtimeT0Done: true, runtimeQ0: true });
+  expect(resetCircuitClock(second, catalogById).components.find((component) => component.id === "plc")!.properties.runtimeT0Done).toBeUndefined();
+});
+
