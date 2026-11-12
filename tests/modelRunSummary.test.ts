@@ -29,6 +29,9 @@ it("keeps retained PLC state visible when a wired fault inhibits the scan", () =
   expect(result?.value).toContain("Q0 OFF");
   expect(result?.value).toContain("D0 1234");
   expect(result?.value).toContain("ERROR: ADC input has an incompatible unit.");
+  const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{ componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io", output: result!, evaluatedProperties: {} }] }));
+  expect(summary).toContain("PLC1: ADC input has an incompatible unit.");
+  expect(summary).toContain("I/O state: I0 ON · I1 OFF · Q0 OFF · D0 1234");
 });
 
 it("shows faults beyond the first two models and restores success after correction", () => {
