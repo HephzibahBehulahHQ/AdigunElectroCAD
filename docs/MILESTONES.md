@@ -200,6 +200,14 @@ PR #121 merged as `5312782`. GitHub Verify run `43313996809` succeeded. Producti
 
 PR #123 merged as `568fab2`. GitHub Verify run `43318329213` and Pages deployment `43318444682` succeeded. Local browser inspection confirmed rectangle drawing and editing the name, palette color and stroke width. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the drawing tool and color palette. No production project data was changed.
 
+## Completed increment: M06k — Fill colors for drafting shapes
+
+- [x] Set custom or palette fill colors for rectangles and ellipses, or clear the fill; keep lines unfilled.
+- [x] Preserve optional fill colors in project JSON, validate their format, and accept earlier projects without fill settings.
+- [x] Pass the full local suite (933 tests), production build, GitHub Verify, merge, deployment and local browser inspection.
+
+PR #125 merged as `e049920`. Verify runs `43320113513` and `43320106081` passed; Pages deployment `43320223240` succeeded. Local browser inspection confirmed a palette-filled ellipse. Production page and JavaScript bundle returned HTTP 200, with the served bundle containing both the fill palette and no-fill option.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
