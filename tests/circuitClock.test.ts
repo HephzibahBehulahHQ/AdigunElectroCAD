@@ -11,6 +11,7 @@ describe("circuit simulation clock", () => {
     plc.properties = { program: "LD I0; OR Q0; ANDN I1; OUT Q0", inputB: false, output: false };
     design.components[2].properties.returnSpring = true;
     let runtime = advanceCircuitClock(design, catalogById, 0.1);
+    expect(JSON.parse(String(runtime.components[1].properties.runtimeScanTrace))).toMatchObject([{ scan: 1, elapsedSeconds: 0.1, status: "ok", output: true }]);
     const actuator = () => executeCircuitModels(runtime, catalogById).find((run) => run.reference === "Y1")!.output.value;
     expect(actuator()).toContain("EXTENDED");
     runtime = setCircuitBooleanInput(runtime, catalogById, runtime.components[0].id, "detected", false);
@@ -23,7 +24,9 @@ describe("circuit simulation clock", () => {
     runtime = advanceCircuitClock(runtime, catalogById, 0.1);
     expect(actuator()).toBe("RETRACTED");
     expect(executeCircuitModels(runtime, catalogById).find((run) => run.reference === "PLC1")!.output.value).toContain("ERROR: Unsupported operation");
+    expect(JSON.parse(String(runtime.components[1].properties.runtimeScanTrace)).at(-1)).toMatchObject({ scan: 4, status: "error", output: false, message: "Unsupported operation: INVALID" });
     expect(resetCircuitClock(runtime, catalogById).components[1].properties.runtimeQ0).toBeUndefined();
+    expect(resetCircuitClock(runtime, catalogById).components[1].properties.runtimeScanTrace).toBeUndefined();
     expect(plc.properties.runtimeQ0).toBeUndefined();
     expect(design.components[0].properties.detected).toBe(true);
     for (const property of ["program", "runtimeQ0", "missing"]) expect(() => setCircuitBooleanInput(runtime, catalogById, plc.id, property, true)).toThrow();
@@ -123,3 +126,4 @@ describe("circuit simulation clock", () => {
     for (const delta of [-1, NaN, Infinity]) expect(() => advanceCircuitClock(templateLibrary[3].document, catalogById, delta)).toThrow();
   });
 });
+
