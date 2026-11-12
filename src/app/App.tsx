@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 18117)
-Total output lines: 928
-
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -388,7 +385,436 @@ export function App() {
       setDirty(false);
       setNotice(`${restored.name} restored from ${saved.source === "previous" ? "the previous local save; the current record remains unchanged" : "local storage"}.`);
     } catch {
-      setNotice("The saved local project is invalid and was not loaded.");…6117 tokens truncated…ton selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
+      setNotice("The saved local project is invalid and was not loaded.");
+    }
+  };
+
+  const exportProject = () => {
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = "adigun-electro-cad-project.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setNotice("Project JSON exported.");
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const captureSchematicSvg = () => {
+    const drawing = window.document.querySelector("svg.schematic");
+    if (!(drawing instanceof SVGSVGElement)) {
+      setNotice("No schematic drawing is available for export.");
+      return null;
+    }
+    const copy = drawing.cloneNode(true) as SVGSVGElement;
+    copy.querySelectorAll(".terminal-anchors").forEach((node) => node.remove());
+    return prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(copy));
+  };
+
+  const exportSchematicSvg = () => {
+    try {
+      const markup = captureSchematicSvg();
+      if (!markup) return;
+      downloadBlob(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }), "adigun-electro-cad-schematic.svg");
+      setNotice("Standalone schematic SVG exported.");
+    } catch {
+      setNotice("Schematic SVG export could not be completed.");
+    }
+  };
+
+  const exportSchematicPng = () => {
+    try {
+      const markup = captureSchematicSvg();
+      if (!markup) return;
+      const sourceUrl = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }));
+      const image = new Image();
+      image.onload = () => {
+        const canvas = window.document.createElement("canvas");
+        canvas.width = 1100;
+        canvas.height = 780;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          URL.revokeObjectURL(sourceUrl);
+          setNotice("PNG export is unavailable in this browser.");
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(sourceUrl);
+          if (!blob) {
+            setNotice("PNG export could not be completed.");
+            return;
+          }
+          downloadBlob(blob, "adigun-electro-cad-schematic.png");
+          setNotice("Schematic PNG exported.");
+        }, "image/png");
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(sourceUrl);
+        setNotice("PNG export could not render the schematic.");
+      };
+      image.src = sourceUrl;
+    } catch {
+      setNotice("Schematic PNG export could not be completed.");
+    }
+  };
+
+  const printSchematic = () => {
+    setNotice("Opening the browser print dialog for the active schematic.");
+    window.print();
+  };
+
+  const importProject = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    try {
+      const imported = parseProjectJson(await file.text());
+      const firstSheet = imported.sheets[0];
+      recordEdit(imported);
+      setActiveSheetId(firstSheet.id);
+      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setSelectedWireId("");
+      setWireMode(false);
+      setWireStart(null);
+      setDirty(true);
+      setNotice(`${imported.name} imported locally. Save to keep this project copy.`);
+    } catch (error) {
+      setNotice(`Import rejected: ${error instanceof Error ? error.message : "Unable to read project."}`);
+    }
+  };
+
+  const restoreDol = () => {
+    recordEdit(createStarterProject());
+    setActiveSheetId("sheet-dol");
+    setSelectedComponentId("contactor");
+    setSelectedWireId("");
+    setDirty(true);
+    setSimulation(initialDolState());
+    setNotice(t.projectRestored);
+  };
+
+  const undo = () => {
+    const result = undoProject(history, project);
+    if (!result.project) return;
+    setHistory(result.history);
+    setProject(result.project);
+    const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
+    setActiveSheetId(restoredSheet.id);
+    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
+    setDirty(true);
+    setNotice("Last project edit undone.");
+  };
+
+  const redo = () => {
+    const result = redoProject(history, project);
+    if (!result.project) return;
+    setHistory(result.history);
+    setProject(result.project);
+    const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
+    setActiveSheetId(restoredSheet.id);
+    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
+    setDirty(true);
+    setNotice("Last project edit redone.");
+  };
+
+  const addSelectedComponent = () => {
+    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free");
+    if (!placement) {
+      setNotice("This sheet's placement grid is full. Add another free sheet to keep symbols clear and non-overlapping.");
+      return;
+    }
+    const number = document.components.filter((component) => component.definitionId === selectedDefinition.id).length + 1;
+    const instance: ComponentInstance = {
+      id: `${selectedDefinition.id.replaceAll(".", "-")}-${Date.now()}`,
+      definitionId: selectedDefinition.id,
+      reference: `${selectedDefinition.referencePrefix}${number}`,
+      x: placement.x,
+      y: placement.y,
+      rotation: 0,
+      properties: { ...selectedDefinition.propertiesSchema },
+    };
+    updateDocument({ ...document, components: [...document.components, instance], revision: document.revision + 1 });
+    selectComponent(instance.id);
+    setNotice(`${selectedDefinition.name} inserted as ${instance.reference}.`);
+  };
+
+  const tryAddFreeSheet = (source: ElectricalProject) => {
+    if (source.sheets.length >= MAX_PROJECT_SHEETS) { setNotice(`This project has reached its ${MAX_PROJECT_SHEETS}-sheet limit. Create a new project to add more sheets.`); return null; }
+    return addFreeSchematicSheet(source);
+  };
+
+  const addSheet = () => {
+    const next = tryAddFreeSheet(project);
+    if (!next) return;
+    const sheet = next.sheets.at(-1)!;
+    recordEdit(next);
+    setActiveSheetId(sheet.id);
+    setSelectedComponentId("");
+    setSelectedWireId("");
+    setWireMode(false);
+    setWireStart(null);
+    setDirty(true);
+    setNotice(`${sheet.name} added. Insert a catalog component to begin the schematic.`);
+  };
+
+  const selectSheet = (sheetId: string) => {
+    const sheet = project.sheets.find((item) => item.id === sheetId);
+    if (!sheet) return;
+    setActiveSheetId(sheetId);
+    setSelectedComponentId(sheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
+    setWireMode(false);
+    setWireStart(null);
+    setNotice(`${sheet.name} selected.`);
+  };
+
+  const loadTemplate = () => {
+    let targetProject = project;
+    let targetSheetId = activeSheet.id;
+    if (isReferenceSheet) {
+      const extended = tryAddFreeSheet(project);
+      if (!extended) return;
+      targetProject = extended;
+      targetSheetId = targetProject.sheets.at(-1)!.id;
+    }
+    const next = loadTemplateIntoSheet(targetProject, targetSheetId, selectedTemplate);
+    const loadedSheet = next.sheets.find((sheet) => sheet.id === targetSheetId)!;
+    recordEdit(next);
+    setActiveSheetId(targetSheetId);
+    setSelectedComponentId(loadedSheet.document.components[0]?.id ?? "");
+    setSelectedWireId("");
+    setWireMode(false);
+    setWireStart(null);
+    setDirty(true);
+    setNotice(`${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
+  };
+
+  const exportReport = (section: ReportSection) => {
+    const blob = new Blob([reportCsv(report, section)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = `adigun-electro-cad-${section}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setNotice(`${section === "bom" ? "BOM" : section === "wires" ? "Wire list" : "Terminal list"} CSV exported.`);
+  };
+
+  const toggleWireMode = () => {
+    const next = !wireMode;
+    setWireMode(next);
+    setWireStart(null);
+    if (!next) setReconnectingWireId("");
+    setNotice(next ? "Wiring mode: select a source terminal, then a compatible target terminal." : "Wiring mode closed.");
+  };
+
+  const selectWireTerminal = (endpoint: TerminalEndpoint) => {
+    if (!wireMode) return;
+    if (!wireStart) {
+      setWireStart(endpoint);
+      setNotice("Wire start selected. Choose a compatible target terminal.");
+      return;
+    }
+    const reconnectingWire = reconnectingWireId ? document.wires.find((wire) => wire.id === reconnectingWireId) : undefined;
+    if (reconnectingWireId && !reconnectingWire) {
+      setNotice("The selected wire is no longer available for reconnection.");
+      setWireStart(null);
+      setReconnectingWireId("");
+      return;
+    }
+    const validationDocument = reconnectingWire ? { ...document, wires: document.wires.filter((wire) => wire.id !== reconnectingWire.id) } : document;
+    const check = canConnectTerminals(validationDocument, catalogById, wireStart, endpoint);
+    if (!check.ok) {
+      setNotice(check.reason ?? "The selected terminals cannot be connected.");
+      setWireStart(reconnectingWire?.from ?? null);
+      return;
+    }
+    if (reconnectingWire) {
+      updateDocument(reconnectWire(document, reconnectingWire.id, endpoint));
+      setSelectedWireId(reconnectingWire.id);
+      setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
+    } else {
+      const wire = { id: `manual-wire-${document.wires.length + 1}`, from: wireStart, to: endpoint, points: [], netName: `MANUAL_${document.wires.length + 1}` };
+      updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
+      setSelectedWireId(wire.id);
+      setNotice(`Wire ${wire.netName} created between catalog terminals.`);
+    }
+    setWireStart(null);
+    setReconnectingWireId("");
+  };
+
+  const renameSelectedWire = (netName: string) => {
+    if (!selectedWire) return;
+    const normalized = netName.trim();
+    if (!normalized || normalized.length > 80) {
+      setNotice("Wire net names must contain 1–80 readable characters.");
+      return;
+    }
+    updateDocument(renameWire(document, selectedWire.id, normalized));
+    setNotice(`Wire renamed to ${normalized}.`);
+  };
+
+  const reconnectSelectedWire = () => {
+    if (!selectedWire) return;
+    setWireMode(true);
+    setWireStart(selectedWire.from);
+    setReconnectingWireId(selectedWire.id);
+    setNotice(`Reconnecting ${selectedWire.netName ?? selectedWire.id}: choose a replacement target terminal.`);
+  };
+
+  const removeSelectedWire = () => {
+    if (!selectedWire) return;
+    updateDocument(removeWire(document, selectedWire.id));
+    setSelectedWireId("");
+    setNotice(`Wire ${selectedWire.netName ?? selectedWire.id} removed. Use Undo to restore it.`);
+  };
+
+  const updateReference = (reference: string) => {
+    if (!selectedComponent || !reference.trim()) return;
+    if (reference.trim().length > 12) {
+      setNotice("Component reference labels are limited to 12 characters to keep the schematic legible.");
+      return;
+    }
+    if (document.components.some((component) => component.id !== selectedComponent.id && component.reference === reference.trim())) {
+      setNotice(`Reference ${reference.trim()} is already in use.`);
+      return;
+    }
+    updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, reference: reference.trim() } : component), revision: document.revision + 1 });
+  };
+
+  const updateSelectedProperty = (property: string, rawValue: string | boolean) => {
+    if (!selectedComponent) return;
+    const definition = catalogById.get(selectedComponent.definitionId);
+    const schemaValue = definition?.propertiesSchema[property];
+    if (schemaValue === undefined) {
+      setNotice("That property is not part of the selected catalog definition.");
+      return;
+    }
+    let value: string | number | boolean;
+    if (typeof schemaValue === "number") {
+      const parsed = typeof rawValue === "string" ? Number(rawValue) : Number.NaN;
+      if (!Number.isFinite(parsed)) {
+        setNotice("Enter a finite numeric parameter value.");
+        return;
+      }
+      value = parsed;
+    } else if (typeof schemaValue === "boolean") {
+      if (typeof rawValue !== "boolean") return;
+      value = rawValue;
+    } else {
+      if (typeof rawValue !== "string" || (property !== "program" && !rawValue.trim()) || rawValue.trim().length > (property === "program" ? 2048 : 80)) {
+        setNotice("Program allows up to 2048 characters; other text parameters require 1–80 characters.");
+        return;
+      }
+      value = rawValue.trim();
+    }
+    updateDocument(updateComponentProperty(document, selectedComponent.id, property, value));
+    setNotice(`${selectedComponent.reference} parameter ${property} updated.`);
+  };
+
+  const nudgeSelectedComponent = (deltaX: number, deltaY: number) => {
+    if (!selectedComponent) return;
+    if (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id)) {
+      setNotice("Reference DOL symbols are fixed in this increment. Newly placed component instances can be moved on the grid.");
+      return;
+    }
+    const nextX = selectedComponent.x + deltaX;
+    const nextY = selectedComponent.y + deltaY;
+    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
+    if (!canPlaceComponent(movableComponents, selectedComponent.id, nextX, nextY)) {
+      setNotice("Move blocked: keep symbols and labels inside the sheet and clear of neighbors.");
+      return;
+    }
+    updateDocument(moveComponent(document, selectedComponent.id, deltaX, deltaY));
+    setNotice(`${selectedComponent.reference} moved; terminal-level wire topology is preserved.`);
+  };
+
+  const dragComponent = (componentId: string, x: number, y: number) => {
+    if (isReferenceSheet) return;
+    const result = moveComponentToGrid(document, componentId, x, y);
+    if (!result.ok) { setNotice(result.reason ?? "Move rejected."); return; }
+    if (result.document === document) return;
+    updateDocument(result.document);
+    setSelectedComponentId(componentId);
+    setNotice("Component moved on the 20-unit grid; connected wire endpoints are preserved.");
+  };
+
+  const removeSelectedComponent = () => {
+    if (!selectedComponent) return;
+    if (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id)) {
+      setNotice("Reference DOL symbols cannot be removed from this supported model. Remove placed instances from a free sheet instead.");
+      return;
+    }
+    const result = removeComponent(document, selectedComponent.id);
+    updateDocument(result.document);
+    setSelectedComponentId("");
+    setNotice(`${selectedComponent.reference} removed${result.removedWireCount ? ` with ${result.removedWireCount} connected wire${result.removedWireCount === 1 ? "" : "s"}` : ""}. Use Undo to restore it.`);
+  };
+
+  const rotateSelectedComponent = () => {
+    if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
+    const nextRotation: ComponentInstance["rotation"] = selectedComponent.rotation === 270 ? 0 : (selectedComponent.rotation + 90) as 90 | 180 | 270;
+    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
+    const rotatedComponents = movableComponents.map((component) => component.id === selectedComponent.id ? { ...component, rotation: nextRotation } : component);
+    if (!canPlaceComponent(rotatedComponents, selectedComponent.id, selectedComponent.x, selectedComponent.y)) {
+      setNotice("Rotation blocked by sheet bounds or symbol/label clearance.");
+      return;
+    }
+    updateDocument(rotateComponent(document, selectedComponent.id));
+    setNotice(`${selectedComponent.reference} rotated to ${nextRotation}°; reference labels remain upright.`);
+  };
+
+  return (
+    <main className="app-shell">
+      <header className="app-header">
+        <div className="brand-lockup">
+          <img src={`${import.meta.env.BASE_URL}assets/hephzibah-behulah-official.jpg`} alt="Hephzibah Behulah" />
+          <div className="brand-identity"><strong>Hephzibah Behulah</strong><small>GLOBAL · HB ELEKTRONIKER</small></div>
+          <div className="product-brand"><strong>⚡ Adigun<span>ElectroCAD</span></strong><small>BY HB ELEKTRONIKER</small></div>
+        </div>
+        <div className="project-status"><strong>{project.name}</strong><span className={isRunning ? "simulation-pill active" : "simulation-pill"}>{isRunning ? t.running : t.stopped}</span></div>
+        <HeaderUtilities saved={!dirty && !botEditsUnsaved} signedIn={Boolean(authUser && !anonymousSession)} accountOpen={authOpen} locale={locale} theme={theme} search={search} grid={showGrid} onAccount={() => setAuthOpen((open) => !open)} onDismissAccount={() => setAuthOpen(false)} onLocale={(value) => setLocale(value as Locale)} onTheme={(value) => setTheme(value as Theme)} onSearch={setSearch} onGrid={setShowGrid} onBot={() => setBotActivation((value) => value + 1)} />
+      </header>
+
+      <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={circuitModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); setBotEditsUnsaved(true); updateDocument(next); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />
+
+      {authOpen && <section className="auth-panel" aria-label="Cloud account">
+        <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
+        {!authUser && <div className="auth-fields"><label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in</button><button onClick={() => void authenticate("sign-up")}>Create account</button><button onClick={() => void startPreview()}>Start preview</button></div></div>}
+        {anonymousSession && !existingAccountMode && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button><button onClick={() => { setExistingAccountMode(true); setAuthPassword(""); setAuthMessage(""); }}>Use an existing account</button></div></div>}
+        {anonymousSession && existingAccountMode && <form className="auth-fields" onSubmit={(event) => { event.preventDefault(); void authenticate("sign-in"); }}><label>Account email<input type="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Existing password<input type="password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button type="submit">Sign in to existing account</button><button type="button" onClick={() => { setExistingAccountMode(false); setAuthPassword(""); setAuthMessage(""); }}>Back to guest upgrade</button><span>This switches accounts; guest data stays with the guest account.</span></div></form>}
+        {authUser && !anonymousSession && upgradeUserId === authUser.id && <div className="auth-fields"><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div>}
+        {authUser && !anonymousSession && <div className="auth-actions"><span>{authUser.email ?? "Confirmed account"}</span><button onClick={() => void signOut().then(() => { setAuthUser(null); setAuthMessage("Signed out."); }).catch((error) => setAuthMessage(error instanceof Error ? error.message : "Sign out failed."))}>Sign out</button></div>}
+        {authMessage && <p className="auth-message">{authMessage}</p>}
+      </section>}
+
+      <nav className="menu-row" aria-label="Project actions">
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
+        <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
+        <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>View · Grid</button>
+        <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
+        <button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Electrical · Validate</button>
+        <button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation</button>
+        <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
+        <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
+      </nav>
+
+      <section className="tool-row" aria-label="CAD and simulation tools">
+        <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
         <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
         <button className="tool-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶<span>Undo</span></button>
         <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
@@ -499,4 +925,3 @@ function ProjectReports({ sheetName, report, onExport, onClose }: { sheetName: s
 function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>No entries on this sheet.</td></tr>}</tbody></table></div></section>;
 }
-
