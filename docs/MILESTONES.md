@@ -57,7 +57,9 @@ PR #79 merged as `d8d28e6`, and Pages run `41614492416` succeeded. Production in
 - [x] Reuse the existing reversing power topology, wired 230 V coil returns, holding contacts and opposing NC interlocks.
 - [x] Add a separate current-driven overload example with reverse-direction trip, cool reset and no automatic restart.
 - [x] Verify the operating sequence, topology and reverse contactor interruption with focused automated checks.
-- [ ] Publish, pass CI, merge and verify the Pages deployment and production project behavior.
+- [x] Publish, pass CI, merge and verify the Pages deployment and production project behavior.
+
+PR #96 merged as `de532b2`; CI run `43259145997` passed, and Pages run `43259252819` completed successfully. The live project library shows 507 entries, the new project’s reverse-trip/cool-reset sequence, and a passed topology/recorded-model check. The live check selected the project card only; no sheet was loaded or saved.
 
 ## Per-increment publication rule
 
