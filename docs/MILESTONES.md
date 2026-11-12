@@ -173,12 +173,14 @@ PR #116 merged as `920fb83`. Its verification run `43298345712` and Pages deploy
 
 Client direction (2026-11-12): keep H1/H2/H3 user-configurable. Do not infer their functions or branches; users choose the colors, terminal labels, wiring, indication text and reference tags.
 
-## Active increment: M06h — User-configurable indicator placeholders
+## Completed increment: M06h — User-configurable indicator placeholders
 
-- [ ] Add H1/H2/H3 as unassigned, unconnected indicator symbols in the reference DOL sheet; preserve their generic symbol-only status.
-- [ ] Let users edit each symbol's color, indication text, terminal labels and reference, and connect its stable terminal IDs to chosen branches using the existing wire editor.
-- [ ] Verify import/export persistence, editable placement and wireable terminal anchors, with no simulated electrical behavior or invented ratings.
-- [ ] Pass focused checks, CI, merge, deployment and production visual inspection.
+- [x] Add H1/H2/H3 as unassigned, unconnected indicator symbols in the reference DOL sheet; preserve their generic symbol-only status.
+- [x] Let users edit each symbol's color, indication text, terminal labels and reference, and connect its stable terminal IDs to chosen branches using the existing wire editor.
+- [x] Verify import/export persistence, editable placement and wireable terminal anchors, with no simulated electrical behavior or invented ratings.
+- [x] Pass focused checks, CI, merge, deployment and production visual inspection.
+
+PR #119 merged as `a4047e9`. Verification run `43309716359` and Pages deployment `43309815669` succeeded. Production inspection at 52% Fit showed H1/H2/H3 as unconnected indicator symbols; selecting H1 exposed the color picker, editable indication, terminal labels, and reference tag. The project suite passed (925 tests) and `npm run build` succeeded.
 
 ## Per-increment publication rule
 
