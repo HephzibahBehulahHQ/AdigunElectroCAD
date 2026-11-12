@@ -131,7 +131,11 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
     const error = timerParameterError(properties);
     if (error) return { label: "Timer contact", error, value: `ERROR: ${error}` };
   }
-  if (text(properties, "runtimeSignalError")) return { label: "Signal fault", error: text(properties, "runtimeSignalError"), value: `ERROR: ${text(properties, "runtimeSignalError")}` };
+  const signalError = text(properties, "runtimeSignalError");
+  if (signalError) {
+    if (modelId === "catalog-plc-digital-io") return models[modelId]({ ...properties, runtimeError: signalError });
+    return { label: "Signal fault", error: signalError, value: `ERROR: ${signalError}` };
+  }
   if (modelId === "contactor-dol-v1") return { label: "Wired control coil", value: `${number(properties, "runtimeCoilVoltageV")} V · ${bool(properties, "energized") ? "ENERGIZED" : "OFF"}` };
   if (modelId === "thermal-overload-dol-v1") {
     if (bool(properties, "thermalEnabled")) {
