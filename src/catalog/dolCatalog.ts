@@ -2,6 +2,7 @@ import type { ElectricalComponentDefinition } from "../types/electrical";
 import { functionalCatalog } from "./functionalCatalog";
 import { modeledCatalog } from "./modeledCatalog";
 import { windingCatalog } from "./windingCatalog";
+import { userSymbolCatalog } from "./userSymbolCatalog";
 
 const terminals = (...items: ElectricalComponentDefinition["terminals"]): ElectricalComponentDefinition["terminals"] => items;
 const terminal = (id: string, label: string, kind: "power" | "control" | "protective-earth", direction: "input" | "output" | "bidirectional" = "bidirectional") => ({ id, label, kind, direction });
@@ -56,6 +57,7 @@ export const interlockedContactor: ElectricalComponentDefinition = {
   propertiesSchema: { ...holdingContactor.propertiesSchema, auxiliaryContacts: "1 NO + 1 NC" },
   documentation: "Wire the opposite contactor's NC 21–22 in series with A1 to create an electrical interlock. Ideal contacts; no mechanical interlock, contact timing, pickup curve or safety certification.",
 };
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, interlockedContactor];
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
+
 
