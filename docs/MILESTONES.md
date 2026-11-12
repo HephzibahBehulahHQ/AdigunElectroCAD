@@ -109,16 +109,23 @@ The balanced steady-state motor operating point is exposed in the star-delta lab
 
 PR #105 merged as `893e114`; CI run `43276387254` passed. The live site exposes the copied wired starter, F1 overload, and traceable motor equivalent-circuit inputs. Focused local validation: 41 tests across five files passed; production build passed with the existing chunk-size warning.
 
-## Active increment: M06a — Six-terminal motor canvas symbol
+## Completed increment: M06a — Six-terminal motor canvas symbol
 
 - [x] Replace the six winding bars with an IEC-style three-phase motor symbol and six named, connectable winding pins.
 - [x] Extend placement and collision bounds for the terminal callouts so adjacent components remain clear.
 - [x] Verify pin coordinates, placement clearance, related circuit behavior, and production build.
-- [ ] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
+- [x] Pass remote CI, merge and deploy; inspect the locally rendered motor sheet and verify the deployed production bundle contains the symbol.
 
-The symbol identifies winding terminals U1/V1/W1 and U2/V2/W2. It does not introduce motor ratings or imply manufacturer-specific geometry.
+PR #106 merged as `3a3e1ad`; CI run `43280182375` and Pages run `43280299800` succeeded. Local rendered review confirmed the U1/V1/W1 and U2/V2/W2 pin callouts. The motor's PE endpoint lacked a visible pin and is tracked in M06b below. The symbol adds no motor ratings or manufacturer-specific geometry.
+
+## Active increment: M06b — Visible protective-earth motor terminal
+
+- [x] Draw a visible PE pin, protective-earth lead and label on the six-terminal motor symbol.
+- [x] Verify the PE drawing matches the model's connectable PE anchor.
+- [ ] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
 
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
+
 

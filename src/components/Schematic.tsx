@@ -87,6 +87,9 @@ function SixTerminalWindings({ x, y }: { x: number; y: number }) {
       <text x={x + offset} y={y - 46} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U1", "V1", "W1"][index]}</text>
       <text x={x + offset} y={y + 56} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U2", "V2", "W2"][index]}</text>
     </g>)}
+    <path d={`M${x - 47} ${y}H${x - 27}`} stroke="#167a52" strokeWidth="2" />
+    <circle cx={x - 47} cy={y} r="2.5" fill="#167a52" />
+    <text x={x - 51} y={y - 5} textAnchor="end" fontSize="9" fontWeight="700" fill="#167a52" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">PE</text>
     <text x={x} y={y - 1} textAnchor="middle" fontSize="17" fontWeight="800" fill="#102a43">M</text>
     <text x={x} y={y + 13} textAnchor="middle" fontSize="10" fontWeight="700" fill="#102a43">3~</text>
   </g>;
@@ -231,4 +234,5 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
     </svg>
   </div>;
 }
+
 
