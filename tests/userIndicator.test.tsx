@@ -42,4 +42,3 @@ it("round-trips user-selected indicator color, indication and terminal labels", 
     color: "#ff00aa", indication: "Machine ready", terminalLabel1: "L+", terminalLabel2: "N",
   });
 });
-

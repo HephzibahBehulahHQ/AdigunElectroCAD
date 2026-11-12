@@ -41,4 +41,3 @@
 | Schematic annotations | Control title and device labels are separated and fully visible | Manually verified in browser |
 
 This manifest only records checks that have been executed. Component and project models are documented engineering abstractions, not manufacturer-certified or physical commissioning results.
-

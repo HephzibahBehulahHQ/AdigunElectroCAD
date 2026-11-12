@@ -7,4 +7,3 @@ it("offers a color control for valid per-instance hex color properties", () => {
   expect(componentPropertyInputType("Unassigned")).toBe("text");
   expect(componentPropertyInputType(24)).toBe("number");
 });
-

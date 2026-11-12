@@ -100,4 +100,3 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   return <g className={mark}><path d={`M ${x - 28} ${cy - 10} H ${x + 28} M ${x - 20} ${cy} H ${x + 20} M ${x - 28} ${cy + 10} H ${x + 28}`} /></g>;
 }
 
-

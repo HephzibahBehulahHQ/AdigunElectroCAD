@@ -25,4 +25,3 @@ export const userSymbolCatalog: ElectricalComponentDefinition[] = [
     standardsReferences: [],
   },
 ];
-

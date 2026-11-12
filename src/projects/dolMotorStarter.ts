@@ -30,4 +30,3 @@ export const createDolMotorStarter = (): CircuitDocument => ({
 function wire(id: string, fromComponentId: string, fromTerminalId: string, toComponentId: string, toTerminalId: string, netName: string) {
   return { id, from: { componentId: fromComponentId, terminalId: fromTerminalId }, to: { componentId: toComponentId, terminalId: toTerminalId }, points: [], netName };
 }
-

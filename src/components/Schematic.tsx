@@ -240,4 +240,3 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
 }
 
 
-

@@ -60,4 +60,3 @@ export const interlockedContactor: ElectricalComponentDefinition = {
 export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
 
-

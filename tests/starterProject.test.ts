@@ -50,4 +50,3 @@ it("can save and reload the maximum sheet count and rejects another addition wit
   expect(() => addFreeSchematicSheet(project)).toThrow("at most");
   expect(JSON.stringify(project)).toBe(before);
 });
-
