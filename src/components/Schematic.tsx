@@ -1,4 +1,4 @@
-import type { CircuitDocument, SchematicAnnotation } from "../types/electrical";
+import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
@@ -25,6 +25,11 @@ interface Props {
   onAnnotationSelect?: (id: string) => void;
   onAnnotationPlace?: (x: number, y: number) => void;
   onAnnotationMove?: (id: string, x: number, y: number) => void;
+  graphicMode?: SchematicGraphicKind | null;
+  selectedGraphicId?: string;
+  onGraphicSelect?: (id: string) => void;
+  onGraphicCreate?: (kind: SchematicGraphicKind, x1: number, y1: number, x2: number, y2: number) => void;
+  onGraphicMove?: (id: string, dx: number, dy: number) => void;
 }
 
 interface TerminalAnchor {
@@ -95,6 +100,36 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
     {selected && <rect x="-5" y="-20" width={Math.max(54, annotation.text.length * 9 + 10)} height="28" rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
     <text x="0" y="0" fill={annotation.color} fontSize="18" fontWeight="600" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
+  </g>;
+}
+
+function PlacedGraphic({ graphic, selected, onSelect, onMove }: { graphic: SchematicGraphic; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onGraphicMove"] }) {
+  const origin = useRef<{ x: number; y: number } | null>(null);
+  const point = (event: PointerEvent<SVGGElement>) => {
+    const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
+    return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+  };
+  const x = Math.min(graphic.x1, graphic.x2); const y = Math.min(graphic.y1, graphic.y2);
+  const width = Math.abs(graphic.x2 - graphic.x1); const height = Math.abs(graphic.y2 - graphic.y1);
+  const shape = graphic.kind === "line"
+    ? <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} />
+    : graphic.kind === "rectangle"
+      ? <rect x={x} y={y} width={width} height={height} />
+      : <ellipse cx={(graphic.x1 + graphic.x2) / 2} cy={(graphic.y1 + graphic.y2) / 2} rx={width / 2} ry={height / 2} />;
+  return <g data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id); }} onPointerDown={(event) => {
+    if (!onMove || event.button !== 0) return;
+    event.stopPropagation(); onSelect(graphic.id); origin.current = point(event) ?? null;
+    if (origin.current) event.currentTarget.setPointerCapture(event.pointerId);
+  }} onPointerUp={(event) => {
+    const start = origin.current; const current = point(event); origin.current = null;
+    if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) onMove?.(graphic.id, current.x - start.x, current.y - start.y);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
+    {selected && <rect x={x - 5} y={y - 5} width={Math.max(10, width + 10)} height={Math.max(10, height + 10)} fill="none" stroke="#e0a526" strokeDasharray="4 3" pointerEvents="none" />}
+    <g stroke={graphic.color} strokeWidth={graphic.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">{shape}</g>
+    {graphic.kind === "line" && <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
+    <text x={x + width / 2} y={y + height + 17 > 780 ? Math.max(14, y - 7) : y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{graphic.name}</text>
+    <title>{`${graphic.name} · drafting geometry; not an electrical connection`}</title>
   </g>;
 }
 
@@ -173,18 +208,48 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const graphicStart = useRef<{ x: number; y: number } | null>(null);
+  const [graphicPreview, setGraphicPreview] = useState<{ kind: SchematicGraphicKind; x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const graphicPoint = (event: PointerEvent<SVGRectElement>) => {
+    const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
+    return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+  };
+  const grid = (value: number) => Math.max(0, Math.min(1100, Math.round(value / 20) * 20));
+  const drawStart = (event: PointerEvent<SVGRectElement>) => {
+    if (!graphicMode || wireMode || event.button !== 0) return;
+    const point = graphicPoint(event); if (!point) return;
+    event.preventDefault(); graphicStart.current = point;
+    const start = { x: grid(point.x), y: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) };
+    setGraphicPreview({ kind: graphicMode, x1: start.x, y1: start.y, x2: start.x, y2: start.y });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const drawMove = (event: PointerEvent<SVGRectElement>) => {
+    if (!graphicStart.current || !graphicMode) return;
+    const point = graphicPoint(event); if (!point) return;
+    setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) } : null);
+  };
+  const drawEnd = (event: PointerEvent<SVGRectElement>) => {
+    const point = graphicPoint(event); const start = graphicStart.current; const kind = graphicMode;
+    graphicStart.current = null; setGraphicPreview(null);
+    if (start && point && kind) {
+      const x1 = grid(start.x); const y1 = Math.max(0, Math.min(780, Math.round(start.y / 20) * 20));
+      const x2 = grid(point.x); const y2 = Math.max(0, Math.min(780, Math.round(point.y / 20) * 20));
+      if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) >= 4 : Math.abs(x2 - x1) >= 4 && Math.abs(y2 - y1) >= 4) onGraphicCreate(kind, x1, y1, x2, y2);
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
 
   return <div className="schematic-wrap">
-    <svg className="schematic" style={{ width: 1100 * zoom, height: 780 * zoom, minWidth: 0, minHeight: 0, cursor: annotationMode ? "crosshair" : undefined }} viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onClick={(event) => {
+    <svg className="schematic" style={{ width: 1100 * zoom, height: 780 * zoom, minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode ? "crosshair" : undefined }} viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onClick={(event) => {
       if (!annotationMode) return;
       const matrix = event.currentTarget.getScreenCTM();
       if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); onAnnotationPlace(Math.max(0, Math.min(1100, Math.round(point.x / 20) * 20)), Math.max(0, Math.min(780, Math.round(point.y / 20) * 20))); }
     }}>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
-      <rect width="1100" height="780" className="sheet-bg" />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
+      <rect width="1100" height="780" className="sheet-bg" onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={drawEnd} onPointerCancel={() => { graphicStart.current = null; setGraphicPreview(null); }} />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
       <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
       <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
       {document.wires.map((wire) => {
@@ -192,6 +257,8 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
         const to = anchorIndex.get(endpointKey(wire.to));
         return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
+      {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} />)}
+      {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} onMove={onMove} wireMode={wireMode} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
@@ -200,8 +267,8 @@ function FreeSchematic({ document, selectedComponentId, selectedWireId, wireMode
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} />;
+export function Schematic({ document, selectedComponentId, selectedWireId, simulation, wireMode, wireStart, onSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect, onGraphicCreate, onGraphicMove }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;
