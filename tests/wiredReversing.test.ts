@@ -71,3 +71,30 @@ it.each(["contactor", "reverse"])("requires the actual A2 return for %s", target
   expect(evaluateWiredControl(runtime, catalogById).get(target)?.energized).toBe(false);
   expect(executeCircuitModels(runtime, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
 });
+
+it("trips the reverse contactor through wired overload 95–96 and does not restart on reset", async () => {
+  const { createThermalWiredReversingTemplate } = await import("../src/projects/wiredReversingCircuit");
+  const { advanceCircuitClock } = await import("../src/simulation/circuitClock");
+  const template = createThermalWiredReversingTemplate();
+  let runtime = setCircuitBooleanInput(template.document, catalogById, "reverse-start", "pressed", true);
+  runtime = advanceCircuitClock(runtime, catalogById, .1);
+  expect(executeCircuitModels(runtime, catalogById).find(r => r.reference === "M1")?.output.value).toBe("-1440 rpm / 7.5 kW");
+  runtime = setCircuitBooleanInput(runtime, catalogById, "reverse-start", "pressed", false);
+  runtime = advanceCircuitClock(runtime, catalogById, 3);
+  expect(runtime.components.find(c => c.id === "overload")?.properties.runtimeThermalTripped).toBe(true);
+  expect(evaluateWiredControl(runtime, catalogById).get("reverse")?.energized).toBe(false);
+  expect(executeCircuitModels(runtime, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
+  runtime = advanceCircuitClock(runtime, catalogById, 20);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "overload", "reset", true);
+  expect(runtime.components.find(c => c.id === "overload")?.properties.runtimeThermalTripped).toBe(false);
+  expect(executeCircuitModels(runtime, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
+});
+
+it("verifies the current-driven reversing overload library sequence", async () => {
+  const { createThermalWiredReversingTemplate } = await import("../src/projects/wiredReversingCircuit");
+  const { verifyProjectTemplate } = await import("../src/projects/templateVerification");
+  const result = verifyProjectTemplate(createThermalWiredReversingTemplate(), catalogById);
+  expect(result.topologyIssues).toEqual([]);
+  expect(result.failedExpectations).toEqual([]);
+  expect(result.passed).toBe(true);
+});
