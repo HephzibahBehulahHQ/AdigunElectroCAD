@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { compileLadder, parseLadder, previewLadder, type LadderRung } from "../src/simulation/ladderProgram";
+import { compileLadder, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
+import { previewLadder } from "../src/simulation/ladderProgram";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LadderEditor } from "../src/components/LadderEditor";
@@ -15,6 +16,53 @@ it("round-trips the start/stop ladder and compiles its actual holding program", 
   const program = compileLadder(holding);
   expect(program).toBe("LD I0; OR Q0; ANDN I1; OUT Q0");
   expect(parseLadder(program.toLowerCase().replaceAll("; ", "\n"))).toEqual(holding);
+});
+
+it("previews conducting contacts against the next scan and retained Q0", () => {
+  const inputs = { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: Array(8).fill(0) };
+  const preview = previewLadder(holding, inputs);
+  expect(preview).toMatchObject({ rungEnergized: [true], contactEnergized: [[[true, false], [true]]], output: true });
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(holding), onApply: () => undefined, previewInputs: inputs }));
+  expect(markup).toContain("class=\"ladder-powered\"");
+  expect(markup).toContain("Next-scan logic preview");
+  const held = previewLadder(holding, { ...inputs, input0: false, q0: true });
+  expect(held).toMatchObject({ rungEnergized: [true], contactEnergized: [[[false, true], [true]]], output: true });
+  const stopped = previewLadder(holding, { ...inputs, input0: false, input1: true, q0: true });
+  expect(stopped).toMatchObject({ rungEnergized: [false], contactEnergized: [[[false, true], [false]]], output: false });
+});
+
+it("previews rising-edge contacts only when the sampled input transitions", () => {
+  const rung: LadderRung[] = [{ stages: [[{ address: "I0", inverted: false, edge: "positive" }]], coil: "OUT" }];
+  expect(previewLadder(rung, { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [] }).rungEnergized).toEqual([true]);
+  expect(previewLadder(rung, { input0: true, input1: false, q0: false, previousInput0: true, previousInput1: false, analogInput0: 0, registers: [] }).rungEnergized).toEqual([false]);
+});
+
+it("round-trips numeric comparison contacts in series and parallel and matches PLC scan output", () => {
+  const rungs: LadderRung[] = [
+    { stages: [
+      [{ address: "I0", inverted: false }, { comparison: "GT", left: "D0", right: "50" }],
+      [{ comparison: "LT", left: "AI0", right: "20000" }],
+    ], coil: "OUT" },
+    { stages: [[{ comparison: "EQ", left: "D0", right: "50" }]], coil: "SET" },
+  ];
+  const program = compileLadder(rungs);
+  expect(program).toContain("PUSH; GT D0 50; ORPOP");
+  expect(program).toContain("PUSH; LT AI0 20000; ANDPOP");
+  expect(parseLadder(program)).toEqual(rungs);
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain("Numeric comparison");
+  expect(markup).toContain("GT D0 50");
+  for (const input0 of [false, true]) for (const q0 of [false, true]) for (const register of [0, 50, 51]) for (const analog of [0, 19999, 20000]) {
+    const preview = previewLadder(rungs, { input0, input1: false, q0, previousInput0: false, previousInput1: false, analogInput0: analog, registers: [register] });
+    const scan = scanPlcProgram(program, input0, false, q0, analog, [register]);
+    expect(scan).toMatchObject({ ok: true, output: preview.output });
+  }
+  expect(() => compileLadder([{ stages: [[{ comparison: "GT", left: "AI0", right: "27649" }]], coil: "OUT" }])).toThrow();
+  expect(parseLadder("GT AI0 27649; OUT Q0")).toBeNull();
+  const selfCompare: LadderRung[] = [{ stages: [[{ comparison: "EQ", left: "AI0", right: "AI0" }]], coil: "OUT" }];
+  const selfCompareProgram = compileLadder(selfCompare);
+  expect(parseLadder(selfCompareProgram)).toEqual(selfCompare);
+  expect(previewLadder(selfCompare, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 13824, registers: [] }).output).toBe(true);
 });
 
 it.each(["positive", "negative"] as const)("compiles and imports %s edge contacts in series and parallel branches", (edge) => {
@@ -72,7 +120,7 @@ it("keeps later reset priority across multiple ladder rungs", () => {
   expect(scanPlcProgram(program, true, false, false)).toEqual({ ok: true, output: true });
 });
 
-it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "GT AI0 100; OUT Q0", "LD I0; XOR I1; OUT Q0", "LD I0; OUT Q1", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
+it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "LD I0; XOR I1; OUT Q0", "LD I0; OUT Q1", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
   expect(parseLadder(program)).toBeNull();
 });
 
@@ -102,22 +150,3 @@ it("drives a wired coil through start, release, stop and release using compiled 
   expect(JSON.stringify(design)).toBe(original);
 });
 
-
-it("previews conducting contacts against the next scan and retained Q0", () => {
-  const inputs = { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false };
-  const preview = previewLadder(holding, inputs);
-  expect(preview).toMatchObject({ rungEnergized: [true], contactEnergized: [[[true, false], [true]]], output: true });
-  const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(holding), onApply: () => undefined, previewInputs: inputs }));
-  expect(markup).toContain(`class="ladder-powered"`);
-  expect(markup).toContain("Next-scan logic preview");
-  const held = previewLadder(holding, { ...inputs, input0: false, q0: true });
-  expect(held).toMatchObject({ rungEnergized: [true], contactEnergized: [[[false, true], [true]]], output: true });
-  const stopped = previewLadder(holding, { ...inputs, input0: false, input1: true, q0: true });
-  expect(stopped).toMatchObject({ rungEnergized: [false], contactEnergized: [[[false, true], [false]]], output: false });
-});
-
-it("previews rising-edge contacts only when the sampled input transitions", () => {
-  const rung: LadderRung[] = [{ stages: [[{ address: "I0", inverted: false, edge: "positive" }]], coil: "OUT" }];
-  expect(previewLadder(rung, { input0: true, input1: false, q0: false, previousInput0: false, previousInput1: false }).rungEnergized).toEqual([true]);
-  expect(previewLadder(rung, { input0: true, input1: false, q0: false, previousInput0: true, previousInput1: false }).rungEnergized).toEqual([false]);
-});
