@@ -153,12 +153,21 @@ PR #110 merged as `4966118`. CI runs `43289702910` and `43289692073` passed, and
 
 PR #112 merged as `28b1860`. CI runs `43290846303` and `43290838032` passed, and Pages deployment `43290966721` succeeded. The live canvas showed each terminal label on the corresponding breaker/contactor pole at both zoom levels.
 
-## Active increment: M06f — Visible overload pole terminal identities
+## Completed increment: M06f — Visible overload pole terminal identities
 
-- [ ] Label the three overload heater inputs and outputs as 1/2, 3/4 and 5/6, aligned to their actual terminal anchors.
-- [ ] Keep the overload terminal numbers clear of the heater zigzags, trip contacts, output conductors and F1 95–96 control contact.
-- [ ] Add focused render and anchor assertions; inspect production at normal and fit zoom.
-- [ ] Pass CI, merge and deployment verification.
+- [x] Label the three overload heater inputs and outputs as 1/2, 3/4 and 5/6, aligned to their actual terminal anchors.
+- [x] Keep the overload terminal numbers clear of the heater zigzags, trip contacts, output conductors and F1 95–96 control contact.
+- [x] Add focused render assertions; inspect production at 85% and 57% Fit zoom.
+- [x] Pass CI, merge and deployment verification.
+
+PR #114 merged as `2257f25`. CI runs `43291819172` and `43291810566` passed, and Pages deployment `43292007489` succeeded. The deployed DOL canvas shows F1 inputs 1/3/5 and outputs 2/4/6 alongside their poles at both zoom levels, with no visible overlap.
+
+## Active increment: M06g — Source-backed DOL control-circuit details
+
+- [ ] Trace the supplied reference’s H1/H2/H3 indicator branches and control terminals into the project model and available source documentation.
+- [ ] Implement indicator symbols only with explicit terminal identities, connected branches and state behavior supported by the design; record any unverified wiring.
+- [ ] Review the control circuit at normal and fit zoom for label, wire and symbol clearance.
+- [ ] Pass focused tests, CI, merge, deployment and production inspection.
 
 ## Per-increment publication rule
 
