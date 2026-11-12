@@ -191,6 +191,15 @@ PR #119 merged as `a4047e9`. Verification run `43309716359` and Pages deployment
 
 PR #121 merged as `5312782`. GitHub Verify run `43313996809` succeeded. Production inspection at `https://adigunelectrocad.hephzibahbehulah.com/` confirmed the Text tool is available on a free sheet and activates placement mode. The live project was not modified during this inspection; annotation rendering, chosen color and text persistence were verified by focused tests.
 
+## Completed increment: M06j — Editable free-sheet drawing graphics
+
+- [x] Draw lines, rectangles and ellipses on free schematic sheets; select and move them on the grid.
+- [x] Let users edit each graphic's name/tag, color and stroke width, with an on-canvas label.
+- [x] Persist bounded geometry in project JSON, retain compatibility with earlier projects, and keep graphics separate from electrical connectivity.
+- [x] Pass focused rendering/serialization tests, the full local suite (932 tests), build, GitHub Verify, merge and deployment.
+
+PR #123 merged as `568fab2`. GitHub Verify run `43318329213` and Pages deployment `43318444682` succeeded. Local browser inspection confirmed rectangle drawing and editing the name, palette color and stroke width. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the drawing tool and color palette. No production project data was changed.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
