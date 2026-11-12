@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { applyStarDeltaState, createStarDeltaCircuit } from "../projects/starDeltaCircuit";
 import type { CircuitDocument } from "../types/electrical";
 import { initialStarDeltaState, starDeltaContacts, starDeltaWindingPoint, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
+import { inductionMotorOperatingPoint, type InductionMotorEquivalentCircuit } from "../simulation/inductionMotor";
 
 export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: CircuitDocument) => void }) {
   const [state, setState] = useState(initialStarDeltaState);
@@ -9,10 +10,31 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
   const [voltage, setVoltage] = useState("400");
   const [resistance, setResistance] = useState("10");
   const [reactance, setReactance] = useState("10");
+  const [motorInput, setMotorInput] = useState({
+    statorResistanceOhm: "", statorReactanceOhm: "", rotorResistanceOhm: "",
+    rotorReactanceOhm: "", magnetizingReactanceOhm: "", frequencyHz: "",
+    polePairs: "", slip: "",
+  });
   const values = [voltage, resistance, reactance].map(Number);
   const valid = [voltage, resistance, reactance].every((value) => value.trim() !== "") && values.every(Number.isFinite) && values[0] >= 0 && values[1] > 0 && values[2] >= 0;
   const winding = valid ? starDeltaWindingPoint(state, values[0], values[1], values[2]) : null;
   const contacts = starDeltaContacts(state);
+  const motorRaw = Object.values(motorInput);
+  const motorNumbers = motorRaw.map(Number);
+  const motorInputStarted = motorRaw.some((value) => value.trim() !== "");
+  const motorInputValid = motorRaw.every((value) => value.trim() !== "") && motorNumbers.every(Number.isFinite)
+    && motorNumbers[0] > 0 && motorNumbers[1] >= 0 && motorNumbers[2] > 0 && motorNumbers[3] >= 0
+    && motorNumbers[4] >= 0 && motorNumbers[5] > 0 && Number.isInteger(motorNumbers[6]) && motorNumbers[6] >= 1
+    && motorNumbers[7] > 0 && motorNumbers[7] <= 1 && values[0] > 0;
+  const motorConnection = contacts.star ? "star" : contacts.delta ? "delta" : null;
+  const equivalentCircuit: InductionMotorEquivalentCircuit = {
+    statorResistanceOhm: motorNumbers[0], statorReactanceOhm: motorNumbers[1],
+    rotorResistanceOhm: motorNumbers[2], rotorReactanceOhm: motorNumbers[3],
+    magnetizingReactanceOhm: motorNumbers[4], frequencyHz: motorNumbers[5], polePairs: motorNumbers[6],
+  };
+  const motorPoint = motorInputValid && motorConnection
+    ? inductionMotorOperatingPoint(equivalentCircuit, values[0], motorNumbers[7], motorConnection)
+    : null;
   const act = (action: StarDeltaAction) => setState((previous) => transitionStarDelta(previous, action));
   useEffect(() => {
     if (!running) return;
@@ -27,6 +49,26 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
       <label>Resistance per winding (Ω)<input type="number" min="0.001" step="0.1" value={resistance} onChange={(event) => setResistance(event.target.value)} /></label>
       <label>Reactance per winding (Ω)<input type="number" min="0" step="0.1" value={reactance} onChange={(event) => setReactance(event.target.value)} /></label>
     </div>
+    <details open>
+      <summary>Induction motor equivalent-circuit operating point</summary>
+      <p>Enter traceable per-phase motor equivalent-circuit data. This balanced steady-state calculation uses the starter's current star/delta stage and entered positive slip; it does not supply assumed motor constants.</p>
+      <div className="auth-fields">
+        {([
+          ["statorResistanceOhm", "Stator resistance R₁ (Ω)"],
+          ["statorReactanceOhm", "Stator reactance X₁ (Ω)"],
+          ["rotorResistanceOhm", "Rotor resistance R₂′ (Ω)"],
+          ["rotorReactanceOhm", "Rotor reactance X₂′ (Ω)"],
+          ["magnetizingReactanceOhm", "Magnetizing reactance Xₘ (Ω)"],
+          ["frequencyHz", "Frequency (Hz)"],
+          ["polePairs", "Pole pairs"],
+          ["slip", "Slip (0–1)"],
+        ] as const).map(([key, label]) => <label key={key}>{label}<input type="number" min="0" step="any" value={motorInput[key]} onChange={(event) => setMotorInput((previous) => ({ ...previous, [key]: event.target.value }))} /></label>)}
+      </div>
+      {motorPoint ? <p role="status" aria-live="polite">{motorConnection!.toUpperCase()} at {(motorPoint.slip * 100).toFixed(2)}% slip · Line current {motorPoint.lineCurrentA.toFixed(2)} A · Phase current {motorPoint.phaseCurrentA.toFixed(2)} A · Electromagnetic torque {motorPoint.electromagneticTorqueNm.toFixed(2)} N·m · Synchronous speed {motorPoint.synchronousSpeedRpm.toFixed(0)} rpm</p>
+        : motorInputStarted && !motorInputValid ? <p role="alert">Complete all motor values. Resistances and frequency must be positive; reactances must be non-negative; pole pairs must be a positive integer; slip must be greater than 0 and no more than 1.</p>
+        : state.stage === "transition" ? <p role="status">No winding is energized during the open-transition interval.</p>
+        : <p role="status">Enter all motor values, close Q1 and start the sequence to calculate the selected winding stage.</p>}
+    </details>
     {winding ? <p>Winding voltage: {winding.windingVoltageV.toFixed(2)} V · Winding current: {winding.windingCurrentA.toFixed(2)} A · Line current: {winding.lineCurrentA.toFixed(2)} A · Real power: {(winding.realPowerW / 1000).toFixed(2)} kW</p> : <p role="alert">Enter finite values: voltage and reactance ≥ 0; winding resistance &gt; 0.</p>}
     <svg viewBox="0 0 600 300" role="img" aria-label={`Motor winding connections: ${state.stage}`} style={{ width: "100%", maxWidth: 600, background: "#f4f8fc", borderRadius: 6 }}>
       <g stroke="#24456b" strokeWidth="3" fill="none">
@@ -56,6 +98,7 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
     </div>
     <p aria-live="polite">Stage: {state.stage} · Main KM1: {contacts.main ? "ON" : "OFF"} · Star KM2: {contacts.star ? "ON" : "OFF"} · Delta KM3: {contacts.delta ? "ON" : "OFF"}</p>
     <p>The copied sheet is an independent switching snapshot. Its winding result follows its edited wires and contactor states; control/protection wiring is not included.</p>
-    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Balanced fixed-impedance winding calculation; slip, torque, and acceleration are not modeled.</p>
+    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Fixed-impedance winding and equivalent-circuit operating-point calculations are shown separately; the equivalent-circuit current is not yet coupled to the copied sheet or overload runtime.</p>
   </section>;
 }
+
