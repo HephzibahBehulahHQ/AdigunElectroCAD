@@ -3,6 +3,8 @@ import { traceOverloadCurrents } from "../src/simulation/overloadCurrent";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
+import { createWiredStarDeltaCircuit } from "../src/projects/wiredStarDeltaCircuit";
+import { advanceCircuitClock } from "../src/simulation/circuitClock";
 import { catalogById } from "../src/catalog/dolCatalog";
 
 const relay = [{ id: "F1", poles: [{ input: "in", output: "out" }] }];
@@ -67,3 +69,48 @@ it("detects a physical relay bypass and zeroes current after losing a motor phas
   expect(executeCircuitModels(circuit, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
   expect(executeCircuitModels(circuit, catalogById).find(r => r.reference === "F1")?.evaluatedProperties.runtimeLoadCurrentA).toBe(0);
 });
+
+it("traces the actual six-terminal star and delta line currents through F1", () => {
+  let circuit = createWiredStarDeltaCircuit();
+  circuit = setCircuitBooleanInput(circuit, catalogById, "breaker", "closed", true);
+  circuit = setCircuitBooleanInput(circuit, catalogById, "start", "pressed", true);
+  circuit = advanceCircuitClock(circuit, catalogById, .1);
+  circuit = setCircuitBooleanInput(circuit, catalogById, "start", "pressed", false);
+  let overload = () => executeCircuitModels(circuit, catalogById).find(run => run.reference === "F1")!.evaluatedProperties;
+  expect(overload().runtimeCurrentError).toBe("");
+  expect(overload().runtimeLoadCurrentA).toBeCloseTo(16.33, 2);
+
+  for (let step = 0; step < 80 && !executeCircuitModels(circuit, catalogById).find(run => run.reference === "M1")!.output.value.startsWith("DELTA"); step++) {
+    circuit = advanceCircuitClock(circuit, catalogById, .1);
+  }
+  expect(executeCircuitModels(circuit, catalogById).find(run => run.reference === "M1")!.output.value).toContain("DELTA");
+  overload = () => executeCircuitModels(circuit, catalogById).find(run => run.reference === "F1")!.evaluatedProperties;
+  expect(overload().runtimeCurrentError).toBe("");
+  expect(overload().runtimeLoadCurrentA).toBeCloseTo(48.99, 2);
+  expect([overload().runtimePhase1CurrentA, overload().runtimePhase2CurrentA, overload().runtimePhase3CurrentA]).toEqual([48.98979485566356, 48.98979485566356, 48.98979485566356]);
+});
+
+it("thermally trips the wired star-delta starter on delta current and does not restart after cool reset", () => {
+  let circuit = createWiredStarDeltaCircuit();
+  const relay = () => circuit.components.find(component => component.id === "overload")!.properties;
+  Object.assign(relay(), { thermalEnabled: true, settingA: 20, overloadFactor: 1, heatingTimeSeconds: 2, coolingTimeSeconds: 10, resetLevel: .5 });
+  circuit = setCircuitBooleanInput(circuit, catalogById, "breaker", "closed", true);
+  circuit = setCircuitBooleanInput(circuit, catalogById, "start", "pressed", true);
+  circuit = advanceCircuitClock(circuit, catalogById, .1);
+  circuit = setCircuitBooleanInput(circuit, catalogById, "start", "pressed", false);
+  for (let step = 0; step < 80 && !executeCircuitModels(circuit, catalogById).find(run => run.reference === "M1")!.output.value.startsWith("DELTA"); step++) {
+    circuit = advanceCircuitClock(circuit, catalogById, .1);
+  }
+  expect(relay().runtimeThermalTripped).not.toBe(true);
+  expect(executeCircuitModels(circuit, catalogById).find(run => run.reference === "F1")!.evaluatedProperties.runtimeLoadCurrentA).toBeCloseTo(48.99, 2);
+
+  circuit = advanceCircuitClock(circuit, catalogById, .5);
+  expect(relay().runtimeThermalTripped).toBe(true);
+  expect(executeCircuitModels(circuit, catalogById).find(run => run.reference === "M1")!.output.value).toContain("OPEN");
+  circuit = advanceCircuitClock(circuit, catalogById, 20);
+  expect(Number(relay().runtimeThermalLevel)).toBeLessThan(.5);
+  circuit = setCircuitBooleanInput(circuit, catalogById, "overload", "reset", true);
+  expect(relay().runtimeThermalTripped).toBe(false);
+  expect(executeCircuitModels(circuit, catalogById).find(run => run.reference === "M1")!.output.value).toContain("OPEN");
+});
+
