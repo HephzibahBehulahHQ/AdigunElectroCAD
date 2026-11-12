@@ -171,10 +171,18 @@ PR #114 merged as `2257f25`. CI runs `43291819172` and `43291810566` passed, and
 
 PR #116 merged as `920fb83`. Its verification run `43298345712` and Pages deployment `43293742977` succeeded. Production inspection at 82% canvas zoom and Fit (52%) confirmed STOP 21/22 and START 13/14 remain adjacent to their contact anchors with readable labels and clearance from the conductors. The current production build was subsequently updated by PR #117 and Pages deployment `43300433874`.
 
-H1/H2/H3 are visible in the supplied screenshot, but that image does not unambiguously establish each lamp's indication or branch wiring. No lamp behavior is inferred.
+Client direction (2026-11-12): keep H1/H2/H3 user-configurable. Do not infer their functions or branches; users choose the colors, terminal labels, wiring, indication text and reference tags.
+
+## Active increment: M06h — User-configurable indicator placeholders
+
+- [ ] Add H1/H2/H3 as unassigned, unconnected indicator symbols in the reference DOL sheet; preserve their generic symbol-only status.
+- [ ] Let users edit each symbol's color, indication text, terminal labels and reference, and connect its stable terminal IDs to chosen branches using the existing wire editor.
+- [ ] Verify import/export persistence, editable placement and wireable terminal anchors, with no simulated electrical behavior or invented ratings.
+- [ ] Pass focused checks, CI, merge, deployment and production visual inspection.
 
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
+
 
 
