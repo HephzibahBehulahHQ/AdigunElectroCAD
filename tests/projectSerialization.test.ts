@@ -99,7 +99,7 @@ describe("project JSON import validation", () => {
 
   it("rejects malformed user-drawn graphics", () => {
     const input = addFreeSchematicSheet(createStarterProject());
-    input.sheets[1].document.graphics = [{ id: "shape-1", name: "Bad shape", kind: "polygon" as never, x1: 0, y1: 0, x2: 200, y2: 200, color: "#1565c0", strokeWidth: 2 }];
+    input.sheets[1].document.graphics = [{ id: "shape-1", name: "Bad shape", kind: "star" as never, x1: 0, y1: 0, x2: 200, y2: 200, color: "#1565c0", strokeWidth: 2 }];
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Graphic kind");
     input.sheets[1].document.graphics[0].kind = "rectangle";
     input.sheets[1].document.graphics[0].x2 = 2;
@@ -113,7 +113,26 @@ describe("project JSON import validation", () => {
     input.sheets[1].document.graphics[0].fillColor = "#ffcc80";
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics?.[0].fillColor).toBe("#ffcc80");
     input.sheets[1].document.graphics[0].kind = "line";
-    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Only rectangles and ellipses");
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Only rectangles, ellipses and polygons");
+  });
+
+  it("persists editable polylines and filled polygons with bounded vertices", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.graphics = [
+      { id: "path-1", name: "Conduit route", kind: "polyline", x1: 100, y1: 100, x2: 220, y2: 180, points: [{ x: 100, y: 100 }, { x: 160, y: 100 }, { x: 160, y: 180 }, { x: 220, y: 180 }], color: "#1565c0", strokeWidth: 3 },
+      { id: "polygon-1", name: "Panel region", kind: "polygon", x1: 320, y1: 100, x2: 460, y2: 220, points: [{ x: 320, y: 100 }, { x: 460, y: 120 }, { x: 420, y: 220 }, { x: 340, y: 200 }], color: "#19324f", fillColor: "#ffcc80", strokeWidth: 2 },
+    ];
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics).toEqual(input.sheets[1].document.graphics);
+  });
+
+  it("rejects paths with too few vertices, invalid bounds or zero-area polygons", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.graphics = [{ id: "path-1", name: "Bad path", kind: "polyline", x1: 0, y1: 0, x2: 100, y2: 100, points: [{ x: 0, y: 0 }], color: "#1565c0", strokeWidth: 2 }];
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("at least 2 distinct");
+    input.sheets[1].document.graphics[0].points = [{ x: 0, y: 0 }, { x: 1200, y: 100 }];
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("inside the schematic sheet");
+    input.sheets[1].document.graphics[0] = { id: "polygon-1", name: "Bad polygon", kind: "polygon", x1: 0, y1: 0, x2: 100, y2: 100, points: [{ x: 0, y: 0 }, { x: 40, y: 40 }, { x: 100, y: 100 }], color: "#1565c0", strokeWidth: 2 };
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("polygons must enclose an area");
   });
 
   it("rejects user-drawn graphics on the fixed reference sheet where they would not render", () => {

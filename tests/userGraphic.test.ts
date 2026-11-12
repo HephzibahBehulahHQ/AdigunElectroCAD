@@ -75,3 +75,22 @@ it("renders editable electrical wire colors separately from terminal topology", 
   expect(document.wires[0]).toMatchObject({ netName: "TEST_NET", draftingColor: "#c62828" });
   expect(document.wires[0].from).toEqual({ componentId: seed.id, terminalId: terminals[0].id });
 });
+
+it("renders editable multi-point paths and exposes a handle for each vertex", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  document.graphics = [
+    { id: "path-1", name: "Conduit route", kind: "polyline", x1: 100, y1: 100, x2: 220, y2: 180, points: [{ x: 100, y: 100 }, { x: 160, y: 100 }, { x: 160, y: 180 }, { x: 220, y: 180 }], color: "#1565c0", strokeWidth: 3 },
+    { id: "polygon-1", name: "Panel region", kind: "polygon", x1: 320, y1: 100, x2: 460, y2: 220, points: [{ x: 320, y: 100 }, { x: 460, y: 120 }, { x: 420, y: 220 }, { x: 340, y: 200 }], color: "#19324f", fillColor: "#ffcc80", strokeWidth: 2 },
+  ];
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", selectedGraphicId: "polygon-1", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onGraphicVertexMove: () => {},
+  }));
+  expect(markup).toContain('data-graphic-kind="polyline"');
+  expect(markup).toContain('data-graphic-kind="polygon"');
+  expect(markup).toContain('points="100,100 160,100 160,180 220,180"');
+  expect(markup).toContain('fill="#ffcc80"');
+  expect(markup).toContain('data-vertex-handle="0"');
+  expect(markup).toContain('data-vertex-handle="3"');
+});
