@@ -75,6 +75,7 @@ it("renders three connected zigzag heater poles and shows the tripped interrupti
     onTerminalSelect: () => undefined,
   }));
   const healthy = render(false);
+  for (const label of ["1", "3", "5", "2", "4", "6", "1/L1", "3/L2", "5/L3", "2/T1", "4/T2", "6/T3"]) expect(healthy).toContain(`>${label}</text>`);
   const tripped = render(true);
   expect(healthy.match(/class="overload"/g)).toHaveLength(3);
   expect(healthy).toContain("Three-phase thermal overload heater poles, healthy");

@@ -196,14 +196,14 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
 
       <g {...componentBox("breaker", selectedComponentId, onSelect, 120, 140, 280, 94)}>
         <g className="device"><text x="475" y="184" className="reference-label">{references.get("breaker") ?? "Q1"}</text><text x="475" y="205" className="device-label">3-pole breaker</text>
-          {[165, 255, 345].map((x) => <g key={x}><path d={`M ${x} 146 v 10 l 24 30`} className="contact-blade" /><path d={`M ${x} 197 V 252`} className={lineClass(switched)} /></g>)}
+          {[165, 255, 345].map((x, index) => <g key={x}><text x={x - 7} y="168" textAnchor="end" className="terminal-label">{["1", "3", "5"][index]}</text><path d={`M ${x} 146 v 10 l 24 30`} className="contact-blade" /><path d={`M ${x} 197 V 252`} className={lineClass(switched)} /><text x={x + 7} y="240" className="terminal-label">{["2", "4", "6"][index]}</text></g>)}
           <path d="M 142 220 H 368" className="mechanical-link" />
         </g>
       </g>
 
       <g {...componentBox("contactor", selectedComponentId, onSelect, 120, 245, 280, 112)}>
         <g className="device"><text x="475" y="284" className="reference-label">{references.get("contactor") ?? "KM1"}</text><text x="475" y="305" className="device-label">main contactor</text>
-          {[165, 255, 345].map((x) => <g key={x}><path d={`M ${x} 252 v 14 l 24 ${energized ? "0" : "32"}`} className={energized ? "contact-blade closed" : "contact-blade"} /><path d={`M ${x} 303 V 370`} className={lineClass(energized)} /></g>)}
+          {[165, 255, 345].map((x, index) => <g key={x}><text x={x - 7} y="275" textAnchor="end" className="terminal-label">{["1/L1", "3/L2", "5/L3"][index]}</text><path d={`M ${x} 252 v 14 l 24 ${energized ? "0" : "32"}`} className={energized ? "contact-blade closed" : "contact-blade"} /><path d={`M ${x} 303 V 370`} className={lineClass(energized)} /><text x={x + 7} y="330" className="terminal-label">{["2/T1", "4/T2", "6/T3"][index]}</text></g>)}
           <path d="M 142 336 H 368" className="mechanical-link" />
         </g>
       </g>
