@@ -29,7 +29,7 @@ The stateful reversing laboratory still uses Boolean command permits. The separa
 ## Next implementation priorities
 
 1. Complete graphical ladder programming and broader PLC execution. PLC digital I/O supports two Boolean inputs, one retained output, one ADC raw input (AI0), eight retained numeric registers and MOV/ADD/SUB/MUL/DIV with GT/LT/EQ comparisons. Wired analog scaling through the PLC to an output coil is covered by automated tests and production checks at 0/50/100 percent, including a division fault. PLC scan supports four bounded TON timers and eight retained internal memory relays (M0–M7), including graphical ladder contacts and coils; see `PLC-PROGRAMS.md` for exact limits. Edge pulses and educational dual-channel reset behavior also advance through the runtime clock. These features do not establish a complete PLC implementation or certified safety controller.
-2. Verify M04c’s deployed winding-current trip/reset behavior; then expand motor transient and protection-coordination models while retaining the documented coil-dynamics and mechanical-interlock limits.
+2. Expand the star-delta motor transient and protection-coordination model while retaining the documented coil-dynamics and mechanical-interlock limits.
 3. Replace generated catalog-count claims with coverage backed by distinct, validated behavior.
 4. Complete live authentication, isolation, and responsive-layout verification.
 
