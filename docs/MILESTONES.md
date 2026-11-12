@@ -144,6 +144,13 @@ PR #108 merged as `be8368e`; both remote verification runs `43285335212` and `43
 
 PR #110 merged as `4966118`. CI runs `43289702910` and `43289692073` passed, and Pages deployment `43289863977` passed. Production inspection confirmed the three heater paths and trip contacts at 85% zoom; the full sheet was clear at 57% Fit. Visual review found no menu/icon, component or wire overlaps. This schematic remains an educational abstraction and does not claim manufacturer-specific overload geometry.
 
+## Active increment: M06e — Visible breaker and contactor terminal identities
+
+- [ ] Label the reference DOL breaker poles 1/3/5 and 2/4/6 using the model's terminal identities.
+- [ ] Label the contactor poles 1/L1, 3/L2, 5/L3 and 2/T1, 4/T2, 6/T3.
+- [ ] Render and review at normal and fit zoom for label-to-wire and label-to-symbol clearance.
+- [ ] Pass focused render tests, CI, merge and deployed production verification.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
