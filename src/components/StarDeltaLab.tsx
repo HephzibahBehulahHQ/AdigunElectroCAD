@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { applyStarDeltaState, createStarDeltaCircuit } from "../projects/starDeltaCircuit";
+import { createWiredStarDeltaCircuit } from "../projects/wiredStarDeltaCircuit";
 import type { CircuitDocument } from "../types/electrical";
 import { initialStarDeltaState, starDeltaContacts, starDeltaWindingPoint, transitionStarDelta, type StarDeltaAction } from "../simulation/starDeltaStarter";
 import { inductionMotorOperatingPoint, type InductionMotorEquivalentCircuit } from "../simulation/inductionMotor";
@@ -84,11 +84,16 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
     </svg>
     <div className="auth-actions">
       <button onClick={() => {
-        const circuit = applyStarDeltaState(createStarDeltaCircuit(), state);
+        const circuit = createWiredStarDeltaCircuit();
         circuit.components.find((component) => component.id === "supply")!.properties.nominalVoltageV = values[0];
-        Object.assign(circuit.components.find((component) => component.id === "motor")!.properties, { resistanceOhm: values[1], reactanceOhm: values[2] });
+        const motor = circuit.components.find((component) => component.id === "motor")!;
+        Object.assign(motor.properties, { resistanceOhm: values[1], reactanceOhm: values[2] });
+        if (motorInputValid) {
+          circuit.components.find((component) => component.id === "supply")!.properties.frequencyHz = motorNumbers[5];
+          Object.assign(motor.properties, { equivalentCircuitEnabled: true, ...equivalentCircuit, slip: motorNumbers[7] });
+        }
         onLoadCircuit(circuit);
-      }} disabled={!valid}>Copy power circuit to new editable sheet</button>
+      }} disabled={!valid}>Copy wired starter and overload to new editable sheet</button>
       <button onClick={() => act(state.breakerClosed ? "open-breaker" : "close-breaker")}>{state.breakerClosed ? "Open Q1" : "Close Q1"}</button>
       <button onClick={() => act("start")}>START Star–Delta</button>
       <button onClick={() => act("stop")}>STOP Star–Delta</button>
@@ -97,8 +102,8 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
       <button onClick={() => act("reset-overload")}>Reset starter overload</button>
     </div>
     <p aria-live="polite">Stage: {state.stage} · Main KM1: {contacts.main ? "ON" : "OFF"} · Star KM2: {contacts.star ? "ON" : "OFF"} · Delta KM3: {contacts.delta ? "ON" : "OFF"}</p>
-    <p>The copied sheet is an independent switching snapshot. Its winding result follows its edited wires and contactor states; control/protection wiring is not included.</p>
-    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Fixed-impedance winding and equivalent-circuit operating-point calculations are shown separately; the equivalent-circuit current is not yet coupled to the copied sheet or overload runtime.</p>
+    <p>The copied sheet contains the wired START/STOP, star-delta contactors and F1 thermal overload. Its controls and runtime are independent of this lab's switching snapshot.</p>
+    <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. When valid equivalent-circuit parameters are entered, they are copied into the motor model and its line current feeds F1; the specified slip remains fixed, so acceleration and flux transients are not modeled.</p>
   </section>;
 }
 
