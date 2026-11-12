@@ -126,12 +126,21 @@ PR #106 merged as `3a3e1ad`; CI run `43280182375` and Pages run `43280299800` su
 
 PR #107 merged as `3715043`; CI run `43281398034` and Pages run `43281618846` succeeded. The deployed bundle includes the green PE lead, terminal marker and label; the symbol PE pin matches the connectable model endpoint.
 
-## Active increment: M06c — Three-pole breaker and thermal-overload symbols
+## Completed increment: M06c — Three-pole breaker and thermal-overload symbols
 
 - [x] Draw dedicated three-pole breaker poles and overload heater paths instead of generic diagonal marks.
 - [x] Align model-backed phase terminals to their matching drawn poles without requiring a placement flag.
 - [x] Reflect the modeled breaker open/closed and overload healthy/tripped state in symbol accessibility and appearance.
-- [ ] Pass focused tests, build, remote CI, merge and deployment verification.
+- [x] Pass focused and full tests, build, remote CI, merge and deployment verification.
+
+PR #108 merged as `be8368e`; both remote verification runs `43285335212` and `43285343988` passed, and Pages deployment `43285458375` succeeded. Production returned HTTP 200 for the app and `/assets/index-CC9f58ll.js`; the served bundle includes breaker open/closed and overload healthy/tripped labels. Local validation passed all 919 tests and the production build. The existing bundle-size warning remains.
+
+## Active increment: M06d — Rendered canvas clearance against the visual target
+
+- [ ] Inspect the rendered power/control schematic at realistic canvas scale against the supplied reference.
+- [ ] Check breaker, contactor, overload, motor pins, labels, wires and nearby controls for visible collisions.
+- [ ] Fix only observed overlaps, then rerun focused tests, full CI and production deployment verification.
+- [ ] Record which views were visually inspected and any remaining unsupported layout cases.
 
 ## Per-increment publication rule
 
