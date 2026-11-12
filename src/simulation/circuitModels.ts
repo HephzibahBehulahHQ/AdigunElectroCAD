@@ -4,6 +4,7 @@ import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModel
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
 import { functionalOutputTerminal } from "../electrical/signalContracts";
+import { inductionMotorOperatingPoint } from "./inductionMotor";
 
 export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; evaluatedProperties: Readonly<Record<string, string | number | boolean>>; }
 
@@ -194,10 +195,35 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const supplyId = sourceIds[0];
     const lineVoltageV = Number(properties.get(supplyId)?.nominalVoltageV ?? 0);
     const impedance = Math.hypot(Number(p.resistanceOhm), Number(p.reactanceOhm));
-    const currentA = connection === "open" ? 0
+    let currentA = connection === "open" ? 0
       : connection === "star" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? lineVoltageV / Math.sqrt(3) / impedance
       : connection === "delta" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? Math.sqrt(3) * lineVoltageV / impedance
       : NaN;
+    if (p.equivalentCircuitEnabled === true && connection !== "open") {
+      const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
+      const supplyFrequencyHz = motorFrequencies[0];
+      try {
+        if (connection !== "star" && connection !== "delta") throw new Error("Motor winding topology is not a valid star or delta connection.");
+        if (supplyFrequencyHz === undefined || !Number.isFinite(supplyFrequencyHz) || supplyFrequencyHz <= 0 || motorFrequencies.some(value => value !== supplyFrequencyHz)) throw new Error("Motor terminals do not share one valid supply frequency.");
+        if (Number(p.frequencyHz) !== supplyFrequencyHz) throw new Error("Motor equivalent-circuit frequency must match the powered supply frequency.");
+        const point = inductionMotorOperatingPoint({
+          statorResistanceOhm: Number(p.statorResistanceOhm), statorReactanceOhm: Number(p.statorReactanceOhm),
+          rotorResistanceOhm: Number(p.rotorResistanceOhm), rotorReactanceOhm: Number(p.rotorReactanceOhm),
+          magnetizingReactanceOhm: Number(p.magnetizingReactanceOhm), frequencyHz: supplyFrequencyHz, polePairs: Number(p.polePairs),
+        }, lineVoltageV, Number(p.slip), connection);
+        currentA = point.lineCurrentA;
+        p.runtimeMotorModelError = "";
+        p.runtimeMotorLineCurrentA = point.lineCurrentA;
+        p.runtimeMotorPhaseCurrentA = point.phaseCurrentA;
+        p.runtimeElectromagneticTorqueNm = point.electromagneticTorqueNm;
+        p.runtimeSynchronousSpeedRpm = point.synchronousSpeedRpm;
+      } catch (cause) {
+        currentA = NaN;
+        p.runtimeMotorModelError = cause instanceof Error ? cause.message : "Invalid motor equivalent-circuit input.";
+        p.runtimeMotorLineCurrentA = NaN;
+        p.runtimeElectromagneticTorqueNm = NaN;
+      }
+    }
     currentLoads.push({ reference: component.reference, currentA, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
       const feed = feeds[index][0], separator = feed.lastIndexOf(":");
       return { terminal: endpointKey(component.id, terminal), source: endpointKey(feed.slice(0, separator), `${feed.slice(separator + 1)}-out`) };
