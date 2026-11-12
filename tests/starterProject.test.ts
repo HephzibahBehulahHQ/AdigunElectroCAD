@@ -11,7 +11,8 @@ describe("multi-sheet starter project", () => {
     expect(next.sheets).toHaveLength(2);
     expect(next.sheets[1]).toMatchObject({ kind: "free-schematic", name: "Free schematic 1" });
     expect(next.sheets[1].document).toMatchObject({ components: [], wires: [] });
-    expect(next.sheets[0].document.components).toHaveLength(8);
+    expect(next.sheets[0].document.components).toHaveLength(11);
+    expect(next.sheets[0].document.components.filter((component) => component.definitionId === "user.indicator-lamp").map((component) => component.reference)).toEqual(["H1", "H2", "H3"]);
   });
   it("updates only the selected sheet document", () => {
     const project = addFreeSchematicSheet(createStarterProject());
@@ -49,3 +50,4 @@ it("can save and reload the maximum sheet count and rejects another addition wit
   expect(() => addFreeSchematicSheet(project)).toThrow("at most");
   expect(JSON.stringify(project)).toBe(before);
 });
+
