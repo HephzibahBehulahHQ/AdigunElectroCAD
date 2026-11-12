@@ -24,7 +24,8 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
   if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
   if (modelId === "catalog-on-delay-timer") {
     if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
-    if (terminalId === "18") return { x: 47, y: 0 };
+    if (terminalId === "16") return { x: 47, y: -12 };
+    if (terminalId === "18") return { x: 47, y: 12 };
     if (terminalId === "15") return { x: 0, y: 27 };
   }
   if (modelId === "catalog-plc-digital-io") {
@@ -62,3 +63,4 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   const bounds = componentFootprint(x, y, rotation);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
+
