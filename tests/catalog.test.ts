@@ -29,7 +29,11 @@ describe("IEC-oriented component catalog", () => {
       expect(definition.referencePrefix).not.toBe("");
       expect(definition.terminals.length).toBeGreaterThan(0);
       expect(new Set(definition.terminals.map((terminal) => terminal.id)).size).toBe(definition.terminals.length);
-      expect(definition.standardsReferences.length).toBeGreaterThan(0);
+      if (definition.simulationSupport === "symbol-only") {
+        expect(definition.standardsReferences).toEqual([]);
+        expect(definition.documentation).toContain("No voltage");
+      } else expect(definition.standardsReferences.length).toBeGreaterThan(0);
     }
   });
 });
+
