@@ -18,6 +18,7 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
   const values = [voltage, resistance, reactance].map(Number);
   const valid = [voltage, resistance, reactance].every((value) => value.trim() !== "") && values.every(Number.isFinite) && values[0] >= 0 && values[1] > 0 && values[2] >= 0;
   const winding = valid ? starDeltaWindingPoint(state, values[0], values[1], values[2]) : null;
+  const contacts = starDeltaContacts(state);
   const motorRaw = Object.values(motorInput);
   const motorNumbers = motorRaw.map(Number);
   const motorInputStarted = motorRaw.some((value) => value.trim() !== "");
@@ -34,7 +35,6 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
   const motorPoint = motorInputValid && motorConnection
     ? inductionMotorOperatingPoint(equivalentCircuit, values[0], motorNumbers[7], motorConnection)
     : null;
-  const contacts = starDeltaContacts(state);
   const act = (action: StarDeltaAction) => setState((previous) => transitionStarDelta(previous, action));
   useEffect(() => {
     if (!running) return;
@@ -66,6 +66,7 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
       </div>
       {motorPoint ? <p role="status" aria-live="polite">{motorConnection!.toUpperCase()} at {(motorPoint.slip * 100).toFixed(2)}% slip · Line current {motorPoint.lineCurrentA.toFixed(2)} A · Phase current {motorPoint.phaseCurrentA.toFixed(2)} A · Electromagnetic torque {motorPoint.electromagneticTorqueNm.toFixed(2)} N·m · Synchronous speed {motorPoint.synchronousSpeedRpm.toFixed(0)} rpm</p>
         : motorInputStarted && !motorInputValid ? <p role="alert">Complete all motor values. Resistances and frequency must be positive; reactances must be non-negative; pole pairs must be a positive integer; slip must be greater than 0 and no more than 1.</p>
+        : state.stage === "transition" ? <p role="status">No winding is energized during the open-transition interval.</p>
         : <p role="status">Enter all motor values, close Q1 and start the sequence to calculate the selected winding stage.</p>}
     </details>
     {winding ? <p>Winding voltage: {winding.windingVoltageV.toFixed(2)} V · Winding current: {winding.windingCurrentA.toFixed(2)} A · Line current: {winding.lineCurrentA.toFixed(2)} A · Real power: {(winding.realPowerW / 1000).toFixed(2)} kW</p> : <p role="alert">Enter finite values: voltage and reactance ≥ 0; winding resistance &gt; 0.</p>}
@@ -100,3 +101,4 @@ export function StarDeltaLab({ onLoadCircuit }: { onLoadCircuit: (document: Circ
     <p>Sequence time: {(state.sequenceMs / 1000).toFixed(1)} s · Overload: {state.overloadTripped ? "TRIPPED" : "healthy"}. Fixed-impedance winding and equivalent-circuit operating-point calculations are shown separately; the equivalent-circuit current is not yet coupled to the copied sheet or overload runtime.</p>
   </section>;
 }
+
