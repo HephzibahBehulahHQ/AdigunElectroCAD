@@ -42,7 +42,7 @@ Local browser verification used the wired PLC sensor/actuator example. With `LDP
 
 ## Graphical contact/coil editor
 
-Select a placed PLC on a free sheet and open Graphical ladder in its properties panel. The editor supports one to four rungs, each with up to four series stages. Each stage can have up to four parallel NO/NC contacts reading I0, I1 or retained Q0. Choose an output, set or reset Q0 coil per rung. Later rungs take priority. The diagram shows the actual branch structure; it does not highlight live power flow.
+Select a placed PLC on a free sheet and open Graphical ladder in its properties panel. The editor supports one to four rungs, each with up to four series stages. Each stage can have up to four parallel NO/NC contacts reading I0, I1 or retained Q0. Choose an output, set or reset Q0 coil per rung. Later rungs take priority. The diagram shows the actual branch structure. When live PLC state is available, green contact paths preview which branches conduct on the next scan using the latest inputs, retained Q0 and edge history. This is a Boolean logic preview, not electrical power flow or a substitute for the next PLC scan.
 
 Add/remove contacts, stages and rungs to edit a draft. Apply ladder program compiles the draft into the same Program executed by the PLC runtime and commits one undoable design edit. Discard ladder draft restores the saved Program. Design edits reset simulation memory. The 32-instruction limit still applies, so large branch combinations can be rejected before Apply. The diagram scrolls within its panel when wider than the available space.
 

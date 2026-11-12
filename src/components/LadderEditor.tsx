@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
-import { compileLadder, defaultLadder, parseLadder, type LadderAddress, type LadderRung } from "../simulation/ladderProgram";
+import { compileLadder, defaultLadder, parseLadder, previewLadder, type LadderAddress, type LadderPreviewInputs, type LadderRung } from "../simulation/ladderProgram";
 
-export function LadderEditor({ program, onApply }: { program: string; onApply: (program: string) => void }) {
+export function LadderEditor({ program, onApply, previewInputs }: { program: string; onApply: (program: string) => void; previewInputs?: LadderPreviewInputs }) {
   const [rungs, setRungs] = useState<LadderRung[] | null>(() => parseLadder(program));
   useEffect(() => { setRungs(parseLadder(program)); }, [program]);
   let compiled = "", error = "";
   if (rungs) { try { compiled = compileLadder(rungs); } catch (failure) { error = (failure as Error).message; } }
+  const preview = rungs && previewInputs && !error ? previewLadder(rungs, previewInputs) : null;
   const edit = (change: (draft: LadderRung[]) => void) => setRungs((current) => { const draft = structuredClone(current ?? defaultLadder()); change(draft); return draft; });
   return <section className="ladder-editor" aria-label="Graphical PLC ladder editor">
     <strong>Graphical ladder · Q0</strong>
     <p>Parallel contacts use OR; series stages use AND. NO closes when true; NC closes when false. Rising/falling contacts pulse for one scan on an I0/I1 transition. Apply commits one program edit. Run executes it.</p>
     {!rungs ? <><p>The current text program is outside this editor's contact/coil subset. It stays unchanged until you explicitly apply a new ladder.</p><button onClick={() => setRungs(defaultLadder())}>Create ladder draft</button></> : <>
-      <div className="ladder-preview"><LadderDiagram rungs={rungs} /></div>
+      <div className="ladder-preview"><LadderDiagram rungs={rungs} contactEnergized={preview?.contactEnergized} /></div>
+      {preview && <p className="muted" aria-live="polite">Next-scan logic preview: green contact paths conduct under the latest PLC inputs. This is a logic preview, not electrical power flow.</p>}
       {rungs.map((rung, rungIndex) => <fieldset key={rungIndex}><legend>Rung {rungIndex + 1}</legend>
         {rung.stages.map((contacts, stageIndex) => <div className="ladder-stage" key={stageIndex}><strong>Series stage {stageIndex + 1}</strong>
           {contacts.map((contact, contactIndex) => <div className="ladder-contact" key={contactIndex}>
@@ -30,7 +32,7 @@ export function LadderEditor({ program, onApply }: { program: string; onApply: (
   </section>;
 }
 
-function LadderDiagram({ rungs }: { rungs: LadderRung[] }) {
+function LadderDiagram({ rungs, contactEnergized }: { rungs: LadderRung[]; contactEnergized?: boolean[][][] }) {
   const width = 150 + Math.max(...rungs.map((rung) => rung.stages.length)) * 110;
   const heights = rungs.map((rung) => 70 + Math.max(...rung.stages.map((contacts) => contacts.length - 1)) * 40);
   const height = heights.reduce((sum, value) => sum + value, 20);
@@ -45,7 +47,7 @@ function LadderDiagram({ rungs }: { rungs: LadderRung[] }) {
           const firstY = y - (contacts.length - 1) * 20, lastY = y + (contacts.length - 1) * 20;
           return <g key={stageIndex}><path d={`M ${left} ${firstY} V ${lastY} M ${right} ${firstY} V ${lastY}`} />{contacts.map((contact, contactIndex) => {
             const cy = firstY + contactIndex * 40, center = left + 55;
-            return <g key={contactIndex}><text x={center} y={cy - 12} textAnchor="middle">{contact.address}</text><path d={`M ${left} ${cy} H ${center - 8} M ${center - 8} ${cy - 7} V ${cy + 7} M ${center + 8} ${cy - 7} V ${cy + 7} M ${center + 8} ${cy} H ${right}${contact.inverted ? ` M ${center - 12} ${cy + 10} L ${center + 12} ${cy - 10}` : ""}`} />{contact.edge && <text x={center} y={cy + 4} textAnchor="middle" aria-label={contact.edge === "positive" ? "Rising edge" : "Falling edge"}>{contact.edge === "positive" ? "↑" : "↓"}</text>}</g>;
+            return <g key={contactIndex} className={contactEnergized?.[index]?.[stageIndex]?.[contactIndex] ? "ladder-powered" : undefined}><text x={center} y={cy - 12} textAnchor="middle">{contact.address}</text><path d={`M ${left} ${cy} H ${center - 8} M ${center - 8} ${cy - 7} V ${cy + 7} M ${center + 8} ${cy - 7} V ${cy + 7} M ${center + 8} ${cy} H ${right}${contact.inverted ? ` M ${center - 12} ${cy + 10} L ${center + 12} ${cy - 10}` : ""}`} />{contact.edge && <text x={center} y={cy + 4} textAnchor="middle" aria-label={contact.edge === "positive" ? "Rising edge" : "Falling edge"}>{contact.edge === "positive" ? "↑" : "↓"}</text>}</g>;
           })}</g>;
         })}<text x={width - 70} y={y - 15} textAnchor="middle">Q0</text><path d={`M ${width - 77} ${y - 10} Q ${width - 90} ${y} ${width - 77} ${y + 10} M ${width - 63} ${y - 10} Q ${width - 50} ${y} ${width - 63} ${y + 10}`} /><text x={width - 70} y={y + 4} textAnchor="middle">{rung.coil === "OUT" ? "" : rung.coil === "SET" ? "S" : "R"}</text></g>;
     })}

@@ -2,6 +2,36 @@ export type LadderAddress = "I0" | "I1" | "Q0";
 export interface LadderContact { address: LadderAddress; inverted: boolean; edge?: "positive" | "negative"; }
 export interface LadderRung { stages: LadderContact[][]; coil: "OUT" | "SET" | "RESET"; }
 export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }];
+export interface LadderPreviewInputs { input0: boolean; input1: boolean; q0: boolean; previousInput0: boolean; previousInput1: boolean; }
+export interface LadderPreview { rungEnergized: boolean[]; contactEnergized: boolean[][][]; output: boolean; }
+
+/** Preview the next scan's rung conditions from the latest PLC I/O and retained state. */
+export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPreviewInputs): LadderPreview {
+  let output = inputs.q0;
+  const rungEnergized: boolean[] = [];
+  const contactEnergized: boolean[][][] = [];
+  for (const rung of rungs) {
+    let precedingStages = true;
+    const poweredStages: boolean[][] = [];
+    for (const contacts of rung.stages) {
+      const conditions = contacts.map((contact) => {
+        const value = contact.address === "I0" ? inputs.input0 : contact.address === "I1" ? inputs.input1 : output;
+        if (contact.edge === "positive") return value && !(contact.address === "I0" ? inputs.previousInput0 : inputs.previousInput1);
+        if (contact.edge === "negative") return !value && (contact.address === "I0" ? inputs.previousInput0 : inputs.previousInput1);
+        return contact.inverted ? !value : value;
+      });
+      poweredStages.push(conditions.map((condition) => precedingStages && condition));
+      precedingStages = precedingStages && conditions.some(Boolean);
+    }
+    rungEnergized.push(precedingStages);
+    contactEnergized.push(poweredStages);
+    if (rung.coil === "OUT") output = precedingStages;
+    else if (rung.coil === "SET" && precedingStages) output = true;
+    else if (rung.coil === "RESET" && precedingStages) output = false;
+  }
+  return { rungEnergized, contactEnergized, output };
+}
+
 
 /** Each stage is an OR of parallel contacts; stages are connected in series. */
 export function compileLadder(rungs: readonly LadderRung[]): string {
