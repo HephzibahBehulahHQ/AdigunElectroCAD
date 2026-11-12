@@ -2,9 +2,19 @@ import { describe, expect, it } from "vitest";
 import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
+import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { moveComponentToGrid } from "../src/cad/documentOps";
 
 describe("component movement", () => {
+  it("keeps the six-terminal motor pin labels clear of adjacent components", () => {
+    const motor = { id: "motor", definitionId: "motor.six-terminal", reference: "M1", x: 180, y: 160, rotation: 0 as const, properties: {} };
+    expect(canPlaceComponent([motor], "new", 180, 280)).toBe(false);
+    expect(canPlaceComponent([motor], "new", 180, 320)).toBe(true);
+    expect(findOpenPlacement([], "free", "motor.six-terminal")).toEqual({ x: 180, y: 160 });
+    const document = createStarDeltaCircuit();
+    expect(moveComponentToGrid(document, "motor", 620, 680).ok).toBe(false);
+  });
+
   it("keeps arrow movement and rotated labels inside the sheet", () => {
     const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 680, rotation: 0 as const, properties: {} };
     expect(canPlaceComponent([component], component.id, 200, 680)).toBe(true);
@@ -88,3 +98,4 @@ describe("component movement", () => {
     expect(removeWire(reconnected, "manual-wire-21").wires.some((wire) => wire.id === "manual-wire-21")).toBe(false);
   });
 });
+

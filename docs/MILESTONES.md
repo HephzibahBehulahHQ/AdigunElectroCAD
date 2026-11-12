@@ -105,10 +105,20 @@ The balanced steady-state motor operating point is exposed in the star-delta lab
 - [x] Preserve explicit equivalent-circuit parameters in the copied motor and use the powered star/delta topology and supply frequency for its operating point.
 - [x] Route balanced line current through all three actual F1 power poles; invalid enabled model data faults and trips instead of falling back to fixed impedance.
 - [x] Verify star current, delta line-current ratio, F1 current tracking, thermal trip, coil drop and displayed torque/current.
-- [ ] Pass remote CI, merge, deploy and verify the operating sequence in production.
+- [x] Pass remote CI, merge, deploy and verify the operating interface in production.
 
-Focused local validation: 41 tests across five files passed; production build passed with the existing chunk-size warning.
+PR #105 merged as `893e114`; CI run `43276387254` passed. The live site exposes the copied wired starter, F1 overload, and traceable motor equivalent-circuit inputs. Focused local validation: 41 tests across five files passed; production build passed with the existing chunk-size warning.
+
+## Active increment: M06a — Six-terminal motor canvas symbol
+
+- [x] Replace the six winding bars with an IEC-style three-phase motor symbol and six named, connectable winding pins.
+- [x] Extend placement and collision bounds for the terminal callouts so adjacent components remain clear.
+- [x] Verify pin coordinates, placement clearance, related circuit behavior, and production build.
+- [ ] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
+
+The symbol identifies winding terminals U1/V1/W1 and U2/V2/W2. It does not introduce motor ratings or imply manufacturer-specific geometry.
 
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
+
