@@ -28,6 +28,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Right-angle rotation for placed components, including rotated terminal anchors and upright reference labels.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.
 - Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
+- User-configurable indicator placeholders on the reference DOL sheet. Their colors, indication labels, terminal display labels and reference tags are editable; branch wiring is user-assigned and the generic symbols do not simulate lamp behavior.
 
 The catalog contains eight supported DOL simulation definitions, 67 executable component definitions and 563 parameterized IEC engineering entries, alongside 500 executable engineering projects. Project checks execute documented component abstractions, not high-fidelity plant simulations. It does not claim manufacturer certification or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 

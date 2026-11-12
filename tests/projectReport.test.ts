@@ -7,9 +7,9 @@ describe("engineering project reports", () => {
   it("derives a BOM, wire list and terminal list from the DOL document", () => {
     const report = createProjectReport(createDolMotorStarter(), catalogById);
 
-    expect(report.bom).toHaveLength(8);
+    expect(report.bom).toHaveLength(9);
     expect(report.wires).toHaveLength(20);
-    expect(report.terminals).toHaveLength(38);
+    expect(report.terminals).toHaveLength(44);
     expect(report.wires[0]).toMatchObject({ netName: "L1", from: "X1.L1", to: "Q1.1/L1" });
   });
 

@@ -7,7 +7,7 @@ export function createWiredHoldingTemplate(): ProjectTemplate {
   document.id = "wired-holding-control";
   document.name = "Wired START/STOP holding starter";
   document.description = "Isolated 230 V ideal control source, actual return and holding wires, manual overload contact and three-phase motor feed. Nominal coil voltage only; no pickup curve or thermal integration.";
-  const positions: Record<string, [number, number]> = { supply: [320, 140], breaker: [320, 260], contactor: [320, 380], overload: [320, 520], motor: [320, 680], control: [100, 140], stop: [600, 180], start: [800, 180] };
+  const positions: Record<string, [number, number]> = { supply: [320, 140], breaker: [320, 260], contactor: [320, 380], overload: [320, 520], motor: [320, 680], control: [100, 140], stop: [600, 180], start: [800, 180], "lamp-h1": [620, 545], "lamp-h2": [760, 545], "lamp-h3": [900, 545] };
   for (const c of document.components) {
     [c.x, c.y] = positions[c.id];
     if (["supply", "breaker", "contactor", "overload", "motor"].includes(c.id)) c.properties.powerLayout = "vertical";
