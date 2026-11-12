@@ -118,11 +118,20 @@ PR #105 merged as `893e114`; CI run `43276387254` passed. The live site exposes 
 
 PR #106 merged as `3a3e1ad`; CI run `43280182375` and Pages run `43280299800` succeeded. Local rendered review confirmed the U1/V1/W1 and U2/V2/W2 pin callouts. The motor's PE endpoint lacked a visible pin and is tracked in M06b below. The symbol adds no motor ratings or manufacturer-specific geometry.
 
-## Active increment: M06b — Visible protective-earth motor terminal
+## Completed increment: M06b — Visible protective-earth motor terminal
 
 - [x] Draw a visible PE pin, protective-earth lead and label on the six-terminal motor symbol.
 - [x] Verify the PE drawing matches the model's connectable PE anchor.
-- [ ] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
+- [x] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
+
+PR #107 merged as `3715043`; CI run `43281398034` and Pages run `43281618846` succeeded. The deployed bundle includes the green PE lead, terminal marker and label; the symbol PE pin matches the connectable model endpoint.
+
+## Active increment: M06c — Three-pole breaker and thermal-overload symbols
+
+- [x] Draw dedicated three-pole breaker poles and overload heater paths instead of generic diagonal marks.
+- [x] Align model-backed phase terminals to their matching drawn poles without requiring a placement flag.
+- [x] Reflect the modeled breaker open/closed and overload healthy/tripped state in symbol accessibility and appearance.
+- [ ] Pass focused tests, build, remote CI, merge and deployment verification.
 
 ## Per-increment publication rule
 

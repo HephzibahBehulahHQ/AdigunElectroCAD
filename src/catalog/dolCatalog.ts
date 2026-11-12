@@ -15,7 +15,7 @@ export const dolCatalog: ElectricalComponentDefinition[] = [
   {
     id: "breaker.three-pole", name: "Three-pole circuit breaker", category: "Circuit Breakers", referencePrefix: "Q", description: "Manually operated three-pole protective switching device.", symbolId: "breaker-3p",
     terminals: terminals(terminal("l1-in", "1/L1", "power"), terminal("l2-in", "3/L2", "power"), terminal("l3-in", "5/L3", "power"), terminal("l1-out", "2/T1", "power"), terminal("l2-out", "4/T2", "power"), terminal("l3-out", "6/T3", "power")),
-    propertiesSchema: { ratedCurrentA: 18, poles: 3 }, simulationModelId: "breaker-3p-v1", simulationSupport: "control-logic", documentation: "Open/close state is modelled; time-current coordination is not.", standardsReferences: ["IEC 60947-2"]
+    propertiesSchema: { ratedCurrentA: 18, poles: 3, closed: false }, simulationModelId: "breaker-3p-v1", simulationSupport: "control-logic", documentation: "Open/close state is modelled; time-current coordination is not.", standardsReferences: ["IEC 60947-2"]
   },
   {
     id: "contactor.three-pole", name: "Three-pole contactor", category: "Contactors & Starters", referencePrefix: "KM", description: "Three main contacts, 230 V control coil and one normally-open holding auxiliary contact.", symbolId: "contactor-3p",
@@ -58,3 +58,4 @@ export const interlockedContactor: ElectricalComponentDefinition = {
 };
 export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, interlockedContactor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
+

@@ -2,14 +2,27 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p"].includes(symbolId) || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p"].includes(symbolId) || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable)-/.test(symbolId);
 }
 
-export function FunctionalSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
+export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
   const cy = y - 13;
   if (!hasDedicatedFunctionalSymbol(symbolId)) return null;
 
   if (symbolId === "control-supply") return <g className={mark} aria-label="Isolated AC control supply"><circle cx={x} cy={cy} r="13" /><path d={`M ${x - 9} ${cy} Q ${x - 4} ${cy - 12} ${x} ${cy} T ${x + 9} ${cy}`} /></g>;
+  if (symbolId === "breaker" || symbolId === "breaker-3p") {
+    const closed = properties.closed === true;
+    return <g className={mark} aria-label={`Three-pole circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+      {[-32, 0, 32].map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset - 7} ${y - 12} H ${x + offset - 2} M ${closed ? `M ${x + offset - 2} ${y - 12} V ${y + 8}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 7} ${y + 1}`} M ${x + offset + 2} ${y + 8} H ${x + offset + 7} V ${y + 27}`} /></g>)}
+    </g>;
+  }
+  if (symbolId === "overload-3p") {
+    const tripped = properties.tripped === true || properties.runtimeThermalTripped === true;
+    return <g className={mark} aria-label={`Three-phase thermal overload relay, ${tripped ? "tripped" : "not tripped"}`} data-state={tripped ? "tripped" : "healthy"}>
+      {[-32, 0, 32].map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset} ${y - 12} L ${x + offset - 5} ${y - 7} L ${x + offset + 5} ${y - 2} L ${x + offset - 5} ${y + 3} L ${x + offset + 5} ${y + 8} L ${x + offset} ${y + 12} V ${y + 27}`} /></g>)}
+      <circle cx={x + 19} cy={y + 18} r="3" fill={tripped ? "#c62828" : "#16824a"} aria-label={tripped ? "Tripped" : "Healthy"} />
+    </g>;
+  }
   if (symbolId === "contactor-3p") return <g className={mark} aria-label="Contactor coil and three main contacts"><rect x={x - 16} y={y - 4} width="32" height="16" />{[-24, 0, 24].map(offset => <path key={offset} d={`M ${x + offset - 5} ${y - 22} L ${x + offset + 5} ${y - 10}`} />)}</g>;
   if (symbolId === "pushbutton-no" || symbolId === "pushbutton-nc") return <g className={mark} aria-label={symbolId === "pushbutton-no" ? "Normally open pushbutton" : "Normally closed pushbutton"}><path d={`M ${x - 28} ${cy} H ${x - 9} M ${x + 9} ${cy} H ${x + 28} M ${x} ${cy - 6} V ${cy - 14} M ${x - 8} ${cy - 14} H ${x + 8}`} /><path d={symbolId === "pushbutton-no" ? `M ${x - 9} ${cy - 6} H ${x + 9}` : `M ${x - 9} ${cy} H ${x + 9} M ${x - 10} ${cy + 8} L ${x + 10} ${cy - 8}`} /></g>;
   if (symbolId === "logic-no" || symbolId === "logic-nc") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 28}`} /><path d={symbolId === "logic-no" ? `M ${x - 6} ${cy + 10} L ${x + 6} ${cy - 10}` : `M ${x - 7} ${cy} H ${x + 7} M ${x - 8} ${cy + 11} L ${x + 8} ${cy - 11}`} /></g>;
@@ -80,3 +93,4 @@ export function FunctionalSymbol({ symbolId, x, y }: { symbolId: string; x: numb
   if (symbolId === "cable-shielded") return <g className={mark}><path d={`M ${x - 28} ${cy - 12} H ${x + 28} M ${x - 28} ${cy + 12} H ${x + 28} M ${x - 28} ${cy} H ${x + 18}`} /><path d={`M ${x + 18} ${cy - 6} L ${x + 27} ${cy} L ${x + 18} ${cy + 6}`} /></g>;
   return <g className={mark}><path d={`M ${x - 28} ${cy - 10} H ${x + 28} M ${x - 20} ${cy} H ${x + 20} M ${x - 28} ${cy + 10} H ${x + 28}`} /></g>;
 }
+
