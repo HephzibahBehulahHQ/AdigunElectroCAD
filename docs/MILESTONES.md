@@ -225,6 +225,14 @@ PR #127 merged as `8bd10b0`. Verify run `43321985037` and Pages deployment `4332
 
 PR #129 merged as `a7f2210`. GitHub Verify runs `43325008843` and `43325040088` and Pages deployment `43325171843` succeeded. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the component color picker, palette/reset control and custom symbol ink rendering.
 
+## Completed increment: M06n — Editable electrical wire colors
+
+- [x] Let users set custom or palette colors for individual electrical wires and reset to the default.
+- [x] Keep conductor appearance separate from net names and terminal endpoints; validate and persist optional colors while accepting older projects.
+- [x] Pass focused local checks (22 tests), build, GitHub Verify, merge, Pages deployment and production bundle inspection.
+
+PR #131 merged as `a77d4d5`. GitHub Verify runs `43327163305` and `43327187398` and Pages deployment `43327301587` succeeded. Production page and bundle returned HTTP 200; the deployed bundle contains the wire color picker, palette and reset controls.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
