@@ -13,7 +13,10 @@ export const createDolMotorStarter = (): CircuitDocument => ({
     { id: "motor", definitionId: "motor.three-phase", reference: "M1", x: 850, y: 530, rotation: 0, properties: {} },
     { id: "control", definitionId: "supply.control", reference: "X2", x: 125, y: 655, rotation: 0, properties: {} },
     { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S0", x: 295, y: 655, rotation: 0, properties: {} },
-    { id: "start", definitionId: "pushbutton.start-no", reference: "S1", x: 490, y: 655, rotation: 0, properties: {} }
+    { id: "start", definitionId: "pushbutton.start-no", reference: "S1", x: 490, y: 655, rotation: 0, properties: {} },
+    { id: "lamp-h1", definitionId: "user.indicator-lamp", reference: "H1", x: 620, y: 545, rotation: 0, properties: { color: "#64748b", indication: "Unassigned", terminalLabel1: "T1", terminalLabel2: "T2" } },
+    { id: "lamp-h2", definitionId: "user.indicator-lamp", reference: "H2", x: 760, y: 545, rotation: 0, properties: { color: "#64748b", indication: "Unassigned", terminalLabel1: "T1", terminalLabel2: "T2" } },
+    { id: "lamp-h3", definitionId: "user.indicator-lamp", reference: "H3", x: 900, y: 545, rotation: 0, properties: { color: "#64748b", indication: "Unassigned", terminalLabel1: "T1", terminalLabel2: "T2" } }
   ],
   wires: [
     wire("w1", "supply", "l1", "breaker", "l1-in", "L1"), wire("w2", "supply", "l2", "breaker", "l2-in", "L2"), wire("w3", "supply", "l3", "breaker", "l3-in", "L3"),
@@ -27,3 +30,4 @@ export const createDolMotorStarter = (): CircuitDocument => ({
 function wire(id: string, fromComponentId: string, fromTerminalId: string, toComponentId: string, toTerminalId: string, netName: string) {
   return { id, from: { componentId: fromComponentId, terminalId: fromTerminalId }, to: { componentId: toComponentId, terminalId: toTerminalId }, points: [], netName };
 }
+
