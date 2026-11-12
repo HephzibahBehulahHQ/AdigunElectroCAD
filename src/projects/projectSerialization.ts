@@ -110,7 +110,9 @@ function parseWire(value: unknown, sheetIndex: number, wireIndex: number): Wire 
     const value = object(point, "Wire routing point is invalid.");
     return { x: finiteNumber(value.x, "wire point x"), y: finiteNumber(value.y, "wire point y") };
   });
-  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80) };
+  const draftingColor = wire.draftingColor === undefined ? undefined : textValue(wire.draftingColor, "wire drafting color", 7);
+  if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Wire drafting color must be a six-digit hex color.");
+  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), draftingColor };
 }
 
 function endpoint(value: unknown, label: string): TerminalEndpoint {

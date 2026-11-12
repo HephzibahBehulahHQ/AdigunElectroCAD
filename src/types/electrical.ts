@@ -48,6 +48,8 @@ export interface Wire {
   to: TerminalEndpoint;
   points: Array<{ x: number; y: number }>;
   netName?: string;
+  /** User-selected conductor stroke color; presentation only. */
+  draftingColor?: string;
 }
 
 export interface SchematicAnnotation {
