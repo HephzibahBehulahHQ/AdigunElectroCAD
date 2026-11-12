@@ -84,6 +84,17 @@ The winding model uses balanced fixed impedance and actual topology. It does not
 
 PR #100 merged as `27ece71`; CI run `43268432156` and Pages run `43268563768` passed. PR #101 merged as `9efbabb`; CI run `43269642739` and Pages run `43269766766` passed. Production verification shows the 508-entry library, wired star-delta record, automatic delta-current thermal trip/cool-reset sequence and passed topology/model checks. The project card was selected for verification; no sheet was loaded or saved.
 
+## Active increment: M04d — Parameterized induction-motor operating point
+
+- [x] Add a balanced per-phase T-equivalent-circuit calculation using explicit stator/rotor resistances and reactances, magnetizing reactance, frequency, pole pairs, supply voltage, winding connection and positive slip.
+- [x] Derive phase/line current, rotor current, synchronous speed and electromagnetic torque without introducing assumed motor constants.
+- [x] Verify star/delta voltage/current relations, voltage-square torque scaling and invalid parameter rejection (three focused tests).
+- [x] Keep unsupported limits explicit: this operating point does not yet simulate flux transients, mechanical acceleration/load dynamics, saturation, harmonics, unbalance or protective-device curves.
+- [x] Run focused tests and production build; publish branch for review.
+- [ ] Merge only after CI succeeds; deploy through configured Pages workflow and verify production.
+
+Model structure follows the balanced induction-motor T-equivalent circuit and Thevenin method described in [IET Electric Power Applications](https://ietresearch.onlinelibrary.wiley.com/doi/10.1049/iet-epa.2019.0822). The explicit circuit inputs are required motor data; the unit-test values are synthetic and are not presented as a real motor.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
