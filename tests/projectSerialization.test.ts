@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
+function freeSheetWithComponent() {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const seed = createStarterProject().sheets[0].document.components[0];
+  project.sheets[1].document.components.push({ ...seed, id: "test-component", x: 300, y: 300, properties: { ...seed.properties } });
+  return project;
+}
+
 describe("project JSON import validation", () => {
   it("rejects duplicate sheet ids that would make edits target multiple sheets", () => {
     const input = addFreeSchematicSheet(createStarterProject());
@@ -29,6 +36,20 @@ describe("project JSON import validation", () => {
 
     expect(imported.name).toBe(original.name);
     expect(imported.sheets[0].document.wires).toHaveLength(20);
+  });
+
+  it("persists optional component drafting colors and accepts older projects without them", () => {
+    const input = freeSheetWithComponent();
+    input.sheets[1].document.components[0].draftingColor = "#7b3fa1";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].draftingColor).toBe("#7b3fa1");
+    delete input.sheets[1].document.components[0].draftingColor;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+  });
+
+  it("rejects malformed component drafting colors", () => {
+    const input = freeSheetWithComponent();
+    input.sheets[1].document.components[0].draftingColor = "blue";
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Component drafting color");
   });
 
   it("persists editable text annotations and accepts older projects without annotations", () => {

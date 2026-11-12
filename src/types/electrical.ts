@@ -32,6 +32,8 @@ export interface ComponentInstance {
   rotation: 0 | 90 | 180 | 270;
   /** Relative symbol size. Missing values in older projects render at 100%. */
   size?: number;
+  /** User-selected schematic ink color; presentation only, with no electrical meaning. */
+  draftingColor?: string;
   properties: Record<string, string | number | boolean>;
 }
 
