@@ -180,9 +180,32 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / Number(p.ratedFrequencyHz ?? 50) * direction;
     }
   }
+  for (const component of document.components) {
+    if (definitionsByComponent.get(component.id)?.simulationModelId !== "six-terminal-windings") continue;
+    const p = properties.get(component.id)!;
+    const contacts = document.components.filter(item => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap(item => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
+    const connection = windingConnection(document, component.id, contacts);
+    const feeds = ["u1", "v1", "w1"].map(terminal => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
+    const validFeeds = feeds.every(feed => feed.length === 1) && new Set(feeds.flat()).size === 3;
+    if (!validFeeds) continue;
+    const sourceIds = feeds.flat().map(feed => feed.slice(0, feed.lastIndexOf(":")));
+    const sameSource = new Set(sourceIds).size === 1;
+    if (!sameSource) continue;
+    const supplyId = sourceIds[0];
+    const lineVoltageV = Number(properties.get(supplyId)?.nominalVoltageV ?? 0);
+    const impedance = Math.hypot(Number(p.resistanceOhm), Number(p.reactanceOhm));
+    const currentA = connection === "open" ? 0
+      : connection === "star" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? lineVoltageV / Math.sqrt(3) / impedance
+      : connection === "delta" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? Math.sqrt(3) * lineVoltageV / impedance
+      : NaN;
+    currentLoads.push({ reference: component.reference, currentA, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
+      const feed = feeds[index][0], separator = feed.lastIndexOf(":");
+      return { terminal: endpointKey(component.id, terminal), source: endpointKey(feed.slice(0, separator), `${feed.slice(separator + 1)}-out`) };
+    }) });
+  }
   const overloads = document.components.filter(c => definitionsByComponent.get(c.id)?.simulationModelId === "thermal-overload-dol-v1").map(c => ({ id: c.id, poles: [1, 2, 3].map(phase => ({ input: endpointKey(c.id, `l${phase}-in`), output: endpointKey(c.id, `t${phase}`) })) }));
   // Do not silently treat connected but unsupported load families as zero current.
-  const supportedPowerModels = new Set(["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "contactor-dol-v1", "thermal-overload-dol-v1", "catalog-induction-motor", "power-junction"]);
+  const supportedPowerModels = new Set(["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "contactor-dol-v1", "thermal-overload-dol-v1", "catalog-induction-motor", "six-terminal-windings", "power-junction"]);
   for (const c of document.components) {
     const definition = definitionsByComponent.get(c.id);
     if (!definition || supportedPowerModels.has(definition.simulationModelId)) continue;

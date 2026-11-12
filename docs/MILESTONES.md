@@ -72,6 +72,15 @@ PR #98 merged as `8506cb2`; CI run `43265109935` and Pages run `43265267348` suc
 
 The six-terminal balanced winding model still does not feed the retained thermal overload runtime; that is tracked separately under M04.
 
+## Active increment: M04c — Winding-derived overload current
+
+- [x] Derive three phase currents from powered six-terminal winding topology and actual contactor states in star and delta.
+- [x] Route winding current through the wired F1 poles and preserve unsupported/bypassed-path fault reporting.
+- [x] Verify star/delta line current, thermal trip, coil interruption, cool reset and no automatic restart.
+- [ ] Publish, pass CI, merge and verify production behavior.
+
+The winding model uses balanced fixed impedance and actual topology. It does not model motor transients, torque, acceleration, standardized relay curves or mechanical interlocking.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
