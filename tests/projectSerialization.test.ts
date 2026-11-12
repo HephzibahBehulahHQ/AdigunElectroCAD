@@ -54,7 +54,7 @@ describe("project JSON import validation", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     input.sheets[1].document.graphics = [
       { id: "line-1", name: "Control boundary", kind: "line", x1: 100, y1: 120, x2: 200, y2: 180, color: "#1565c0", strokeWidth: 2 },
-      { id: "rect-1", name: "Panel outline", kind: "rectangle", x1: 240, y1: 160, x2: 440, y2: 320, color: "#16814b", strokeWidth: 3 },
+      { id: "rect-1", name: "Panel outline", kind: "rectangle", x1: 240, y1: 160, x2: 440, y2: 320, color: "#16814b", fillColor: "#ffcc80", strokeWidth: 3 },
       { id: "ellipse-1", name: "User mark", kind: "ellipse", x1: 500, y1: 160, x2: 620, y2: 240, color: "#7b3fa1", strokeWidth: 1 },
     ];
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics).toEqual(input.sheets[1].document.graphics);
@@ -69,6 +69,16 @@ describe("project JSON import validation", () => {
     input.sheets[1].document.graphics[0].kind = "rectangle";
     input.sheets[1].document.graphics[0].x2 = 2;
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("span at least 4 units");
+  });
+
+  it("validates optional shape fill colors and keeps lines unfilled", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.graphics = [{ id: "shape-1", name: "Panel", kind: "rectangle", x1: 0, y1: 0, x2: 100, y2: 80, color: "#1565c0", fillColor: "notacol", strokeWidth: 2 }];
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Graphic fill color");
+    input.sheets[1].document.graphics[0].fillColor = "#ffcc80";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics?.[0].fillColor).toBe("#ffcc80");
+    input.sheets[1].document.graphics[0].kind = "line";
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Only rectangles and ellipses");
   });
 
   it("rejects user-drawn graphics on the fixed reference sheet where they would not render", () => {
