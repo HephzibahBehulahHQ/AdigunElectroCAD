@@ -61,3 +61,25 @@ export function createWiredReversingTemplate(): ProjectTemplate {
     { reference: "M1", label: "Nominal motor point", valueIncludes: "STANDBY" },
   ] };
 }
+
+/** Current-driven overload example using the same physical reversing power path. */
+export function createThermalWiredReversingTemplate(): ProjectTemplate {
+  const template = createWiredReversingTemplate();
+  const document = template.document;
+  document.id = "thermal-wired-reversing";
+  document.name = "Thermal overload on reversing starter";
+  document.description = "Current-driven educational thermal overload trips the energized reverse contactor through wired 95–96. The deliberately low 7.05 A setting demonstrates response against the 14.1 A nominal motor load; this is not a certified relay curve.";
+  Object.assign(document.components.find(c => c.id === "overload")!.properties, { thermalEnabled: true, settingA: 7.05, overloadFactor: 1, heatingTimeSeconds: 10, coolingTimeSeconds: 20, resetLevel: .5, reset: false });
+  const step = (name: string, durationSeconds: number, changes: CircuitSequenceStep["changes"], exact: string): CircuitSequenceStep => ({ name, durationSeconds, changes, expectations: [{ reference: "M1", label: "Nominal motor point", exact }] });
+  const operatingSequence = [
+    step("Start reverse", .1, [{ reference: "S2", properties: { pressed: true } }], "-1440 rpm / 7.5 kW"),
+    step("Release reverse START and heat the overload to trip", 3, [{ reference: "S2", properties: { pressed: false } }], "STANDBY"),
+    step("Cool the tripped overload", 20, [{ reference: "F1", properties: { reset: false } }], "STANDBY"),
+    step("Apply a fresh cool reset without restarting", 0, [{ reference: "F1", properties: { reset: true } }], "STANDBY"),
+  ];
+  return { ...template, id: document.id, name: document.name, description: document.description, level: "Advanced", document, operatingSequence, testSequence: operatingSequence.map(s => s.name), expectedOutputs: [
+    { reference: "KM1", label: "Wired control coil", valueIncludes: "0 V · OFF" },
+    { reference: "KM2", label: "Wired control coil", valueIncludes: "0 V · OFF" },
+    { reference: "M1", label: "Nominal motor point", valueIncludes: "STANDBY" },
+  ] };
+}
