@@ -34,6 +34,25 @@ it("keeps retained PLC state visible when a wired fault inhibits the scan", () =
   expect(summary).toContain("I/O state: I0 ON · I1 OFF · Q0 OFF · D0 1234");
 });
 
+it("shows a live PLC watch table for inputs, output, analog input, and all retained registers", () => {
+  const result = evaluateFunctionalModel("catalog-plc-digital-io", {
+    inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true,
+    runtimeD0: 50, runtimeD7: -2, program: "LD AI0; MOV AI0 D0; OUT Q0",
+  });
+  const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
+    componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io", output: result!,
+    evaluatedProperties: { inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true, runtimeD0: 50, runtimeD7: -2, program: "LD AI0; MOV AI0 D0; OUT Q0" },
+  }] }));
+  expect(summary).toContain('aria-label="PLC1 PLC watch table"');
+  expect(summary).toContain("AI0");
+  expect(summary).toContain("13824");
+  expect(summary).toContain("D0");
+  expect(summary).toContain("50");
+  expect(summary).toContain("D7");
+  expect(summary).toContain("-2");
+  expect(summary).toContain("no scan history is recorded");
+});
+
 it("shows faults beyond the first two models and restores success after correction", () => {
   const document: CircuitDocument = { id: "summary", name: "Summary", description: "", revision: 1, wires: [], components: [
     { id: "a", definitionId: "logic.output-coil", reference: "K1", x: 0, y: 0, rotation: 0, properties: { input: false } },
@@ -52,3 +71,4 @@ it("shows faults beyond the first two models and restores success after correcti
   expect(recovered).toContain("K1 OFF");
   expect(recovered).not.toContain('role="alert"');
 });
+
