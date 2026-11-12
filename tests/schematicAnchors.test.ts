@@ -62,6 +62,7 @@ it("renders breaker and overload symbols with their real open/closed and trip st
 
 it("renders three connected zigzag heater poles and shows the tripped interruption", () => {
   const document = createDolMotorStarter();
+  expect(terminalAnchors(document).find((item) => item.endpoint.componentId === "overload" && item.endpoint.terminalId === "t1")).toMatchObject({ x: 165, y: 449 });
   const render = (overloadTripped: boolean) => renderToStaticMarkup(createElement(Schematic, {
     document,
     selectedComponentId: "",
@@ -78,6 +79,8 @@ it("renders three connected zigzag heater poles and shows the tripped interrupti
   expect(healthy.match(/class="overload"/g)).toHaveLength(3);
   expect(healthy).toContain("Three-phase thermal overload heater poles, healthy");
   expect(healthy).toContain("l -6 4 l 12 6");
+  expect(healthy).toContain("contact-blade closed");
   expect(tripped).toContain('data-state="tripped"');
   expect(tripped.match(/class="wire fault"/g)).toHaveLength(3);
+  expect(tripped.match(/contact-blade open-fault/g)).toHaveLength(6);
 });
