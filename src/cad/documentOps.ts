@@ -7,7 +7,7 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(x) || !Number.isFinite(y)) return { document, ok: false, reason: "Invalid component position." };
   const snappedX = Math.round(x / 20) * 20; const snappedY = Math.round(y / 20) * 20;
-  if (!componentFitsSheet(snappedX, snappedY, component.rotation)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
+  if (!componentFitsSheet(snappedX, snappedY, component.rotation, component.definitionId)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
   if (!canPlaceComponent(document.components, componentId, snappedX, snappedY)) return { document, ok: false, reason: "Move blocked: symbol or label clearance overlaps another component." };
   if (component.x === snappedX && component.y === snappedY) return { document, ok: true };
   return { document: moveComponent(document, componentId, snappedX - component.x, snappedY - component.y), ok: true };
@@ -58,21 +58,23 @@ export function removeWire(document: CircuitDocument, wireId: string): CircuitDo
   return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => wire.id !== wireId) };
 }
 
-export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout): { x: number; y: number } | null {
+export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string): { x: number; y: number } | null {
   const columns = layout === "reference" ? [940, 800, 660] : [180, 360, 540, 720, 900];
   const rows = layout === "reference" ? [140, 260, 380, 500] : [160, 280, 400, 520, 640];
   for (const x of columns) {
     for (const y of rows) {
-      if (canPlaceComponent(components, "", x, y)) return { x, y };
+      if (canPlaceComponent(components, "", x, y, definitionId)) return { x, y };
     }
   }
   return null;
 }
 
-export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number): boolean {
-  const rotation = components.find((component) => component.id === componentId)?.rotation ?? 0;
-  if (!componentFitsSheet(x, y, rotation)) return false;
-  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, component.x, component.y, component.rotation));
+export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string): boolean {
+  const moving = components.find((component) => component.id === componentId);
+  const rotation = moving?.rotation ?? 0;
+  const movingDefinitionId = definitionId ?? moving?.definitionId;
+  if (!componentFitsSheet(x, y, rotation, movingDefinitionId)) return false;
+  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, component));
 }
 
 export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
@@ -81,8 +83,9 @@ export function removeComponent(document: CircuitDocument, componentId: string):
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
 
-function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], rightX: number, rightY: number, rightRotation: ComponentInstance["rotation"]): boolean {
-  const left = componentFootprint(leftX, leftY, leftRotation);
-  const right = componentFootprint(rightX, rightY, rightRotation);
+function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], leftDefinitionId: string | undefined, rightComponent: ComponentInstance): boolean {
+  const left = componentFootprint(leftX, leftY, leftRotation, leftDefinitionId);
+  const right = componentFootprint(rightComponent.x, rightComponent.y, rightComponent.rotation, rightComponent.definitionId);
   return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
+

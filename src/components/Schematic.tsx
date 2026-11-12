@@ -48,7 +48,7 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
     definition?.terminals.forEach((terminal, index) => {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
-      const y = sixTerminal ? index < 3 ? -27 : index < 6 ? 27 : 0 : -15 + Math.floor(index / 2) * 12;
+      const y = sixTerminal ? index < 3 ? -42 : index < 6 ? 42 : 0 : -15 + Math.floor(index / 2) * 12;
       const power = component.properties.powerLayout === "vertical" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const offset = rotateOffset(control?.x ?? x, control?.y ?? y, component.rotation);
@@ -78,19 +78,23 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
 });
 
 function SixTerminalWindings({ x, y }: { x: number; y: number }) {
-  return <g aria-label="Six winding terminals U1 V1 W1 U2 V2 W2">
+  return <g aria-label="Three-phase induction motor with six accessible winding terminals U1 V1 W1 U2 V2 W2">
+    <circle cx={x} cy={y} r="27" fill="#f7fbff" stroke="#24456b" strokeWidth="2.5" />
     {[-30, 0, 30].map((offset, index) => <g key={offset}>
-      <path d={`M${x + offset} ${y - 27}V${y - 5}M${x + offset} ${y + 5}V${y + 27}`} stroke="#24456b" strokeWidth="2" />
-      <rect x={x + offset - 5} y={y - 5} width="10" height="10" fill="none" stroke="#24456b" strokeWidth="2" />
-      <text x={x + offset} y={y - 14} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U1", "V1", "W1"][index]}</text>
-      <text x={x + offset} y={y + 20} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U2", "V2", "W2"][index]}</text>
+      <path d={`M${x + offset} ${y - 42}V${y - 27}M${x + offset} ${y + 27}V${y + 42}`} stroke="#24456b" strokeWidth="2" />
+      <circle cx={x + offset} cy={y - 42} r="2.5" fill="#24456b" />
+      <circle cx={x + offset} cy={y + 42} r="2.5" fill="#24456b" />
+      <text x={x + offset} y={y - 46} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U1", "V1", "W1"][index]}</text>
+      <text x={x + offset} y={y + 56} textAnchor="middle" fontSize="9" fontWeight="700" fill="#102a43" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3">{["U2", "V2", "W2"][index]}</text>
     </g>)}
+    <text x={x} y={y - 1} textAnchor="middle" fontSize="17" fontWeight="800" fill="#102a43">M</text>
+    <text x={x} y={y + 13} textAnchor="middle" fontSize="10" fontWeight="700" fill="#102a43">3~</text>
   </g>;
 }
 
 function PlacedSymbol({ component, selectedComponentId, onSelect, onMove, wireMode }: { component: CircuitDocument["components"][number]; selectedComponentId: string; onSelect: (componentId: string) => void; onMove?: Props["onMove"]; wireMode?: boolean }) {
   const definition = catalogById.get(component.definitionId);
-  const labels = componentLabelOffsets(component.rotation);
+  const labels = componentLabelOffsets(component.rotation, component.definitionId);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const [delta, setDelta] = useState({ x: 0, y: 0 });
   const point = (event: PointerEvent<SVGGElement>) => {
@@ -227,3 +231,4 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
     </svg>
   </div>;
 }
+

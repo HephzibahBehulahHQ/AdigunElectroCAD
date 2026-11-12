@@ -531,7 +531,7 @@ export function App() {
 
   const addSelectedComponent = () => {
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free");
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id);
     if (!placement) {
       setNotice("This sheet's placement grid is full. Add another free sheet to keep symbols clear and non-overlapping.");
       return;
