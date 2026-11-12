@@ -30,6 +30,8 @@ export interface ComponentInstance {
   x: number;
   y: number;
   rotation: 0 | 90 | 180 | 270;
+  /** Relative symbol size. Missing values in older projects render at 100%. */
+  size?: number;
   properties: Record<string, string | number | boolean>;
 }
 

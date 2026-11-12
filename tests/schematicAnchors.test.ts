@@ -44,6 +44,15 @@ it("aligns breaker and overload phase anchors with the dedicated three-pole symb
   expect(relative(overload.id, "t3")).toEqual([32, 27]);
 });
 
+it("keeps scaled symbol terminals connected to the scaled canvas instance", () => {
+  const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
+    { id: "motor", definitionId: "motor.six-terminal", reference: "M1", x: 300, y: 300, rotation: 0 as const, size: 1.5, properties: {} },
+  ] };
+  const anchors = terminalAnchors(document);
+  expect(anchors.find((item) => item.endpoint.terminalId === "u1")).toMatchObject({ x: 255, y: 237 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "v1")).toMatchObject({ x: 300, y: 237 });
+});
+
 it("renders breaker and overload symbols with their real open/closed and trip states", () => {
   for (const symbolId of ["breaker", "breaker-3p", "overload-3p"]) expect(hasDedicatedFunctionalSymbol(symbolId)).toBe(true);
   const breakerOpen = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "breaker-3p", x: 100, y: 100, properties: { closed: false } }));

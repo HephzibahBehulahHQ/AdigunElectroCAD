@@ -53,16 +53,16 @@ export function componentLabelOffsets(rotation: ComponentInstance["rotation"], d
 }
 
 /** Include upright labels as well as the rotated symbol in placement clearance. */
-export function componentFootprint(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string) {
+export function componentFootprint(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string, size = 1) {
   const sideways = rotation === 90 || rotation === 270;
-  const halfWidth = Math.max(sideways ? 35 : 55, 55) + 6;
-  const terminalExtension = definitionId === "motor.six-terminal" ? 16 : 0;
-  return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 55 : 35) - 6 - terminalExtension, bottom: y + componentLabelOffsets(rotation, definitionId).kind + 8 };
+  const halfWidth = (Math.max(sideways ? 35 : 55, 55) + 6) * size;
+  const terminalExtension = (definitionId === "motor.six-terminal" ? 16 : 0) * size;
+  return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 55 : 35) * size - 6 - terminalExtension, bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
 }
 
-export function componentFitsSheet(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string): boolean {
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
-  const bounds = componentFootprint(x, y, rotation, definitionId);
+export function componentFitsSheet(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string, size = 1): boolean {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(size) || size < .5 || size > 2) return false;
+  const bounds = componentFootprint(x, y, rotation, definitionId, size);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
 

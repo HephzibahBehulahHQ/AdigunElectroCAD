@@ -57,9 +57,11 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   if (!catalogById.has(definitionId)) throw new Error(`Component definition ${definitionId} is not in the installed catalog.`);
   const rotation = component.rotation;
   if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) throw new Error("Component rotation is invalid.");
+  const size = component.size === undefined ? undefined : finiteNumber(component.size, "component size");
+  if (size !== undefined && (size < .5 || size > 2)) throw new Error("Component size must be between 0.5 and 2.");
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
-    x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270,
+    x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size,
     properties: properties(component.properties),
   };
 }

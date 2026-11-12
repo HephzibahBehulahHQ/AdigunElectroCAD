@@ -1,11 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { moveComponentToGrid } from "../src/cad/documentOps";
+import { parseProjectJson } from "../src/projects/projectSerialization";
+import { createStarterProject } from "../src/projects/starterProject";
 
 describe("component movement", () => {
+  it("resizes placed instances only when terminal and label clearance remains valid", () => {
+    const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
+      { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 180, y: 200, rotation: 0 as const, properties: {} },
+      { id: "two", definitionId: "motor.three-phase", reference: "M2", x: 360, y: 200, rotation: 0 as const, properties: {} },
+    ] };
+    const resized = resizeComponent(document, "one", 1.5);
+    expect(resized.ok).toBe(true);
+    expect(resized.document.components[0].size).toBe(1.5);
+    expect(resized.document.revision).toBe(1);
+    expect(resizeComponent(document, "one", 2.1).ok).toBe(false);
+    expect(resizeComponent(document, "one", 2).ok).toBe(false);
+  });
+
+  it("persists valid instance sizes while preserving compatibility with older project files", () => {
+    const project = createStarterProject();
+    project.sheets[0].document.components[0].size = 1.4;
+    const parsed = parseProjectJson(JSON.stringify(project));
+    expect(parsed.sheets[0].document.components[0].size).toBe(1.4);
+    const legacy = JSON.parse(JSON.stringify(project));
+    delete legacy.sheets[0].document.components[0].size;
+    expect(parseProjectJson(JSON.stringify(legacy)).sheets[0].document.components[0].size).toBeUndefined();
+    legacy.sheets[0].document.components[0].size = 2.5;
+    expect(() => parseProjectJson(JSON.stringify(legacy))).toThrow("Component size must be between 0.5 and 2.");
+  });
+
   it("keeps the six-terminal motor pin labels clear of adjacent components", () => {
     const motor = { id: "motor", definitionId: "motor.six-terminal", reference: "M1", x: 180, y: 160, rotation: 0 as const, properties: {} };
     expect(canPlaceComponent([motor], "new", 180, 280)).toBe(false);
