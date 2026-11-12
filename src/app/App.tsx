@@ -834,7 +834,7 @@ export function App() {
 
       <section className="workspace">
         <aside className="panel component-panel">
-          <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} catalog · {dolCatalog.length} DOL</span></div>
+          <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span></div>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
           <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={setSelectedDefinitionId} />
           <section className="component-card">
