@@ -1,10 +1,12 @@
 import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { terminalAnchors } from "../src/components/Schematic";
+import { Schematic, terminalAnchors } from "../src/components/Schematic";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { createReversingCircuit } from "../src/projects/reversingCircuit";
+import { initialDolState } from "../src/simulation/dolSimulator";
+import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));
@@ -57,3 +59,25 @@ it("renders breaker and overload symbols with their real open/closed and trip st
 });
 
 
+
+it("renders three connected zigzag heater poles and shows the tripped interruption", () => {
+  const document = createDolMotorStarter();
+  const render = (overloadTripped: boolean) => renderToStaticMarkup(createElement(Schematic, {
+    document,
+    selectedComponentId: "",
+    selectedWireId: "",
+    simulation: { ...initialDolState(), overloadTripped },
+    wireMode: false,
+    wireStart: null,
+    onSelect: () => undefined,
+    onWireSelect: () => undefined,
+    onTerminalSelect: () => undefined,
+  }));
+  const healthy = render(false);
+  const tripped = render(true);
+  expect(healthy.match(/class="overload"/g)).toHaveLength(3);
+  expect(healthy).toContain("Three-phase thermal overload heater poles, healthy");
+  expect(healthy).toContain("l -6 4 l 12 6");
+  expect(tripped).toContain('data-state="tripped"');
+  expect(tripped.match(/class="wire fault"/g)).toHaveLength(3);
+});

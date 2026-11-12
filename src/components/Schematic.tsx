@@ -210,7 +210,9 @@ export function Schematic({ document, selectedComponentId, selectedWireId, simul
 
       <g {...componentBox("overload", selectedComponentId, onSelect, 120, 365, 280, 104)}>
         <g className="device"><text x="475" y="405" className="reference-label">{references.get("overload") ?? "F1"}</text><text x="475" y="426" className="device-label">thermal overload</text>
-          {[165, 255, 345].map((x) => <g key={x}><rect x={x - 15} y="372" width="30" height="29" className={simulation.overloadTripped ? "overload tripped" : "overload"} /><path d={`M ${x} 401 V 516`} className={lineClass(energized)} /></g>)}
+          <g aria-label={`Three-phase thermal overload heater poles, ${simulation.overloadTripped ? "tripped" : "healthy"}`} data-state={simulation.overloadTripped ? "tripped" : "healthy"}>
+            {[165, 255, 345].map((x) => <g key={x}><path d={`M ${x} 370 V 373 l -6 4 l 12 6 l -12 6 l 12 6 l -6 3 V 401`} className={simulation.overloadTripped ? "overload tripped" : "overload"} /><path d={`M ${x} 401 V 516`} className={simulation.overloadTripped ? "wire fault" : lineClass(energized)} /></g>)}
+          </g>
         </g>
       </g>
 
