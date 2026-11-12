@@ -162,12 +162,14 @@ PR #112 merged as `28b1860`. CI runs `43290846303` and `43290838032` passed, and
 
 PR #114 merged as `2257f25`. CI runs `43291819172` and `43291810566` passed, and Pages deployment `43292007489` succeeded. The deployed DOL canvas shows F1 inputs 1/3/5 and outputs 2/4/6 alongside their poles at both zoom levels, with no visible overlap.
 
-## Active increment: M06g — Source-backed DOL control-circuit details
+## Active increment: M06g — DOL control terminal identities
 
-- [ ] Trace the supplied reference’s H1/H2/H3 indicator branches and control terminals into the project model and available source documentation.
-- [ ] Implement indicator symbols only with explicit terminal identities, connected branches and state behavior supported by the design; record any unverified wiring.
-- [ ] Review the control circuit at normal and fit zoom for label, wire and symbol clearance.
+- [x] Inspect the current reference DOL model and available repository documentation for H1/H2/H3 functions and branches. No lamp definition or authoritative branch mapping is present; ask the client to confirm functions/wiring before implementation.
+- [ ] Render the existing STOP terminals 21/22 and START terminals 13/14 beside their connected reference anchors.
+- [ ] Test terminal-to-anchor alignment and inspect normal/fit views for label, conductor and symbol clearance.
 - [ ] Pass focused tests, CI, merge, deployment and production inspection.
+
+H1/H2/H3 are visible in the supplied screenshot, but that image does not unambiguously establish each lamp's indication or branch wiring. No lamp behavior is inferred.
 
 ## Per-increment publication rule
 
