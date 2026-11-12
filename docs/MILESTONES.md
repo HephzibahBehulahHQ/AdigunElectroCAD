@@ -47,9 +47,10 @@ Acceptance: PR #77, synchronized branch `77fae21`, merge `a1210ea`, successful P
 - [x] Specify a documented educational thermal model and wire current-driven trip into the existing power/control circuit.
 - [x] Verify cold/hot trip, cooling/reset, time-step consistency, current interruption and saved-design immutability.
 - [x] Add observable runtime state and meaningful local browser acceptance.
-- [ ] Publish/synchronize, pass CI, deploy and verify the same behavior live.
+- [x] Publish/synchronize, pass CI, and deploy.
+- [ ] Verify the same behavior on production.
 
-Local event-coupled thermal integration, nominal feeder-current tracing and browser acceptance are complete. Final publication and live acceptance remain open in draft PR #79. Approximately 80% of M04a is complete; 0.5–1 hour remaining is provisional. See THERMAL-OVERLOAD.md for supported current paths and limits.
+PR #79 merged as `d8d28e6`, and Pages run `41614492416` succeeded. Production interactive acceptance remains pending. See THERMAL-OVERLOAD.md for supported current paths and limits.
 
 ## Per-increment publication rule
 

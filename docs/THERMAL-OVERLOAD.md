@@ -1,6 +1,6 @@
-# Current-driven thermal overload — implementation in progress
+# Current-driven thermal overload — deployment verified
 
-The thermal primitive, nominal feeder-current tracing, wired trip events and live readings are integrated locally. Production acceptance is pending PR #79. M04a remains open until deployment and live verification pass.
+PR #79 is merged as `d8d28e6`; Pages deployment run `41614492416` succeeded. The thermal primitive, nominal feeder-current tracing, wired trip events and live readings are deployed. Production interactive verification remains pending; M04a stays open until that passes.
 
 ## Model contract
 
