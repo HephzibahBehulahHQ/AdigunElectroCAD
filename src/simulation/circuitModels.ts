@@ -206,7 +206,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const active = properties.get(component.id) ?? component.properties;
     if (definition.simulationModelId === "power-junction") active.connectedConductors = document.wires.filter((wire) => wire.from.componentId === component.id || wire.to.componentId === component.id).length;
     if (definition.simulationModelId === "six-terminal-windings") {
-      const contacts = document.components.filter((item) => definitionsByComponent.get(item.id)?.simulationModelId === "catalog-motor-starter" && properties.get(item.id)?.energized === true).flatMap((item) => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
+      const contacts = document.components.filter((item) => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap((item) => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
       active.connection = windingConnection(document, component.id, contacts);
       const feeds = ["u1", "v1", "w1"].map((terminal) => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
       const supplied = feeds.every((feed) => feed.length === 1) && new Set(feeds.flat()).size === 3;
@@ -217,3 +217,4 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output, evaluatedProperties: { ...active } }] : [];
   });
 }
+
