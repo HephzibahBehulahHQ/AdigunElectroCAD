@@ -66,7 +66,9 @@ PR #96 merged as `de532b2`; CI run `43259145997` passed, and Pages run `43259252
 - [x] Use actual KM1/KM2/KM3 power poles and NO holding/NC interlock contacts in an editable six-terminal circuit.
 - [x] Add hardwired STOP, START, manual overload interruption, A2 returns, a 5 s star timer and a 200 ms open-transition timer.
 - [x] Verify topology, star/open/delta outputs, contactor exclusion during transition, overload stop/reset and broken delta-interlock behavior.
-- [ ] Publish, pass CI, merge and verify the deployed project behavior.
+- [x] Publish, pass CI, merge and verify the deployed project behavior.
+
+PR #98 merged as `8506cb2`; CI run `43265109935` and Pages run `43265267348` succeeded. The live library shows 508 entries, the wired star-delta template, and passed topology/recorded-model checks. The check selected the project card only; no sheet was loaded or saved.
 
 The six-terminal balanced winding model still does not feed the retained thermal overload runtime; that is tracked separately under M04.
 
