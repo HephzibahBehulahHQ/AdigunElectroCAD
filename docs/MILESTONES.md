@@ -233,6 +233,16 @@ PR #129 merged as `a7f2210`. GitHub Verify runs `43325008843` and `43325040088` 
 
 PR #131 merged as `a77d4d5`. GitHub Verify runs `43327163305` and `43327187398` and Pages deployment `43327301587` succeeded. Production page and bundle returned HTTP 200; the deployed bundle contains the wire color picker, palette and reset controls.
 
+## Completed increment: M06o — Editable polyline and polygon drafting
+
+- [x] Add point-by-point polyline and polygon tools with double-click or Enter to finish and Escape to cancel.
+- [x] Let users move whole paths, edit individual vertices, set stroke color and fill polygons; keep drawing geometry separate from electrical connectivity.
+- [x] Persist bounded vertices, validate path length and polygon area, and accept older projects without path data.
+- [x] Pass focused local checks (25 tests), build, GitHub Verify and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #133 merged as `633c7f9`. Verify runs `43329733302` and `43329763671` and Pages deployment `43329864660` succeeded. A live custom-domain request could not resolve its hostname in this environment; production bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
