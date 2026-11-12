@@ -135,12 +135,14 @@ PR #107 merged as `3715043`; CI run `43281398034` and Pages run `43281618846` su
 
 PR #108 merged as `be8368e`; both remote verification runs `43285335212` and `43285343988` passed, and Pages deployment `43285458375` succeeded. Production returned HTTP 200 for the app and `/assets/index-CC9f58ll.js`; the served bundle includes breaker open/closed and overload healthy/tripped labels. Local validation passed all 919 tests and the production build. The existing bundle-size warning remains.
 
-## Active increment: M06d — Rendered canvas clearance against the visual target
+## Completed increment: M06d — Rendered canvas clearance and overload state
 
-- [ ] Inspect the rendered power/control schematic at realistic canvas scale against the supplied reference.
-- [ ] Check breaker, contactor, overload, motor pins, labels, wires and nearby controls for visible collisions.
-- [ ] Fix only observed overlaps, then rerun focused tests, full CI and production deployment verification.
-- [ ] Record which views were visually inspected and any remaining unsupported layout cases.
+- [x] Inspect the rendered power/control schematic at 85% canvas zoom and 57% fit against the supplied motor-starter reference.
+- [x] Review breaker, contactor, overload, motor pins, labels, wires and toolbar controls for visible collisions. No overlaps were observed; at 85% the sheet scrolls within the viewport, and Fit shows the complete sheet.
+- [x] Replace the reference sheet’s hollow overload blocks with three connected heater paths and normally-closed trip contacts; show all three outputs open on trip and align output anchors to the drawn contacts.
+- [x] Pass focused render checks, full CI and production build; merge, deploy and inspect the live drawing.
+
+PR #110 merged as `4966118`. CI runs `43289702910` and `43289692073` passed, and Pages deployment `43289863977` passed. Production inspection confirmed the three heater paths and trip contacts at 85% zoom; the full sheet was clear at 57% Fit. Visual review found no menu/icon, component or wire overlaps. This schematic remains an educational abstraction and does not claim manufacturer-specific overload geometry.
 
 ## Per-increment publication rule
 
