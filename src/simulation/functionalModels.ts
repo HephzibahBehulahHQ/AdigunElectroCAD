@@ -149,6 +149,14 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   if (modelId === "six-terminal-windings") {
     const connection = text(properties, "connection", "open");
     const voltage = number(properties, "lineVoltageV");
+    if (bool(properties, "equivalentCircuitEnabled")) {
+      const error = text(properties, "runtimeMotorModelError");
+      if (error) return { label: "Winding operating point", error, value: `ERROR: ${error}` };
+      const windingVoltage = connection === "star" ? voltage / Math.sqrt(3) : connection === "delta" ? voltage : 0;
+      const current = number(properties, "runtimeMotorLineCurrentA");
+      const torque = number(properties, "runtimeElectromagneticTorqueNm");
+      return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line · ${torque.toFixed(2)} N·m` };
+    }
     const resistance = number(properties, "resistanceOhm");
     const reactance = number(properties, "reactanceOhm");
     if (resistance <= 0 || reactance < 0) return { label: "Winding operating point", value: "INVALID IMPEDANCE", error: "Winding resistance must be positive and reactance non-negative." };
