@@ -19,6 +19,10 @@ export function powerTerminalOffset(modelId: string, terminalId: string): { x: n
 
 /** Keep supported command wires outside the symbol body; COM is a distinct lower anchor. */
 export function controlTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+  if (modelId === "user-indicator-symbol") {
+    if (terminalId === "t1") return { x: -32, y: -13 };
+    if (terminalId === "t2") return { x: 32, y: -13 };
+  }
   if (modelId === "control-supply-v1") return { x: 47, y: terminalId === "line" ? -12 : 12 };
   if (modelId === "pushbutton-start-v1" || modelId === "pushbutton-stop-v1") return { x: ["13", "21"].includes(terminalId) ? -47 : 47, y: 0 };
   if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
@@ -65,6 +69,7 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   const bounds = componentFootprint(x, y, rotation, definitionId, size);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
+
 
 
 
