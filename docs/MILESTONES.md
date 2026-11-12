@@ -12,7 +12,7 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 | M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Manual trip, DOL dynamics and starter laboratories exist; thermal overload integration and broader physical coupling remain open. |
 | M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
 | M06 | Component library | Every requested item, including categories 11–18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
-| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 507 entries currently include 499 variants from five scenario families and eight dedicated additions. This gate is not satisfied by those counts. |
+| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 508 entries currently include 499 variants from five scenario families and nine dedicated additions. This gate is not satisfied by those counts. |
 | M08 | Identity and project data | Schema isolation, owner RLS, restrictive anonymous INSERT, confirmed email/password and two-step anonymous upgrade; local/cloud save/load and preferences work with refresh and two permanent accounts. | Partial. Existing sign-in, cloud and RLS evidence in AUTH-RLS-VERIFICATION-2026-11-02.md; email upgrade, two-account browser isolation and cross-device preferences remain unverified. |
 | M09 | Visual, responsive and language acceptance | Match supplied workstation target; legible branding and labels, no collisions at desktop/mobile sizes; usable keyboard flows, light/dark themes and reviewed English/German/Yoruba/Pidgin. | Partial. Checked header/footer layouts and compact account/status controls; full reference match, all views and translations remain open. See VISUAL-TARGET.md. |
 | M10 | Adigun Bot | Floating/resizable/dockable window and persistence; actual canvas-aware assistance, explanations, consented atomic edits, quiet/unread behavior and configured AI capabilities; test all requested addendum flows. | Partial. Rule-based assistance and floating window deployed; generative AI and broader engineering reasoning are not configured or verified. See both retained Bot request TXT files and verification docs. |
@@ -60,6 +60,15 @@ PR #79 merged as `d8d28e6`, and Pages run `41614492416` succeeded. Production in
 - [x] Publish, pass CI, merge and verify the Pages deployment and production project behavior.
 
 PR #96 merged as `de532b2`; CI run `43259145997` passed, and Pages run `43259252819` completed successfully. The live project library shows 507 entries, the new project’s reverse-trip/cool-reset sequence, and a passed topology/recorded-model check. The live check selected the project card only; no sheet was loaded or saved.
+
+## Active increment: M03c — Wired star-delta control
+
+- [x] Use actual KM1/KM2/KM3 power poles and NO holding/NC interlock contacts in an editable six-terminal circuit.
+- [x] Add hardwired STOP, START, manual overload interruption, A2 returns, a 5 s star timer and a 200 ms open-transition timer.
+- [x] Verify topology, star/open/delta outputs, contactor exclusion during transition, overload stop/reset and broken delta-interlock behavior.
+- [ ] Publish, pass CI, merge and verify the deployed project behavior.
+
+The six-terminal balanced winding model still does not feed the retained thermal overload runtime; that is tracked separately under M04.
 
 ## Per-increment publication rule
 

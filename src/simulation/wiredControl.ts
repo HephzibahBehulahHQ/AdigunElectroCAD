@@ -9,10 +9,12 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
     const c = document.components.find(c => c.id === id)!;
     return { ...catalog.get(c.definitionId)?.propertiesSchema, ...c.properties };
   };
-  const coils = document.components.filter(c => model(c.id) === "contactor-dol-v1");
+  const contactors = document.components.filter(c => model(c.id) === "contactor-dol-v1");
+  const timers = document.components.filter(c => model(c.id) === "catalog-on-delay-timer" && typeof props(c.id).coilVoltageV === "number");
+  const coils = [...contactors, ...timers];
   const sources = document.components.filter(c => model(c.id) === "control-supply-v1");
   if (!coils.length) return new Map();
-  let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true]));
+  let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true || (model(c.id) === "catalog-on-delay-timer" && props(c.id).energized === true)]));
   const seen = new Set<string>();
   const key = (id: string, terminal: string) => `${id}.${terminal}`;
   for (let iteration = 0; iteration <= coils.length * 2 + 2; iteration++) {
@@ -39,6 +41,10 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       if (m === "thermal-overload-dol-v1" && p.tripped !== true && !(p.thermalEnabled === true && p.runtimeThermalTripped === true)) link(key(c.id, "aux-95"), key(c.id, "aux-96"));
       if (m === "contactor-dol-v1" && state.get(c.id)) link(key(c.id, "aux-13"), key(c.id, "aux-14"));
       if (m === "contactor-dol-v1" && !state.get(c.id) && isControl(c.id, "aux-21") && isControl(c.id, "aux-22")) link(key(c.id, "aux-21"), key(c.id, "aux-22"));
+      if (m === "catalog-on-delay-timer") {
+        const done = state.get(c.id) === true && Number(p.elapsedSeconds) >= Number(p.delaySeconds);
+        link(key(c.id, "15"), key(c.id, done ? "18" : "16"));
+      }
     }
     const reachable = (start: string) => {
       const visited = new Set<string>([start]);
@@ -59,7 +65,8 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
         if (reachable(line).has(neutral)) value.error = "Control supply line and neutral are shorted.";
         else if ((a.has(line) && b.has(neutral)) || (a.has(neutral) && b.has(line))) {
           const voltage = props(supply.id).voltageV;
-          const rating = props(coil.id).coilVoltageV;
+          const coilProperties = props(coil.id);
+          const rating = coilProperties.coilVoltageV ?? coilProperties.nominalVoltageV;
           if (typeof voltage !== "number" || !Number.isFinite(voltage) || voltage <= 0 || typeof rating !== "number" || !Number.isFinite(rating) || rating <= 0) value.error = "Supply and coil voltage ratings must be finite positive numbers.";
           else {
             value.voltageV = voltage;
@@ -75,3 +82,4 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
   }
   return new Map(coils.map(c => [c.id, { energized: false, voltageV: 0, error: "Control contacts did not settle; all evaluated coils are inhibited." }]));
 }
+
