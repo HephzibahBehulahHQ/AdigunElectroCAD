@@ -182,6 +182,15 @@ Client direction (2026-11-12): keep H1/H2/H3 user-configurable. Do not infer the
 
 PR #119 merged as `a4047e9`. Verification run `43309716359` and Pages deployment `43309815669` succeeded. Production inspection at 52% Fit showed H1/H2/H3 as unconnected indicator symbols; selecting H1 exposed the color picker, editable indication, terminal labels, and reference tag. The project suite passed (925 tests) and `npm run build` succeeded.
 
+## Completed increment: M06i — Editable schematic text annotations
+
+- [x] Place, select, move, edit, recolor, and remove user-owned text annotations on free schematic sheets.
+- [x] Preserve annotations in project JSON with bounded positions, text, colors, annotation counts and unique IDs; keep older projects importable.
+- [x] Pass focused render and serialization checks, the complete local suite (928 tests), build and GitHub Verify workflow.
+- [x] Merge, deploy and inspect the production Text tool and placement mode.
+
+PR #121 merged as `5312782`. GitHub Verify run `43313996809` succeeded. Production inspection at `https://adigunelectrocad.hephzibahbehulah.com/` confirmed the Text tool is available on a free sheet and activates placement mode. The live project was not modified during this inspection; annotation rendering, chosen color and text persistence were verified by focused tests.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
