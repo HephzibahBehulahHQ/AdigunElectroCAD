@@ -32,7 +32,7 @@ import { readLocalProject, writeLocalProject } from "../projects/projectLocalSto
 import { bindProjectExitSave } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
-import type { CircuitDocument, ComponentInstance, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { ReversingLab } from "../components/ReversingLab";
 import { StarDeltaLab } from "../components/StarDeltaLab";
@@ -295,10 +295,10 @@ export function App() {
     setNotice("Text annotation removed. Use Undo to restore it.");
   };
 
-  const addGraphic = (kind: SchematicGraphicKind, x1: number, y1: number, x2: number, y2: number) => {
+  const addGraphic = (kind: SchematicGraphicKind, x1: number, y1: number, x2: number, y2: number, points?: SchematicGraphicPoint[]) => {
     if (isReferenceSheet) return;
     if ((document.graphics?.length ?? 0) >= 2000) { setNotice("This sheet has reached the 2,000 drawing-graphic limit."); return; }
-    const graphic: SchematicGraphic = { id: `graphic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: `${kind[0].toUpperCase()}${kind.slice(1)} ${(document.graphics?.length ?? 0) + 1}`, kind, x1, y1, x2, y2, color: "#1565c0", fillColor: null, strokeWidth: 2 };
+    const graphic: SchematicGraphic = { id: `graphic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: `${kind[0].toUpperCase()}${kind.slice(1)} ${(document.graphics?.length ?? 0) + 1}`, kind, x1, y1, x2, y2, ...(points ? { points } : {}), color: "#1565c0", fillColor: null, strokeWidth: 2 };
     updateDocument({ ...document, graphics: [...(document.graphics ?? []), graphic], revision: document.revision + 1 });
     selectGraphic(graphic.id);
     setNotice(`${graphic.name} drawn. It is drafting geometry and does not create an electrical connection.`);
@@ -319,19 +319,36 @@ export function App() {
     if (!graphic) return;
     const snap = (value: number) => Math.round(value / 20) * 20;
     const dx = snap(deltaX); const dy = snap(deltaY);
-    const boundedX = Math.max(-Math.min(graphic.x1, graphic.x2), Math.min(1100 - Math.max(graphic.x1, graphic.x2), dx));
-    const boundedY = Math.max(-Math.min(graphic.y1, graphic.y2), Math.min(780 - Math.max(graphic.y1, graphic.y2), dy));
+    const xs = graphic.points?.map((point) => point.x) ?? [graphic.x1, graphic.x2];
+    const ys = graphic.points?.map((point) => point.y) ?? [graphic.y1, graphic.y2];
+    const minX = Math.min(...xs); const maxX = Math.max(...xs); const minY = Math.min(...ys); const maxY = Math.max(...ys);
+    const boundedX = Math.max(-minX, Math.min(1100 - maxX, dx));
+    const boundedY = Math.max(-minY, Math.min(780 - maxY, dy));
     if (!boundedX && !boundedY) return;
     selectGraphic(id);
-    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? { ...item, x1: item.x1 + boundedX, x2: item.x2 + boundedX, y1: item.y1 + boundedY, y2: item.y2 + boundedY } : item), revision: document.revision + 1 });
+    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? { ...item, x1: item.x1 + boundedX, x2: item.x2 + boundedX, y1: item.y1 + boundedY, y2: item.y2 + boundedY, ...(item.points ? { points: item.points.map((point) => ({ x: point.x + boundedX, y: point.y + boundedY })) } : {}) } : item), revision: document.revision + 1 });
   };
 
   const resizeGraphic = (id: string, x1: number, y1: number, x2: number, y2: number) => {
     const graphic = document.graphics?.find((item) => item.id === id);
-    if (!graphic) return;
+    if (!graphic || graphic.points) return;
     const next = { ...graphic, x1, y1, x2, y2 };
     const validSpan = next.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) >= 4 : Math.abs(x2 - x1) >= 4 && Math.abs(y2 - y1) >= 4;
     if (!validSpan) { setNotice("Drawing graphics must span at least 4 units when resized."); return; }
+    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? next : item), revision: document.revision + 1 });
+  };
+
+  const moveGraphicVertex = (id: string, index: number, x: number, y: number) => {
+    const graphic = document.graphics?.find((item) => item.id === id);
+    if (!graphic?.points?.[index]) return;
+    const points = graphic.points.map((point, pointIndex) => pointIndex === index ? { x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : point);
+    if (points.some((point, pointIndex) => pointIndex > 0 && point.x === points[pointIndex - 1].x && point.y === points[pointIndex - 1].y)) return;
+    if (graphic.kind === "polygon") {
+      const twiceArea = points.reduce((sum, point, pointIndex) => { const next = points[(pointIndex + 1) % points.length]; return sum + point.x * next.y - next.x * point.y; }, 0);
+      if (Math.abs(twiceArea) < 8) return;
+    }
+    const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
+    const next = { ...graphic, points, x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
     updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? next : item), revision: document.revision + 1 });
   };
 
@@ -347,7 +364,7 @@ export function App() {
     setGraphicMode(next);
     setWireMode(false); setWireStart(null); setAnnotationMode(false);
     setSelectedComponentId(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId("");
-    setNotice(next ? `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
+    setNotice(next ? kind === "polyline" || kind === "polygon" ? `Click to add ${kind} vertices; double-click or press Enter to finish. Escape cancels.` : `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
   };
 
   const runAction = (action: DolAction) => {
@@ -972,6 +989,8 @@ export function App() {
           <button className={graphicMode === "line" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("line")} aria-label="Draw line">／<span>Line</span></button>
           <button className={graphicMode === "rectangle" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("rectangle")} aria-label="Draw rectangle">▭<span>Rectangle</span></button>
           <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
+          <button className={graphicMode === "polyline" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polyline")} aria-label="Draw polyline">⌁<span>Polyline</span></button>
+          <button className={graphicMode === "polygon" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polygon")} aria-label="Draw polygon">⬠<span>Polygon</span></button>
         </>}
         <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
         <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
@@ -1001,7 +1020,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
@@ -1095,7 +1114,7 @@ function GraphicProperties({ graphic, onChange, onRemove }: { graphic: Schematic
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
     <label>Color<input type="color" value={graphic.color} onChange={(event) => onChange({ color: event.target.value })} /></label>
     <div className="annotation-palette" aria-label="Graphic color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ color })} />)}</div>
-    {graphic.kind !== "line" && <>
+    {(graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon") && <>
       <label>Fill color<input type="color" value={graphic.fillColor ?? "#ffffff"} onChange={(event) => onChange({ fillColor: event.target.value })} /></label>
       <div className="annotation-palette" aria-label="Graphic fill palette"><button type="button" aria-label="Set graphic fill to none" title="No fill" onClick={() => onChange({ fillColor: null })}>∅</button>{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic fill ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ fillColor: color })} />)}</div>
     </>}

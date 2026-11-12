@@ -60,7 +60,9 @@ export interface SchematicAnnotation {
   color: string;
 }
 
-export type SchematicGraphicKind = "line" | "rectangle" | "ellipse";
+export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";
+
+export interface SchematicGraphicPoint { x: number; y: number }
 
 /** Visual drafting geometry; it does not represent electrical connectivity. */
 export interface SchematicGraphic {
@@ -71,6 +73,8 @@ export interface SchematicGraphic {
   y1: number;
   x2: number;
   y2: number;
+  /** Vertices for polylines and polygons; older two-point shapes omit this. */
+  points?: SchematicGraphicPoint[];
   color: string;
   fillColor?: string | null;
   strokeWidth: number;

@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalEndpoint, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -60,21 +60,41 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
 
 function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number): SchematicGraphic {
   const graphic = object(value, `Sheet ${sheetIndex + 1} graphic ${graphicIndex + 1} is invalid.`);
-  if (graphic.kind !== "line" && graphic.kind !== "rectangle" && graphic.kind !== "ellipse") throw new Error("Graphic kind must be line, rectangle or ellipse.");
-  const x1 = finiteNumber(graphic.x1, "graphic x1");
-  const y1 = finiteNumber(graphic.y1, "graphic y1");
-  const x2 = finiteNumber(graphic.x2, "graphic x2");
-  const y2 = finiteNumber(graphic.y2, "graphic y2");
-  if ([x1, x2].some((x) => x < 0 || x > 1100) || [y1, y2].some((y) => y < 0 || y > 780)) throw new Error("Graphic coordinates must be inside the schematic sheet.");
-  if (graphic.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
+  if (!["line", "rectangle", "ellipse", "polyline", "polygon"].includes(String(graphic.kind))) throw new Error("Graphic kind must be line, rectangle, ellipse, polyline or polygon.");
+  const kind = graphic.kind as SchematicGraphic["kind"];
+  let points: SchematicGraphicPoint[] | undefined;
+  let x1: number; let y1: number; let x2: number; let y2: number;
+  if (kind === "polyline" || kind === "polygon") {
+    const pointsValue = array(graphic.points, "Graphic vertices are invalid.");
+    if (pointsValue.length > 200) throw new Error("A graphic path may have at most 200 vertices.");
+    points = pointsValue.map((item, index) => {
+      const point = object(item, `Graphic vertex ${index + 1} is invalid.`);
+      const x = finiteNumber(point.x, "graphic vertex x"); const y = finiteNumber(point.y, "graphic vertex y");
+      if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Graphic coordinates must be inside the schematic sheet.");
+      return { x, y };
+    });
+    if (kind === "polygon" && points.length > 1 && points[0].x === points.at(-1)?.x && points[0].y === points.at(-1)?.y) points.pop();
+    const minimum = kind === "polygon" ? 3 : 2;
+    if (points.length < minimum || points.some((point, index) => index > 0 && point.x === points![index - 1].x && point.y === points![index - 1].y)) throw new Error(`${kind} needs at least ${minimum} distinct consecutive vertices.`);
+    const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
+    x1 = Math.min(...xs); y1 = Math.min(...ys); x2 = Math.max(...xs); y2 = Math.max(...ys);
+    const length = points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point.x - points![index].x, point.y - points![index].y), 0);
+    const area = kind === "polygon" ? Math.abs(points.reduce((sum, point, index) => { const next = points![(index + 1) % points!.length]; return sum + point.x * next.y - next.x * point.y; }, 0)) / 2 : 0;
+    if (length < 4 || (kind === "polygon" && area < 4)) throw new Error("Graphic path must span at least 4 units and polygons must enclose an area.");
+  } else {
+    x1 = finiteNumber(graphic.x1, "graphic x1"); y1 = finiteNumber(graphic.y1, "graphic y1");
+    x2 = finiteNumber(graphic.x2, "graphic x2"); y2 = finiteNumber(graphic.y2, "graphic y2");
+    if ([x1, x2].some((x) => x < 0 || x > 1100) || [y1, y2].some((y) => y < 0 || y > 780)) throw new Error("Graphic coordinates must be inside the schematic sheet.");
+    if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
+  }
   const color = textValue(graphic.color, "graphic color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Graphic color must be a six-digit hex color.");
-  if (graphic.kind === "line" && graphic.fillColor != null) throw new Error("Only rectangles and ellipses support a fill color.");
+  if ((kind === "line" || kind === "polyline") && graphic.fillColor != null) throw new Error("Only rectangles, ellipses and polygons support a fill color.");
   const fillColor = graphic.fillColor === undefined ? undefined : graphic.fillColor === null ? null : textValue(graphic.fillColor, "graphic fill color", 7);
   if (typeof fillColor === "string" && !/^#[0-9a-f]{6}$/i.test(fillColor)) throw new Error("Graphic fill color must be a six-digit hex color.");
   const strokeWidth = finiteNumber(graphic.strokeWidth, "graphic stroke width");
   if (strokeWidth < 1 || strokeWidth > 12) throw new Error("Graphic stroke width must be between 1 and 12.");
-  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind: graphic.kind, x1, y1, x2, y2, color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
+  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind, x1, y1, x2, y2, ...(points ? { points } : {}), color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
 }
 
 function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: number): SchematicAnnotation {
