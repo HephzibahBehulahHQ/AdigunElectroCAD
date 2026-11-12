@@ -95,13 +95,19 @@ PR #100 merged as `27ece71`; CI run `43268432156` and Pages run `43268563768` pa
 
 Model structure follows the balanced induction-motor T-equivalent circuit and Thevenin method described in [IET Electric Power Applications](https://ietresearch.onlinelibrary.wiley.com/doi/10.1049/iet-epa.2019.0822). The explicit circuit inputs are required motor data; the unit-test values are synthetic and are not presented as a real motor.
 
-## Active increment: M04e — Star-delta lab motor operating point
+## Completed increment: M04e — Star-delta lab motor operating point
 
-- [x] Expose explicit per-phase stator/rotor resistances and reactances, magnetizing reactance, frequency, pole pairs and slip in the star-delta lab.
-- [x] Use the active star or delta stage to calculate phase current, line current, electromagnetic torque and synchronous speed.
-- [x] Keep inputs empty until supplied by the user and clearly label the output as a balanced steady-state operating point.
-- [x] State that the operating-point current remains separate from the copied sheet and overload runtime.
-- [ ] Verify the UI in production; couple the calculated current to the copied sheet and overload runtime in the next increment.
+The balanced steady-state motor operating point is exposed in the star-delta lab with blank-by-default, explicit equivalent-circuit inputs. The active star/delta stage reports phase current, line current, electromagnetic torque and synchronous speed at the entered positive slip. PR #104 merged as `64ac699`; CI and Pages run `43273844996` succeeded. Production inspection confirmed all eight inputs and the open-transition message. The model was not coupled to the copied sheet or overload in that release; this is completed separately in M04f below.
+
+## Active increment: M04f — Equivalent-circuit current through wired overload
+
+- [x] Copy the lab into a wired starter circuit with actual START/STOP, star/delta contactors and F1 thermal overload.
+- [x] Preserve explicit equivalent-circuit parameters in the copied motor and use the powered star/delta topology and supply frequency for its operating point.
+- [x] Route balanced line current through all three actual F1 power poles; invalid enabled model data faults and trips instead of falling back to fixed impedance.
+- [x] Verify star current, delta line-current ratio, F1 current tracking, thermal trip, coil drop and displayed torque/current.
+- [ ] Pass remote CI, merge, deploy and verify the operating sequence in production.
+
+Focused local validation: 41 tests across five files passed; production build passed with the existing chunk-size warning.
 
 ## Per-increment publication rule
 
