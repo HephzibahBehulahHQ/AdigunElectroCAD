@@ -39,3 +39,17 @@ it("shows endpoint resize handles for a selected line", () => {
   expect(markup).toContain('data-resize-handle="start"');
   expect(markup).toContain('data-resize-handle="end"');
 });
+
+it("renders a user-selected component drafting color without changing its catalog properties", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  const seed = createStarterProject().sheets[0].document.components[0];
+  document.components.push({ ...seed, id: "draft-color-test", x: 300, y: 300, properties: { ...seed.properties } });
+  document.components[0].draftingColor = "#7b3fa1";
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: document.components[0].id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toContain('style="--component-ink:#7b3fa1"');
+  expect(document.components[0].properties).not.toHaveProperty("draftingColor");
+});
