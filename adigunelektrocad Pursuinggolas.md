@@ -3480,6 +3480,1377 @@ A project that merely displays a diagram is not a completed runnable example.
 
 ---
 
+
+# GLOBAL UI/UX STANDARD
+## UNIVERSAL MENU, ICON, DROPDOWN AND FLOATING PANEL BEHAVIOR
+
+**RULE ID:** GLOBAL-UI-UX-001  
+**SCOPE:** ALL CURRENT AND FUTURE PROJECTS  
+**PRIORITY:** Mandatory Global Development Standard  
+**APPLIES TO:** All repositories, websites, web applications, dashboards, desktop applications, engineering software, CAD systems, and future products.
+
+---
+
+## 1. PRIMARY OBJECTIVE
+
+Implement consistent, professional, lightweight, and predictable behavior for all interactive menus, icons, dropdowns, popovers, tooltips, and floating panels.
+
+**GOLDEN RULE:**
+
+Opening or closing a menu, icon panel, or dropdown must NEVER push, resize, reposition, or disturb the underlying application content.
+
+All temporary menus and panels must float above the existing interface.
+
+The underlying page, canvas, workspace, toolbar, sidebar, and other components must remain stationary.
+
+---
+
+## 2. UNIVERSAL MENU AND ICON BEHAVIOR
+
+Apply the following interaction rules to all applicable interactive menus and icons.
+
+### A. OPEN ON CLICK
+
+- Click a menu or icon → its associated content opens.
+- Click the same menu or icon again → its content closes.
+- Click another menu or icon → the currently open panel closes and the newly selected panel opens.
+- Only one transient menu or icon panel may remain open at a time within the same menu system.
+- Opening a panel must not alter the surrounding layout.
+
+### B. AUTOMATIC CLOSE ON MOUSE LEAVE
+
+- When the mouse leaves the menu trigger and its associated panel, close the panel automatically.
+- Moving the mouse from the trigger into its panel must NOT close it.
+- Avoid flickering, accidental closing, or reopening loops.
+- Use a short delay where necessary to allow natural mouse movement.
+- Do not close a panel while the pointer is still interacting with its contents.
+
+### C. CLICK OUTSIDE TO CLOSE
+
+- Clicking outside an open menu or panel closes it.
+- Pressing Escape closes the active panel.
+- Opening another transient panel closes the previous one.
+- Closing a panel must not reset unrelated application state.
+
+### D. TOUCHSCREEN BEHAVIOR
+
+- Tap a menu or icon to open its content.
+- Tap the same trigger to close it.
+- Tap another trigger to switch panels.
+- Tap outside to close.
+- Do not rely on hover or mouseleave for touch devices.
+- Support keyboard and accessibility interactions where applicable.
+
+---
+
+## 3. DROPDOWN DISPLAY STANDARD
+
+All dropdown menus must:
+
+1. Open directly beneath or beside their associated trigger.
+2. Float above the underlying application interface.
+3. Display options in a clean, organized layout.
+4. Support vertical lists and appropriate horizontal arrangements.
+5. Remain fully interactive while open.
+6. Close after selecting a completed command, unless the command requires continued interaction.
+7. Support internal scrolling when content exceeds available space.
+8. Remain within the visible viewport whenever possible.
+9. Automatically reposition near screen boundaries.
+10. Maintain appropriate stacking order above normal application content.
+
+**IMPORTANT:**
+
+Dropdowns must NEVER push the page, canvas, workspace, navigation bars, or other elements downward.
+
+---
+
+## 4. ICON AND TOOLBAR BEHAVIOR
+
+Apply the same principles to interactive icons.
+
+Examples include:
+
+- Settings icons
+- Search icons
+- User profile icons
+- Notification icons
+- Tool selectors
+- Drawing tools
+- Engineering commands
+- Formatting controls
+- Filter icons
+- Context menus
+- Additional options menus
+
+When an icon opens a temporary panel:
+
+- The panel must appear near its associated icon.
+- It must float above the interface.
+- It must not change the position of surrounding elements.
+- It must close using the defined interaction rules.
+- Its existing functionality must remain intact.
+
+Do not apply automatic closing to persistent panels, active editing dialogs, or workflows requiring ongoing user interaction unless explicitly designed for that behavior.
+
+---
+
+## 5. STRICT NO-LAYOUT-SHIFT RULE
+
+**THIS RULE IS MANDATORY.**
+
+Opening or closing any transient menu, dropdown, or icon panel must not cause:
+
+- Page movement
+- Canvas displacement
+- Workspace resizing
+- Toolbar shifting
+- Sidebar movement
+- Unexpected scrolling
+- Content jumping
+- Unnecessary component reflow
+- Loss of user selection
+- Changes to application data
+
+**Expected behavior:**
+
+Click → Panel opens above existing content → User interacts → Panel closes.
+
+**Everything underneath remains stationary.**
+
+---
+
+## 6. TECHNICAL IMPLEMENTATION STANDARD
+
+Use lightweight, maintainable solutions.
+
+Recommended approaches:
+
+- CSS absolute or fixed positioning
+- React portals or equivalent framework mechanisms when necessary
+- Correct stacking contexts and z-index
+- Pointer and click event handling
+- Mouseleave handling for desktop
+- Click-outside detection
+- Escape-key handling
+- Appropriate focus management
+- Viewport-aware positioning
+- Internal overflow scrolling
+
+Avoid unnecessary heavy UI libraries.
+
+Prefer reusable components and shared interaction logic.
+
+Prevent event propagation problems, accidental panel closure, focus loss, and conflicts between nested menus.
+
+For accessibility, support appropriate ARIA attributes, visible focus indicators, keyboard navigation, and focus restoration.
+
+---
+
+## 7. GLOBAL CONSISTENCY REQUIREMENT
+
+All applicable menus and icons across a product must follow the same interaction standard.
+
+Do not implement different opening and closing behaviors without a documented UX reason.
+
+Create or reuse a shared menu/popover component where appropriate.
+
+The same global standard must apply across multiple projects while allowing each product to retain its own branding, visual design, and functionality.
+
+---
+
+## 8. VERIFICATION AND ACCEPTANCE TESTS
+
+Before considering implementation complete, verify:
+
+- Click opens the correct panel.
+- Clicking the same trigger closes it.
+- Clicking another trigger switches panels.
+- Only one transient panel is open at a time.
+- Mouse movement into the panel does not close it.
+- Mouseleave closes the panel correctly.
+- Clicking outside closes it.
+- Escape closes it.
+- Touch interactions work correctly.
+- Keyboard navigation works correctly.
+- Panels remain inside the viewport where possible.
+- Long menus scroll internally.
+- No underlying layout movement occurs.
+- All existing commands remain functional.
+- No application data is modified unexpectedly.
+- No regression is introduced.
+
+Test desktop, mobile, and tablet viewport sizes.
+
+---
+
+## 9. IMPLEMENTATION, MERGE AND DEPLOYMENT
+
+For every project adopting this standard:
+
+1. Inspect the existing menu and icon implementations.
+2. Identify inconsistent behavior.
+3. Implement the shared interaction standard.
+4. Preserve existing application functionality.
+5. Run relevant automated and browser tests.
+6. Fix verified regressions.
+7. Commit the verified changes.
+8. Merge into the approved main branch.
+9. Deploy using the project's existing deployment workflow.
+10. Verify the deployed application.
+
+Do not claim successful deployment without verification.
+
+Do not proceed with unrelated development until the required menu correction and its verification are complete.
+
+---
+
+## 10. PERMANENT REPOSITORY REFERENCE
+
+Store this document in the project's designated goals, governance, or standards repository.
+
+**Recommended filename:**
+
+`GLOBAL_UI_UX_MENU_ICON_STANDARD.md`
+
+**Rule identifier:**
+
+`GLOBAL-UI-UX-001`
+
+Reference this standard from the project's `AGENTS.md` or equivalent development instructions.
+
+For future projects:
+
+- Load this standard during initial project setup.
+- Apply it to all relevant interactive menus and icons.
+- Include its acceptance tests in the normal development workflow.
+- Reuse existing compliant components where practical.
+- Do not unnecessarily rewrite working components.
+
+This standard remains active until the project owner explicitly approves a revision.
+
+---
+
+## 11. FINAL CODEX DIRECTIVE
+
+**CODEX:**
+
+Treat GLOBAL-UI-UX-001 as a reusable, project-independent development standard.
+
+Apply it consistently to all applicable current and future software projects.
+
+Never allow transient menus, dropdowns, or icon panels to disturb the underlying interface.
+
+Preserve existing functionality.
+
+Implement, test, commit, merge, deploy, and verify changes according to each project's authorized workflow.
+
+Save and reference this rule in the designated goals or standards repository for future development.
+
+**GLOBAL STANDARD:**
+
+**CLICK TO OPEN → FLOAT ABOVE CONTENT → INTERACT → AUTO-CLOSE ON MOUSE LEAVE OR OUTSIDE CLICK → ZERO LAYOUT SHIFT.**
+
+
+## 1. LEFT-CLICK FUNCTIONS
+1. Select Object
+2. Select Text
+3. Select Shape
+4. Select Image
+5. Select Layer
+6. Select Tool
+7. Activate Menu
+8. Open Dropdown
+9. Place Object
+10. Insert Text
+11. Draw Shape
+12. Draw Line
+13. Draw Curve
+14. Add Point
+15. Select Node
+16. Move Cursor
+17. Activate Input Field
+18. Select Color
+19. Apply Fill
+20. Apply Outline
+21. Select Page
+22. Select Slide
+23. Select Artboard
+24. Select Component
+25. Activate Control Point
+26. Start Drawing
+27. Start Dragging
+28. Confirm Placement
+29. Select Multiple Objects (Shift + Click)
+30. Toggle Selection (Ctrl + Click)
+
+## 2. RIGHT-CLICK FUNCTIONS
+31. Open Context Menu
+32. Copy
+33. Cut
+34. Paste
+35. Delete
+36. Duplicate
+37. Rename
+38. Group
+39. Ungroup
+40. Lock Object
+41. Unlock Object
+42. Hide Object
+43. Show Object
+44. Bring to Front
+45. Send to Back
+46. Bring Forward
+47. Send Backward
+48. Align Objects
+49. Distribute Objects
+50. Rotate Object
+51. Flip Horizontal
+52. Flip Vertical
+53. Resize Object
+54. Transform Object
+55. Edit Object
+56. Edit Text
+57. Edit Nodes
+58. Convert to Curves
+59. Convert to Shape
+60. Convert to Symbol
+61. Object Properties
+62. Format Object
+63. Change Fill
+64. Change Outline
+65. Change Opacity
+66. Change Layer
+67. Move to Layer
+68. Create New Layer
+69. Merge Layers
+70. Export Selection
+71. Save as Component
+72. Add Hyperlink
+73. Remove Hyperlink
+74. Add Comment
+75. Inspect Object
+76. Reset Transformation
+77. Select Similar Objects
+78. Select All
+79. Invert Selection
+80. Deselect All
+
+## 3. DOUBLE-CLICK FUNCTIONS
+81. Edit Text
+82. Enter Group
+83. Edit Shape
+84. Edit Nodes
+85. Open Object Properties
+86. Open Component
+87. Rename Layer
+88. Rename Page
+89. Rename Slide
+90. Edit Symbol
+91. Enter Isolation Mode
+92. Open Image Editor
+93. Edit Table Cell
+94. Edit Chart
+95. Edit Formula
+
+## 4. MOUSE DRAG FUNCTIONS
+96. Move Object
+97. Resize Object
+98. Rotate Object
+99. Draw Selection Box
+100. Select Multiple Objects
+101. Draw Rectangle
+102. Draw Ellipse
+103. Draw Freehand Path
+104. Draw Bezier Curve
+105. Adjust Control Handles
+106. Move Anchor Points
+107. Adjust Gradient
+108. Adjust Transparency
+109. Crop Image
+110. Pan Canvas
+111. Drag Guide
+112. Drag Ruler
+113. Rearrange Layers
+114. Rearrange Slides
+115. Rearrange Pages
+116. Rearrange Objects
+117. Drag and Drop Files
+118. Drag and Drop Components
+119. Duplicate by Dragging
+120. Adjust Object Spacing
+
+## 5. MOUSE WHEEL FUNCTIONS
+121. Zoom In
+122. Zoom Out
+123. Scroll Up
+124. Scroll Down
+125. Horizontal Scroll
+126. Pan Canvas
+127. Adjust Brush Size
+128. Adjust Tool Value
+129. Navigate Pages
+130. Navigate Slides
+
+## 6. CANVAS RIGHT-CLICK FUNCTIONS
+131. Paste
+132. Paste Special
+133. Select All
+134. Deselect All
+135. Add New Object
+136. Insert Image
+137. Insert Text
+138. Insert Shape
+139. Insert Table
+140. Insert Chart
+141. Add Guide
+142. Remove Guides
+143. Show Grid
+144. Hide Grid
+145. Snap to Grid
+146. Snap to Objects
+147. Snap to Guides
+148. Change Canvas Color
+149. Change Page Size
+150. Change Orientation
+151. Canvas Properties
+152. Page Properties
+153. Zoom to Fit
+154. Zoom to Selection
+155. Reset View
+156. Show Rulers
+157. Hide Rulers
+158. Lock Guides
+159. Unlock Guides
+160. Export Canvas
+
+## 7. TOOLBAR RIGHT-CLICK FUNCTIONS
+161. Customize Toolbar
+162. Show Toolbar
+163. Hide Toolbar
+164. Reset Toolbar
+165. Add Tool
+166. Remove Tool
+167. Rearrange Tools
+168. Pin Tool
+169. Unpin Tool
+170. Tool Settings
+171. Tool Properties
+172. Reset Tool
+173. Assign Shortcut
+174. Change Tool Icon
+175. Expand Tool Group
+176. Collapse Tool Group
+177. Show Tool Labels
+178. Hide Tool Labels
+179. Dock Toolbar
+180. Undock Toolbar
+
+## 8. LAYER PANEL MOUSE FUNCTIONS
+181. Select Layer
+182. Create Layer
+183. Delete Layer
+184. Duplicate Layer
+185. Rename Layer
+186. Lock Layer
+187. Unlock Layer
+188. Hide Layer
+189. Show Layer
+190. Reorder Layer
+191. Merge Layer
+192. Flatten Layer
+193. Group Layers
+194. Ungroup Layers
+195. Change Layer Opacity
+196. Change Layer Color
+197. Move Object Between Layers
+198. Expand Layer
+199. Collapse Layer
+200. Export Layer
+
+## 9. ADVANCED CAD / VECTOR FUNCTIONS
+201. Trim
+202. Extend
+203. Offset
+204. Fillet
+205. Chamfer
+206. Weld
+207. Intersect
+208. Subtract
+209. Combine
+210. Break Apart
+211. Join Paths
+212. Split Path
+213. Close Path
+214. Simplify Path
+215. Smooth Nodes
+216. Convert Node Type
+217. Add Dimension
+218. Edit Dimension
+219. Measure Distance
+220. Measure Angle
+221. Measure Area
+222. Set Origin
+223. Set Pivot Point
+224. Mirror Object
+225. Create Array
+226. Create Pattern
+227. Apply Boolean Operation
+228. Extrude Object
+229. Apply Perspective
+230. Create Clipping Mask
+
+## 10. POWERPOINT / PRESENTATION FUNCTIONS
+231. Add Slide
+232. Duplicate Slide
+233. Delete Slide
+234. Hide Slide
+235. Change Slide Layout
+236. Change Slide Background
+237. Add Animation
+238. Edit Animation
+239. Add Transition
+240. Edit Transition
+241. Insert Media
+242. Insert Chart
+243. Insert SmartArt
+244. Insert Text Box
+245. Add Speaker Notes
+246. Start Presentation
+247. Preview Animation
+248. Arrange Slide Objects
+249. Group Slide Objects
+250. Export Slide
+
+## 11. ADDITIONAL PROFESSIONAL MOUSE FUNCTIONS
+251. Undo
+252. Redo
+253. Repeat Last Action
+254. Open Quick Actions
+255. Open Command Search
+256. Open Object Inspector
+257. Open Properties Panel
+258. Open Color Picker
+259. Open Font Picker
+260. Open Stroke Settings
+261. Open Fill Settings
+262. Open Effects Panel
+263. Open Animation Panel
+264. Open History Panel
+265. Open Asset Library
+266. Open Symbol Library
+267. Open Templates
+268. Open Plugins
+269. Open Help
+270. Open Keyboard Shortcuts
+271. Copy Style
+272. Paste Style
+273. Clear Formatting
+274. Reset Object
+275. Replace Image
+276. Relink Asset
+277. Embed Asset
+278. Detach Component
+279. Create Component
+280. Preview Object
+
+**TOTAL: 280 MOUSE-INTERACTION FUNCTIONS.**
+
+# COMPONENT FUNCTIONS INSIDE AN ENGINEERING DESIGN CANVAS
+**CAD | Electrical Design | Circuit Design | PCB | Mechanical Design | CorelDRAW | PowerPoint | Diagram Editors**
+
+## 1. COMPONENT SELECTION
+1. Select Component
+2. Multi-Select Components
+3. Select All Components
+4. Deselect Components
+5. Select Connected Components
+6. Select Similar Components
+7. Select Components by Type
+8. Select Components by Layer
+9. Select Components by Name
+10. Invert Selection
+
+## 2. COMPONENT MOVEMENT
+11. Move Component
+12. Drag Component
+13. Reposition Component
+14. Move Multiple Components
+15. Move Connected Components
+16. Move Component Horizontally
+17. Move Component Vertically
+18. Move Component Freely
+19. Move Component by Coordinates
+20. Move Component with Arrow Keys
+21. Snap Component to Grid
+22. Snap Component to Another Component
+23. Align Component to Guide
+24. Lock Component Position
+25. Unlock Component Position
+
+## 3. COMPONENT CONNECTION
+26. Connect Two Components
+27. Connect Multiple Components
+28. Connect Component Pins
+29. Connect Input to Output
+30. Connect Output to Input
+31. Connect Power Pins
+32. Connect Ground Pins
+33. Connect Signal Pins
+34. Connect Data Ports
+35. Connect Control Ports
+36. Connect Mechanical Joints
+37. Connect Hydraulic Ports
+38. Connect Pneumatic Ports
+39. Connect Optical Ports
+40. Connect Network Ports
+41. Auto-Connect Components
+42. Disconnect Components
+43. Reconnect Components
+44. Replace Existing Connection
+45. Validate Connection
+46. Highlight Connected Components
+47. Trace Component Connections
+48. Show Connection Path
+49. Hide Connection Path
+50. Detect Unconnected Components
+
+## 4. WIRING FUNCTIONS
+51. Start Wire
+52. Draw Wire
+53. End Wire
+54. Connect Wire to Pin
+55. Connect Wire to Terminal
+56. Connect Wire to Another Wire
+57. Extend Wire
+58. Shorten Wire
+59. Move Wire
+60. Drag Wire
+61. Bend Wire
+62. Split Wire
+63. Join Wires
+64. Merge Wires
+65. Delete Wire
+66. Duplicate Wire
+67. Copy Wire
+68. Paste Wire
+69. Rotate Wire
+70. Change Wire Direction
+71. Change Wire Thickness
+72. Change Wire Color
+73. Change Wire Style
+74. Change Wire Type
+75. Change Wire Material
+76. Change Wire Label
+77. Add Wire Junction
+78. Remove Wire Junction
+79. Add Wire Node
+80. Remove Wire Node
+81. Auto-Route Wire
+82. Manual-Route Wire
+83. Orthogonal Wire Routing
+84. Curved Wire Routing
+85. Straight Wire Routing
+86. Avoid Wire Crossing
+87. Detect Wire Crossing
+88. Detect Wire Short Circuit
+89. Highlight Wire Path
+90. Trace Wire Connection
+
+## 5. COMPONENT ROTATION
+91. Rotate Component
+92. Rotate 90 Degrees
+93. Rotate 180 Degrees
+94. Rotate 270 Degrees
+95. Rotate Clockwise
+96. Rotate Counterclockwise
+97. Free Rotation
+98. Rotate Around Center
+99. Rotate Around Custom Pivot
+100. Reset Rotation
+
+## 6. COMPONENT TRANSFORMATION
+101. Resize Component
+102. Scale Component
+103. Stretch Component
+104. Flip Horizontally
+105. Flip Vertically
+106. Mirror Component
+107. Skew Component
+108. Change Component Orientation
+109. Change Component Dimensions
+110. Reset Transformation
+
+## 7. COMPONENT EDITING
+111. Edit Component
+112. Edit Component Properties
+113. Edit Component Name
+114. Edit Component Label
+115. Edit Component Value
+116. Edit Component Description
+117. Edit Component Parameters
+118. Edit Component Dimensions
+119. Edit Component Material
+120. Edit Component Color
+121. Edit Component Shape
+122. Edit Component Symbol
+123. Edit Component Footprint
+124. Edit Component Pins
+125. Edit Component Terminals
+126. Edit Component Ports
+127. Edit Component Metadata
+128. Edit Component Reference ID
+129. Edit Component Orientation
+130. Reset Component Properties
+
+## 8. COMPONENT DUPLICATION
+131. Copy Component
+132. Cut Component
+133. Paste Component
+134. Duplicate Component
+135. Clone Component
+136. Duplicate Connected Components
+137. Duplicate Component with Wiring
+138. Duplicate Component without Wiring
+139. Create Component Array
+140. Create Repeated Component Pattern
+
+## 9. COMPONENT GROUPING
+141. Group Components
+142. Ungroup Components
+143. Create Component Assembly
+144. Break Component Assembly
+145. Add Component to Group
+146. Remove Component from Group
+147. Move Group
+148. Rotate Group
+149. Resize Group
+150. Lock Group
+151. Unlock Group
+152. Duplicate Group
+153. Connect Component Groups
+154. Save Group as Module
+155. Convert Group to Reusable Component
+
+## 10. COMPONENT ALIGNMENT
+156. Align Left
+157. Align Right
+158. Align Top
+159. Align Bottom
+160. Align Center
+161. Align Horizontally
+162. Align Vertically
+163. Distribute Horizontally
+164. Distribute Vertically
+165. Equalize Spacing
+166. Snap to Grid
+167. Snap to Component
+168. Snap to Connection Point
+169. Auto-Align Components
+170. Auto-Arrange Components
+
+## 11. COMPONENT PIN AND TERMINAL FUNCTIONS
+171. Select Pin
+172. Move Pin
+173. Add Pin
+174. Delete Pin
+175. Rename Pin
+176. Change Pin Number
+177. Change Pin Type
+178. Change Pin Direction
+179. Connect Pin
+180. Disconnect Pin
+181. Highlight Pin
+182. Show Pin Name
+183. Hide Pin Name
+184. Show Pin Number
+185. Hide Pin Number
+186. Swap Pins
+187. Lock Pin
+188. Unlock Pin
+189. Validate Pin Connection
+190. Detect Floating Pins
+
+## 12. COMPONENT LAYER FUNCTIONS
+191. Move Component to Layer
+192. Create Component Layer
+193. Delete Component Layer
+194. Hide Component Layer
+195. Show Component Layer
+196. Lock Component Layer
+197. Unlock Component Layer
+198. Change Component Layer
+199. Bring Component Forward
+200. Send Component Backward
+201. Bring Component to Front
+202. Send Component to Back
+203. Merge Component Layers
+204. Duplicate Component Layer
+205. Isolate Component Layer
+
+## 13. COMPONENT CONSTRAINTS
+206. Lock Component
+207. Unlock Component
+208. Fix Component Position
+209. Apply Distance Constraint
+210. Apply Angle Constraint
+211. Apply Alignment Constraint
+212. Apply Parallel Constraint
+213. Apply Perpendicular Constraint
+214. Apply Coincident Constraint
+215. Apply Tangent Constraint
+216. Apply Symmetry Constraint
+217. Apply Rotation Constraint
+218. Apply Movement Constraint
+219. Remove Constraint
+220. Validate Constraints
+
+## 14. COMPONENT SIMULATION
+221. Simulate Component
+222. Simulate Connected Components
+223. Start Simulation
+224. Stop Simulation
+225. Pause Simulation
+226. Resume Simulation
+227. Reset Simulation
+228. Monitor Component State
+229. Monitor Component Voltage
+230. Monitor Component Current
+231. Monitor Component Power
+232. Monitor Component Temperature
+233. Monitor Component Frequency
+234. Monitor Component Signal
+235. Display Simulation Results
+236. Highlight Active Connections
+237. Detect Simulation Errors
+238. Inspect Component Behavior
+239. Animate Component Operation
+240. Export Simulation Results
+
+## 15. COMPONENT TESTING AND VALIDATION
+241. Test Component
+242. Test Connection
+243. Test Wiring
+244. Test Circuit
+245. Check Connectivity
+246. Check Pin Compatibility
+247. Check Electrical Rules
+248. Check Design Rules
+249. Detect Short Circuits
+250. Detect Open Circuits
+251. Detect Overlapping Components
+252. Detect Invalid Connections
+253. Detect Missing Connections
+254. Detect Duplicate Connections
+255. Detect Component Conflicts
+256. Highlight Errors
+257. Show Error Details
+258. Auto-Fix Supported Errors
+259. Generate Validation Report
+260. Clear Validation Results
+
+## 16. COMPONENT ORGANIZATION
+261. Rename Component
+262. Number Component
+263. Tag Component
+264. Categorize Component
+265. Search Component
+266. Filter Components
+267. Sort Components
+268. Hide Component
+269. Show Component
+270. Isolate Component
+271. Highlight Component
+272. Add Component Notes
+273. Add Component Comments
+274. Add Component Documentation
+275. Assign Component Identifier
+276. Create Component Hierarchy
+277. Add Component to Library
+278. Remove Component from Library
+279. Save Component Template
+280. Load Component Template
+
+## 17. COMPONENT REPLACEMENT
+281. Replace Component
+282. Swap Component
+283. Change Component Type
+284. Change Component Model
+285. Change Component Symbol
+286. Change Component Footprint
+287. Replace Component While Preserving Connections
+288. Replace Component While Preserving Position
+289. Replace Component While Preserving Properties
+290. Restore Previous Component
+
+## 18. ADVANCED WIRING AND ROUTING
+291. Create Wire Bus
+292. Connect Component to Bus
+293. Add Bus Entry
+294. Remove Bus Entry
+295. Split Bus
+296. Merge Buses
+297. Rename Net
+298. Assign Net Label
+299. Assign Net Class
+300. Assign Wire Gauge
+301. Assign Wire Length
+302. Calculate Wire Length
+303. Calculate Wire Resistance
+304. Calculate Voltage Drop
+305. Auto-Optimize Wiring
+306. Route Around Obstacles
+307. Route Through Waypoints
+308. Add Wire Waypoint
+309. Remove Wire Waypoint
+310. Move Wire Waypoint
+311. Create Differential Pair
+312. Route Differential Pair
+313. Create Wire Harness
+314. Bundle Wires
+315. Unbundle Wires
+316. Create Terminal Block
+317. Connect to Terminal Block
+318. Generate Wiring Diagram
+319. Generate Netlist
+320. Export Wiring Data
+
+## 19. COMPONENT INTERACTION WITH THE CANVAS
+321. Drag Component from Sidebar to Canvas
+322. Drop Component onto Canvas
+323. Preview Component Before Placement
+324. Place Component at Cursor
+325. Place Multiple Components
+326. Cancel Component Placement
+327. Undo Component Placement
+328. Redo Component Placement
+329. Show Component Bounding Box
+330. Show Component Selection Handles
+331. Show Component Connection Points
+332. Show Component Alignment Guides
+333. Show Component Dimensions
+334. Show Component Coordinates
+335. Show Component Tooltip
+336. Open Component Context Menu
+337. Open Component Properties Panel
+338. Open Component Quick Actions
+339. Zoom to Component
+340. Center Component in View
+
+## 20. PROFESSIONAL CANVAS INTERACTION FUNCTIONS
+341. Drag Component Without Disconnecting Wires
+342. Drag Component and Automatically Reroute Wires
+343. Move Connected Components Together
+344. Move Component While Preserving Connection Geometry
+345. Rotate Component While Maintaining Connections
+346. Duplicate Component with Existing Connections
+347. Auto-Snap Wire to Nearest Valid Pin
+348. Preview Connection Before Completion
+349. Highlight Valid Connection Targets
+350. Highlight Invalid Connection Targets
+351. Prevent Invalid Pin Connections
+352. Automatically Create Wire Junctions
+353. Automatically Remove Redundant Junctions
+354. Automatically Update Connections After Movement
+355. Automatically Recalculate Wire Paths
+356. Automatically Update Component Coordinates
+357. Automatically Update Component Dimensions
+358. Automatically Update Component Labels
+359. Automatically Update Netlist
+360. Automatically Save Canvas Changes
+
+
+
+# ELECTRICAL ENGINEERING DESIGN LIBRARY — REAL COMPONENTS FOR 50 INDUSTRIAL PROJECTS
+
+**Requirement:** Every component must represent a real, commercially available engineering device with an identifiable manufacturer, model number, technical specifications, terminals, and electrical connections.
+
+**No dummy components. No placeholder symbols. No fictional manufacturer part numbers.**
+
+The following is a proposed component library for designing the 50 projects. It is **not a claim that these components are already installed in an accessible CAD library**.
+
+## 1. INDUSTRIAL POWER AND DISTRIBUTION COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 1 | Miniature circuit breaker (MCB) | Siemens SENTRON 5SY |
+| 2 | Molded-case circuit breaker (MCCB) | Schneider Electric ComPacT NSX |
+| 3 | Air circuit breaker (ACB) | ABB SACE Emax 2 |
+| 4 | Residual-current circuit breaker (RCCB) | ABB F200 |
+| 5 | RCBO | ABB DS201 |
+| 6 | Motor protection circuit breaker | Siemens SIRIUS 3RV2 |
+| 7 | Fuse switch disconnector | Siemens SENTRON 3NP1 |
+| 8 | Industrial fuse | Eaton Bussmann series |
+| 9 | Fuse holder | Phoenix Contact |
+| 10 | Switch disconnector | ABB OT series |
+| 11 | Main isolator | Schneider Electric TeSys Vario |
+| 12 | Automatic transfer switch | Socomec ATyS |
+| 13 | Surge protection device | DEHNguard |
+| 14 | Power distribution block | Phoenix Contact PTFIX |
+| 15 | Busbar system | Rittal RiLine |
+| 16 | Current transformer | Schneider Electric PowerLogic |
+| 17 | Voltage transformer | ABB instrument transformers |
+| 18 | Multifunction power meter | Siemens SENTRON PAC |
+| 19 | Energy meter | Schneider Electric PowerLogic PM5000 |
+| 20 | Power quality analyzer | Janitza UMG 96 |
+
+## 2. MOTOR CONTROL COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 21 | Three-phase contactor | Siemens SIRIUS 3RT2 |
+| 22 | Reversing contactor assembly | Schneider Electric TeSys Deca |
+| 23 | Thermal overload relay | Siemens SIRIUS 3RU2 |
+| 24 | Electronic overload relay | Siemens SIRIUS 3RB3 |
+| 25 | Motor starter | Eaton PKZM0 |
+| 26 | Soft starter | ABB PSTX |
+| 27 | Variable-frequency drive | Siemens SINAMICS G120 |
+| 28 | Compact variable-frequency drive | ABB ACS580 |
+| 29 | Servo drive | Siemens SINAMICS S210 |
+| 30 | Servo motor | Siemens SIMOTICS S-1FK2 |
+| 31 | Three-phase induction motor | Siemens SIMOTICS GP |
+| 32 | Geared motor | SEW-EURODRIVE DRN series |
+| 33 | Motor brake | SEW-EURODRIVE brake systems |
+| 34 | Motor braking resistor | Siemens SINAMICS accessories |
+| 35 | Motor line reactor | Schneider Electric Altivar accessories |
+| 36 | EMC filter | Schaffner FN series |
+| 37 | Motor encoder | SICK DFS60 |
+| 38 | Motor thermistor relay | Siemens SIRIUS 3RN2 |
+| 39 | Motor monitoring relay | Schneider Electric Harmony Control |
+| 40 | Motor control center | Siemens SIVACON S8 |
+
+## 3. PLC AND INDUSTRIAL AUTOMATION COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 41 | Compact PLC | Siemens SIMATIC S7-1200 |
+| 42 | Modular PLC | Siemens SIMATIC S7-1500 |
+| 43 | Safety PLC | Siemens SIMATIC S7-1500F |
+| 44 | PLC CPU | Siemens CPU 1511-1 PN |
+| 45 | Digital input module | Siemens SM 521 |
+| 46 | Digital output module | Siemens SM 522 |
+| 47 | Analog input module | Siemens SM 531 |
+| 48 | Analog output module | Siemens SM 532 |
+| 49 | Remote I/O interface | Siemens ET 200SP |
+| 50 | Remote I/O station | WAGO 750 series |
+| 51 | PLC power supply | Siemens SITOP |
+| 52 | Industrial communication processor | Siemens SIMATIC CP |
+| 53 | PLC memory card | Siemens SIMATIC Memory Card |
+| 54 | Industrial Ethernet switch | Siemens SCALANCE XC |
+| 55 | Industrial router | Siemens SCALANCE M |
+| 56 | HMI touch panel | Siemens SIMATIC HMI Unified |
+| 57 | Industrial panel PC | Siemens SIMATIC IPC |
+| 58 | Industrial edge computer | Siemens Industrial Edge |
+| 59 | PLC interface relay | Phoenix Contact PLC-INTERFACE |
+| 60 | Signal conditioner | Phoenix Contact MINI Analog Pro |
+
+## 4. INDUSTRIAL SENSORS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 61 | Inductive proximity sensor | SICK IME |
+| 62 | Capacitive proximity sensor | ifm KI |
+| 63 | Photoelectric sensor | SICK W4 |
+| 64 | Ultrasonic sensor | Pepperl+Fuchs UC |
+| 65 | Laser distance sensor | SICK DT |
+| 66 | Magnetic cylinder sensor | Festo SMT-8M |
+| 67 | Mechanical limit switch | Schneider Electric XCK |
+| 68 | Rotary encoder | SICK DFS60 |
+| 69 | Linear position sensor | Balluff BTL |
+| 70 | Pressure transmitter | Endress+Hauser Cerabar |
+| 71 | Differential pressure transmitter | Siemens SITRANS P |
+| 72 | Temperature transmitter | Endress+Hauser iTEMP |
+| 73 | RTD temperature sensor | WIKA TR series |
+| 74 | Thermocouple | WIKA TC series |
+| 75 | Flowmeter | Endress+Hauser Promag |
+| 76 | Level transmitter | Endress+Hauser Micropilot |
+| 77 | Level switch | Endress+Hauser Liquiphant |
+| 78 | Conductivity sensor | Endress+Hauser Memosens |
+| 79 | pH sensor | Endress+Hauser Memosens CPS |
+| 80 | Vibration sensor | ifm VSA |
+
+## 5. INDUSTRIAL CONTROL AND SWITCHING
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 81 | Start pushbutton | Schneider Electric Harmony XB5 |
+| 82 | Stop pushbutton | Schneider Electric Harmony XB5 |
+| 83 | Emergency-stop device | Schneider Electric Harmony XB5 |
+| 84 | Selector switch | Schneider Electric Harmony XB5 |
+| 85 | Key-operated switch | Schneider Electric Harmony XB5 |
+| 86 | Pilot light | Schneider Electric Harmony XB5 |
+| 87 | Illuminated pushbutton | Schneider Electric Harmony XB5 |
+| 88 | Control relay | Finder 55 series |
+| 89 | Timer relay | Siemens SIRIUS 3RP |
+| 90 | Monitoring relay | Siemens SIRIUS 3UG |
+| 91 | Safety relay | Pilz PNOZ X |
+| 92 | Safety controller | Pilz PNOZmulti 2 |
+| 93 | Solid-state relay | Carlo Gavazzi RGC |
+| 94 | Interface relay | Phoenix Contact PLC-RSC |
+| 95 | Latching relay | Finder 26 series |
+| 96 | Temperature controller | Omron E5CC |
+| 97 | PID process controller | Eurotherm 3200 |
+| 98 | Signal isolator | Phoenix Contact MINI Analog Pro |
+| 99 | Alarm annunciator | Eaton M22 |
+| 100 | Industrial buzzer | Werma |
+
+## 6. TERMINALS, WIRING AND CONNECTION COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 101 | Feed-through terminal | Phoenix Contact UK 5 N |
+| 102 | Ground terminal | Phoenix Contact USLKG |
+| 103 | Fuse terminal | Phoenix Contact UK 5-HESI |
+| 104 | Disconnect terminal | Phoenix Contact UT series |
+| 105 | Sensor terminal | Phoenix Contact PT series |
+| 106 | Multi-level terminal | Phoenix Contact ST series |
+| 107 | Terminal jumper | Phoenix Contact FBS |
+| 108 | Terminal end plate | Phoenix Contact |
+| 109 | Terminal end clamp | Phoenix Contact |
+| 110 | DIN rail | Phoenix Contact NS 35 |
+| 111 | Wire duct | Panduit |
+| 112 | Cable gland | LAPP SKINTOP |
+| 113 | Cable marker | Phoenix Contact |
+| 114 | Wire marker | Weidmüller |
+| 115 | Ferrule | Weidmüller |
+| 116 | Ring cable lug | Klauke |
+| 117 | Industrial connector | Harting Han |
+| 118 | M12 sensor connector | Phoenix Contact |
+| 119 | Multipole connector | Harting Han |
+| 120 | Industrial Ethernet connector | Siemens IE FC RJ45 |
+
+## 7. INDUSTRIAL POWER SUPPLIES
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 121 | 24 V DC power supply | Siemens SITOP PSU6200 |
+| 122 | Redundant power supply module | Siemens SITOP RED |
+| 123 | DC UPS | Siemens SITOP UPS1600 |
+| 124 | Industrial battery module | Siemens SITOP BAT1600 |
+| 125 | DC/DC converter | Phoenix Contact QUINT |
+| 126 | AC/DC converter | Mean Well SDR |
+| 127 | Control transformer | Schneider Electric Phaseo |
+| 128 | Isolation transformer | BLOCK |
+| 129 | Electronic circuit protector | Phoenix Contact CAPAROC |
+| 130 | Power monitoring module | Siemens SITOP |
+
+## 8. PNEUMATIC AND HYDRAULIC COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 131 | Pneumatic solenoid valve | Festo VUVG |
+| 132 | Pneumatic valve terminal | Festo VTUG |
+| 133 | Pneumatic cylinder | Festo DSBC |
+| 134 | Compact pneumatic cylinder | Festo ADN |
+| 135 | Pneumatic gripper | Festo DHPS |
+| 136 | Air preparation unit | Festo MS series |
+| 137 | Pressure regulator | Festo LR |
+| 138 | Pressure sensor | Festo SPAN |
+| 139 | Flow control valve | Festo GRLA |
+| 140 | Vacuum generator | Festo OVEM |
+| 141 | Hydraulic directional valve | Bosch Rexroth 4WE |
+| 142 | Hydraulic proportional valve | Bosch Rexroth |
+| 143 | Hydraulic pressure sensor | Bosch Rexroth |
+| 144 | Hydraulic power unit | Bosch Rexroth CytroPac |
+| 145 | Hydraulic cylinder | Bosch Rexroth |
+
+## 9. BUILDING, ENERGY AND POWER SYSTEM COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 146 | Solar inverter | SMA Sunny Tripower |
+| 147 | Hybrid inverter | Fronius GEN24 |
+| 148 | PV DC isolator | ABB OTDC |
+| 149 | PV surge protector | DEHNguard |
+| 150 | PV connector | Stäubli MC4 |
+| 151 | Battery inverter | SMA Sunny Island |
+| 152 | Battery energy storage system | Tesla Megapack |
+| 153 | EV charging station | ABB Terra |
+| 154 | EV charging controller | Phoenix Contact CHARX |
+| 155 | Generator controller | ComAp InteliLite |
+| 156 | Automatic transfer switch | Socomec ATyS |
+| 157 | UPS system | Schneider Electric Galaxy |
+| 158 | Power monitoring meter | Schneider Electric PowerLogic |
+| 159 | Building automation controller | Siemens Desigo PXC |
+| 160 | HVAC actuator | Belimo |
+| 161 | HVAC differential pressure sensor | Siemens |
+| 162 | Fire alarm interface module | Siemens Cerberus PRO |
+| 163 | Emergency lighting controller | Eaton |
+| 164 | Refrigeration controller | Danfoss AK-CC |
+| 165 | Energy management gateway | Siemens |
+
+## 10. ROBOTICS AND MACHINE SAFETY COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 166 | Industrial robot | ABB IRB 1200 |
+| 167 | Industrial robot controller | ABB OmniCore |
+| 168 | Collaborative robot | Universal Robots UR10e |
+| 169 | Robot gripper | SCHUNK |
+| 170 | Robot tool changer | ATI Industrial Automation |
+| 171 | Safety light curtain | SICK deTec4 |
+| 172 | Safety laser scanner | SICK microScan3 |
+| 173 | Safety door switch | Schmersal AZM |
+| 174 | Safety relay | Pilz PNOZ |
+| 175 | Safety PLC | Siemens S7-1500F |
+| 176 | Two-hand control station | Schneider Electric |
+| 177 | Emergency-stop pushbutton | Eaton M22 |
+| 178 | Safety enabling switch | EUCHNER |
+| 179 | Safety encoder | SICK |
+| 180 | Safety-rated drive | Siemens SINAMICS |
+
+## 11. ADDITIONAL SPECIALIZED COMPONENTS
+
+| # | Component | Real manufacturer / product family |
+|---|---|---|
+| 181 | Industrial weighing transmitter | Siemens SIWAREX |
+| 182 | Load cell | HBM Z6 |
+| 183 | Barcode scanner | SICK CLV |
+| 184 | RFID reader | Siemens SIMATIC RF |
+| 185 | Machine vision camera | Cognex In-Sight |
+| 186 | Industrial lighting | Banner Engineering |
+| 187 | Industrial network gateway | HMS Anybus |
+| 188 | Modbus gateway | Moxa MGate |
+| 189 | Industrial wireless access point | Siemens SCALANCE W |
+| 190 | Remote telemetry unit | Schneider Electric SCADAPack |
+| 191 | Data logger | Campbell Scientific CR1000X |
+| 192 | Industrial alarm dialer | Ewon |
+| 193 | Industrial vibration monitor | ifm VSE |
+| 194 | Condition monitoring system | SKF IMx |
+| 195 | Industrial panel enclosure | Rittal AX |
+| 196 | Floor-standing enclosure | Rittal VX25 |
+| 197 | Enclosure cooling unit | Rittal Blue e+ |
+| 198 | Enclosure thermostat | STEGO |
+| 199 | Enclosure heater | STEGO |
+| 200 | Cabinet fan/filter unit | Rittal |
+
+---
+
+# 12. REAL PROJECT EXAMPLES — ALL 50 PROJECTS
+
+Each project below uses real equipment families. The listed equipment is a starting bill of materials, **not a completed or verified electrical design**.
+
+| Project | Real components to use |
+|---|---|
+| 01. Reversing motor starter | Siemens 3RT2, 3RV2, 3RU2, SIMOTICS GP, Harmony XB5 |
+| 02. Star–delta starter | Siemens 3RT2 contactors, 3RP timer, 3RU2 overload, SIMOTICS GP |
+| 03. VFD conveyor | Siemens S7-1200, SINAMICS G120, SICK W4, SEW DRN |
+| 04. Servo motion cell | Siemens S7-1500, SINAMICS S210, SIMOTICS S-1FK2, SICK encoders |
+| 05. Duty/standby pump | ABB PSTX, Siemens S7-1200, Endress+Hauser Cerabar |
+| 06. Segmented MCC | Siemens SIVACON S8, 3RV2, 3RT2, SENTRON PAC |
+| 07. Industrial fan bank | ABB ACS580, Siemens S7-1500, SITRANS P |
+| 08. Packaging machine | Siemens S7-1500, ET 200SP, Festo VUVG, SICK W4 |
+| 09. Hoist/crane control | SEW drives and brakes, Siemens PLC, SICK encoders |
+| 10. Hydraulic power unit | Bosch Rexroth CytroPac, 4WE valves, Siemens PLC |
+| 11. Modular PLC cabinet | Siemens S7-1500, ET 200SP, SITOP, SCALANCE |
+| 12. Water-treatment plant | Siemens S7-1500, Endress+Hauser Memosens, Promag |
+| 13. Wastewater lift station | Schneider SCADAPack, ABB PSTX, Endress+Hauser Micropilot |
+| 14. Food processing line | Siemens S7-1500, SEW drives, SICK sensors |
+| 15. Chemical batch reactor | Siemens S7-1500, Endress+Hauser temperature/pressure instruments |
+| 16. Brewery/CIP skid | Siemens PLC, Endress+Hauser Promag, Memosens sensors |
+| 17. Industrial oven | Eurotherm 3200, WIKA thermocouples, Carlo Gavazzi SSR |
+| 18. HVAC AHU | Siemens Desigo PXC, Belimo actuators, Siemens sensors |
+| 19. Cold storage | Danfoss AK-CC, pressure sensors, refrigeration actuators |
+| 20. Warehouse sorter | Siemens S7-1500, SINAMICS G120, SICK scanners |
+| 21. LV distribution board | ABB SACE Emax 2, ComPacT NSX, PowerLogic |
+| 22. Industrial subdistribution | Siemens SENTRON, Janitza UMG, Phoenix terminals |
+| 23. Emergency lighting | Eaton emergency lighting equipment, Socomec ATS |
+| 24. Building automation | Siemens Desigo PXC, Belimo, Siemens field sensors |
+| 25. Solar PV | SMA Sunny Tripower, Stäubli MC4, ABB OTDC, DEHN |
+| 26. Battery storage | Tesla Megapack, Siemens monitoring equipment |
+| 27. EV charging | ABB Terra, Phoenix Contact CHARX, PowerLogic |
+| 28. Generator ATS | ComAp InteliLite, Socomec ATyS, SENTRON PAC |
+| 29. UPS bypass | Schneider Galaxy, Socomec switching, PowerLogic |
+| 30. Data-center alarms | Siemens PLC, Phoenix Contact relays, Rittal enclosures |
+| 31. Robotic welding | ABB IRB 1200, OmniCore, Siemens safety PLC |
+| 32. CNC auxiliary controls | Siemens S7-1500, SINAMICS, SICK sensors |
+| 33. Assembly-line safety | Pilz PNOZmulti 2, SICK deTec4, Schmersal AZM |
+| 34. Pneumatic pick-and-place | Festo DSBC, VUVG, SMT-8M, Siemens PLC |
+| 35. Injection molding | Siemens PLC, Bosch Rexroth hydraulics, WIKA sensors |
+| 36. Printing press | Siemens SINAMICS S210, S7-1500, SICK encoders |
+| 37. Textile machine | ABB ACS580, Siemens PLC, SICK sensors |
+| 38. Pharmaceutical filling | Siemens PLC, Festo pneumatics, Cognex vision |
+| 39. Automated palletizer | ABB robot, Siemens PLC, SICK scanners |
+| 40. Industrial test bench | Siemens PLC, HBM load cells, Janitza meters |
+| 41. IEC machine panel | Siemens SIRIUS, SIMATIC, Phoenix Contact, Rittal |
+| 42. NFPA 79 machine panel | Rockwell Automation, Allen-Bradley, Panduit |
+| 43. UL 508A panel example | Rockwell Automation, Eaton, Panduit, Rittal |
+| 44. Marshalling cabinet | Phoenix Contact terminals, Weidmüller markers, Harting |
+| 45. Marine auxiliary panel | ABB switching, Siemens monitoring, approved marine equipment |
+| 46. Irrigation automation | Siemens S7-1200, Festo valves, Endress+Hauser sensors |
+| 47. Railway auxiliary controls | Siemens PLC, Phoenix Contact terminals, industrial relays |
+| 48. Mining ventilation | ABB ACS580, Siemens PLC, industrial sensors |
+| 49. Hospital auxiliary alarms | Siemens monitoring, Phoenix Contact relays, Rittal cabinets |
+| 50. Training laboratory | Siemens S7-1200, SIRIUS contactors, Festo valves, SICK sensors |
+
+---
+
+# 13. COMPONENT DATA REQUIRED INSIDE THE ENGINEERING CANVAS
+
+Every real component entered into the library should contain these **30 fields**:
+
+1. Manufacturer
+2. Manufacturer part number
+3. Product family
+4. Component category
+5. Component description
+6. Electrical symbol
+7. IEC symbol representation
+8. ANSI/NFPA symbol representation, where applicable
+9. Rated operating voltage
+10. Rated operating current
+11. Rated power
+12. Operating frequency
+13. Terminal numbers
+14. Terminal names
+15. Pin definitions
+16. Connection types
+17. Electrical characteristics
+18. Mechanical dimensions
+19. Mounting method
+20. Protection rating
+21. Operating temperature
+22. Manufacturer datasheet
+23. Manufacturer installation manual
+24. Wiring diagram
+25. Connection diagram
+26. Compatible accessories
+27. Compatible components
+28. Component reference designation
+29. Component revision/version
+30. Verified source and verification date
+
+**Important:** Not every field applies to every component. A mechanical enclosure, for example, does not have an operating current or electrical pinout.
+
+---
+
+# 14. REAL ENGINEERING PROJECT DOCUMENTATION — 100+ SHEETS PER PROJECT
+
+Each of the 50 projects should have its own independent documentation package.
+
+| Sheet range | Documentation |
+|---|---|
+| 001–005 | Cover, project information, revision history |
+| 006–010 | Drawing index and standards |
+| 011–020 | Electrical power distribution |
+| 021–030 | Motor and drive circuits |
+| 031–040 | PLC and control circuits |
+| 041–050 | Sensors and instrumentation |
+| 051–060 | Safety and interlocking circuits |
+| 061–070 | Terminal and wiring diagrams |
+| 071–080 | Cable schedules and connections |
+| 081–090 | Equipment layouts and panel drawings |
+| 091–100 | Bills of materials, testing and commissioning |
+| 101–110 | Installation and maintenance documentation |
+| 111–120 | Calculations, verification and project-specific documentation |
+
+**120 sheets per project × 50 projects = 6,000 sheets.**
+
+These are proposed documentation structures, not completed drawings. Sheet allocation must be adapted to each project's actual topology, and every sheet must contain meaningful project-specific information.
+
+---
+
+
+
 # A16. Final agent instruction
 
 The component library and schematic drawing engine are core product requirements.
