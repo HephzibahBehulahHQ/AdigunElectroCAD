@@ -10,7 +10,10 @@ import { verifyProjectTemplate } from "../src/projects/templateVerification";
 const motor = (document: ReturnType<typeof createWiredStarDeltaCircuit>) => executeCircuitModels(document, catalogById).find(run => run.reference === "M1")!.output.value;
 
 it("runs the wired star, open-transition, delta, overload and reset sequence", () => {
-  const result = verifyProjectTemplate(createWiredStarDeltaTemplate(), catalogById);
+  const template = createWiredStarDeltaTemplate();
+  expect(template.document.components.find(component => component.id === "overload")?.properties.thermalEnabled).toBe(true);
+  expect(template.operatingSequence?.map(step => step.name)).toContain("Delta current trips the thermal overload and drops all coils");
+  const result = verifyProjectTemplate(template, catalogById);
   expect(validateCircuit(createWiredStarDeltaCircuit(), catalogById)).toEqual([]);
   expect(result).toMatchObject({ passed: true, topologyIssues: [], failedExpectations: [] });
 });

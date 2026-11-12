@@ -77,6 +77,7 @@ The six-terminal balanced winding model still does not feed the retained thermal
 - [x] Derive three phase currents from powered six-terminal winding topology and actual contactor states in star and delta.
 - [x] Route winding current through the wired F1 poles and preserve unsupported/bypassed-path fault reporting.
 - [x] Verify star/delta line current, thermal trip, coil interruption, cool reset and no automatic restart.
+- [x] Enable thermal mode in the dedicated template and record an automatic delta-current trip, cool-down and manual reset sequence.
 - [ ] Publish, pass CI, merge and verify production behavior.
 
 The winding model uses balanced fixed impedance and actual topology. It does not model motor transients, torque, acceleration, standardized relay curves or mechanical interlocking.

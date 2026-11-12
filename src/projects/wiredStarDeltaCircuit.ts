@@ -8,7 +8,7 @@ export function createWiredStarDeltaCircuit(): CircuitDocument {
   const document = createStarDeltaCircuit();
   document.id = "wired-star-delta-control";
   document.name = "Wired open-transition star–delta starter";
-  document.description = "Six-terminal motor feeder with wired START/STOP holding, overload NC, 5 s star timer, 200 ms open transition, and star/delta NC electrical interlocks. Ideal dry contacts; no mechanical interlock or motor transient model.";
+  document.description = "Six-terminal motor feeder with wired START/STOP holding, current-driven thermal overload, 5 s star timer, 200 ms open transition, and star/delta NC electrical interlocks. Balanced fixed impedance; no mechanical interlock or motor transient model.";
   for (const component of document.components.filter(c => ["forward", "star", "delta"].includes(c.id))) {
     component.definitionId = "contactor.three-pole-no-nc";
     component.properties = { ...component.properties, coilVoltageV: 230, energized: false };
@@ -18,7 +18,7 @@ export function createWiredStarDeltaCircuit(): CircuitDocument {
   const star = document.components.find(c => c.id === "star")!;
   const delta = document.components.find(c => c.id === "delta")!;
   document.components.push(
-    { id: "overload", definitionId: "overload.thermal", reference: "F1", x: 480, y: 340, rotation: 0, properties: { settingA: 12.5, tripped: false, thermalEnabled: false } },
+    { id: "overload", definitionId: "overload.thermal", reference: "F1", x: 480, y: 340, rotation: 0, properties: { settingA: 20, tripped: false, thermalEnabled: true, overloadFactor: 1, heatingTimeSeconds: 5, coolingTimeSeconds: 10, resetLevel: .5, reset: false } },
     { id: "control", definitionId: "supply.control", reference: "X3", x: 100, y: 100, rotation: 0, properties: { voltageV: 230, frequencyHz: 50 } },
     { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S0", x: 100, y: 300, rotation: 0, properties: { pressed: false } },
     { id: "start", definitionId: "pushbutton.start-no", reference: "S1", x: 300, y: 300, rotation: 0, properties: { pressed: false } },
@@ -63,8 +63,9 @@ export function createWiredStarDeltaTemplate(): ProjectTemplate {
     step("Release START; holding contact sustains star", 4.8, [{ reference: "S1", properties: { pressed: false } }], "STAR · 230.94 V/winding · 16.33 A line"),
     step("KT1 ends star; open transition begins", .1, [], "OPEN · 0.00 V/winding · 0.00 A line"),
     step("KT2 completes the 200 ms break interval and closes delta", .2, [], "DELTA · 400.00 V/winding · 48.99 A line"),
-    step("Trip overload; all three coils drop", 0, [{ reference: "F1", properties: { tripped: true } }], "OPEN · 0.00 V/winding · 0.00 A line"),
-    step("Reset overload without automatic restart", 0, [{ reference: "F1", properties: { tripped: false } }], "OPEN · 0.00 V/winding · 0.00 A line"),
+    step("Delta current trips the thermal overload and drops all coils", .6, [], "OPEN · 0.00 V/winding · 0.00 A line"),
+    step("Allow the overload to cool below its reset level", 10, [], "OPEN · 0.00 V/winding · 0.00 A line"),
+    step("Reset the overload without automatic restart", 0, [{ reference: "F1", properties: { reset: true } }], "OPEN · 0.00 V/winding · 0.00 A line"),
   ];
   return { id: document.id, name: document.name, category: "Motor Control", level: "Advanced", description: document.description, document, operatingSequence, testSequence: operatingSequence.map(s => s.name), expectedOutputs: [
     { reference: "KM1", label: "Wired control coil", valueIncludes: "0 V · OFF" },
