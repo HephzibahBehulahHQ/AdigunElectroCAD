@@ -81,6 +81,6 @@ it("renders three connected zigzag heater poles and shows the tripped interrupti
   expect(healthy).toContain("l -6 4 l 12 6");
   expect(healthy).toContain("contact-blade closed");
   expect(tripped).toContain('data-state="tripped"');
-  expect(tripped.match(/class="wire fault"/g)).toHaveLength(3);
+  expect(tripped.match(/class="wire fault overload-output"/g)).toHaveLength(3);
   expect(tripped.match(/contact-blade open-fault/g)).toHaveLength(6);
 });
