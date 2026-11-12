@@ -12,7 +12,7 @@ Updated 2026-11-03. The full master goal remains active. This checklist suppleme
 | M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Manual trip, DOL dynamics and starter laboratories exist; thermal overload integration and broader physical coupling remain open. |
 | M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
 | M06 | Component library | Every requested item, including categories 11–18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
-| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 506 entries currently include 499 variants from five scenario families and seven dedicated additions. This gate is not satisfied by those counts. |
+| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 507 entries currently include 499 variants from five scenario families and eight dedicated additions. This gate is not satisfied by those counts. |
 | M08 | Identity and project data | Schema isolation, owner RLS, restrictive anonymous INSERT, confirmed email/password and two-step anonymous upgrade; local/cloud save/load and preferences work with refresh and two permanent accounts. | Partial. Existing sign-in, cloud and RLS evidence in AUTH-RLS-VERIFICATION-2026-11-02.md; email upgrade, two-account browser isolation and cross-device preferences remain unverified. |
 | M09 | Visual, responsive and language acceptance | Match supplied workstation target; legible branding and labels, no collisions at desktop/mobile sizes; usable keyboard flows, light/dark themes and reviewed English/German/Yoruba/Pidgin. | Partial. Checked header/footer layouts and compact account/status controls; full reference match, all views and translations remain open. See VISUAL-TARGET.md. |
 | M10 | Adigun Bot | Floating/resizable/dockable window and persistence; actual canvas-aware assistance, explanations, consented atomic edits, quiet/unread behavior and configured AI capabilities; test all requested addendum flows. | Partial. Rule-based assistance and floating window deployed; generative AI and broader engineering reasoning are not configured or verified. See both retained Bot request TXT files and verification docs. |
@@ -51,6 +51,13 @@ Acceptance: PR #77, synchronized branch `77fae21`, merge `a1210ea`, successful P
 - [ ] Verify the same behavior on production.
 
 PR #79 merged as `d8d28e6`, and Pages run `41614492416` succeeded. Production interactive acceptance remains pending. See THERMAL-OVERLOAD.md for supported current paths and limits.
+
+## Active increment: M04b — Thermal protection on wired reversing
+
+- [x] Reuse the existing reversing power topology, wired 230 V coil returns, holding contacts and opposing NC interlocks.
+- [x] Add a separate current-driven overload example with reverse-direction trip, cool reset and no automatic restart.
+- [x] Verify the operating sequence, topology and reverse contactor interruption with focused automated checks.
+- [ ] Publish, pass CI, merge and verify the Pages deployment and production project behavior.
 
 ## Per-increment publication rule
 
