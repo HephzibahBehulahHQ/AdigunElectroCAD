@@ -19,6 +19,18 @@ it.each([
   expect(evaluateFunctionalModel(model, properties)?.error).toEqual(expect.any(String));
 });
 
+it("keeps retained PLC state visible when a wired fault inhibits the scan", () => {
+  const result = evaluateFunctionalModel("catalog-plc-digital-io", {
+    inputA: true, inputB: false, runtimeQ0: false, runtimeD0: 1234,
+    program: "LD D0; OUT Q0", runtimeSignalError: "ADC input has an incompatible unit.",
+  });
+  expect(result).toMatchObject({ label: "I/O state", error: "ADC input has an incompatible unit." });
+  expect(result?.value).toContain("I0 ON");
+  expect(result?.value).toContain("Q0 OFF");
+  expect(result?.value).toContain("D0 1234");
+  expect(result?.value).toContain("ERROR: ADC input has an incompatible unit.");
+});
+
 it("shows faults beyond the first two models and restores success after correction", () => {
   const document: CircuitDocument = { id: "summary", name: "Summary", description: "", revision: 1, wires: [], components: [
     { id: "a", definitionId: "logic.output-coil", reference: "K1", x: 0, y: 0, rotation: 0, properties: { input: false } },
