@@ -85,7 +85,7 @@ it("renders editable multi-point paths and exposes a handle for each vertex", ()
   ];
   const markup = renderToStaticMarkup(createElement(Schematic, {
     document, selectedComponentId: "", selectedWireId: "", selectedGraphicId: "polygon-1", simulation: initialDolState(), wireMode: false, wireStart: null,
-    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onGraphicVertexMove: () => {},
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onGraphicVertexMove: () => {}, onGraphicVertexInsert: () => {}, onGraphicVertexDelete: () => {},
   }));
   expect(markup).toContain('data-graphic-kind="polyline"');
   expect(markup).toContain('data-graphic-kind="polygon"');
@@ -93,4 +93,5 @@ it("renders editable multi-point paths and exposes a handle for each vertex", ()
   expect(markup).toContain('fill="#ffcc80"');
   expect(markup).toContain('data-vertex-handle="0"');
   expect(markup).toContain('data-vertex-handle="3"');
+  expect(markup).toContain("right-click to remove");
 });
