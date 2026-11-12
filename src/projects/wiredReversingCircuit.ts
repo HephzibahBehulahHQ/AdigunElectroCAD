@@ -30,11 +30,8 @@ export function createWiredReversingCircuit(): CircuitDocument {
     connect("breaker", `l${phase}-out`, "reverse", `l${phase}-in`);
     connect("reverse", `l${phase}-out`, "overload", `l${4 - phase}-in`);
   }
-  const positions: Record<string, [number, number]> = { supply: [500, 140], breaker: [500, 260], contactor: [340, 420], reverse: [660, 420], overload: [500, 560], motor: [500, 680], control: [100, 140], stop: [100, 320], start: [900, 320], "reverse-start": [900, 540] };
-  for (const c of document.components) {
-    const position = positions[c.id];
-    if (position) [c.x, c.y] = position;
-  }
+  const positions: Record<string, [number, number]> = { supply: [500, 140], breaker: [500, 260], contactor: [340, 420], reverse: [660, 420], overload: [500, 560], motor: [500, 680], control: [100, 140], stop: [100, 320], start: [900, 320], "reverse-start": [900, 540], "lamp-h1": [620, 700], "lamp-h2": [760, 700], "lamp-h3": [900, 700] };
+  for (const c of document.components) [c.x, c.y] = positions[c.id];
   for (const w of document.wires) w.points = (wiredReversingRoutes[w.id] ?? []).map(point => ({ ...point }));
   return document;
 }
