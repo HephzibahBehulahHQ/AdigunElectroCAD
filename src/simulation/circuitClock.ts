@@ -8,6 +8,24 @@ import { scanSafetyReset } from "./safetyReset";
 import { advanceCylinder, valve52Direction } from "./pneumaticState";
 import { timerParameterError } from "./functionalModels";
 
+const PLC_TRACE_LIMIT = 25;
+type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number; output: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
+
+function appendPlcTrace(properties: Record<string, string | number | boolean>, deltaSeconds: number, entry: Omit<PlcTraceEntry, "scan" | "elapsedSeconds">): string {
+  let history: PlcTraceEntry[] = [];
+  try {
+    const parsed: unknown = JSON.parse(String(properties.runtimeScanTrace ?? "[]"));
+    if (Array.isArray(parsed)) history = parsed.filter((item): item is PlcTraceEntry => !!item && typeof item === "object" && Number.isInteger((item as PlcTraceEntry).scan) && Number.isFinite((item as PlcTraceEntry).elapsedSeconds));
+  } catch { /* Invalid persisted runtime trace is discarded and rebuilt. */ }
+  const previous = history.at(-1);
+  const next: PlcTraceEntry = {
+    ...entry,
+    scan: (previous?.scan ?? 0) + 1,
+    elapsedSeconds: Math.round(((previous?.elapsedSeconds ?? 0) + deltaSeconds) * 1e9) / 1e9,
+  };
+  return JSON.stringify([...history, next].slice(-PLC_TRACE_LIMIT));
+}
+
 export function setCircuitBooleanInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, property: string, value: boolean): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
   const definition = component && catalog.get(component.definitionId);
@@ -35,6 +53,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     delete properties.runtimeCoilEnergized;
     delete properties.runtimeThermalLevel; delete properties.runtimeThermalTripped; delete properties.runtimeThermalResetPrevious; delete properties.runtimeThermalError; delete properties.runtimeLoadCurrentA;
     delete properties.runtimeQ0; delete properties.runtimeError;
+    delete properties.runtimeScanTrace;
     delete properties.runtimeSpool; delete properties.runtimePositionPercent;
     delete properties.runtimeInput0Previous; delete properties.runtimeInput1Previous;
     for (let index = 0; index < PLC_REGISTER_COUNT; index++) delete properties[`runtimeD${index}`];
@@ -69,11 +88,17 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     if (model === "catalog-plc-digital-io" && typeof component.properties.program === "string" && component.properties.program.trim() && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       // Invalid wired inputs must not execute instructions or mutate retained registers.
-      if (active.runtimeSignalError) return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeError: String(active.runtimeSignalError) } };
       const previousRegisters = Array.from({ length: PLC_REGISTER_COUNT }, (_, index) => Number(active[`runtimeD${index}`] ?? 0));
+      if (active.runtimeSignalError) {
+        const message = String(active.runtimeSignalError);
+        const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: false, registers: previousRegisters, status: "inhibited", message });
+        return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeError: message, runtimeScanTrace: trace } };
+      }
       const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true]);
       const registers = result.ok ? result.registers ?? previousRegisters : previousRegisters;
-      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), runtimeInput0Previous: active.inputA === true, runtimeInput1Previous: active.inputB === true, runtimeQ0: result.output, runtimeError: result.ok ? "" : result.error } };
+      const message = result.ok ? undefined : result.error;
+      const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: result.output, registers, status: result.ok ? "ok" : "error", ...(message ? { message } : {}) });
+      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), runtimeInput0Previous: active.inputA === true, runtimeInput1Previous: active.inputB === true, runtimeQ0: result.output, runtimeError: message ?? "", runtimeScanTrace: trace } };
     }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
@@ -90,3 +115,4 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     return { ...component, properties: { ...component.properties, elapsedSeconds } };
   }) };
 }
+
