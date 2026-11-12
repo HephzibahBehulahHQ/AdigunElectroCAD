@@ -7,7 +7,7 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(x) || !Number.isFinite(y)) return { document, ok: false, reason: "Invalid component position." };
   const snappedX = Math.round(x / 20) * 20; const snappedY = Math.round(y / 20) * 20;
-  if (!componentFitsSheet(snappedX, snappedY, component.rotation, component.definitionId)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
+  if (!componentFitsSheet(snappedX, snappedY, component.rotation, component.definitionId, component.size ?? 1)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
   if (!canPlaceComponent(document.components, componentId, snappedX, snappedY)) return { document, ok: false, reason: "Move blocked: symbol or label clearance overlaps another component." };
   if (component.x === snappedX && component.y === snappedY) return { document, ok: true };
   return { document: moveComponent(document, componentId, snappedX - component.x, snappedY - component.y), ok: true };
@@ -69,12 +69,21 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
   return null;
 }
 
-export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string): boolean {
+export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string, size?: number): boolean {
   const moving = components.find((component) => component.id === componentId);
   const rotation = moving?.rotation ?? 0;
   const movingDefinitionId = definitionId ?? moving?.definitionId;
-  if (!componentFitsSheet(x, y, rotation, movingDefinitionId)) return false;
-  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, component));
+  const movingSize = size ?? moving?.size ?? 1;
+  if (!componentFitsSheet(x, y, rotation, movingDefinitionId, movingSize)) return false;
+  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, movingSize, component));
+}
+
+export function resizeComponent(document: CircuitDocument, componentId: string, size: number): { document: CircuitDocument; ok: boolean; reason?: string } {
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component || !Number.isFinite(size) || size < .5 || size > 2) return { document, ok: false, reason: "Symbol size must be between 50% and 200%." };
+  if (!canPlaceComponent(document.components, componentId, component.x, component.y, component.definitionId, size)) return { document, ok: false, reason: "Resize blocked: keep the symbol, terminals and labels clear of other components and the sheet edge." };
+  if ((component.size ?? 1) === size) return { document, ok: true };
+  return { document: { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, size } : item) }, ok: true };
 }
 
 export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
@@ -83,9 +92,9 @@ export function removeComponent(document: CircuitDocument, componentId: string):
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
 
-function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], leftDefinitionId: string | undefined, rightComponent: ComponentInstance): boolean {
-  const left = componentFootprint(leftX, leftY, leftRotation, leftDefinitionId);
-  const right = componentFootprint(rightComponent.x, rightComponent.y, rightComponent.rotation, rightComponent.definitionId);
+function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], leftDefinitionId: string | undefined, leftSize: number, rightComponent: ComponentInstance): boolean {
+  const left = componentFootprint(leftX, leftY, leftRotation, leftDefinitionId, leftSize);
+  const right = componentFootprint(rightComponent.x, rightComponent.y, rightComponent.rotation, rightComponent.definitionId, rightComponent.size ?? 1);
   return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
 
