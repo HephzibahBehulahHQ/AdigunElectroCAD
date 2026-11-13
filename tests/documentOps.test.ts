@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponent, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponent, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -153,5 +153,15 @@ describe("component movement", () => {
     expect(reconnected.wires.find((wire) => wire.id === "manual-wire-21")).toMatchObject({ from: { componentId: "supply", terminalId: "l1" }, to: { componentId: "motor", terminalId: "v1" }, netName: "MOTOR_L1", points: [] });
     expect(removeWire(reconnected, "manual-wire-21").wires.some((wire) => wire.id === "manual-wire-21")).toBe(false);
   });
+});
+
+it("creates uniquely tagged manual wires for user-defined terminal branches", () => {
+  const document = createDolMotorStarter();
+  const from = { componentId: "supply", terminalId: "l1" };
+  const first = createManualWire(document, from, { componentId: "motor-2", terminalId: "u1" });
+  document.wires.push(first);
+  const second = createManualWire(document, from, { componentId: "motor-3", terminalId: "u1" });
+  expect(second.id).not.toBe(first.id);
+  expect(second.netName).not.toBe(first.netName);
 });
 

@@ -1,7 +1,13 @@
-import type { CircuitDocument, ComponentInstance, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, TerminalEndpoint, Wire } from "../types/electrical";
 import { componentFootprint, componentFitsSheet } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
+
+export function createManualWire(document: CircuitDocument, from: TerminalEndpoint, to: TerminalEndpoint): Wire {
+  let index = 1;
+  while (document.wires.some((wire) => wire.id === `manual-wire-${index}` || wire.netName === `MANUAL_${index}`)) index++;
+  return { id: `manual-wire-${index}`, from, to, points: [], netName: `MANUAL_${index}` };
+}
 
 export function moveComponentToGrid(document: CircuitDocument, componentId: string, x: number, y: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const component = document.components.find((item) => item.id === componentId);
