@@ -119,9 +119,11 @@ describe("project JSON import validation", () => {
   it("persists editable text annotations and accepts older projects without annotations", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = input.sheets[1].document;
-    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0" }];
+    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0", fontSize: 28 }];
     const imported = parseProjectJson(JSON.stringify(input));
     expect(imported.sheets[1].document.annotations).toEqual(sheet.annotations);
+    delete sheet.annotations[0].fontSize;
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
 
     delete input.sheets[0].document.annotations;
     expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
@@ -133,6 +135,11 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("inside the schematic sheet");
     input.sheets[1].document.annotations![0].x = 100;
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("six-digit hex color");
+    input.sheets[1].document.annotations![0].color = "#1565c0";
+    input.sheets[1].document.annotations![0].fontSize = 49;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 8 and 48");
+    input.sheets[1].document.annotations![0].fontSize = 7;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 8 and 48");
   });
 
   it("persists user-drawn graphics and accepts earlier projects without graphics", () => {

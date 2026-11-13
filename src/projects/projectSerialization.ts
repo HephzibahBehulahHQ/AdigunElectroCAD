@@ -104,7 +104,9 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Annotation position must be inside the schematic sheet.");
   const color = textValue(annotation.color, "annotation color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Annotation color must be a six-digit hex color.");
-  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color };
+  const fontSize = annotation.fontSize === undefined ? undefined : finiteNumber(annotation.fontSize, "annotation text size");
+  if (fontSize !== undefined && (fontSize < 8 || fontSize > 48)) throw new Error("Annotation text size must be between 8 and 48.");
+  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }) };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
