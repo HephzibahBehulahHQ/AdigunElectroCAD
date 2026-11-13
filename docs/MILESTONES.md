@@ -568,3 +568,11 @@ Production result and scope limits are recorded in `PLC-PROGRAMS.md`.
 - [x] Pass exact-head Verify runs `43406611123` and `43406634534`, merge PR #213 as `f099f05`, and complete Pages deployment `43406737965`.
 
 This PLC lab comparator is a local preview and does not replace scanned, wired PLC program instructions.
+
+## Completed increment: M06az — Second independently wired PLC analog input
+
+- [x] Add independently wired AI1 raw input alongside AI0; make AI1 available to PLC text instructions, graphical ladder comparisons, arithmetic, watch output and scan trace.
+- [x] Verify independent AI0/AI1 thresholds, ladder preview and a two-transmitter/two-output circuit; exact-head Verify run `43409330860` passed.
+- [x] Merge PR #215 as `7fc3657`; merged test/build and Pages deployment run `43409436336` passed.
+
+AI1 has no predefined sensor assignment. Users choose the components, branches, terminals and program behavior. Physical input diagnostics and wire-break/overrange faults remain unimplemented.
