@@ -2,7 +2,7 @@ import { typeKThermocoupleMillivolt } from "./thermocouple";
 import { nominalPt100ResistanceOhm } from "./pt100";
 
 export type LogicGate = "and" | "or" | "not" | "nand" | "nor" | "xor";
-export type Comparator = "greater-than" | "less-than" | "equal-to";
+export type Comparator = "greater-than" | "greater-or-equal" | "less-than" | "less-or-equal" | "equal-to" | "not-equal";
 export type MathOperation = "add" | "subtract" | "multiply" | "divide";
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value));
@@ -25,8 +25,11 @@ export function logicGate(kind: LogicGate, inputs: boolean[]): boolean {
 
 export function compare(kind: Comparator, left: number, right: number, tolerance = 0.000_001): boolean {
   if (kind === "greater-than") return left > right;
+  if (kind === "greater-or-equal") return left >= right;
   if (kind === "less-than") return left < right;
-  return Math.abs(left - right) <= Math.max(0, tolerance);
+  if (kind === "less-or-equal") return left <= right;
+  const equal = Math.abs(left - right) <= Math.max(0, tolerance);
+  return kind === "equal-to" ? equal : !equal;
 }
 
 export function mathBlock(kind: MathOperation, left: number, right: number): { ok: true; value: number } | { ok: false; reason: string } {
