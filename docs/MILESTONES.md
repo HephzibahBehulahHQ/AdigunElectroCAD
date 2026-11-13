@@ -274,6 +274,15 @@ PR #137 merged as `15bed16`. Verify runs `43336032081` and `43336039728` succeed
 PR #139 merged as `658ee94`. Verify runs `43337243565` and `43337249564` succeeded. Pages deployment `43337370770` succeeded; the custom domain remains inaccessible through the available browser route.
 
 
+## Completed increment: M06s — Duplicate placed components
+
+- [x] Duplicate a placed component on editable free sheets, preserve its catalog parameters, custom fields, drafting color, size and orientation, and assign a unique reference and clear position.
+- [x] Give the copy independent editable metadata and leave wires unconnected so users choose the desired branches and terminals.
+- [x] Pass 13 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #141 merged as `c63aa86`. Verify runs `43339962834` and `43339970398` and Pages deployment `43340083622` succeeded; custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
