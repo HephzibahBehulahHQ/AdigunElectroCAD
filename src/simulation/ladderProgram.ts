@@ -7,6 +7,18 @@ export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "TON"; timer: `T${0 |
 export interface LadderRung { stages: LadderContact[][]; coil: LadderCoil; }
 export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }];
 
+/** Return an independent ladder with one rung moved to another valid position. */
+export function moveLadderRung(rungs: readonly LadderRung[], fromIndex: number, toIndex: number): LadderRung[] | null {
+  if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || fromIndex >= rungs.length || toIndex < 0 || toIndex >= rungs.length) return null;
+  const copy = rungs.map((rung) => ({
+    stages: rung.stages.map((stage) => stage.map((contact) => ({ ...contact }))),
+    coil: typeof rung.coil === "object" ? { ...rung.coil } : rung.coil,
+  }));
+  const [moved] = copy.splice(fromIndex, 1);
+  copy.splice(toIndex, 0, moved);
+  return copy;
+}
+
 export interface LadderPreviewInputs { input0: boolean; input1: boolean; q0: boolean; previousInput0: boolean; previousInput1: boolean; analogInput0: number; registers: readonly number[]; timers?: Partial<Record<`T${0 | 1 | 2 | 3}`, { elapsedSeconds: number; done: boolean }>>; memory?: readonly boolean[]; deltaSeconds?: number; }
 export interface LadderPreview { rungEnergized: boolean[]; contactEnergized: boolean[][][]; output: boolean; memory: boolean[]; }
 
