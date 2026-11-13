@@ -4,7 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { controlTerminalOffset } from "../cad/componentGeometry";
-import { schematicGraphicToSymbolGraphic } from "../cad/userSymbol";
+import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { toggleComponentSelection } from "../cad/componentSelection";
 import { appendWireRoutePoint, type WireBranchSource } from "../cad/wirePath";
@@ -93,6 +93,7 @@ export function App() {
   const [selectedAnnotationId, setSelectedAnnotationId] = useState("");
   const [annotationMode, setAnnotationMode] = useState(false);
   const [selectedGraphicId, setSelectedGraphicId] = useState("");
+  const [selectedGraphicIds, setSelectedGraphicIds] = useState<string[]>([]);
   const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | null>(null);
   const [reconnectingWireId, setReconnectingWireId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
@@ -256,7 +257,7 @@ export function App() {
     } else setComponentSelection(componentId);
     setSelectedWireId("");
     setSelectedAnnotationId("");
-    setSelectedGraphicId("");
+    setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setGraphicMode(null);
     setReconnectingWireId("");
   };
@@ -267,7 +268,7 @@ export function App() {
     setSelectedComponentId(next.at(-1) ?? "");
     setSelectedWireId("");
     setSelectedAnnotationId("");
-    setSelectedGraphicId("");
+    setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setGraphicMode(null);
     setReconnectingWireId("");
   };
@@ -281,7 +282,7 @@ export function App() {
     setWireBranchStart(null);
     setReconnectingWireId("");
     setSelectedAnnotationId("");
-    setSelectedGraphicId("");
+    setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setGraphicMode(null);
   };
 
@@ -290,12 +291,16 @@ export function App() {
     setComponentSelection("");
     setSelectedWireId("");
     setAnnotationMode(false);
-    setSelectedGraphicId("");
+    setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setGraphicMode(null);
   };
 
-  const selectGraphic = (id: string) => {
-    setSelectedGraphicId(id);
+  const selectGraphic = (id: string, additive = false) => {
+    const nextIds = additive
+      ? selectedGraphicIds.includes(id) ? selectedGraphicIds.filter((item) => item !== id) : [...selectedGraphicIds, id]
+      : [id];
+    setSelectedGraphicIds(nextIds);
+    setSelectedGraphicId(nextIds.at(-1) ?? "");
     setComponentSelection("");
     setSelectedWireId("");
     setSelectedAnnotationId("");
@@ -349,9 +354,11 @@ export function App() {
 
   const makeComponentFromGraphic = () => {
     if (!selectedGraphic || isReferenceSheet) return;
+    const selectedGraphics = (document.graphics ?? []).filter((graphic) => selectedGraphicIds.includes(graphic.id));
+    if (!selectedGraphics.length) return;
     const definition = catalogById.get("user.drawn-symbol");
     if (!definition) return;
-    const points = selectedGraphic.points ?? [{ x: selectedGraphic.x1, y: selectedGraphic.y1 }, { x: selectedGraphic.x2, y: selectedGraphic.y2 }];
+    const points = selectedGraphics.flatMap((graphic) => graphic.points ?? [{ x: graphic.x1, y: graphic.y1 }, { x: graphic.x2, y: graphic.y2 }]);
     const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
     const x = Math.round(((Math.min(...xs) + Math.max(...xs)) / 2) / 20) * 20;
     const y = Math.round(((Math.min(...ys) + Math.max(...ys)) / 2) / 20) * 20;
@@ -360,20 +367,18 @@ export function App() {
     while (usedReferences.has(`${definition.referencePrefix}${suffix}`.toLowerCase())) suffix++;
     const instance: ComponentInstance = {
       id: `user-drawn-symbol-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      definitionId: definition.id,
-      reference: `${definition.referencePrefix}${suffix}`,
-      displayName: selectedGraphic.name,
-      x, y, rotation: 0,
+      definitionId: definition.id, reference: `${definition.referencePrefix}${suffix}`,
+      displayName: selectedGraphic.name, x, y, rotation: 0,
       properties: { ...definition.propertiesSchema },
-      customSymbolGraphics: [schematicGraphicToSymbolGraphic(selectedGraphic)],
+      customSymbolGraphics: schematicGraphicsToSymbolGraphics(selectedGraphics),
     };
     if (!canPlaceComponent(document.components, instance.id, x, y, definition.id)) {
       setNotice("Move this drawing to clear symbol space before converting it into a component.");
       return;
     }
-    updateDocument({ ...document, components: [...document.components, instance], graphics: (document.graphics ?? []).filter((graphic) => graphic.id !== selectedGraphic.id), revision: document.revision + 1 });
+    updateDocument({ ...document, components: [...document.components, instance], graphics: (document.graphics ?? []).filter((graphic) => !selectedGraphicIds.includes(graphic.id)), revision: document.revision + 1 });
     selectComponent(instance.id);
-    setNotice(`${selectedGraphic.name} converted to ${instance.reference}. Edit its name and terminals in Properties, or duplicate it to reuse the symbol.`);
+    setNotice(`${selectedGraphics.length} drafted shape${selectedGraphics.length === 1 ? "" : "s"} converted to ${instance.reference}. Edit its name and terminals in Properties, or duplicate it to reuse the symbol.`);
   };
 
   const moveGraphic = (id: string, deltaX: number, deltaY: number) => {
@@ -429,7 +434,7 @@ export function App() {
   const removeSelectedGraphic = () => {
     if (!selectedGraphic) return;
     updateDocument({ ...document, graphics: (document.graphics ?? []).filter((item) => item.id !== selectedGraphic.id), revision: document.revision + 1 });
-    setSelectedGraphicId("");
+    setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setNotice(`${selectedGraphic.name} removed. Use Undo to restore it.`);
   };
 
@@ -445,7 +450,7 @@ export function App() {
     const next = graphicMode === kind ? null : kind;
     setGraphicMode(next);
     setWireMode(false); setWireStart(null); setAnnotationMode(false);
-    setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId("");
+    setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setNotice(next ? kind === "polyline" || kind === "polygon" ? `Click to add ${kind} vertices; double-click or press Enter to finish. Escape cancels.` : `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
   };
 
@@ -773,7 +778,7 @@ export function App() {
     setActiveSheetId(sheet.id);
     setComponentSelection("");
     setSelectedWireId("");
-    setSelectedAnnotationId(""); setSelectedGraphicId(""); setAnnotationMode(false); setGraphicMode(null);
+    setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(false);
     setWireStart(null);
     setDirty(true);
@@ -787,7 +792,7 @@ export function App() {
     setComponentSelection(sheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
     setWireRouteEditId("");
-    setSelectedAnnotationId(""); setSelectedGraphicId(""); setAnnotationMode(false); setGraphicMode(null);
+    setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(false);
     setWireStart(null);
     setNotice(`${sheet.name} selected.`);
@@ -831,7 +836,7 @@ export function App() {
     setWireRouteEditId("");
     setWireStart(null);
     setWireBranchStart(null);
-    setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId("");
+    setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId(""); setSelectedGraphicIds([]);
     if (!next) setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
   };
@@ -1245,7 +1250,7 @@ export function App() {
         <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         {!isReferenceSheet && <>
-          <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setComponentSelection(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
+          <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setComponentSelection(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
           <button className={graphicMode === "line" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("line")} aria-label="Draw line">／<span>Line</span></button>
           <button className={graphicMode === "rectangle" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("rectangle")} aria-label="Draw rectangle">▭<span>Rectangle</span></button>
           <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
@@ -1280,7 +1285,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
@@ -1288,7 +1293,7 @@ export function App() {
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
           {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
-        {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
+        {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} selectionCount={selectedGraphicIds.length} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
@@ -1408,7 +1413,7 @@ function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: 
   </section>;
 }
 
-function GraphicProperties({ graphic, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
+function GraphicProperties({ graphic, selectionCount, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; selectionCount: number; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
   const palette = ["#1565c0", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"];
   return <section className="properties-form graphic-properties" aria-label="Drawing graphic properties">
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
@@ -1421,7 +1426,9 @@ function GraphicProperties({ graphic, onChange, onGeometryChange, onDuplicate, o
     </>}
     <label>Stroke width · units<input type="number" min="1" max="12" step="1" defaultValue={graphic.strokeWidth} key={`${graphic.id}:${graphic.strokeWidth}`} onBlur={(event) => onChange({ strokeWidth: Number(event.target.value) })} /></label>
     <p>{graphic.kind[0].toUpperCase() + graphic.kind.slice(1)} · drafting geometry; it does not connect electrical terminals. {graphic.points ? "Double-click an edge to insert a vertex; drag vertices to reshape and right-click a handle to remove it." : "Drag the shape to move it."}</p>
-    <button type="button" onClick={onMakeComponent}>Make component symbol</button>
+    {selectionCount > 1 && <p>{selectionCount} graphics selected. Properties above edit the active graphic; symbol conversion combines the selected shapes.</p>}
+    {selectionCount === 1 && <p>Shift-click more graphics to combine a drawing into one user symbol.</p>}
+    <button type="button" onClick={onMakeComponent}>{selectionCount > 1 ? `Make symbol from ${selectionCount} graphics` : "Make component symbol"}</button>
     <button type="button" onClick={onDuplicate}>Duplicate drawing graphic</button>
     <button className="remove-component" onClick={onRemove}>Remove drawing graphic</button>
   </section>;
