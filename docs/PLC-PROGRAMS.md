@@ -106,3 +106,7 @@ On 2026-11-12, the deployed production PLC example was temporarily changed to `L
 On 2026-11-13, the deployed desktop app's PLC sensor/actuator example was temporarily given `LD I0; TON T0 0.2; LD T0; OUT Q0`. With wired I0 on, successive 100 ms scans advanced T0; the watch table showed T0.Q and Q0 on, with T0.ET at 0.7 s when observed. Pause retained the completed timer and Q0 state. Stop reset T0.Q, T0.ET to 0.0 s and Q0 off. The original holding program (`LD I0; OR Q0; ANDN I1; OUT Q0`) was restored, and the app showed “Saved locally”; no cloud save was made.
 
 This verifies one 0.2 s T0 sequence on the deployed desktop app. It does not measure the exact first completion scan, exercise T1–T3, or replace automated fault-rollback coverage.
+
+## PLC comparator lab
+
+The standalone PLC Control & Analog Lab compares Value A and Value B with greater-than, greater-than-or-equal, less-than, less-than-or-equal, equal-to, and not-equal operators. Ordered comparisons use direct numeric ordering; GE and LE include exact equality. EQ and NE use the comparison function's default absolute tolerance of 0.000001 to account for floating-point values. This lab preview is separate from the connected PLC program; use text or graphical ladder instructions for scanned, wired behavior.

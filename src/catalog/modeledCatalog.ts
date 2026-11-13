@@ -48,7 +48,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,
-    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/LT/EQ with AI0 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
+    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/GE/LT/LE/EQ/NE with AI0 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
     standardsReferences: [family.standardsReference],
   };
 }));

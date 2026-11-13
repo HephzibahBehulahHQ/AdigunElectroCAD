@@ -21,6 +21,7 @@ describe("IEC-oriented component catalog", () => {
       expect(hasFunctionalModel(definition.simulationModelId)).toBe(true);
       expect(evaluateFunctionalModel(definition.simulationModelId, definition.propertiesSchema)).toMatchObject({ label: expect.any(String), value: expect.any(String) });
       expect(definition.documentation).toContain("engineering abstraction");
+      if (definition.id === "plc-digital-io") expect(definition.documentation).toContain("GT/GE/LT/LE/EQ/NE");
     }
   });
 

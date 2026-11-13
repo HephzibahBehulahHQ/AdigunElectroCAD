@@ -20,8 +20,16 @@ describe("PLC logic and analog signal models", () => {
 
   it("evaluates comparisons and all math blocks with a safe divide failure", () => {
     expect(compare("greater-than", 3, 2)).toBe(true);
+    expect(compare("greater-than", 2, 2)).toBe(false);
+    expect(compare("greater-or-equal", 2, 2)).toBe(true);
+    expect(compare("greater-or-equal", 1, 2)).toBe(false);
     expect(compare("less-than", 2, 3)).toBe(true);
+    expect(compare("less-than", 2, 2)).toBe(false);
+    expect(compare("less-or-equal", 2, 2)).toBe(true);
+    expect(compare("less-or-equal", 3, 2)).toBe(false);
     expect(compare("equal-to", 1, 1.0000005)).toBe(true);
+    expect(compare("not-equal", 1, 1.0000005)).toBe(false);
+    expect(compare("not-equal", 1, 1.01)).toBe(true);
     expect(mathBlock("add", 2, 3)).toEqual({ ok: true, value: 5 });
     expect(mathBlock("subtract", 2, 3)).toEqual({ ok: true, value: -1 });
     expect(mathBlock("multiply", 2, 3)).toEqual({ ok: true, value: 6 });
