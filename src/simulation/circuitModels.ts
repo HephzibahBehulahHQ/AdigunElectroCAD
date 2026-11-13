@@ -3,7 +3,7 @@ import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurren
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
-import { functionalOutputTerminal } from "../electrical/signalContracts";
+import { functionalOutputTerminals } from "../electrical/signalContracts";
 import { inductionMotorOperatingPoint } from "./inductionMotor";
 
 export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; evaluatedProperties: Readonly<Record<string, string | number | boolean>>; }
@@ -109,9 +109,10 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           changed = true;
         }
       }
-      const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties);
-      const output = functionalOutputTerminal(definition);
-      if (signal !== undefined && output) {
+      const outputs = functionalOutputTerminals(definition);
+      for (const output of outputs) {
+        const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties, output.id);
+        if (signal === undefined) continue;
         const key = endpointKey(component.id, output.id);
         if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
       }
