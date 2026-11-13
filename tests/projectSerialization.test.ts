@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { catalogById } from "../src/catalog/dolCatalog";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
@@ -54,6 +55,26 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
     input.sheets[1].document.components[0].displayName = "x".repeat(81);
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component display name");
+  });
+
+  it("persists editable terminal labels and rejects labels for unknown terminals", () => {
+    const input = freeSheetWithComponent();
+    const component = input.sheets[1].document.components[0];
+    const terminalId = catalogById.get(component.definitionId)!.terminals[0].id;
+    component.terminalLabels = { [terminalId]: "LINE+" };
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].terminalLabels).toEqual(component.terminalLabels);
+    component.terminalLabels = { "not-a-terminal": "LINE+" };
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("not a catalog terminal");
+  });
+
+  it("rejects blank or overlong terminal display labels", () => {
+    const input = freeSheetWithComponent();
+    const component = input.sheets[1].document.components[0];
+    const terminalId = catalogById.get(component.definitionId)!.terminals[0].id;
+    for (const label of ["", "x".repeat(9)]) {
+      component.terminalLabels = { [terminalId]: label };
+      expect(() => parseProjectJson(JSON.stringify(input))).toThrow("non-empty and at most 8 characters");
+    }
   });
 
   it("persists user-defined component data without requiring it in older projects", () => {

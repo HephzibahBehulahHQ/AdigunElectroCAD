@@ -121,6 +121,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
+    ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId) }),
     properties: properties(component.properties),
       ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
   };
@@ -164,6 +165,20 @@ function customProperties(value: unknown): Record<string, string> {
     if (!key || key.length > 40 || ["__proto__", "constructor", "prototype"].includes(key.toLowerCase()) || typeof item !== "string" || item.length > 240) throw new Error("A custom component field is invalid.");
     if (Object.keys(result).some((existing) => existing.toLowerCase() === key.toLowerCase())) throw new Error("Custom component field names must be unique.");
     result[key] = item;
+  }
+  return result;
+}
+
+function terminalLabelOverrides(value: unknown, definitionId: string): Record<string, string> {
+  const source = object(value, "Component terminal labels are invalid.");
+  const terminals = new Set(catalogById.get(definitionId)?.terminals.map((terminal) => terminal.id) ?? []);
+  const entries = Object.entries(source);
+  if (entries.length > terminals.size) throw new Error("Component terminal labels exceed the catalog terminal count.");
+  const result: Record<string, string> = {};
+  for (const [terminalId, label] of entries) {
+    if (!terminals.has(terminalId)) throw new Error(`Component terminal label ${terminalId} is not a catalog terminal.`);
+    if (typeof label !== "string" || !label.trim() || label.length > 8) throw new Error("Component terminal labels must be non-empty and at most 8 characters.");
+    result[terminalId] = label.trim();
   }
   return result;
 }
