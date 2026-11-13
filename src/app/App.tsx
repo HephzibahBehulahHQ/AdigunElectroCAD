@@ -94,7 +94,7 @@ export function App() {
   const [annotationMode, setAnnotationMode] = useState(false);
   const [selectedGraphicId, setSelectedGraphicId] = useState("");
   const [selectedGraphicIds, setSelectedGraphicIds] = useState<string[]>([]);
-  const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | null>(null);
+  const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | "freehand" | null>(null);
   const [reconnectingWireId, setReconnectingWireId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
   const [reportsOpen, setReportsOpen] = useState(false);
@@ -446,12 +446,12 @@ export function App() {
     setNotice(`${copy.name} created. It is drafting geometry and does not create an electrical connection.`);
   };
 
-  const activateGraphicTool = (kind: SchematicGraphicKind) => {
+  const activateGraphicTool = (kind: SchematicGraphicKind | "freehand") => {
     const next = graphicMode === kind ? null : kind;
     setGraphicMode(next);
     setWireMode(false); setWireStart(null); setAnnotationMode(false);
     setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]);
-    setNotice(next ? kind === "polyline" || kind === "polygon" ? `Click to add ${kind} vertices; double-click or press Enter to finish. Escape cancels.` : `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
+    setNotice(next ? kind === "polyline" || kind === "polygon" ? `Click to add ${kind} vertices; double-click or press Enter to finish. Escape cancels.` : kind === "freehand" ? "Drag on the blank sheet to sketch an editable path. Drafting geometry does not connect terminals." : `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
   };
 
   const runAction = (action: DolAction) => {
@@ -1256,6 +1256,7 @@ export function App() {
           <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
           <button className={graphicMode === "polyline" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polyline")} aria-label="Draw polyline">⌁<span>Polyline</span></button>
           <button className={graphicMode === "polygon" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polygon")} aria-label="Draw polygon">⬠<span>Polygon</span></button>
+          <button className={graphicMode === "freehand" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("freehand")} aria-label="Draw freehand path">✎<span>Freehand</span></button>
         </>}
         <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
         <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>

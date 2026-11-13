@@ -6,7 +6,10 @@ import { componentsInMarquee, previewComponentMove } from "../cad/componentSelec
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
+import { appendFreehandPoint, freehandPathBounds } from "../cad/freehandPath";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent } from "react";
+
+type SchematicGraphicMode = SchematicGraphicKind | "freehand";
 
 interface Props {
   onMove?: (componentId: string, x: number, y: number) => void;
@@ -32,7 +35,7 @@ interface Props {
   onAnnotationSelect?: (id: string) => void;
   onAnnotationPlace?: (x: number, y: number) => void;
   onAnnotationMove?: (id: string, x: number, y: number) => void;
-  graphicMode?: SchematicGraphicKind | null;
+  graphicMode?: SchematicGraphicMode | null;
   selectedGraphicId?: string;
   selectedGraphicIds?: string[];
   onGraphicSelect?: (id: string, additive?: boolean) => void;
@@ -310,7 +313,7 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
   const routeGesture = useRef<{ wireId: string; index: number; points: SchematicGraphicPoint[] } | null>(null);
   const [routePreview, setRoutePreview] = useState<{ wireId: string; points: SchematicGraphicPoint[] } | null>(null);
   const isPathMode = graphicMode === "polyline" || graphicMode === "polygon";
-  useEffect(() => { pathVertices.current = []; setGraphicPreview(null); }, [graphicMode]);
+  useEffect(() => { pathVertices.current = []; graphicStart.current = null; setGraphicPreview(null); }, [graphicMode]);
   const graphicPoint = (event: PointerEvent<SVGRectElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -372,19 +375,36 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
     if (!graphicMode || wireMode || event.button !== 0) return;
     const point = graphicPoint(event); if (!point) return;
     event.preventDefault(); graphicStart.current = point;
-    const start = { x: grid(point.x), y: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) };
-    setGraphicPreview({ kind: graphicMode, x1: start.x, y1: start.y, x2: start.x, y2: start.y });
+    const start = graphicMode === "freehand"
+      ? { x: Math.max(0, Math.min(1100, point.x)), y: Math.max(0, Math.min(780, point.y)) }
+      : { x: grid(point.x), y: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) };
+    if (graphicMode === "freehand") {
+      pathVertices.current = appendFreehandPoint([], start);
+      setGraphicPreview({ kind: "polyline", x1: start.x, y1: start.y, x2: start.x, y2: start.y, points: [...pathVertices.current] });
+    } else setGraphicPreview({ kind: graphicMode, x1: start.x, y1: start.y, x2: start.x, y2: start.y });
     event.currentTarget.setPointerCapture(event.pointerId);
   };
   const drawMove = (event: PointerEvent<SVGRectElement>) => {
     if (!graphicStart.current || !graphicMode) return;
     const point = graphicPoint(event); if (!point) return;
+    if (graphicMode === "freehand") {
+      pathVertices.current = appendFreehandPoint(pathVertices.current, point);
+      const bounds = freehandPathBounds(pathVertices.current);
+      if (bounds) setGraphicPreview({ kind: "polyline", ...bounds, points: [...pathVertices.current] });
+      return;
+    }
     setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) } : null);
   };
   const drawEnd = (event: PointerEvent<SVGRectElement>) => {
     const point = graphicPoint(event); const start = graphicStart.current; const kind = graphicMode;
     graphicStart.current = null; setGraphicPreview(null);
-    if (start && point && kind) {
+    if (start && point && kind === "freehand") {
+      const points = appendFreehandPoint(pathVertices.current, point);
+      const bounds = freehandPathBounds(points);
+      const length = points.slice(1).reduce((sum, item, index) => sum + Math.hypot(item.x - points[index].x, item.y - points[index].y), 0);
+      if (bounds && length >= 4) onGraphicCreate("polyline", bounds.x1, bounds.y1, bounds.x2, bounds.y2, points);
+      pathVertices.current = [];
+    } else if (start && point && kind && kind !== "freehand") {
       const x1 = grid(start.x); const y1 = Math.max(0, Math.min(780, Math.round(start.y / 20) * 20));
       const x2 = grid(point.x); const y2 = Math.max(0, Math.min(780, Math.round(point.y / 20) * 20));
       if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) >= 4 : Math.abs(x2 - x1) >= 4 && Math.abs(y2 - y1) >= 4) onGraphicCreate(kind, x1, y1, x2, y2);
@@ -422,10 +442,11 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
       if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); onAnnotationPlace(Math.max(0, Math.min(1100, Math.round(point.x / 20) * 20)), Math.max(0, Math.min(780, Math.round(point.y / 20) * 20))); }
     }}>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
-      <rect width="1100" height="780" className="sheet-bg" onPointerDown={(event) => graphicMode ? drawStart(event) : selectionStart(event)} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
+      <rect width="1100" height="780" className="sheet-bg" onPointerDown={(event) => graphicMode ? drawStart(event) : selectionStart(event)} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
       <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
       <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
       {isPathMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
+      {graphicMode === "freehand" && <text x="65" y="105" className="sheet-note" pointerEvents="none">Drag to sketch · select the path to edit its vertices, color, width and name</text>}
       {wireMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click a wire to place a junction, then choose a compatible terminal. Shift-click targets to continue branching.</text>}
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
