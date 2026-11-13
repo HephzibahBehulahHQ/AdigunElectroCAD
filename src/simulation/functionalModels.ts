@@ -153,13 +153,18 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   if (modelId === "six-terminal-windings") {
     const connection = text(properties, "connection", "open");
     const voltage = number(properties, "lineVoltageV");
+    if (bool(properties, "mechanicalTransientEnabled")) {
+      const error = text(properties, "runtimeMotorModelError");
+      if (error) return { label: "Winding operating point", error, value: `ERROR: ${error}` };
+    }
     if (bool(properties, "equivalentCircuitEnabled")) {
       const error = text(properties, "runtimeMotorModelError");
       if (error) return { label: "Winding operating point", error, value: `ERROR: ${error}` };
       const windingVoltage = connection === "star" ? voltage / Math.sqrt(3) : connection === "delta" ? voltage : 0;
       const current = number(properties, "runtimeMotorLineCurrentA");
       const torque = number(properties, "runtimeElectromagneticTorqueNm");
-      return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line · ${torque.toFixed(2)} N·m` };
+      const transient = bool(properties, "mechanicalTransientEnabled") ? ` · ${number(properties, "runtimeRotorSpeedRpm").toFixed(1)} rpm · ${number(properties, "runtimeSlip").toFixed(4)} slip` : "";
+      return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line · ${torque.toFixed(2)} N·m${transient}` };
     }
     const resistance = number(properties, "resistanceOhm");
     const reactance = number(properties, "reactanceOhm");
@@ -211,3 +216,4 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   return undefined;
 }
+

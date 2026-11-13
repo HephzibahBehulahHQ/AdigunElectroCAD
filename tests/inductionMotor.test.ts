@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inductionMotorOperatingPoint, type InductionMotorEquivalentCircuit } from "../src/simulation/inductionMotor";
+import { advanceInductionMotorSpeedRpm, inductionMotorOperatingPoint, type InductionMotorEquivalentCircuit } from "../src/simulation/inductionMotor";
 
 const motor: InductionMotorEquivalentCircuit = {
   statorResistanceOhm: 0.8,
@@ -47,3 +47,12 @@ it("represents synchronous speed with an open rotor branch and zero torque", () 
   expect(star.phaseCurrentA).toBeGreaterThan(0);
   expect(delta.lineCurrentA).toBeCloseTo(Math.sqrt(3) * delta.phaseCurrentA);
 });
+
+it("advances explicit rigid-rotor mechanics and clamps speed to the synchronous boundary", () => {
+  const accelerated = advanceInductionMotorSpeedRpm(0, 10, 0, 1, 1500, 0.1);
+  expect(accelerated).toBeCloseTo(10 * 0.1 * 60 / (2 * Math.PI));
+  expect(advanceInductionMotorSpeedRpm(100, 0, 10_000, 1, 1500, 0.1)).toBe(0);
+  expect(advanceInductionMotorSpeedRpm(1499, 10, 0, 1, 1500, 1)).toBe(1500);
+  expect(() => advanceInductionMotorSpeedRpm(0, 1, 0, 0, 1500, 0.1)).toThrow(/finite/);
+});
+

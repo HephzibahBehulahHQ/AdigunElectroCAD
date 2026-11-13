@@ -201,18 +201,34 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       : connection === "star" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? lineVoltageV / Math.sqrt(3) / impedance
       : connection === "delta" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? Math.sqrt(3) * lineVoltageV / impedance
       : NaN;
-    if (p.equivalentCircuitEnabled === true && connection !== "open") {
+    if ((p.equivalentCircuitEnabled === true || p.mechanicalTransientEnabled === true) && connection !== "open") {
       const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
       const supplyFrequencyHz = motorFrequencies[0];
       try {
+        if (p.mechanicalTransientEnabled === true && p.equivalentCircuitEnabled !== true) throw new Error("Enable the explicit motor equivalent circuit before enabling mechanical transients.");
         if (connection !== "star" && connection !== "delta") throw new Error("Motor winding topology is not a valid star or delta connection.");
         if (supplyFrequencyHz === undefined || !Number.isFinite(supplyFrequencyHz) || supplyFrequencyHz <= 0 || motorFrequencies.some(value => value !== supplyFrequencyHz)) throw new Error("Motor terminals do not share one valid supply frequency.");
         if (Number(p.frequencyHz) !== supplyFrequencyHz) throw new Error("Motor equivalent-circuit frequency must match the powered supply frequency.");
+        const polePairs = Number(p.polePairs);
+        if (!Number.isInteger(polePairs) || polePairs < 1) throw new Error("Motor pole pairs must be a positive integer.");
+        const synchronousSpeedRpm = 60 * supplyFrequencyHz / polePairs;
+        let slip = Number(p.slip);
+        if (p.mechanicalTransientEnabled === true) {
+          const inertia = Number(p.rotorInertiaKgM2), loadTorque = Number(p.loadTorqueNm);
+          const speed = Number(p.runtimeRotorSpeedRpm ?? p.initialRotorSpeedRpm ?? 0);
+          if (!Number.isFinite(inertia) || inertia <= 0) throw new Error("Enter a positive rotor inertia before enabling mechanical transients.");
+          if (!Number.isFinite(loadTorque) || loadTorque < 0) throw new Error("Enter a finite non-negative mechanical load torque.");
+          if (!Number.isFinite(speed) || speed < 0 || speed > synchronousSpeedRpm) throw new Error("Initial rotor speed must be between zero and synchronous speed.");
+          p.runtimeRotorSpeedRpm = speed;
+          p.runtimeLoadTorqueNm = loadTorque;
+          slip = Math.max(0, 1 - speed / synchronousSpeedRpm);
+          p.runtimeSlip = slip;
+        }
         const point = inductionMotorOperatingPoint({
           statorResistanceOhm: Number(p.statorResistanceOhm), statorReactanceOhm: Number(p.statorReactanceOhm),
           rotorResistanceOhm: Number(p.rotorResistanceOhm), rotorReactanceOhm: Number(p.rotorReactanceOhm),
           magnetizingReactanceOhm: Number(p.magnetizingReactanceOhm), frequencyHz: supplyFrequencyHz, polePairs: Number(p.polePairs),
-        }, lineVoltageV, Number(p.slip), connection);
+        }, lineVoltageV, slip, connection);
         currentA = point.lineCurrentA;
         p.runtimeMotorModelError = "";
         p.runtimeMotorLineCurrentA = point.lineCurrentA;
@@ -225,6 +241,10 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         p.runtimeMotorLineCurrentA = NaN;
         p.runtimeElectromagneticTorqueNm = NaN;
       }
+    } else if (p.mechanicalTransientEnabled === true && connection === "open") {
+      p.runtimeElectromagneticTorqueNm = 0;
+      p.runtimeMotorLineCurrentA = 0;
+      p.runtimeMotorModelError = "";
     }
     currentLoads.push({ reference: component.reference, currentA, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
       const feed = feeds[index][0], separator = feed.lastIndexOf(":");
@@ -268,4 +288,5 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return output ? [{ componentId: component.id, reference: component.reference, modelId: definition.simulationModelId, output, evaluatedProperties: { ...active } }] : [];
   });
 }
+
 

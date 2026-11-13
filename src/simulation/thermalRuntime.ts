@@ -2,6 +2,7 @@ import type { CircuitDocument, ElectricalComponentDefinition } from "../types/el
 import { executeCircuitModels } from "./circuitModels";
 import { evaluateWiredControl } from "./wiredControl";
 import { advanceThermalOverload, secondsUntilThermalTrip, type ThermalOverloadParameters, type ThermalOverloadState } from "./thermalOverload";
+import { advanceInductionMotorSpeedRpm } from "./inductionMotor";
 
 type Properties = Readonly<Record<string, string | number | boolean>>;
 const stateOf = (p: Properties): ThermalOverloadState => ({ level: Number(p.runtimeThermalLevel ?? 0), tripped: p.runtimeThermalTripped === true, resetPrevious: p.runtimeThermalResetPrevious === true });
@@ -17,12 +18,15 @@ export function advanceCircuitThermal(document: CircuitDocument, catalog: Map<st
   if (!Number.isFinite(seconds) || seconds < 0) throw new Error("Thermal interval must be finite and non-negative.");
   if (document.id === "reference-dol-motor-starter") return document;
   const enabled = new Set(document.components.filter(c => catalog.get(c.definitionId)?.simulationModelId === "thermal-overload-dol-v1" && { ...catalog.get(c.definitionId)?.propertiesSchema, ...c.properties }.thermalEnabled === true).map(c => c.id));
-  if (!enabled.size) return document;
+  const dynamicMotors = new Set(document.components.filter(c => catalog.get(c.definitionId)?.simulationModelId === "six-terminal-windings" && { ...catalog.get(c.definitionId)?.propertiesSchema, ...c.properties }.mechanicalTransientEnabled === true).map(c => c.id));
+  if (!enabled.size && !dynamicMotors.size) return document;
+  if (dynamicMotors.size && seconds > 1000) throw new Error("Mechanical transient intervals are limited to 1000 seconds per simulation advance.");
   let current = settleCoils(document, catalog), remaining = seconds;
-  // Each relay can trip at most once per interval; resets are consumed at its start.
-  for (let iteration = 0; iteration < enabled.size + 3; iteration++) {
+  // Dynamic mechanics use bounded 10 ms steps; each relay may trip once per interval.
+  const maxIterations = dynamicMotors.size ? Math.ceil(seconds / 0.01) + enabled.size + 3 : enabled.size + 3;
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
     const runs = new Map(executeCircuitModels(current, catalog).map(r => [r.componentId, r.evaluatedProperties]));
-    let horizon = remaining;
+    let horizon = dynamicMotors.size ? Math.min(remaining, 0.01) : remaining;
     const samples = new Map<string, { state: ThermalOverloadState; currentA: number; parameters: ThermalOverloadParameters; error: string; valid: boolean }>();
     for (const id of enabled) {
       const p = runs.get(id)!;
@@ -45,9 +49,37 @@ export function advanceCircuitThermal(document: CircuitDocument, catalog: Map<st
     }
     current = { ...current, components: current.components.map(c => {
       const sample = samples.get(c.id);
-      if (!sample) return c;
-      const state = sample.valid ? advanceThermalOverload(sample.state, sample.currentA, horizon, sample.state.resetPrevious, sample.parameters) : sample.state;
-      return { ...c, properties: { ...c.properties, runtimeThermalLevel: state.level, runtimeThermalTripped: state.tripped, runtimeThermalResetPrevious: state.resetPrevious, runtimeThermalError: sample.error, runtimeLoadCurrentA: sample.currentA } };
+      const isDynamicMotor = dynamicMotors.has(c.id);
+      if (!sample && !isDynamicMotor) return c;
+      const nextProperties = { ...c.properties };
+      if (sample) {
+        const state = sample.valid ? advanceThermalOverload(sample.state, sample.currentA, horizon, sample.state.resetPrevious, sample.parameters) : sample.state;
+        Object.assign(nextProperties, { runtimeThermalLevel: state.level, runtimeThermalTripped: state.tripped, runtimeThermalResetPrevious: state.resetPrevious, runtimeThermalError: sample.error, runtimeLoadCurrentA: sample.currentA });
+      }
+      if (isDynamicMotor) {
+        const p = runs.get(c.id) ?? { ...catalog.get(c.definitionId)?.propertiesSchema, ...c.properties };
+        let error = String(p.runtimeMotorModelError ?? "");
+        try {
+          if (p.equivalentCircuitEnabled !== true) throw new Error("Enable the explicit motor equivalent circuit before enabling mechanical transients.");
+          const inertia = Number(p.rotorInertiaKgM2), loadTorque = Number(p.loadTorqueNm);
+          const speed = Number(p.runtimeRotorSpeedRpm ?? p.initialRotorSpeedRpm ?? 0);
+          const lineVoltage = Number(p.lineVoltageV);
+          const energized = (p.connection === "star" || p.connection === "delta") && Number.isFinite(lineVoltage) && lineVoltage > 0;
+          const synchronousSpeed = energized ? Number(p.runtimeSynchronousSpeedRpm) : 60 * Number(p.frequencyHz) / Number(p.polePairs);
+          if (!Number.isFinite(inertia) || inertia <= 0) throw new Error("Enter a positive rotor inertia before enabling mechanical transients.");
+          if (!Number.isFinite(loadTorque) || loadTorque < 0) throw new Error("Enter a finite non-negative mechanical load torque.");
+          if (!Number.isFinite(synchronousSpeed) || synchronousSpeed <= 0) throw new Error("Motor synchronous speed must be finite and positive.");
+          if (error) throw new Error(error);
+          const torque = energized ? Number(p.runtimeElectromagneticTorqueNm) : 0;
+          if (!Number.isFinite(torque) || torque < 0) throw new Error("Electromagnetic torque is invalid for the current motor operating point.");
+          const nextSpeed = advanceInductionMotorSpeedRpm(speed, torque, loadTorque, inertia, synchronousSpeed, horizon);
+          nextProperties.runtimeRotorSpeedRpm = nextSpeed;
+          nextProperties.runtimeMotorModelError = "";
+        } catch (cause) {
+          nextProperties.runtimeMotorModelError = cause instanceof Error ? cause.message : "Invalid mechanical transient input.";
+        }
+      }
+      return { ...c, properties: nextProperties };
     }) };
     current = settleCoils(current, catalog);
     remaining = Math.max(0, remaining - horizon);
@@ -55,3 +87,4 @@ export function advanceCircuitThermal(document: CircuitDocument, catalog: Map<st
   }
   throw new Error("Thermal event integration did not settle.");
 }
+
