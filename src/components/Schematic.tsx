@@ -90,7 +90,9 @@ function wirePath(from: TerminalAnchor, to: TerminalAnchor, points: readonly { x
 function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotation: SchematicAnnotation; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onAnnotationMove"] }) {
   const origin = useRef<{ x: number; y: number } | null>(null);
   const size = annotation.fontSize ?? 18;
-  const width = Math.max(size * 3, annotation.text.length * size * .52 + 10);
+  const lines = annotation.text.split(/\r?\n/);
+  const width = Math.max(size * 3, ...lines.map((line) => line.length * size * .52 + 10));
+  const height = Math.max(size * 1.35, lines.length * size * 1.2 + size * .15);
   const textAnchor = annotation.textAnchor ?? "start";
   const outlineX = textAnchor === "middle" ? -width / 2 : textAnchor === "end" ? -width : -5;
   const point = (event: PointerEvent<SVGGElement>) => {
@@ -106,8 +108,8 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) onMove?.(annotation.id, annotation.x + current.x - start.x, annotation.y + current.y - start.y);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
-    {selected && <rect x={outlineX} y={-size * 1.1} width={width} height={size * 1.35} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
-    <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight={annotation.fontWeight ?? 600} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
+    {selected && <rect x={outlineX} y={-size * 1.1} width={width} height={height} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
+    <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight={annotation.fontWeight ?? 600} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{lines.map((line, index) => <tspan key={index} x="0" dy={index === 0 ? 0 : size * 1.2}>{line || " "}</tspan>)}</text>
   </g>;
 }
 

@@ -283,7 +283,8 @@ export function App() {
   const updateSelectedAnnotation = (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "x" | "y" | "fontSize" | "rotation" | "textAnchor" | "fontWeight">>) => {
     if (!selectedAnnotation) return;
     const next = { ...selectedAnnotation, ...patch };
-    if (!next.text.trim() || next.text.length > 160 || !/^#[0-9a-f]{6}$/i.test(next.color) || !Number.isFinite(next.fontSize ?? 18) || (next.fontSize ?? 18) < 8 || (next.fontSize ?? 18) > 48 || !Number.isFinite(next.rotation ?? 0) || (next.rotation ?? 0) < 0 || (next.rotation ?? 0) >= 360 || ![400, 600, 700].includes(next.fontWeight ?? 600)) {
+    const lines = next.text.split(/\r?\n/);
+    if (!next.text.trim() || next.text.length > 500 || lines.length > 8 || lines.some((line) => line.length > 160) || !/^#[0-9a-f]{6}$/i.test(next.color) || !Number.isFinite(next.fontSize ?? 18) || (next.fontSize ?? 18) < 8 || (next.fontSize ?? 18) > 48 || !Number.isFinite(next.rotation ?? 0) || (next.rotation ?? 0) < 0 || (next.rotation ?? 0) >= 360 || ![400, 600, 700].includes(next.fontWeight ?? 600)) {
       setNotice("Annotation text, color, size, or rotation is outside its allowed range.");
       return;
     }
@@ -1249,7 +1250,7 @@ function WireProperties({ wire, onNetNameChange, onColorChange, onReconnect, onR
 function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: SchematicAnnotation; onChange: (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "fontSize" | "rotation" | "textAnchor" | "fontWeight">>) => void; onRemove: () => void }) {
   const palette = ["#19324f", "#c62828", "#16814b", "#1565c0", "#d27a00", "#7b3fa1"];
   return <section className="properties-form annotation-properties" aria-label="Text annotation properties">
-    <label>Text<input defaultValue={annotation.text} key={`${annotation.id}:${annotation.text}`} maxLength={160} onBlur={(event) => onChange({ text: event.target.value })} /></label>
+    <label>Text<textarea defaultValue={annotation.text} key={`${annotation.id}:${annotation.text}`} maxLength={500} rows={4} onBlur={(event) => onChange({ text: event.target.value })} /></label>
     <label>Text size · SVG units<input type="number" min={8} max={48} step={1} defaultValue={annotation.fontSize ?? 18} key={`${annotation.id}:size:${annotation.fontSize ?? 18}`} onBlur={(event) => onChange({ fontSize: Number(event.target.value) })} /></label>
     <label>Rotation · degrees<input type="number" min={0} max={359} step={1} defaultValue={annotation.rotation ?? 0} key={`${annotation.id}:rotation:${annotation.rotation ?? 0}`} onBlur={(event) => onChange({ rotation: Number(event.target.value) })} /></label>
     <label>Text alignment<select aria-label="Text alignment" value={annotation.textAnchor ?? "start"} onChange={(event) => onChange({ textAnchor: event.target.value as SchematicAnnotation["textAnchor"] })}><option value="start">Left</option><option value="middle">Center</option><option value="end">Right</option></select></label>
