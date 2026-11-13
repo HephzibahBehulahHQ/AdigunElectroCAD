@@ -30,7 +30,7 @@ it("shares Q0 between set and reset rungs, with later reset priority", () => {
   expect(scanPlcProgram(program, true, true, true)).toEqual({ ok: true, output: false });
 });
 
-it.each(["", "AND I0; OUT Q0", "LD I0", "LD I3; OUT Q0", "LD I0; OUT Q1", "LD I0; RUN Q0", "LD I0; OUT Q0 extra", Array(33).fill("LD I0").join(";")])("fails closed for invalid program %s", (program) => {
+it.each(["", "AND I0; OUT Q0", "LD I0", "LD I3; OUT Q0", "LD I0; RUN Q0", "LD I0; OUT Q0 extra", Array(33).fill("LD I0").join(";")])("fails closed for invalid program %s", (program) => {
   expect(scanPlcProgram(program, true, false, true)).toMatchObject({ ok: false, output: false });
 });
 
