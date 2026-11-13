@@ -1,6 +1,6 @@
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
-import { appendWireRoutePoint, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
+import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
 import { terminalAnchors } from "../src/components/Schematic";
 import { createTwoMotorSequence } from "../src/projects/twoMotorSequence";
 import { catalogById } from "../src/catalog/dolCatalog";
@@ -81,4 +81,14 @@ it("adds a route waypoint on the final rendered segment", () => {
   expect(updated).toHaveLength(2);
   expect(updated[1]).toEqual({ x: 370, y: 300 });
   expect(appendWireRoutePoint(from, from, [])).toEqual([]);
+});
+
+it("inserts a route waypoint where the user clicks an existing wire segment", () => {
+  const from = { x: 100, y: 100 }; const to = { x: 500, y: 300 };
+  const first = insertWireRoutePointAt(from, to, [], false, false, { x: 241, y: 103 });
+  expect(first).toMatchObject({ point: { x: 240, y: 100 }, index: 0, points: [{ x: 240, y: 100 }] });
+  const nested = insertWireRoutePointAt(from, to, [{ x: 240, y: 100 }], false, false, { x: 243, y: 180 });
+  expect(nested).toMatchObject({ point: { x: 240, y: 180 }, index: 1 });
+  expect(orthogonalWireVertices(from, to, nested!.points).some((point) => point.x === nested!.point.x && point.y === nested!.point.y)).toBe(true);
+  expect(insertWireRoutePointAt(from, to, [], false, false, { x: 700, y: 700 })).toBeNull();
 });

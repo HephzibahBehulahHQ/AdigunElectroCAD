@@ -5,8 +5,8 @@ import { catalogById } from "../catalog/dolCatalog";
 import { componentsInMarquee } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
-import { orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent } from "react";
 
 interface Props {
   onMove?: (componentId: string, x: number, y: number) => void;
@@ -410,6 +410,14 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
         const routePoints = routePreview?.wireId === wire.id ? routePreview.points : wire.points;
         const points = branch?.points ?? routePoints;
         const path = wirePath(from, to, points);
+        const insertRoutePoint = (event: ReactMouseEvent<SVGPathElement>) => {
+          event.stopPropagation();
+          const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
+          if (!matrix) return;
+          const pointer = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+          const inserted = insertWireRoutePointAt(from, to, wire.points, from.vertical ?? false, to.vertical ?? false, pointer);
+          if (inserted) onWireRouteChange?.(wire.id, inserted.points);
+        };
         const startBranch = (event: PointerEvent<SVGPathElement>) => {
           event.stopPropagation();
           const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
@@ -419,7 +427,8 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
           if (route) onWireBranchStart?.(wire.id, route.source, route.position);
         };
         return <g key={wire.id}>
-          <path d={path} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} />
+          <path d={path} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId) insertRoutePoint(event); else onWireSelect(wire.id); }} />
+          {wireRouteEditId === wire.id && !wire.branchOfWireId && <path d={path} className="wire-route-hit-target" aria-hidden="true" onClick={insertRoutePoint} />}
           {wireMode && onWireBranchStart && <path d={path} className="wire-branch-hit-target" role="button" tabIndex={0} aria-label={`Create a branch from ${wire.netName ?? wire.id}`} onClick={startBranch} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onWireBranchStart(wire.id, "from", .5); } }} />}
           {branch && <circle cx={branch.point.x} cy={branch.point.y} r="5" className="wire-junction" aria-label={`Electrical junction on ${wire.netName ?? wire.id}`} />}
           {wireRouteEditId === wire.id && !wire.branchOfWireId && routePoints.map((point, index) => <circle key={index} className="wire-route-handle" data-route-point={index} cx={point.x} cy={point.y} r="6" role="button" tabIndex={0} aria-label={`Route point ${index + 1} on ${wire.netName ?? wire.id}; drag to move or use arrow keys`} onPointerDown={(event) => { event.stopPropagation(); routeGesture.current = { wireId: wire.id, index, points: [...routePoints] }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => moveRoutePoint(event, wire.id)} onPointerUp={(event) => finishRoutePoint(event, wire.id)} onPointerCancel={() => { routeGesture.current = null; setRoutePreview(null); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); }} onKeyDown={(event) => { const delta = event.shiftKey ? 100 : 20; const move = event.key === "ArrowLeft" ? { x: -delta, y: 0 } : event.key === "ArrowRight" ? { x: delta, y: 0 } : event.key === "ArrowUp" ? { x: 0, y: -delta } : event.key === "ArrowDown" ? { x: 0, y: delta } : null; if (move) { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.map((item, pointIndex) => pointIndex === index ? snappedPathPoint(item.x + move.x, item.y + move.y) : item)); } else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); } }} />)}
