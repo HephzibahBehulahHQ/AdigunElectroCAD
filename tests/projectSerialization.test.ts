@@ -119,10 +119,12 @@ describe("project JSON import validation", () => {
   it("persists editable text annotations and accepts older projects without annotations", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = input.sheets[1].document;
-    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0", fontSize: 28, rotation: 45, textAnchor: "middle" }];
+    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0", fontSize: 28, rotation: 45, textAnchor: "middle", fontWeight: 700 }];
     const imported = parseProjectJson(JSON.stringify(input));
     expect(imported.sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].textAnchor;
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
+    delete sheet.annotations[0].fontWeight;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].rotation;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
@@ -152,6 +154,9 @@ describe("project JSON import validation", () => {
     input.sheets[1].document.annotations![0].rotation = 0;
     input.sheets[1].document.annotations![0].textAnchor = "bogus" as "start";
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("alignment must be left, center, or right");
+    input.sheets[1].document.annotations![0].textAnchor = "start";
+    input.sheets[1].document.annotations![0].fontWeight = 500 as 600;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("weight must be 400, 600, or 700");
   });
 
   it("persists user-drawn graphics and accepts earlier projects without graphics", () => {

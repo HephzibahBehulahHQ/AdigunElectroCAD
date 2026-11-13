@@ -280,10 +280,10 @@ export function App() {
     setNotice("Text annotation placed. Edit its text and color in Properties; drag it to reposition.");
   };
 
-  const updateSelectedAnnotation = (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "x" | "y" | "fontSize" | "rotation" | "textAnchor">>) => {
+  const updateSelectedAnnotation = (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "x" | "y" | "fontSize" | "rotation" | "textAnchor" | "fontWeight">>) => {
     if (!selectedAnnotation) return;
     const next = { ...selectedAnnotation, ...patch };
-    if (!next.text.trim() || next.text.length > 160 || !/^#[0-9a-f]{6}$/i.test(next.color) || !Number.isFinite(next.fontSize ?? 18) || (next.fontSize ?? 18) < 8 || (next.fontSize ?? 18) > 48 || !Number.isFinite(next.rotation ?? 0) || (next.rotation ?? 0) < 0 || (next.rotation ?? 0) >= 360) {
+    if (!next.text.trim() || next.text.length > 160 || !/^#[0-9a-f]{6}$/i.test(next.color) || !Number.isFinite(next.fontSize ?? 18) || (next.fontSize ?? 18) < 8 || (next.fontSize ?? 18) > 48 || !Number.isFinite(next.rotation ?? 0) || (next.rotation ?? 0) < 0 || (next.rotation ?? 0) >= 360 || ![400, 600, 700].includes(next.fontWeight ?? 600)) {
       setNotice("Annotation text, color, size, or rotation is outside its allowed range.");
       return;
     }
@@ -1246,13 +1246,14 @@ function WireProperties({ wire, onNetNameChange, onColorChange, onReconnect, onR
   return <section className="properties-form wire-properties"><label>Net name<input defaultValue={wire.netName ?? wire.id} key={wire.id + (wire.netName ?? "")} onBlur={(event) => onNetNameChange(event.target.value)} /></label><label>Wire color<input aria-label="Wire color" type="color" value={wire.draftingColor ?? "#68788b"} onChange={(event) => onColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Wire color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set wire color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onColorChange(color)} />)}<button type="button" aria-label="Reset wire color" title="Default color" onClick={() => onColorChange(undefined)}>↺</button></div><label>From terminal<input value={`${wire.from.componentId}.${wire.from.terminalId}`} readOnly /></label><label>To terminal<input value={`${wire.to.componentId}.${wire.to.terminalId}`} readOnly /></label><p>Wire color is drafting appearance only. Reconnecting changes its target terminal and recalculates the orthogonal path.</p><button className="reconnect-wire" onClick={onReconnect}>Reconnect target terminal</button><button className="remove-component" onClick={onRemove}>Delete wire</button></section>;
 }
 
-function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: SchematicAnnotation; onChange: (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "fontSize" | "rotation" | "textAnchor">>) => void; onRemove: () => void }) {
+function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: SchematicAnnotation; onChange: (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "fontSize" | "rotation" | "textAnchor" | "fontWeight">>) => void; onRemove: () => void }) {
   const palette = ["#19324f", "#c62828", "#16814b", "#1565c0", "#d27a00", "#7b3fa1"];
   return <section className="properties-form annotation-properties" aria-label="Text annotation properties">
     <label>Text<input defaultValue={annotation.text} key={`${annotation.id}:${annotation.text}`} maxLength={160} onBlur={(event) => onChange({ text: event.target.value })} /></label>
     <label>Text size · SVG units<input type="number" min={8} max={48} step={1} defaultValue={annotation.fontSize ?? 18} key={`${annotation.id}:size:${annotation.fontSize ?? 18}`} onBlur={(event) => onChange({ fontSize: Number(event.target.value) })} /></label>
     <label>Rotation · degrees<input type="number" min={0} max={359} step={1} defaultValue={annotation.rotation ?? 0} key={`${annotation.id}:rotation:${annotation.rotation ?? 0}`} onBlur={(event) => onChange({ rotation: Number(event.target.value) })} /></label>
     <label>Text alignment<select aria-label="Text alignment" value={annotation.textAnchor ?? "start"} onChange={(event) => onChange({ textAnchor: event.target.value as SchematicAnnotation["textAnchor"] })}><option value="start">Left</option><option value="middle">Center</option><option value="end">Right</option></select></label>
+    <label>Text weight<select aria-label="Text weight" value={annotation.fontWeight ?? 600} onChange={(event) => onChange({ fontWeight: Number(event.target.value) as SchematicAnnotation["fontWeight"] })}><option value={400}>Standard</option><option value={600}>Semi-bold</option><option value={700}>Bold</option></select></label>
     <label>Color<input type="color" value={annotation.color} onChange={(event) => onChange({ color: event.target.value })} /></label>
     <div className="annotation-palette" aria-label="Text color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set text color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ color })} />)}</div>
     <p>Position · X {annotation.x} · Y {annotation.y}. Drag the text on the sheet to move it.</p>
