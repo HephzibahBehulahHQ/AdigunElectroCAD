@@ -2,7 +2,7 @@ import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicG
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
-import { componentsInMarquee } from "../cad/componentSelection";
+import { componentsInMarquee, previewComponentMove } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as Rea
 
 interface Props {
   onMove?: (componentId: string, x: number, y: number) => void;
+  onMovePreview?: (componentId: string, delta: { x: number; y: number } | null) => void;
   zoom?: number;
   showGrid?: boolean;
   document: CircuitDocument;
@@ -209,7 +210,7 @@ function SixTerminalWindings({ x, y }: { x: number; y: number }) {
   </g>;
 }
 
-function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [], onSelect, onMove, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
+function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [], onSelect, onMove, onMovePreview, previewDelta, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; onMovePreview?: Props["onMovePreview"]; previewDelta?: { x: number; y: number }; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
   const definition = catalogById.get(component.definitionId);
   const labels = componentLabelOffsets(component.rotation, component.definitionId);
   const typeLabel = typeof component.properties.indication === "string" && component.properties.indication.trim() ? component.properties.indication.trim() : definition?.referencePrefix ?? "?";
@@ -223,7 +224,8 @@ function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  return <g onClick={(event) => { event.stopPropagation(); if (dragged.current) { dragged.current = false; return; } onSelect(component.id, event.shiftKey); }} transform={`translate(${delta.x} ${delta.y})`} style={{ touchAction: wireMode ? "auto" : "none", cursor: onMove && !wireMode ? "grab" : undefined }}
+  const visualDelta = previewDelta ?? delta;
+  return <g onClick={(event) => { event.stopPropagation(); if (dragged.current) { dragged.current = false; return; } onSelect(component.id, event.shiftKey); }} transform={`translate(${visualDelta.x} ${visualDelta.y})`} style={{ touchAction: wireMode ? "auto" : "none", cursor: onMove && !wireMode ? "grab" : undefined }}
     onPointerDown={(event) => {
       if (!onMove || wireMode || event.button !== 0) return;
       const start = point(event); if (!start) return;
@@ -232,16 +234,17 @@ function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [
     }}
     onPointerMove={(event) => {
       const current = point(event); if (!origin.current || !current) return;
-      setDelta({ x: Math.round((current.x - origin.current.x) / 20) * 20, y: Math.round((current.y - origin.current.y) / 20) * 20 });
+      const nextDelta = { x: Math.round((current.x - origin.current.x) / 20) * 20, y: Math.round((current.y - origin.current.y) / 20) * 20 };
+      setDelta(nextDelta); onMovePreview?.(component.id, nextDelta);
     }}
     onPointerUp={(event) => {
       const current = point(event); const start = origin.current;
-      origin.current = null; setDelta({ x: 0, y: 0 });
+      origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null);
       if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) { dragged.current = true; onMove?.(component.id, component.x + current.x - start.x, component.y + current.y - start.y); }
       if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     }}
-    onPointerCancel={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
-    onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); }}
+    onPointerCancel={() => { origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null); }}
+    onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null); }}
     className={(selectedComponentIds.length ? selectedComponentIds.includes(component.id) : component.id === selectedComponentId) ? "schematic-component selected" : "schematic-component"}>
     <g transform={`translate(${component.x} ${component.y}) scale(${component.size ?? 1}) translate(${-component.x} ${-component.y})`}><g transform={`rotate(${component.rotation} ${component.x} ${component.y})`} style={component.draftingColor ? { "--component-ink": component.draftingColor } as CSSProperties : undefined}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} properties={symbolProperties} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
     {definition?.symbolId !== "user-indicator-lamp" && terminalAnchorsForComponent.map(({ endpoint, x, y }) => { const label = component.terminalLabels?.[endpoint.terminalId]; if (!label) return null; const left = x < component.x; return <text key={endpoint.terminalId} x={x + (left ? -5 : 5)} y={y + (y < component.y ? -5 : 12)} textAnchor={left ? "end" : "start"} className="terminal-label custom-terminal-label">{label}</text>; })} <text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
@@ -266,7 +269,14 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
 }
 
 function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId = "", onWireRouteChange, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
-  const anchors = terminalAnchors(document);
+  const [previewMove, setPreviewMove] = useState<{ ids: string[]; delta: { x: number; y: number } } | null>(null);
+  const updateMovePreview = (componentId: string, delta: { x: number; y: number } | null) => {
+    if (!delta) { setPreviewMove(null); return; }
+    const ids = selectedComponentIds.includes(componentId) ? selectedComponentIds : [componentId];
+    setPreviewMove({ ids, delta });
+  };
+  const previewDocument = previewMove ? previewComponentMove(document, previewMove.ids, previewMove.delta.x, previewMove.delta.y) : document;
+  const anchors = terminalAnchors(previewDocument);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
   const branchRouteForWire = (wire: Wire, seen = new Set<string>()): { point: { x: number; y: number }; points: { x: number; y: number }[] } | null => {
     if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
@@ -436,7 +446,7 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
       })}
       {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
-      {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} wireMode={wireMode} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
+      {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
       {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)} · Shift-click target to continue branch</title></g>)}</g>}

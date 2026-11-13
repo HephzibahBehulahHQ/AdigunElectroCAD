@@ -1,4 +1,4 @@
-import type { ComponentInstance } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance } from "../types/electrical";
 import { componentFootprint } from "./componentGeometry";
 
 export function toggleComponentSelection(selectedIds: string[], componentId: string): string[] {
@@ -13,4 +13,10 @@ export function componentsInMarquee(components: ComponentInstance[], x1: number,
     const bounds = componentFootprint(component.x, component.y, component.rotation, component.definitionId, component.size ?? 1);
     return bounds.left <= right && bounds.right >= left && bounds.top <= bottom && bounds.bottom >= top;
   }).map((component) => component.id);
+}
+
+export function previewComponentMove(document: CircuitDocument, componentIds: string[], dx: number, dy: number): CircuitDocument {
+  const moving = new Set(componentIds);
+  if (!moving.size || (!dx && !dy)) return document;
+  return { ...document, components: document.components.map((component) => moving.has(component.id) ? { ...component, x: component.x + dx, y: component.y + dy } : component) };
 }
