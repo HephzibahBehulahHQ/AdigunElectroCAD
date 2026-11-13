@@ -76,6 +76,23 @@ it("renders editable electrical wire colors separately from terminal topology", 
   expect(document.wires[0].from).toEqual({ componentId: seed.id, terminalId: terminals[0].id });
 });
 
+it("shows draggable route handles only while editing an unbranched wire", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  const seed = { ...createStarterProject().sheets[0].document.components[0], id: "route-edit-test", x: 300, y: 300 };
+  document.components.push(seed);
+  const terminals = catalogById.get(seed.definitionId)!.terminals;
+  const wire = { id: "route-wire", from: { componentId: seed.id, terminalId: terminals[0].id }, to: { componentId: seed.id, terminalId: terminals[1].id }, points: [{ x: 360, y: 320 }], netName: "ROUTE_TEST" };
+  document.wires = [wire];
+  const render = (wireRouteEditId: string) => renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: wire.id, wireRouteEditId, simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onWireRouteChange: () => {},
+  }));
+  expect(render(wire.id)).toContain('data-route-point="0"');
+  wire.branchOfWireId = "parent-wire";
+  expect(render(wire.id)).not.toContain('data-route-point="0"');
+});
+
 it("renders editable multi-point paths and exposes a handle for each vertex", () => {
   const project = addFreeSchematicSheet(createStarterProject());
   const document = project.sheets[1].document;

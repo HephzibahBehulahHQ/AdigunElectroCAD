@@ -1,6 +1,6 @@
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
-import { orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
+import { appendWireRoutePoint, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
 import { terminalAnchors } from "../src/components/Schematic";
 import { createTwoMotorSequence } from "../src/projects/twoMotorSequence";
 import { catalogById } from "../src/catalog/dolCatalog";
@@ -72,4 +72,13 @@ it("reprojects a saved junction fraction when a wire endpoint moves", () => {
   const moved = wireBranchRoute({ x: 100, y: 100 }, { x: 700, y: 300 }, [], false, false, "from", .5);
   expect(first).not.toBeNull(); expect(moved).not.toBeNull();
   expect(moved!.point).not.toEqual(first!.point);
+});
+
+it("adds a route waypoint on the final rendered segment", () => {
+  const from = { x: 100, y: 100 }; const to = { x: 500, y: 300 };
+  const original = [{ x: 240, y: 100 }];
+  const updated = appendWireRoutePoint(from, to, original);
+  expect(updated).toHaveLength(2);
+  expect(updated[1]).toEqual({ x: 370, y: 300 });
+  expect(appendWireRoutePoint(from, from, [])).toEqual([]);
 });
