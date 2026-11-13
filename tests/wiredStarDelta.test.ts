@@ -77,6 +77,36 @@ it("routes the configured induction-motor line current through F1 and trips on d
   expect(evaluateWiredControl(runtime, catalogById).get("forward")?.energized).toBe(false);
   expect(motor(runtime)).toContain("OPEN");
 });
+
+it("integrates editable inertia and load torque through wired motor current and coasts when de-energized", () => {
+  const document = createWiredStarDeltaCircuit();
+  const motorComponent = document.components.find(component => component.id === "motor")!;
+  Object.assign(motorComponent.properties, {
+    equivalentCircuitEnabled: true, mechanicalTransientEnabled: true,
+    statorResistanceOhm: 0.8, statorReactanceOhm: 1.2, rotorResistanceOhm: 0.6,
+    rotorReactanceOhm: 0.9, magnetizingReactanceOhm: 24, frequencyHz: 50, polePairs: 2,
+    rotorInertiaKgM2: 1, loadTorqueNm: 1, initialRotorSpeedRpm: 0,
+  });
+  let runtime = setCircuitBooleanInput(document, catalogById, "breaker", "closed", true);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "start", "pressed", true);
+  runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+  const runningMotor = executeCircuitModels(runtime, catalogById).find(run => run.reference === "M1")!;
+  const runningSpeed = Number(runningMotor.evaluatedProperties.runtimeRotorSpeedRpm);
+  expect(runningSpeed).toBeGreaterThan(0);
+  expect(runningSpeed).toBeLessThan(1500);
+  expect(runningMotor.output.value).toContain("rpm");
+  expect(runningMotor.output.value).toContain("slip");
+  expect(Number(executeCircuitModels(runtime, catalogById).find(run => run.reference === "F1")!.evaluatedProperties.runtimeLoadCurrentA)).toBeCloseTo(Number(runningMotor.evaluatedProperties.runtimeMotorLineCurrentA));
+
+  runtime = setCircuitBooleanInput(runtime, catalogById, "breaker", "closed", false);
+  expect(runtime.components.find(component => component.id === "breaker")!.properties.closed).toBe(false);
+  expect(Number(executeCircuitModels(runtime, catalogById).find(run => run.reference === "M1")!.evaluatedProperties.lineVoltageV)).toBe(0);
+  runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+  const coastedSpeed = Number(runtime.components.find(component => component.id === "motor")!.properties.runtimeRotorSpeedRpm);
+  expect(coastedSpeed).toBeLessThan(runningSpeed);
+  expect(coastedSpeed).toBeGreaterThanOrEqual(0);
+});
+
 it("reports invalid enabled motor parameters through the overload fault path", () => {
   const document = createWiredStarDeltaCircuit();
   const motorComponent = document.components.find(component => component.id === "motor")!;
@@ -88,3 +118,4 @@ it("reports invalid enabled motor parameters through the overload fault path", (
   expect(runs.find(run => run.reference === "F1")?.evaluatedProperties.runtimeThermalError).toContain("Invalid nominal load current");
   expect(runs.find(run => run.reference === "F1")?.evaluatedProperties.runtimeThermalTripped).toBe(true);
 });
+

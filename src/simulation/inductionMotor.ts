@@ -80,3 +80,24 @@ export function inductionMotorOperatingPoint(
   if (!Object.values(operatingPoint).every(Number.isFinite)) throw new Error("Motor operating point exceeds the supported numeric range.");
   return operatingPoint;
 }
+
+/** First-order rigid-rotor speed step using explicit user-supplied mechanics. */
+export function advanceInductionMotorSpeedRpm(
+  speedRpm: number,
+  electromagneticTorqueNm: number,
+  loadTorqueNm: number,
+  rotorInertiaKgM2: number,
+  synchronousSpeedRpm: number,
+  deltaSeconds: number,
+): number {
+  const inputs = [speedRpm, electromagneticTorqueNm, loadTorqueNm, rotorInertiaKgM2, synchronousSpeedRpm, deltaSeconds];
+  if (!inputs.every(Number.isFinite) || speedRpm < 0 || electromagneticTorqueNm < 0 || loadTorqueNm < 0
+      || rotorInertiaKgM2 <= 0 || synchronousSpeedRpm <= 0 || deltaSeconds < 0 || speedRpm > synchronousSpeedRpm) {
+    throw new Error("Motor transient inputs must be finite with non-negative speed, torques, and time; inertia and synchronous speed must be positive.");
+  }
+  const accelerationRadPerSecondSquared = (electromagneticTorqueNm - loadTorqueNm) / rotorInertiaKgM2;
+  const nextRpm = speedRpm + accelerationRadPerSecondSquared * deltaSeconds * 60 / (2 * Math.PI);
+  if (!Number.isFinite(nextRpm)) throw new Error("Motor transient step exceeds the supported numeric range.");
+  return Math.min(synchronousSpeedRpm, Math.max(0, nextRpm));
+}
+
