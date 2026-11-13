@@ -211,7 +211,7 @@ it("keeps later reset priority across multiple ladder rungs", () => {
   expect(scanPlcProgram(program, true, false, false)).toEqual({ ok: true, output: true });
 });
 
-it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "LD I0; XOR I1; OUT Q0", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
+it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
   expect(parseLadder(program)).toBeNull();
 });
 
@@ -264,3 +264,29 @@ it("drives a wired coil through start, release, stop and release using compiled 
 });
 
 
+
+it("edits OR/XOR parallel logic and preserves its scan, preview and round-trip behavior", () => {
+  const xor: LadderRung[] = [{ stages: [[{ address: "I0", inverted: false }, { address: "I1", inverted: false }]], stageOperators: ["XOR"], coil: "OUT" }];
+  const program = compileLadder(xor);
+  expect(program).toBe("LD I0; XOR I1; OUT Q0");
+  expect(parseLadder(program)).toEqual(xor);
+  expect(scanPlcProgram(program, true, true, false)).toEqual({ ok: true, output: false });
+  expect(scanPlcProgram(program, true, false, false)).toEqual({ ok: true, output: true });
+  const previewInputs = { input0: true, input1: true, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [] };
+  expect(previewLadder(xor, previewInputs).output).toBe(false);
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain('aria-label="R1 S1 parallel logic"');
+  expect(markup).toContain("XOR</option>");
+  expect(markup).toContain(">XOR</text>");
+});
+
+it("round-trips XOR groups with comparison and edge contacts", () => {
+  const comparisons: LadderRung[] = [{ stages: [[{ comparison: "GT", left: "AI0", right: "100" }, { address: "I1", inverted: false }]], stageOperators: ["XOR"], coil: "OUT" }];
+  const program = compileLadder(comparisons);
+  expect(parseLadder(program)).toEqual(comparisons);
+  expect(scanPlcProgram(program, false, false, false, 101)).toMatchObject({ ok: true, output: true });
+  const edges: LadderRung[] = [{ stages: [[{ address: "I0", inverted: false, edge: "positive" }, { address: "I1", inverted: false, edge: "negative" }]], stageOperators: ["XOR"], coil: "OUT" }];
+  const edgeProgram = compileLadder(edges);
+  expect(parseLadder(edgeProgram)).toEqual(edges);
+  expect(scanPlcProgram(edgeProgram, true, false, false)).toMatchObject({ ok: true, output: true });
+});
