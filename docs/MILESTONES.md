@@ -333,6 +333,14 @@ PR #151 merged as `6386c68`. Verify runs `43351518960` and `43351537821` and Pag
 
 PR #153 merged as `c9d9411`. GitHub Verify and Pages deployment `43352293155` succeeded; direct custom-domain inspection remains pending.
 
+## Completed increment: M06z — Multiline schematic annotations
+
+- [x] Edit free-sheet annotations in a multiline field and render each line with consistent spacing and aligned text anchors.
+- [x] Size the selection outline to the longest line and full text height; persist up to 8 lines, each at most 160 characters.
+- [x] Verify multiline rendering, persistence and limits; pass focused tests, build, GitHub Verify, merge and Pages deployment.
+
+PR #155 merged as `7fdb8af`. GitHub Verify and Pages deployment `43353082631` succeeded; direct custom-domain inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
