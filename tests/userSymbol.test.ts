@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { schematicGraphicToSymbolGraphic } from "../src/cad/userSymbol";
+import { schematicGraphicToSymbolGraphic, schematicGraphicsToSymbolGraphics } from "../src/cad/userSymbol";
 import { Schematic } from "../src/components/Schematic";
 import type { SchematicGraphic } from "../src/types/electrical";
 import { initialDolState } from "../src/simulation/dolSimulator";
@@ -15,6 +15,15 @@ describe("user-drawn component symbols", () => {
       kind: "polyline", x1: -30, y1: -20, x2: 30, y2: 20, color: "#c62828", strokeWidth: 3,
       points: [{ x: -30, y: 0 }, { x: 0, y: -20 }, { x: 30, y: 0 }, { x: 0, y: 20 }],
     });
+  });
+
+  it("keeps multiple drafted shapes in one shared centered composition", () => {
+    const first: SchematicGraphic = { id: "a", name: "A", kind: "line", x1: 0, y1: 20, x2: 20, y2: 20, color: "#123456", strokeWidth: 2 };
+    const second: SchematicGraphic = { id: "b", name: "B", kind: "rectangle", x1: 100, y1: 0, x2: 200, y2: 40, color: "#abcdef", fillColor: "#eeeeee", strokeWidth: 4 };
+    expect(schematicGraphicsToSymbolGraphics([first, second])).toMatchObject([
+      { kind: "line", x1: -45, y1: 0, x2: -36, y2: 0, color: "#123456", strokeWidth: 2 },
+      { kind: "rectangle", x1: 0, y1: -9, x2: 45, y2: 9, color: "#abcdef", fillColor: "#eeeeee", strokeWidth: 4 },
+    ]);
   });
 
   it("renders authored shape geometry and default terminal labels on the schematic", () => {
