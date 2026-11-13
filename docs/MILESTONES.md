@@ -373,6 +373,14 @@ PR #161 merged as `454844a`. Verify runs `43355568307` and `43355585024` and Pag
 
 PR #163 merged as `5c4ed14`. GitHub Verify run `43358060417` and Pages deployment run #161 succeeded; direct custom-domain interaction verification remains pending.
 
+## Completed increment: M06ae — Drag-box component selection
+
+- [x] Select placed component footprints with a drag box in either direction; Shift-drag adds to the current group.
+- [x] Keep the selection box out of wiring, annotation, and drawing gestures.
+- [x] Pass 26 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #166 merged as `b7f42a9`. GitHub Verify run `43359574264` and Pages deployment run #164 succeeded.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
