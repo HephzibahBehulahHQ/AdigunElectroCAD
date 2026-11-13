@@ -26,7 +26,7 @@ describe("balanced induction-motor equivalent circuit", () => {
   });
 
   it("rejects missing, non-finite, and out-of-range machine data", () => {
-    expect(() => inductionMotorOperatingPoint(motor, 400, 0, "star")).toThrow(/slip/);
+    expect(() => inductionMotorOperatingPoint(motor, 400, -0.01, "star")).toThrow(/slip/);
     expect(() => inductionMotorOperatingPoint(motor, 400, 1.01, "star")).toThrow(/slip/);
     expect(() => inductionMotorOperatingPoint({ ...motor, rotorResistanceOhm: 0 }, 400, 0.08, "star")).toThrow(/physically valid/);
     expect(() => inductionMotorOperatingPoint(motor, Number.NaN, 0.08, "star")).toThrow(/physically valid/);
@@ -38,4 +38,12 @@ describe("balanced induction-motor equivalent circuit", () => {
     const reduced = inductionMotorOperatingPoint(motor, 200, 0.08, "star");
     expect(reduced.electromagneticTorqueNm / nominal.electromagneticTorqueNm).toBeCloseTo(0.25);
   });
+});
+
+it("represents synchronous speed with an open rotor branch and zero torque", () => {
+  const star = inductionMotorOperatingPoint(motor, 400, 0, "star");
+  const delta = inductionMotorOperatingPoint(motor, 400, 0, "delta");
+  expect(star).toMatchObject({ slip: 0, synchronousSpeedRpm: 1500, rotorCurrentA: 0, electromagneticTorqueNm: 0 });
+  expect(star.phaseCurrentA).toBeGreaterThan(0);
+  expect(delta.lineCurrentA).toBeCloseTo(Math.sqrt(3) * delta.phaseCurrentA);
 });

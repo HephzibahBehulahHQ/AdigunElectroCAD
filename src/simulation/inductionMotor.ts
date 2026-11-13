@@ -41,12 +41,12 @@ function validate(parameters: InductionMotorEquivalentCircuit, lineVoltageV: num
   if (!positive.every(Number.isFinite) || positive.some(value => value <= 0)
       || !nonNegative.every(Number.isFinite) || nonNegative.some(value => value < 0)
       || !Number.isInteger(parameters.polePairs) || parameters.polePairs < 1
-      || !Number.isFinite(slip) || slip <= 0 || slip > 1) {
-    throw new Error("Motor equivalent-circuit values must be finite and physically valid; slip must be in (0, 1].");
+      || !Number.isFinite(slip) || slip < 0 || slip > 1) {
+    throw new Error("Motor equivalent-circuit values must be finite and physically valid; slip must be in [0, 1].");
   }
 }
 
-/** Compute the balanced, positive-slip T-equivalent-circuit operating point. */
+/** Compute the balanced T-equivalent-circuit point; at zero slip the rotor branch is open. */
 export function inductionMotorOperatingPoint(
   parameters: InductionMotorEquivalentCircuit,
   lineVoltageV: number,
@@ -59,16 +59,16 @@ export function inductionMotorOperatingPoint(
   const phaseVoltageV = connection === "star" ? lineVoltageV / Math.sqrt(3) : lineVoltageV;
   const stator: Complex = { re: parameters.statorResistanceOhm, im: parameters.statorReactanceOhm };
   const magnetizing: Complex = { re: 0, im: parameters.magnetizingReactanceOhm };
-  const rotor: Complex = { re: parameters.rotorResistanceOhm / slip, im: parameters.rotorReactanceOhm };
-  const parallel = divide(multiply(magnetizing, rotor), add(magnetizing, rotor));
+  const rotor: Complex | undefined = slip === 0 ? undefined : { re: parameters.rotorResistanceOhm / slip, im: parameters.rotorReactanceOhm };
+  const parallel = rotor ? divide(multiply(magnetizing, rotor), add(magnetizing, rotor)) : magnetizing;
   const phaseCurrent = divide({ re: phaseVoltageV, im: 0 }, add(stator, parallel));
   const branchVoltage = multiply(phaseCurrent, parallel);
-  const rotorCurrent = divide(branchVoltage, rotor);
+  const rotorCurrent: Complex = rotor ? divide(branchVoltage, rotor) : { re: 0, im: 0 };
   const synchronousSpeedRpm = 60 * parameters.frequencyHz / parameters.polePairs;
   const synchronousAngularSpeed = 2 * Math.PI * parameters.frequencyHz / parameters.polePairs;
-  const electromagneticTorqueNm = 3 * magnitude(rotorCurrent) ** 2 * parameters.rotorResistanceOhm / slip / synchronousAngularSpeed;
+  const electromagneticTorqueNm = slip === 0 ? 0 : 3 * magnitude(rotorCurrent) ** 2 * parameters.rotorResistanceOhm / slip / synchronousAngularSpeed;
 
-  return {
+  const operatingPoint = {
     phaseVoltageV,
     phaseCurrentA: magnitude(phaseCurrent),
     lineCurrentA: connection === "star" ? magnitude(phaseCurrent) : Math.sqrt(3) * magnitude(phaseCurrent),
@@ -77,4 +77,6 @@ export function inductionMotorOperatingPoint(
     slip,
     electromagneticTorqueNm,
   };
+  if (!Object.values(operatingPoint).every(Number.isFinite)) throw new Error("Motor operating point exceeds the supported numeric range.");
+  return operatingPoint;
 }
