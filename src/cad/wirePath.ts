@@ -30,6 +30,41 @@ export function appendWireRoutePoint(from: Point, to: Point, bends: readonly Poi
   return [...bends, point];
 }
 
+export function insertWireRoutePointAt(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, pointer: Point, tolerance = 18): { points: Point[]; point: Point; index: number } | null {
+  const segments: { start: Point; end: Point; index: number }[] = [];
+  const addSegment = (start: Point, end: Point, index: number) => {
+    if (start.x !== end.x || start.y !== end.y) segments.push({ start, end, index });
+  };
+  if (!bends.length) {
+    const vertices = orthogonalWireVertices(from, to, [], fromVertical, toVertical);
+    for (let i = 0; i < vertices.length - 1; i++) addSegment(vertices[i], vertices[i + 1], 0);
+  } else {
+    let current = from;
+    bends.forEach((bend, index) => {
+      const elbow = index === 0 && fromVertical ? { x: current.x, y: bend.y } : { x: bend.x, y: current.y };
+      addSegment(current, elbow, index); addSegment(elbow, bend, index); current = bend;
+    });
+    const elbow = toVertical ? { x: to.x, y: current.y } : { x: current.x, y: to.y };
+    addSegment(current, elbow, bends.length); addSegment(elbow, to, bends.length);
+  }
+  let best: { point: Point; index: number; distance: number } | null = null;
+  for (const segment of segments) {
+    const horizontal = segment.start.y === segment.end.y;
+    const low = Math.min(horizontal ? segment.start.x : segment.start.y, horizontal ? segment.end.x : segment.end.y);
+    const high = Math.max(horizontal ? segment.start.x : segment.start.y, horizontal ? segment.end.x : segment.end.y);
+    const coordinate = horizontal ? pointer.x : pointer.y;
+    const projected = Math.max(low, Math.min(high, coordinate));
+    const fixed = horizontal ? segment.start.y : segment.start.x;
+    const distance = Math.hypot(pointer.x - (horizontal ? projected : fixed), pointer.y - (horizontal ? fixed : projected));
+    const gridCoordinate = Math.max(low, Math.min(high, Math.round(projected / 20) * 20));
+    const point = horizontal ? { x: gridCoordinate, y: fixed } : { x: fixed, y: gridCoordinate };
+    if (!best || distance < best.distance) best = { point, index: segment.index, distance };
+  }
+  if (!best || best.distance > tolerance || bends.some((bend) => bend.x === best!.point.x && bend.y === best!.point.y)) return null;
+  const points = [...bends]; points.splice(best.index, 0, best.point);
+  return { points, point: best.point, index: best.index };
+}
+
 export function wireBranchAtPoint(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, point: Point, tolerance = 18): { source: WireBranchSource; position: number } | null {
   const candidates = [
     { source: "from" as const, vertices: orthogonalWireVertices(from, to, bends, fromVertical, toVertical) },

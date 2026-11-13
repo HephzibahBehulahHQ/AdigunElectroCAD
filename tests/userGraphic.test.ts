@@ -89,6 +89,7 @@ it("shows draggable route handles only while editing an unbranched wire", () => 
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onWireRouteChange: () => {},
   }));
   expect(render(wire.id)).toContain('data-route-point="0"');
+  expect(render(wire.id)).toContain('class="wire-route-hit-target"');
   wire.branchOfWireId = "parent-wire";
   expect(render(wire.id)).not.toContain('data-route-point="0"');
 });
