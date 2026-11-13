@@ -590,3 +590,12 @@ AI1 has no predefined sensor assignment. Users choose the components, branches, 
 - [x] Merge PR #219 as `70aa53f` and complete Pages deployment `43412487849`.
 
 This extends the steady-state equivalent-circuit boundary only. Rotor acceleration and electrical transients remain unmodeled.
+
+## Completed increment: M06bc — User-entered motor speed transient
+
+- [x] Add opt-in 10 ms rigid-rotor speed steps using explicit user-entered inertia and load torque; no engineering values are invented.
+- [x] Couple speed-dependent slip, electromagnetic torque and line current to the wired star/delta motor and overload path; coast when motor voltage is removed.
+- [x] Add acceleration, deceleration, speed-boundary, wired-current and coast tests. Local focused tests passed 11/11; exact-head Verify run `43416362580` passed.
+- [x] Merge PR #221 as `ffd169e` and complete full-test/build/Pages deployment run `43416495533`.
+
+The model is a first-order rigid-rotor approximation with piecewise-constant electrical current. Flux transients, multi-mass mechanics, motor heating and certified protection curves remain unmodeled.
