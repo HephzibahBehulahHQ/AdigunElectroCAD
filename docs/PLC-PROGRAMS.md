@@ -62,7 +62,7 @@ Automated tests cover branch truth tables, exact import/compile round trips, rej
 
 AI0 accepts the ADC block's `plc-raw` output (integer 0–27648). Wire a level sensor's 4–20 mA signal to ADC IN, ADC OUT to PLC AI0 raw, and PLC Q0 to the controlled Boolean block. Four milliamps maps to 0; 12 mA to 13824; 20 mA to 27648.
 
-`GT AI0 13824`, `LT AI0 13824` and `EQ AI0 13824` load a comparison result into the accumulator. Thresholds must be integer raw values in 0–27648. Invalid analog inputs or comparison instructions force Q0 and Q1 off with an error. For example:
+`GT AI0 13824`, `LT AI0 13824`, `EQ AI0 13824` and `NE AI0 13824` load a comparison result into the accumulator. Thresholds must be integer raw values in 0–27648. Invalid analog inputs or comparison instructions force Q0 and Q1 off with an error. For example:
 
 ```text
 GT AI0 13824; OUT Q0
@@ -76,7 +76,7 @@ Select a placed level sensor and use its **Live Level Percent** slider to change
 
 Each placed PLC has eight independent numeric registers, D0–D7. They start at zero, retain values across runtime scans and Pause, and reset on Stop or design edits. MOV source destination copies a value. ADD/SUB/MUL/DIV left right destination perform arithmetic. Operands can be AI0, D0–D7 or signed decimal constants; destinations must be D0–D7. Instructions execute unconditionally in program order. Every valid program must assign Q0 or Q1.
 
-GT/LT/EQ can compare a numeric register against another register or constant. Existing direct AI0 comparisons retain their integer raw-threshold range of 0–27648. For example, scale the wired ADC reading to percent before comparing:
+GT/LT/EQ/NE can compare a numeric register against another register or constant. Existing direct AI0 comparisons retain their integer raw-threshold range of 0–27648. For example, scale the wired ADC reading to percent before comparing:
 
 ```text
 DIV AI0 276.48 D0; GT D0 50; OUT Q0

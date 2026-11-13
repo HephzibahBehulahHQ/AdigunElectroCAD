@@ -5,6 +5,10 @@ it.each([["GT", 13825, true], ["GT", 13824, false], ["LT", 13823, true], ["LT", 
   expect(scanPlcProgram(`${operation} AI0 13824; OUT Q0`, false, false, false, raw as number)).toEqual({ ok: true, output: expected });
 });
 
+it.each([[0, true], [1, false]] as const)("loads NE comparison against a numeric constant with AI0=%s", (raw, expected) => {
+  expect(scanPlcProgram("NE AI0 1; OUT Q0", false, false, false, raw)).toEqual({ ok: true, output: expected });
+});
+
 it.each(["GT AI1 0; OUT Q0", "GT AI0 NaN; OUT Q0", "GT AI0 -1; OUT Q0", "GT AI0 27649; OUT Q0", "GT AI0 1.5; OUT Q0"])("rejects invalid analog instruction %s", (program) => {
   expect(scanPlcProgram(program, false, false, true, 0)).toMatchObject({ ok: false, output: false });
 });
