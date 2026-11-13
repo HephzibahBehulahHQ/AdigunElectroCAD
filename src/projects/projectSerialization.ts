@@ -116,10 +116,12 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   if (lineSpacing !== undefined && (lineSpacing < 1 || lineSpacing > 3)) throw new Error("Annotation line spacing must be between 1 and 3.");
   const fontStyle = annotation.fontStyle === undefined ? undefined : textValue(annotation.fontStyle, "annotation font style", 6);
   if (fontStyle !== undefined && fontStyle !== "normal" && fontStyle !== "italic") throw new Error("Annotation font style must be normal or italic.");
+  const backgroundColor = annotation.backgroundColor === undefined ? undefined : textValue(annotation.backgroundColor, "annotation background color", 7);
+  if (backgroundColor !== undefined && !/^#[0-9a-f]{6}$/i.test(backgroundColor)) throw new Error("Annotation background color must be a six-digit hex color.");
   const text = textValue(annotation.text, "annotation text", 500);
   const lines = text.split(/\r?\n/);
   if (lines.length > 8 || lines.some((line) => line.length > 160)) throw new Error("Annotation text must have at most 8 lines, with no line longer than 160 characters.");
-  return { id: textValue(annotation.id, "annotation id", 120), text, x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }), ...(lineSpacing === undefined ? {} : { lineSpacing }), ...(fontStyle === undefined ? {} : { fontStyle: fontStyle as SchematicAnnotation["fontStyle"] }) };
+  return { id: textValue(annotation.id, "annotation id", 120), text, x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }), ...(lineSpacing === undefined ? {} : { lineSpacing }), ...(fontStyle === undefined ? {} : { fontStyle: fontStyle as SchematicAnnotation["fontStyle"] }), ...(backgroundColor === undefined ? {} : { backgroundColor }) };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
