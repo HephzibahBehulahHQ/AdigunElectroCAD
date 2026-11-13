@@ -9,6 +9,12 @@ export function functionalOutputTerminal(definition: ElectricalComponentDefiniti
   return definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
 }
 
+export function functionalOutputTerminals(definition: ElectricalComponentDefinition): TerminalDefinition[] {
+  if (definition.simulationModelId === "catalog-plc-digital-io") return definition.terminals.filter((terminal) => terminal.id === "out-0" || terminal.id === "out-1");
+  const output = functionalOutputTerminal(definition);
+  return output ? [output] : [];
+}
+
 /** Known simulated signal contracts; undefined leaves physical/unsupported terminals unclassified. */
 export function terminalSignalUnits(definition: ElectricalComponentDefinition, terminalId: string): SignalUnit[] | undefined {
   const model = definition.simulationModelId;
@@ -24,7 +30,7 @@ export function terminalSignalUnits(definition: ElectricalComponentDefinition, t
   }
   if (model === "catalog-plc-digital-io") {
     if (terminalId === "ai-0") return ["plc-raw"];
-    if (["in-0", "in-1", "out-0"].includes(terminalId)) return ["boolean"];
+    if (["in-0", "in-1", "out-0", "out-1"].includes(terminalId)) return ["boolean"];
   }
   if (model === "signal-adc") return terminalId === "in" ? ["milliamp"] : terminalId === "out" ? ["plc-raw"] : undefined;
   if (model === "signal-dac") return terminalId === "in" ? ["plc-raw"] : terminalId === "out" ? ["milliamp"] : undefined;

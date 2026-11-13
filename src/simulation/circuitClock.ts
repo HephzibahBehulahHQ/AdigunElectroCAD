@@ -9,7 +9,7 @@ import { advanceCylinder, valve52Direction } from "./pneumaticState";
 import { timerParameterError } from "./functionalModels";
 
 const PLC_TRACE_LIMIT = 25;
-type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number; output: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
+type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number; output: boolean; output1?: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
 
 function appendPlcTrace(properties: Record<string, string | number | boolean>, deltaSeconds: number, entry: Omit<PlcTraceEntry, "scan" | "elapsedSeconds">): string {
   let history: PlcTraceEntry[] = [];
@@ -52,7 +52,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeCoilEnergized;
     delete properties.runtimeThermalLevel; delete properties.runtimeThermalTripped; delete properties.runtimeThermalResetPrevious; delete properties.runtimeThermalError; delete properties.runtimeLoadCurrentA;
-    delete properties.runtimeQ0; delete properties.runtimeError;
+    delete properties.runtimeQ0; delete properties.runtimeQ1; delete properties.runtimeError;
     for (let index = 0; index < PLC_MEMORY_COUNT; index++) delete properties[`runtimeM${index}`];
     for (let index = 0; index < 4; index++) { delete properties[`runtimeT${index}Elapsed`]; delete properties[`runtimeT${index}Done`]; }
     delete properties.runtimeScanTrace;
@@ -95,16 +95,16 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
       const previousTimers = Object.fromEntries([0, 1, 2, 3].map((index) => [`T${index}`, { elapsedSeconds: Number(active[`runtimeT${index}Elapsed`] ?? 0), done: active[`runtimeT${index}Done`] === true }])) as PlcTimerStates;
       if (active.runtimeSignalError) {
         const message = String(active.runtimeSignalError);
-        const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: false, registers: previousRegisters, status: "inhibited", message });
-        return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeError: message, runtimeScanTrace: trace } };
+        const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: false, output1: false, registers: previousRegisters, status: "inhibited", message });
+        return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeQ1: false, runtimeError: message, runtimeScanTrace: trace } };
       }
-      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true], previousTimers, deltaSeconds, previousMemory);
+      const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true], previousTimers, deltaSeconds, previousMemory, active.runtimeQ1 === true);
       const registers = result.ok ? result.registers ?? previousRegisters : previousRegisters;
       const message = result.ok ? undefined : result.error;
-      const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: result.output, registers, status: result.ok ? "ok" : "error", ...(message ? { message } : {}) });
+      const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), output: result.output, output1: result.ok ? result.output1 ?? active.runtimeQ1 === true : false, registers, status: result.ok ? "ok" : "error", ...(message ? { message } : {}) });
       const timers = result.ok ? result.timers ?? previousTimers : previousTimers;
       const memory = result.ok ? result.memory ?? previousMemory : previousMemory;
-      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), ...Object.fromEntries(memory.map((value, index) => [`runtimeM${index}`, value])), ...Object.fromEntries(Object.entries(timers).map(([address, timer]) => [`runtime${address}Elapsed`, timer.elapsedSeconds])), ...Object.fromEntries(Object.entries(timers).map(([address, timer]) => [`runtime${address}Done`, timer.done])), runtimeInput0Previous: active.inputA === true, runtimeInput1Previous: active.inputB === true, runtimeQ0: result.output, runtimeError: message ?? "", runtimeScanTrace: trace } };
+      return { ...component, properties: { ...component.properties, ...Object.fromEntries(registers.map((value, index) => [`runtimeD${index}`, value])), ...Object.fromEntries(memory.map((value, index) => [`runtimeM${index}`, value])), ...Object.fromEntries(Object.entries(timers).map(([address, timer]) => [`runtime${address}Elapsed`, timer.elapsedSeconds])), ...Object.fromEntries(Object.entries(timers).map(([address, timer]) => [`runtime${address}Done`, timer.done])), runtimeInput0Previous: active.inputA === true, runtimeInput1Previous: active.inputB === true, runtimeQ0: result.output, runtimeQ1: result.ok ? result.output1 ?? active.runtimeQ1 === true : false, runtimeError: message ?? "", runtimeScanTrace: trace } };
     }
     if (model && ["logic-set-coil", "logic-reset-coil", "logic-edge-positive", "logic-edge-negative"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;

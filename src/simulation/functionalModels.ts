@@ -47,7 +47,11 @@ function thermocoupleSignal(properties: Properties): FunctionalSignal {
 }
 const memory = (p: Properties) => bool(p, typeof p.runtimePrevious === "boolean" ? "runtimePrevious" : "previous");
 const edgeOutput = (p: Properties, kind: "positive" | "negative") => typeof p.scanOutput === "boolean" ? p.scanOutput : edgeTrigger(memory(p), bool(p, "input"))[kind];
-const plcOutput = (p: Properties) => text(p, "program").trim() ? bool(p, "runtimeQ0") : bool(p, "output");
+const plcOutput = (p: Properties, terminalId = "out-0") => {
+  const key = terminalId === "out-1" ? "runtimeQ1" : "runtimeQ0";
+  const manualKey = terminalId === "out-1" ? "output1" : "output";
+  return text(p, "program").trim() ? bool(p, key) : bool(p, manualKey);
+};
 const safetyOutput = (p: Properties) => safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "runtimeSafetyArmed"));
 
 const models: Record<string, Model> = {
@@ -117,7 +121,7 @@ const models: Record<string, Model> = {
   "catalog-induction-motor": (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" }),
   "catalog-control-transformer": (p) => ({ label: "Ideal ratio output", value: `${(number(p, "secondaryVoltageV") * (1 - number(p, "loadPercent") / 2000)).toFixed(1)} V from ${number(p, "primaryVoltageV")} V` }),
   "catalog-proximity-sensor": (p) => ({ label: "Sensor output", value: bool(p, "detected") ? `${text(p, "outputType", "PNP")} ON` : `${text(p, "outputType", "PNP")} OFF` }),
-  "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p))}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${number(p, "analogInput0")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
+  "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p, "out-0"))}${(/\bQ1\b/.test(text(p, "program").toUpperCase()) || bool(p, "output1") || bool(p, "runtimeQ1")) ? ` · Q1 ${binary(plcOutput(p, "out-1"))}` : ""}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${number(p, "analogInput0")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
   "catalog-on-delay-timer": (p) => ({ label: "Timer contact", value: bool(p, "energized") && number(p, "elapsedSeconds") >= number(p, "delaySeconds") ? "CLOSED" : `${number(p, "elapsedSeconds").toFixed(1)} / ${number(p, "delaySeconds").toFixed(1)} s` }),
   "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
@@ -168,7 +172,7 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 }
 export function hasFunctionalModel(modelId: string) { return ["contactor-dol-v1", "thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
-export function evaluateFunctionalSignal(modelId: string, properties: Properties): FunctionalSignal | undefined {
+export function evaluateFunctionalSignal(modelId: string, properties: Properties, terminalId?: string): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
@@ -181,7 +185,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   }
   if (modelId === "catalog-interface-relay") return signal("boolean", bool(properties, "energized"));
   if (modelId === "catalog-proximity-sensor") return signal("boolean", bool(properties, "detected"));
-  if (modelId === "catalog-plc-digital-io") return signal("boolean", plcOutput(properties));
+  if (modelId === "catalog-plc-digital-io") return signal("boolean", plcOutput(properties, terminalId));
   if (modelId === "logic-no") return signal("boolean", normallyOpen(bool(properties, "input")));
   if (modelId === "logic-nc") return signal("boolean", normallyClosed(bool(properties, "input")));
   if (modelId === "logic-output-coil") return signal("boolean", outputCoil(bool(properties, "input")));
