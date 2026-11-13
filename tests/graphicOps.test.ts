@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicateSchematicGraphic } from "../src/cad/graphicOps";
+import { duplicateSchematicGraphic, setSchematicGraphicBounds } from "../src/cad/graphicOps";
 import type { SchematicGraphic } from "../src/types/electrical";
 
 const pathGraphic: SchematicGraphic = {
@@ -20,4 +20,20 @@ describe("drafting graphic duplication", () => {
     const duplicate = duplicateSchematicGraphic(graphic, "box-copy");
     expect([duplicate.x1, duplicate.y1, duplicate.x2, duplicate.y2]).toEqual([1060, 740, 1080, 760]);
   });
+});
+
+const rectangle: SchematicGraphic = { id: "r1", name: "Panel", kind: "rectangle", x1: 100, y1: 120, x2: 300, y2: 240, color: "#1565c0", strokeWidth: 2 };
+
+it("edits exact graphic coordinates while preserving its drafting properties", () => {
+  expect(setSchematicGraphicBounds(rectangle, { x1: 80, y1: 90, x2: 360, y2: 270 })).toEqual({ ...rectangle, x1: 80, y1: 90, x2: 360, y2: 270 });
+});
+
+it("rejects graphic coordinates outside the sheet or spans too small to draw", () => {
+  expect(setSchematicGraphicBounds(rectangle, { x1: -1, y1: 90, x2: 360, y2: 270 })).toBeNull();
+  expect(setSchematicGraphicBounds(rectangle, { x1: 80, y1: 90, x2: 82, y2: 270 })).toBeNull();
+});
+
+it("keeps path vertex geometry on the vertex editor", () => {
+  const path = { ...rectangle, kind: "polyline" as const, points: [{ x: 100, y: 120 }, { x: 300, y: 240 }] };
+  expect(setSchematicGraphicBounds(path, { x1: 80, y1: 90, x2: 360, y2: 270 })).toBeNull();
 });
