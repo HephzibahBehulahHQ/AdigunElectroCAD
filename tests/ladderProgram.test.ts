@@ -54,6 +54,23 @@ it("duplicates a rung beside its source with independent contacts and coil setti
   expect(duplicateLadderRung([...rungs, source, source], 0)).toBeNull();
 });
 
+
+it("round-trips independent Q1 ladder coils and previews Q1 feedback", () => {
+  const rungs: LadderRung[] = [
+    { stages: [[{ address: "I1", inverted: false }]], coil: { type: "OUTPUT", address: "Q1", operation: "OUT" } },
+    { stages: [[{ address: "Q1", inverted: false }]], coil: "OUT" },
+  ];
+  const program = compileLadder(rungs);
+  expect(program).toBe("LD I1; OUT Q1; LD Q1; OUT Q0");
+  expect(parseLadder(program)).toEqual(rungs);
+  const inputs = { input0: false, input1: true, q0: false, q1: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [] };
+  expect(previewLadder(rungs, inputs)).toMatchObject({ output: true, output1: true });
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain("Output Q1");
+  const scan = scanPlcProgram(program, false, true, false, 0, undefined, [], undefined, 0.1, undefined, false);
+  expect(scan).toMatchObject({ ok: true, output: true, output1: true });
+});
+
 it("round-trips TON timer coils and preview timer contacts", () => {
   const rungs: LadderRung[] = [
     { stages: [[{ address: "I0", inverted: false }]], coil: { type: "TON", timer: "T0", presetSeconds: 0.2 } },
@@ -89,7 +106,7 @@ it("round-trips internal relay contacts and coils and previews retained logic", 
   expect(reset).toMatchObject({ output: false, memory: Array(8).fill(false) });
   const scan = scanPlcProgram(program, true, false, false, 0, undefined, [], undefined, 0.1, Array(8).fill(false));
   expect(scan).toMatchObject({ ok: true, output: first.output, memory: first.memory });
-  expect(() => compileLadder([{ stages: [[{ address: "I0", inverted: false }]], coil: { type: "MEMORY", address: "M0", operation: "SET" } }])).toThrow(/assign Q0/);
+  expect(() => compileLadder([{ stages: [[{ address: "I0", inverted: false }]], coil: { type: "MEMORY", address: "M0", operation: "SET" } }])).toThrow(/assign Q0 or Q1/);
 });
 
 it("previews conducting contacts against the next scan and retained Q0", () => {
@@ -194,7 +211,7 @@ it("keeps later reset priority across multiple ladder rungs", () => {
   expect(scanPlcProgram(program, true, false, false)).toEqual({ ok: true, output: true });
 });
 
-it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "LD I0; XOR I1; OUT Q0", "LD I0; OUT Q1", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
+it.each(["", "LD I0; AND I1; OR Q0; OUT Q0", "LD I0; XOR I1; OUT Q0", "PUSH; LD I0; ANDPOP; OUT Q0", "LD I0; PUSH; LD I1; OUT Q0"])("does not reinterpret unsupported or ambiguous text %s", (program) => {
   expect(parseLadder(program)).toBeNull();
 });
 
