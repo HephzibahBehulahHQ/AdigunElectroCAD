@@ -164,3 +164,5 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 
 .free-symbol { stroke: var(--component-ink, #24456b); }.generic-symbol-mark, .functional-symbol { stroke: var(--component-ink, #2272ad); }
 .custom-data-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; } .custom-data-row button { margin: 0; }
+
+.custom-terminal-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; align-items: end; padding: 7px 0; border-bottom: 1px solid var(--border); }.custom-terminal-row > span, .custom-terminal-row > button { grid-column: 1 / -1; }.custom-terminal-row select { min-width: 0; width: 100%; }.custom-terminal-row label { min-width: 0; font-size: .58rem; }

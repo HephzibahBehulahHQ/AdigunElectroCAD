@@ -53,10 +53,12 @@ it("persists user-configured terminals and creates connectable anchor locations"
     { id: "t3", label: "FRAME", kind: "protective-earth", direction: "input" },
   ];
   lamp.terminalLabels = { t3: "PE" };
+  lamp.customTerminalOffsets = { t3: { x: 44, y: -24 } };
   const restored = parseProjectJson(JSON.stringify(project));
   const restoredLamp = restored.sheets[0].document.components.find((component) => component.id === lamp.id)!;
   expect(restoredLamp.customTerminals).toEqual(lamp.customTerminals);
   expect(restoredLamp.terminalLabels).toEqual({ t3: "PE" });
-  expect(terminalAnchors(restored.sheets[0].document).find((anchor) => anchor.endpoint.componentId === lamp.id && anchor.endpoint.terminalId === "t3")).toMatchObject({ x: lamp.x - 32, y: lamp.y - 25 });
+  expect(restoredLamp.customTerminalOffsets).toEqual({ t3: { x: 44, y: -24 } });
+  expect(terminalAnchors(restored.sheets[0].document).find((anchor) => anchor.endpoint.componentId === lamp.id && anchor.endpoint.terminalId === "t3")).toMatchObject({ x: lamp.x + 44, y: lamp.y - 24 });
   expect(canConnectTerminals(restored.sheets[0].document, catalogById, { componentId: lamp.id, terminalId: "t3" }, { componentId: "lamp-h2", terminalId: "t2" }).ok).toBe(false);
 });

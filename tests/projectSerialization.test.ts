@@ -69,6 +69,21 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component display name");
   });
 
+  it("persists user-positioned added terminals and rejects offsets outside the symbol workspace", () => {
+    const input = freeSheetWithComponent();
+    const component = input.sheets[1].document.components[0];
+    component.definitionId = "user.indicator-lamp";
+    component.customTerminals = [
+      { id: "t1", label: "T1", kind: "control", direction: "bidirectional" },
+      { id: "t2", label: "T2", kind: "control", direction: "bidirectional" },
+      { id: "t3", label: "FRAME", kind: "protective-earth", direction: "input" },
+    ];
+    component.customTerminalOffsets = { t3: { x: 60, y: -52 } };
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].customTerminalOffsets).toEqual(component.customTerminalOffsets);
+    component.customTerminalOffsets.t3.x = 61;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between -60 and 60 units");
+  });
+
   it("persists editable terminal labels and rejects labels for unknown terminals", () => {
     const input = freeSheetWithComponent();
     const component = input.sheets[1].document.components[0];

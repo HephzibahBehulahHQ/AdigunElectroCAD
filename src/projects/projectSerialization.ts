@@ -135,11 +135,13 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   const draftingColor = component.draftingColor === undefined ? undefined : textValue(component.draftingColor, "component drafting color", 7);
   if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
   const customTerminals = component.customTerminals === undefined ? undefined : customTerminalDefinitions(component.customTerminals, definitionId);
+  const customTerminalOffsets = component.customTerminalOffsets === undefined ? undefined : customTerminalOffsetsValue(component.customTerminalOffsets, definitionId, customTerminals);
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
     ...(customTerminals === undefined ? {} : { customTerminals }),
+    ...(customTerminalOffsets === undefined ? {} : { customTerminalOffsets }),
     ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId, customTerminals) }),
     properties: properties(component.properties),
       ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
@@ -211,6 +213,24 @@ function customTerminalDefinitions(value: unknown, definitionId: string): Termin
   });
   if (new Set(terminals.map((terminal) => terminal.id)).size !== terminals.length || !["t1", "t2"].every((id) => terminals.some((terminal) => terminal.id === id))) throw new Error("Custom terminals must keep unique t1 and t2 identities.");
   return terminals;
+}
+
+function customTerminalOffsetsValue(value: unknown, definitionId: string, customTerminals?: TerminalDefinition[]): Record<string, { x: number; y: number }> {
+  if (definitionId !== "user.indicator-lamp" || !customTerminals) throw new Error("Custom terminal positions require configured user-symbol terminals.");
+  const source = object(value, "Custom terminal positions are invalid.");
+  const entries = Object.entries(source);
+  if (entries.length > 6) throw new Error("A user symbol may position at most 6 added terminals.");
+  const terminalIds = new Set(customTerminals.map((terminal) => terminal.id));
+  const result: Record<string, { x: number; y: number }> = {};
+  for (const [terminalId, rawPoint] of entries) {
+    if (!/^t[3-8]$/.test(terminalId) || !terminalIds.has(terminalId)) throw new Error(`Custom terminal position ${terminalId} is not an added terminal.`);
+    const point = object(rawPoint, "Custom terminal position is invalid.");
+    const x = finiteNumber(point.x, "custom terminal x offset");
+    const y = finiteNumber(point.y, "custom terminal y offset");
+    if (x < -60 || x > 60 || y < -60 || y > 60) throw new Error("Custom terminal offsets must be between -60 and 60 units.");
+    result[terminalId] = { x, y };
+  }
+  return result;
 }
 
 function terminalLabelOverrides(value: unknown, definitionId: string, customTerminals?: TerminalDefinition[]): Record<string, string> {
