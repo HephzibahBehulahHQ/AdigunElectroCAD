@@ -162,3 +162,4 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .wire.manual-wire.power-wire { stroke-dasharray: none; }.wire.manual-wire.power-wire:not(.selected-wire) { stroke: #991b1b; stroke-width: 2.4; }
 
 .free-symbol { stroke: var(--component-ink, #24456b); }.generic-symbol-mark, .functional-symbol { stroke: var(--component-ink, #2272ad); }
+.custom-data-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; } .custom-data-row button { margin: 0; }

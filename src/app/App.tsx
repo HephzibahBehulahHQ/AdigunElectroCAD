@@ -895,6 +895,53 @@ export function App() {
     setNotice(`${selectedComponent.reference} parameter ${property} updated.`);
   };
 
+    const addSelectedCustomProperty = (rawName: string, value: string) => {
+      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return false;
+      const name = rawName.trim();
+      const fields = selectedComponent.customProperties ?? {};
+      if (!isValidCustomFieldName(name) || value.length > 240 || Object.keys(fields).length >= 20 || Object.keys(fields).some((key) => key.toLowerCase() === name.toLowerCase())) {
+        setNotice("Use a unique field name of 1–40 characters and a value of at most 240 characters; a component can have up to 20 custom fields.");
+        return false;
+      }
+      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
+      setNotice(`${selectedComponent.reference} custom field ${name} added. It does not affect simulation.`);
+      return true;
+    };
+
+    const updateSelectedCustomProperty = (name: string, value: string) => {
+      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
+      const fields = selectedComponent.customProperties ?? {};
+      if (!Object.prototype.hasOwnProperty.call(fields, name) || value.length > 240) return;
+      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
+      setNotice(`${selectedComponent.reference} custom field ${name} updated. It does not affect simulation.`);
+    };
+
+    const renameSelectedCustomProperty = (previousName: string, rawName: string) => {
+      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return false;
+      const name = rawName.trim();
+      const fields = selectedComponent.customProperties ?? {};
+      if (!Object.prototype.hasOwnProperty.call(fields, previousName)) return false;
+      if (!isValidCustomFieldName(name) || Object.keys(fields).some((key) => key !== previousName && key.toLowerCase() === name.toLowerCase())) {
+        setNotice("Custom field names must be unique and 1–40 characters long.");
+        return false;
+      }
+      if (name !== previousName) {
+        const customProperties = Object.fromEntries(Object.entries(fields).map(([key, value]) => [key === previousName ? name : key, value]));
+        updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties } : component), revision: document.revision + 1 });
+        setNotice(`${selectedComponent.reference} custom field renamed to ${name}.`);
+      }
+      return true;
+    };
+
+    const removeSelectedCustomProperty = (name: string) => {
+      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
+      const fields = selectedComponent.customProperties ?? {};
+      if (!Object.prototype.hasOwnProperty.call(fields, name)) return;
+      const customProperties = Object.fromEntries(Object.entries(fields).filter(([key]) => key !== name));
+      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties } : component), revision: document.revision + 1 });
+      setNotice(`${selectedComponent.reference} custom field ${name} removed.`);
+    };
+
   const updateSelectedSize = (rawValue: string) => {
     if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
     const size = Number(rawValue) / 100;
@@ -1042,7 +1089,7 @@ export function App() {
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
           {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
-          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
+          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
@@ -1090,11 +1137,11 @@ export function App() {
   );
 }
 
-function Properties({ instance: savedInstance, modelOutput, onReferenceChange, onPropertyChange, onDraftingColorChange, onSizeChange, onNudge, onRotate, onRemove, movable }: { instance: ComponentInstance; modelOutput?: FunctionalModelResult; onReferenceChange: (reference: string) => void; onPropertyChange: (property: string, value: string | boolean) => void; onDraftingColorChange: (color: string | undefined) => void; onSizeChange: (sizePercent: string) => void; onNudge: (deltaX: number, deltaY: number) => void; onRotate: () => void; onRemove: () => void; movable: boolean }) {
+function Properties({ instance: savedInstance, modelOutput, onReferenceChange, onCustomPropertyAdd, onCustomPropertyRename, onCustomPropertyChange, onCustomPropertyRemove, onPropertyChange, onDraftingColorChange, onSizeChange, onNudge, onRotate, onRemove, movable }: { instance: ComponentInstance; modelOutput?: FunctionalModelResult; onReferenceChange: (reference: string) => void; onCustomPropertyAdd: (name: string, value: string) => boolean; onCustomPropertyRename: (previousName: string, name: string) => boolean; onCustomPropertyChange: (name: string, value: string) => void; onCustomPropertyRemove: (name: string) => void; onPropertyChange: (property: string, value: string | boolean) => void; onDraftingColorChange: (color: string | undefined) => void; onSizeChange: (sizePercent: string) => void; onNudge: (deltaX: number, deltaY: number) => void; onRotate: () => void; onRemove: () => void; movable: boolean }) {
   const definition = catalogById.get(savedInstance.definitionId);
   if (!definition) return <p className="empty">Catalog definition missing.</p>;
   const instance = { ...savedInstance, properties: { ...definition.propertiesSchema, ...savedInstance.properties } };
-  return <section className="properties-form"><label>Reference<input defaultValue={instance.reference} key={instance.id + instance.reference} onBlur={(event) => onReferenceChange(event.target.value)} /></label><label>Component<input value={definition.name} readOnly /></label><label>Category<input value={definition.category} readOnly /></label><label>Simulation<input value={definition.simulationSupport} readOnly /></label>{movable && <><label>Symbol color<input aria-label="Component drafting color" type="color" value={instance.draftingColor ?? "#2272ad"} onChange={(event) => onDraftingColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Component color palette">{["#2272ad", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"].map((color) => <button key={color} type="button" aria-label={`Set component color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onDraftingColorChange(color)} />)}<button type="button" aria-label="Reset component color" title="Default color" onClick={() => onDraftingColorChange(undefined)}>↺</button></div><label>Symbol size · percent<input type="number" min="50" max="200" step="10" defaultValue={Math.round((instance.size ?? 1) * 100)} key={`${instance.id}:${instance.size ?? 1}`} onBlur={(event) => onSizeChange(event.target.value)} /></label></>}<section className="component-parameters"><strong>Component parameters</strong>{Object.entries(instance.properties).map(([property, value]) => typeof value === "boolean" ? <label className="property-checkbox" key={property}>{formatPropertyLabel(property)}<input type="checkbox" checked={value} disabled={!movable} onChange={(event) => onPropertyChange(property, event.target.checked)} /></label> : <label key={property}>{formatPropertyLabel(property)}<input key={JSON.stringify([instance.id, property, value])} type={componentPropertyInputType(value)} defaultValue={String(value)} maxLength={property.startsWith("terminalLabel") ? 8 : undefined} disabled={!movable} inputMode={typeof value === "number" ? "decimal" : undefined} onBlur={(event) => onPropertyChange(property, event.target.value)} /></label>)}</section>{modelOutput && <section className="model-output"><strong>Live model output</strong><span>{modelOutput.label}</span><b>{modelOutput.value}</b></section>}{!movable && <p className="parameter-note">Reference-model geometry and parameters are fixed so the supported DOL behaviour and displayed circuit stay consistent.</p>}{movable && <><div className="move-grid"><strong>Position · snap 20</strong><span>X {instance.x} · Y {instance.y} · R {instance.rotation}°</span><button onClick={() => onNudge(0, -20)} aria-label="Move component up">↑</button><button onClick={() => onNudge(-20, 0)} aria-label="Move component left">←</button><button onClick={() => onNudge(20, 0)} aria-label="Move component right">→</button><button onClick={() => onNudge(0, 20)} aria-label="Move component down">↓</button></div><button className="rotate-component" onClick={onRotate}>Rotate 90°</button><button className="remove-component" onClick={onRemove}>Remove placed component</button></>}<div className="terminals"><strong>Terminals</strong>{definition.terminals.map((terminal, index) => <span key={terminal.id}>{displayTerminalLabel(instance.properties, index, terminal.label)}<small>{terminal.kind}</small></span>)}</div><p>{definition.documentation}</p></section>;
+  return <section className="properties-form"><label>Reference<input defaultValue={instance.reference} key={instance.id + instance.reference} onBlur={(event) => onReferenceChange(event.target.value)} /></label><label>Component<input value={definition.name} readOnly /></label><label>Category<input value={definition.category} readOnly /></label><label>Simulation<input value={definition.simulationSupport} readOnly /></label>{movable && <><label>Symbol color<input aria-label="Component drafting color" type="color" value={instance.draftingColor ?? "#2272ad"} onChange={(event) => onDraftingColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Component color palette">{["#2272ad", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"].map((color) => <button key={color} type="button" aria-label={`Set component color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onDraftingColorChange(color)} />)}<button type="button" aria-label="Reset component color" title="Default color" onClick={() => onDraftingColorChange(undefined)}>↺</button></div><label>Symbol size · percent<input type="number" min="50" max="200" step="10" defaultValue={Math.round((instance.size ?? 1) * 100)} key={`${instance.id}:${instance.size ?? 1}`} onBlur={(event) => onSizeChange(event.target.value)} /></label></>}<section className="component-parameters"><strong>Component parameters</strong>{Object.entries(instance.properties).map(([property, value]) => typeof value === "boolean" ? <label className="property-checkbox" key={property}>{formatPropertyLabel(property)}<input type="checkbox" checked={value} disabled={!movable} onChange={(event) => onPropertyChange(property, event.target.checked)} /></label> : <label key={property}>{formatPropertyLabel(property)}<input key={JSON.stringify([instance.id, property, value])} type={componentPropertyInputType(value)} defaultValue={String(value)} maxLength={property.startsWith("terminalLabel") ? 8 : undefined} disabled={!movable} inputMode={typeof value === "number" ? "decimal" : undefined} onBlur={(event) => onPropertyChange(property, event.target.value)} /></label>)}</section>{movable && <CustomComponentData instance={instance} onAdd={onCustomPropertyAdd} onRename={onCustomPropertyRename} onChange={onCustomPropertyChange} onRemove={onCustomPropertyRemove} />}{modelOutput && <section className="model-output"><strong>Live model output</strong><span>{modelOutput.label}</span><b>{modelOutput.value}</b></section>}{!movable && <p className="parameter-note">Reference-model geometry and parameters are fixed so the supported DOL behaviour and displayed circuit stay consistent.</p>}{movable && <><div className="move-grid"><strong>Position · snap 20</strong><span>X {instance.x} · Y {instance.y} · R {instance.rotation}°</span><button onClick={() => onNudge(0, -20)} aria-label="Move component up">↑</button><button onClick={() => onNudge(-20, 0)} aria-label="Move component left">←</button><button onClick={() => onNudge(20, 0)} aria-label="Move component right">→</button><button onClick={() => onNudge(0, 20)} aria-label="Move component down">↓</button></div><button className="rotate-component" onClick={onRotate}>Rotate 90°</button><button className="remove-component" onClick={onRemove}>Remove placed component</button></>}<div className="terminals"><strong>Terminals</strong>{definition.terminals.map((terminal, index) => <span key={terminal.id}>{displayTerminalLabel(instance.properties, index, terminal.label)}<small>{terminal.kind}</small></span>)}</div><p>{definition.documentation}</p></section>;
 }
 
 function displayTerminalLabel(properties: ComponentInstance["properties"], index: number, fallback: string) {
@@ -1102,8 +1149,32 @@ function displayTerminalLabel(properties: ComponentInstance["properties"], index
   return typeof label === "string" && label.trim() ? label.slice(0, 8) : fallback;
 }
 
+function CustomComponentData({ instance, onAdd, onRename, onChange, onRemove }: { instance: ComponentInstance; onAdd: (name: string, value: string) => boolean; onRename: (previousName: string, name: string) => boolean; onChange: (name: string, value: string) => void; onRemove: (name: string) => void }) {
+  const [name, setName] = useState("");
+  const [value, setValue] = useState("");
+  const fields = instance.customProperties ?? {};
+  return <section className="component-parameters custom-component-data">
+    <strong>User-defined component data</strong>
+    <p>Saved on this component instance; custom data does not affect electrical simulation.</p>
+    {Object.entries(fields).map(([fieldName, fieldValue]) => <div className="custom-data-row" key={fieldName}>
+      <label>Field name<input aria-label={`${fieldName} field name`} maxLength={40} defaultValue={fieldName} key={`${instance.id}:name:${fieldName}`} onBlur={(event) => { if (event.target.value !== fieldName && !onRename(fieldName, event.target.value)) event.target.value = fieldName; }} /></label>
+      <label>Value<input aria-label={`${fieldName} custom value`} maxLength={240} defaultValue={fieldValue} key={`${instance.id}:${fieldName}:${fieldValue}`} onBlur={(event) => { if (event.target.value !== fieldValue) onChange(fieldName, event.target.value); }} /></label>
+      <button type="button" aria-label={`Remove custom field ${fieldName}`} onClick={() => onRemove(fieldName)}>Remove</button>
+    </div>)}
+    {Object.keys(fields).length < 20 && <>
+      <label>Field name<input aria-label="New custom field name" maxLength={40} value={name} onChange={(event) => setName(event.target.value)} /></label>
+      <label>Value<input aria-label="New custom field value" maxLength={240} value={value} onChange={(event) => setValue(event.target.value)} /></label>
+      <button type="button" disabled={!name.trim()} onClick={() => { if (onAdd(name, value)) { setName(""); setValue(""); } }}>Add custom field</button>
+    </>}
+  </section>;
+}
+
 function formatPropertyLabel(property: string) {
   return property.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (character) => character.toUpperCase());
+}
+
+function isValidCustomFieldName(name: string) {
+  return name.length > 0 && name.length <= 40 && !["__proto__", "constructor", "prototype"].includes(name.toLowerCase());
 }
 
 function WireProperties({ wire, onNetNameChange, onColorChange, onReconnect, onRemove }: { wire: Wire; onNetNameChange: (netName: string) => void; onColorChange: (color: string | undefined) => void; onReconnect: () => void; onRemove: () => void }) {

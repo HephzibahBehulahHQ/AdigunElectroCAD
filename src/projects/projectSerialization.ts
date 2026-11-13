@@ -121,6 +121,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
     properties: properties(component.properties),
+      ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
   };
 }
 
@@ -148,6 +149,20 @@ function properties(value: unknown): Record<string, string | number | boolean> {
   for (const [key, item] of entries) {
     if (key.length > 64 || !["string", "number", "boolean"].includes(typeof item) || (typeof item === "number" && !Number.isFinite(item))) throw new Error("A component property is invalid.");
     result[key] = item as string | number | boolean;
+  }
+  return result;
+}
+
+function customProperties(value: unknown): Record<string, string> {
+  const input = object(value, "Custom component data is invalid.");
+  const entries = Object.entries(input);
+  if (entries.length > 20) throw new Error("A component may have at most 20 custom fields.");
+  const result: Record<string, string> = {};
+  for (const [rawKey, item] of entries) {
+    const key = rawKey.trim();
+    if (!key || key.length > 40 || ["__proto__", "constructor", "prototype"].includes(key.toLowerCase()) || typeof item !== "string" || item.length > 240) throw new Error("A custom component field is invalid.");
+    if (Object.keys(result).some((existing) => existing.toLowerCase() === key.toLowerCase())) throw new Error("Custom component field names must be unique.");
+    result[key] = item;
   }
   return result;
 }
