@@ -283,6 +283,15 @@ PR #139 merged as `658ee94`. Verify runs `43337243565` and `43337249564` succeed
 
 PR #141 merged as `c63aa86`. Verify runs `43339962834` and `43339970398` and Pages deployment `43340083622` succeeded; custom-domain bundle inspection remains pending.
 
+## Completed increment: M06t — Editable component instance names
+
+- [x] Let users name a placed component independently of its catalog definition and reference tag; show that name beside its indication/type label.
+- [x] Preserve the descriptive name in project JSON and copied components without changing simulation behavior; accept older projects without a name.
+- [x] Pass 47 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #143 merged as `4f0dae5`. Verify runs `43345427176` and `43345460442` succeeded. Pages deployment `43345569530` succeeded; custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
