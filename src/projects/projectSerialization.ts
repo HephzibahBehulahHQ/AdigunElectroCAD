@@ -112,7 +112,10 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   if (textAnchor !== undefined && !["start", "middle", "end"].includes(textAnchor)) throw new Error("Annotation text alignment must be left, center, or right.");
   const fontWeight = annotation.fontWeight === undefined ? undefined : finiteNumber(annotation.fontWeight, "annotation text weight");
   if (fontWeight !== undefined && ![400, 600, 700].includes(fontWeight)) throw new Error("Annotation text weight must be 400, 600, or 700.");
-  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }) };
+  const text = textValue(annotation.text, "annotation text", 500);
+  const lines = text.split(/\r?\n/);
+  if (lines.length > 8 || lines.some((line) => line.length > 160)) throw new Error("Annotation text must have at most 8 lines, with no line longer than 160 characters.");
+  return { id: textValue(annotation.id, "annotation id", 120), text, x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }) };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
