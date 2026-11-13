@@ -13,6 +13,26 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
   return { document: moveComponent(document, componentId, snappedX - component.x, snappedY - component.y), ok: true };
 }
 
+export function moveComponentsByGrid(document: CircuitDocument, componentIds: string[], deltaX: number, deltaY: number): { document: CircuitDocument; ok: boolean; reason?: string } {
+  const ids = [...new Set(componentIds)];
+  if (!ids.length || !Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return { document, ok: false, reason: "Select components and use a finite grid movement." };
+  const selected = document.components.filter((component) => ids.includes(component.id));
+  if (selected.length !== ids.length) return { document, ok: false, reason: "One or more selected components no longer exist." };
+  const dx = Math.round(deltaX / 20) * 20; const dy = Math.round(deltaY / 20) * 20;
+  if (dx === 0 && dy === 0) return { document, ok: true };
+  const selectedIds = new Set(ids);
+  const stationary = document.components.filter((component) => !selectedIds.has(component.id));
+  for (const component of selected) {
+    if (!canPlaceComponent([...stationary, component], component.id, component.x + dx, component.y + dy)) {
+      return { document, ok: false, reason: "Move blocked: keep selected symbols and labels inside the sheet and clear of neighbors." };
+    }
+  }
+  return {
+    document: { ...document, revision: document.revision + 1, components: document.components.map((component) => selectedIds.has(component.id) ? { ...component, x: component.x + dx, y: component.y + dy } : component) },
+    ok: true,
+  };
+}
+
 
 export function moveComponent(document: CircuitDocument, componentId: string, deltaX: number, deltaY: number): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);

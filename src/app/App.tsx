@@ -2,8 +2,9 @@ import { ModelRunSummary } from "../components/ModelRunSummary";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
+import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
+import { toggleComponentSelection } from "../cad/componentSelection";
 import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
 import { duplicateSchematicGraphic } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
@@ -28,7 +29,6 @@ import { CatalogTree } from "../components/CatalogTree";
 import { LadderEditor } from "../components/LadderEditor";
 import { LiveCopilot } from "../components/LiveCopilot";
 import { HeaderUtilities } from "../components/HeaderUtilities";
-import { moveComponentToGrid } from "../cad/documentOps";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
 import { bindProjectExitSave } from "../projects/projectExitSave";
@@ -64,6 +64,7 @@ export function App() {
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("contactor");
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(["contactor"]);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<Theme>("dark");
@@ -119,6 +120,11 @@ export function App() {
   const cloudProjectId = selectedCloudProjectId(cloudSelection, authUser?.id);
   const t = copy[locale];
   const anonymousSession = isAnonymousUser(authUser);
+
+  const setComponentSelection = (componentId: string) => {
+    setSelectedComponentId(componentId);
+    setSelectedComponentIds(componentId ? [componentId] : []);
+  };
 
   const activeSheet = project.sheets.find((sheet) => sheet.id === activeSheetId) ?? project.sheets[0];
   const document = activeSheet.document;
@@ -200,7 +206,7 @@ export function App() {
       const firstSheet = restored.sheets[0];
       setProject(restored);
       setActiveSheetId(firstSheet.id);
-      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
       setSelectedWireId("");
       setNotice(`${restored.name} restored from ${saved.source === "previous" ? "the previous local save; the current record remains unchanged" : "local storage"}.`);
     } catch {
@@ -235,8 +241,12 @@ export function App() {
     else setProject(nextProject);
   };
 
-  const selectComponent = (componentId: string) => {
-    setSelectedComponentId(componentId);
+  const selectComponent = (componentId: string, additive = false) => {
+    if (additive && !isReferenceSheet) {
+      const next = toggleComponentSelection(selectedComponentIds, componentId);
+      setSelectedComponentIds(next);
+      setSelectedComponentId(next.includes(componentId) ? componentId : next[0] ?? "");
+    } else setComponentSelection(componentId);
     setSelectedWireId("");
     setSelectedAnnotationId("");
     setSelectedGraphicId("");
@@ -246,7 +256,7 @@ export function App() {
 
   const selectWire = (wireId: string) => {
     setSelectedWireId(wireId);
-    setSelectedComponentId("");
+    setComponentSelection("");
     setWireMode(false);
     setWireStart(null);
     setReconnectingWireId("");
@@ -257,7 +267,7 @@ export function App() {
 
   const selectAnnotation = (id: string) => {
     setSelectedAnnotationId(id);
-    setSelectedComponentId("");
+    setComponentSelection("");
     setSelectedWireId("");
     setAnnotationMode(false);
     setSelectedGraphicId("");
@@ -266,7 +276,7 @@ export function App() {
 
   const selectGraphic = (id: string) => {
     setSelectedGraphicId(id);
-    setSelectedComponentId("");
+    setComponentSelection("");
     setSelectedWireId("");
     setSelectedAnnotationId("");
     setGraphicMode(null);
@@ -387,7 +397,7 @@ export function App() {
     const next = graphicMode === kind ? null : kind;
     setGraphicMode(next);
     setWireMode(false); setWireStart(null); setAnnotationMode(false);
-    setSelectedComponentId(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId("");
+    setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId("");
     setNotice(next ? kind === "polyline" || kind === "polygon" ? `Click to add ${kind} vertices; double-click or press Enter to finish. Escape cancels.` : `Click and drag on the blank sheet to draw a ${kind}. Drafting geometry does not connect terminals.` : "Drawing tool closed.");
   };
 
@@ -458,7 +468,7 @@ export function App() {
       setProject(restored);
       setHistory({ undo: [], redo: [] });
       setActiveSheetId(firstSheet.id);
-      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
       setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
@@ -529,7 +539,7 @@ export function App() {
       const firstSheet = restored.sheets[0];
       recordEdit(restored);
       setActiveSheetId(firstSheet.id);
-      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
       setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
@@ -633,7 +643,7 @@ export function App() {
       const firstSheet = imported.sheets[0];
       recordEdit(imported);
       setActiveSheetId(firstSheet.id);
-      setSelectedComponentId(firstSheet.document.components[0]?.id ?? "");
+      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
       setSelectedWireId("");
       setWireMode(false);
       setWireStart(null);
@@ -647,7 +657,7 @@ export function App() {
   const restoreDol = () => {
     recordEdit(createStarterProject());
     setActiveSheetId("sheet-dol");
-    setSelectedComponentId("contactor");
+    setComponentSelection("contactor");
     setSelectedWireId("");
     setDirty(true);
     setSimulation(initialDolState());
@@ -661,7 +671,7 @@ export function App() {
     setProject(result.project);
     const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
     setActiveSheetId(restoredSheet.id);
-    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setComponentSelection(restoredSheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
     setDirty(true);
     setNotice("Last project edit undone.");
@@ -674,7 +684,7 @@ export function App() {
     setProject(result.project);
     const restoredSheet = result.project.sheets.find((sheet) => sheet.id === activeSheetId) ?? result.project.sheets[0];
     setActiveSheetId(restoredSheet.id);
-    setSelectedComponentId(restoredSheet.document.components[0]?.id ?? "");
+    setComponentSelection(restoredSheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
     setDirty(true);
     setNotice("Last project edit redone.");
@@ -713,7 +723,7 @@ export function App() {
     const sheet = next.sheets.at(-1)!;
     recordEdit(next);
     setActiveSheetId(sheet.id);
-    setSelectedComponentId("");
+    setComponentSelection("");
     setSelectedWireId("");
     setSelectedAnnotationId(""); setSelectedGraphicId(""); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(false);
@@ -726,7 +736,7 @@ export function App() {
     const sheet = project.sheets.find((item) => item.id === sheetId);
     if (!sheet) return;
     setActiveSheetId(sheetId);
-    setSelectedComponentId(sheet.document.components[0]?.id ?? "");
+    setComponentSelection(sheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
     setSelectedAnnotationId(""); setSelectedGraphicId(""); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(false);
@@ -747,7 +757,7 @@ export function App() {
     const loadedSheet = next.sheets.find((sheet) => sheet.id === targetSheetId)!;
     recordEdit(next);
     setActiveSheetId(targetSheetId);
-    setSelectedComponentId(loadedSheet.document.components[0]?.id ?? "");
+    setComponentSelection(loadedSheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
     setWireMode(false);
     setWireStart(null);
@@ -1000,29 +1010,27 @@ export function App() {
 
   const nudgeSelectedComponent = (deltaX: number, deltaY: number) => {
     if (!selectedComponent) return;
-    if (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id)) {
+    const componentIds = selectedComponentIds.includes(selectedComponent.id) ? selectedComponentIds : [selectedComponent.id];
+    if (isReferenceSheet && componentIds.some((id) => fixedReferenceComponentIds.has(id))) {
       setNotice("Reference DOL symbols are fixed in this increment. Newly placed component instances can be moved on the grid.");
       return;
     }
-    const nextX = selectedComponent.x + deltaX;
-    const nextY = selectedComponent.y + deltaY;
-    const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    if (!canPlaceComponent(movableComponents, selectedComponent.id, nextX, nextY)) {
-      setNotice("Move blocked: keep symbols and labels inside the sheet and clear of neighbors.");
-      return;
-    }
-    updateDocument(moveComponent(document, selectedComponent.id, deltaX, deltaY));
-    setNotice(`${selectedComponent.reference} moved; terminal-level wire topology is preserved.`);
+    const result = moveComponentsByGrid(document, componentIds, deltaX, deltaY);
+    if (!result.ok) { setNotice(result.reason ?? "Move blocked: keep symbols and labels inside the sheet and clear of neighbors."); return; }
+    if (result.document !== document) updateDocument(result.document);
+    setNotice(`${componentIds.length} selected component${componentIds.length === 1 ? "" : "s"} moved; terminal-level wire topology is preserved.`);
   };
 
   const dragComponent = (componentId: string, x: number, y: number) => {
     if (isReferenceSheet) return;
-    const result = moveComponentToGrid(document, componentId, x, y);
+    const component = document.components.find((item) => item.id === componentId);
+    if (!component) return;
+    const componentIds = selectedComponentIds.includes(componentId) ? selectedComponentIds : [componentId];
+    const result = moveComponentsByGrid(document, componentIds, x - component.x, y - component.y);
     if (!result.ok) { setNotice(result.reason ?? "Move rejected."); return; }
     if (result.document === document) return;
     updateDocument(result.document);
-    setSelectedComponentId(componentId);
-    setNotice("Component moved on the 20-unit grid; connected wire endpoints are preserved.");
+    setNotice(`${componentIds.length} selected component${componentIds.length === 1 ? "" : "s"} moved on the 20-unit grid; connected wire endpoints are preserved.`);
   };
 
   const removeSelectedComponent = () => {
@@ -1033,7 +1041,7 @@ export function App() {
     }
     const result = removeComponent(document, selectedComponent.id);
     updateDocument(result.document);
-    setSelectedComponentId("");
+    setComponentSelection("");
     setNotice(`${selectedComponent.reference} removed${result.removedWireCount ? ` with ${result.removedWireCount} connected wire${result.removedWireCount === 1 ? "" : "s"}` : ""}. Use Undo to restore it.`);
   };
 
@@ -1104,7 +1112,7 @@ export function App() {
         <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
         <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
         {!isReferenceSheet && <>
-          <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedComponentId(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
+          <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setComponentSelection(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
           <button className={graphicMode === "line" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("line")} aria-label="Draw line">／<span>Line</span></button>
           <button className={graphicMode === "rectangle" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("rectangle")} aria-label="Draw rectangle">▭<span>Rectangle</span></button>
           <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
@@ -1139,7 +1147,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
@@ -1147,7 +1155,7 @@ export function App() {
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
           {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
-          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
+          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
@@ -1162,7 +1170,7 @@ export function App() {
           const sheet = extended.sheets.at(-1)!;
           recordEdit(replaceSheetDocument(extended, sheet.id, circuit));
           setActiveSheetId(sheet.id);
-          setSelectedComponentId("motor");
+          setComponentSelection("motor");
           setSelectedWireId(""); setWireMode(false); setWireStart(null);
           setDirty(true);
           setNotice("Star–delta power circuit copied to a new editable sheet. Lab controls remain independent.");
@@ -1174,7 +1182,7 @@ export function App() {
           const next = replaceSheetDocument(extended, sheet.id, circuit);
           recordEdit(next);
           setActiveSheetId(sheet.id);
-          setSelectedComponentId("breaker");
+          setComponentSelection("breaker");
           setSelectedWireId("");
           setWireMode(false);
           setWireStart(null);
@@ -1195,11 +1203,11 @@ export function App() {
   );
 }
 
-function Properties({ instance: savedInstance, modelOutput, onReferenceChange, onDisplayNameChange, onTerminalLabelChange, onCustomPropertyAdd, onCustomPropertyRename, onCustomPropertyChange, onCustomPropertyRemove, onPropertyChange, onDraftingColorChange, onSizeChange, onNudge, onRotate, onDuplicate, onRemove, movable }: { instance: ComponentInstance; modelOutput?: FunctionalModelResult; onReferenceChange: (reference: string) => void; onDisplayNameChange: (displayName: string) => void; onTerminalLabelChange: (terminalId: string, label: string) => void; onCustomPropertyAdd: (name: string, value: string) => boolean; onCustomPropertyRename: (previousName: string, name: string) => boolean; onCustomPropertyChange: (name: string, value: string) => void; onCustomPropertyRemove: (name: string) => void; onPropertyChange: (property: string, value: string | boolean) => void; onDraftingColorChange: (color: string | undefined) => void; onSizeChange: (sizePercent: string) => void; onNudge: (deltaX: number, deltaY: number) => void; onRotate: () => void; onDuplicate: () => void; onRemove: () => void; movable: boolean }) {
+function Properties({ instance: savedInstance, modelOutput, selectionCount, onReferenceChange, onDisplayNameChange, onTerminalLabelChange, onCustomPropertyAdd, onCustomPropertyRename, onCustomPropertyChange, onCustomPropertyRemove, onPropertyChange, onDraftingColorChange, onSizeChange, onNudge, onRotate, onDuplicate, onRemove, movable }: { instance: ComponentInstance; modelOutput?: FunctionalModelResult; selectionCount: number; onReferenceChange: (reference: string) => void; onDisplayNameChange: (displayName: string) => void; onTerminalLabelChange: (terminalId: string, label: string) => void; onCustomPropertyAdd: (name: string, value: string) => boolean; onCustomPropertyRename: (previousName: string, name: string) => boolean; onCustomPropertyChange: (name: string, value: string) => void; onCustomPropertyRemove: (name: string) => void; onPropertyChange: (property: string, value: string | boolean) => void; onDraftingColorChange: (color: string | undefined) => void; onSizeChange: (sizePercent: string) => void; onNudge: (deltaX: number, deltaY: number) => void; onRotate: () => void; onDuplicate: () => void; onRemove: () => void; movable: boolean }) {
   const definition = catalogById.get(savedInstance.definitionId);
   if (!definition) return <p className="empty">Catalog definition missing.</p>;
   const instance = { ...savedInstance, properties: { ...definition.propertiesSchema, ...savedInstance.properties } };
-  return <section className="properties-form"><label>Reference<input defaultValue={instance.reference} key={instance.id + instance.reference} onBlur={(event) => onReferenceChange(event.target.value)} /></label><label>Instance name<input defaultValue={savedInstance.displayName ?? ""} key={savedInstance.id + String(savedInstance.displayName ?? "")} maxLength={80} disabled={!movable} onBlur={(event) => onDisplayNameChange(event.target.value)} /></label><label>Component<input value={definition.name} readOnly /></label><label>Category<input value={definition.category} readOnly /></label><label>Simulation<input value={definition.simulationSupport} readOnly /></label>{movable && <><label>Symbol color<input aria-label="Component drafting color" type="color" value={instance.draftingColor ?? "#2272ad"} onChange={(event) => onDraftingColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Component color palette">{["#2272ad", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"].map((color) => <button key={color} type="button" aria-label={`Set component color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onDraftingColorChange(color)} />)}<button type="button" aria-label="Reset component color" title="Default color" onClick={() => onDraftingColorChange(undefined)}>↺</button></div><label>Symbol size · percent<input type="number" min="50" max="200" step="10" defaultValue={Math.round((instance.size ?? 1) * 100)} key={`${instance.id}:${instance.size ?? 1}`} onBlur={(event) => onSizeChange(event.target.value)} /></label></>}<section className="component-parameters"><strong>Component parameters</strong>{Object.entries(instance.properties).map(([property, value]) => typeof value === "boolean" ? <label className="property-checkbox" key={property}>{formatPropertyLabel(property)}<input type="checkbox" checked={value} disabled={!movable} onChange={(event) => onPropertyChange(property, event.target.checked)} /></label> : <label key={property}>{formatPropertyLabel(property)}<input key={JSON.stringify([instance.id, property, value])} type={componentPropertyInputType(value)} defaultValue={String(value)} maxLength={property.startsWith("terminalLabel") ? 8 : undefined} disabled={!movable} inputMode={typeof value === "number" ? "decimal" : undefined} onBlur={(event) => onPropertyChange(property, event.target.value)} /></label>)}</section>{movable && <CustomComponentData instance={instance} onAdd={onCustomPropertyAdd} onRename={onCustomPropertyRename} onChange={onCustomPropertyChange} onRemove={onCustomPropertyRemove} />}{modelOutput && <section className="model-output"><strong>Live model output</strong><span>{modelOutput.label}</span><b>{modelOutput.value}</b></section>}{!movable && <p className="parameter-note">Reference-model geometry and parameters are fixed so the supported DOL behaviour and displayed circuit stay consistent.</p>}{movable && <><div className="move-grid"><strong>Position · snap 20</strong><span>X {instance.x} · Y {instance.y} · R {instance.rotation}°</span><button onClick={() => onNudge(0, -20)} aria-label="Move component up">↑</button><button onClick={() => onNudge(-20, 0)} aria-label="Move component left">←</button><button onClick={() => onNudge(20, 0)} aria-label="Move component right">→</button><button onClick={() => onNudge(0, 20)} aria-label="Move component down">↓</button></div><button type="button" onClick={onDuplicate}>Duplicate component</button><button className="rotate-component" onClick={onRotate}>Rotate 90°</button><button className="remove-component" onClick={onRemove}>Remove placed component</button></>}<div className="terminals"><strong>Terminal display labels</strong>{definition.terminals.map((terminal, index) => { const fallback = displayTerminalLabel(instance.properties, index, terminal.label); return <span key={terminal.id}>{movable ? <TerminalLabelField instance={instance} terminalId={terminal.id} defaultLabel={fallback} onChange={onTerminalLabelChange} /> : instance.terminalLabels?.[terminal.id] ?? fallback}<small>{terminal.id} · {terminal.kind}</small></span>; })}</div><p>{definition.documentation}</p></section>;
+  return <section className="properties-form">{selectionCount > 1 && <p className="group-selection" aria-label="Group selection">{selectionCount} components selected. Arrow controls move the whole group.</p>}<label>Reference<input defaultValue={instance.reference} key={instance.id + instance.reference} onBlur={(event) => onReferenceChange(event.target.value)} /></label><label>Instance name<input defaultValue={savedInstance.displayName ?? ""} key={savedInstance.id + String(savedInstance.displayName ?? "")} maxLength={80} disabled={!movable} onBlur={(event) => onDisplayNameChange(event.target.value)} /></label><label>Component<input value={definition.name} readOnly /></label><label>Category<input value={definition.category} readOnly /></label><label>Simulation<input value={definition.simulationSupport} readOnly /></label>{movable && <><label>Symbol color<input aria-label="Component drafting color" type="color" value={instance.draftingColor ?? "#2272ad"} onChange={(event) => onDraftingColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Component color palette">{["#2272ad", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"].map((color) => <button key={color} type="button" aria-label={`Set component color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onDraftingColorChange(color)} />)}<button type="button" aria-label="Reset component color" title="Default color" onClick={() => onDraftingColorChange(undefined)}>↺</button></div><label>Symbol size · percent<input type="number" min="50" max="200" step="10" defaultValue={Math.round((instance.size ?? 1) * 100)} key={`${instance.id}:${instance.size ?? 1}`} onBlur={(event) => onSizeChange(event.target.value)} /></label></>}<section className="component-parameters"><strong>Component parameters</strong>{Object.entries(instance.properties).map(([property, value]) => typeof value === "boolean" ? <label className="property-checkbox" key={property}>{formatPropertyLabel(property)}<input type="checkbox" checked={value} disabled={!movable} onChange={(event) => onPropertyChange(property, event.target.checked)} /></label> : <label key={property}>{formatPropertyLabel(property)}<input key={JSON.stringify([instance.id, property, value])} type={componentPropertyInputType(value)} defaultValue={String(value)} maxLength={property.startsWith("terminalLabel") ? 8 : undefined} disabled={!movable} inputMode={typeof value === "number" ? "decimal" : undefined} onBlur={(event) => onPropertyChange(property, event.target.value)} /></label>)}</section>{movable && <CustomComponentData instance={instance} onAdd={onCustomPropertyAdd} onRename={onCustomPropertyRename} onChange={onCustomPropertyChange} onRemove={onCustomPropertyRemove} />}{modelOutput && <section className="model-output"><strong>Live model output</strong><span>{modelOutput.label}</span><b>{modelOutput.value}</b></section>}{!movable && <p className="parameter-note">Reference-model geometry and parameters are fixed so the supported DOL behaviour and displayed circuit stay consistent.</p>}{movable && <><div className="move-grid"><strong>Position · snap 20</strong><span>X {instance.x} · Y {instance.y} · R {instance.rotation}°</span><button onClick={() => onNudge(0, -20)} aria-label="Move component up">↑</button><button onClick={() => onNudge(-20, 0)} aria-label="Move component left">←</button><button onClick={() => onNudge(20, 0)} aria-label="Move component right">→</button><button onClick={() => onNudge(0, 20)} aria-label="Move component down">↓</button></div><button type="button" onClick={onDuplicate}>Duplicate component</button><button className="rotate-component" onClick={onRotate}>Rotate 90°</button><button className="remove-component" onClick={onRemove}>Remove placed component</button></>}<div className="terminals"><strong>Terminal display labels</strong>{definition.terminals.map((terminal, index) => { const fallback = displayTerminalLabel(instance.properties, index, terminal.label); return <span key={terminal.id}>{movable ? <TerminalLabelField instance={instance} terminalId={terminal.id} defaultLabel={fallback} onChange={onTerminalLabelChange} /> : instance.terminalLabels?.[terminal.id] ?? fallback}<small>{terminal.id} · {terminal.kind}</small></span>; })}</div><p>{definition.documentation}</p></section>;
 }
 
 function TerminalLabelField({ instance, terminalId, defaultLabel, onChange }: { instance: ComponentInstance; terminalId: string; defaultLabel: string; onChange: (terminalId: string, label: string) => void }) {

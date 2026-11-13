@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponent, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -73,6 +73,23 @@ describe("component movement", () => {
       expect(rejected.ok).toBe(false);
       expect(rejected.document).toBe(document);
     }
+  });
+  it("moves a selected component group atomically on the grid and preserves its wires", () => {
+    const base = createAnalogLevelProject().document;
+    const template = base.components[0];
+    const first = { ...template, id: "group-1", reference: "LT1", x: 140, y: 300 };
+    const second = { ...template, id: "group-2", reference: "LT2", x: 400, y: 300 };
+    const blocker = { ...template, id: "stationary", reference: "LT3", x: 820, y: 300 };
+    const document = { ...base, components: [first, second, blocker] };
+    const moved = moveComponentsByGrid(document, [first.id, second.id], 37, 0);
+    expect(moved.ok).toBe(true);
+    expect(moved.document.components.map(({ id, x, y }) => ({ id, x, y }))).toEqual([
+      { id: first.id, x: 180, y: 300 }, { id: second.id, x: 440, y: 300 }, { id: blocker.id, x: 820, y: 300 },
+    ]);
+    expect(moved.document.wires).toEqual(document.wires);
+    const blocked = moveComponentsByGrid(document, [first.id, second.id], 400, 0);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.document).toBe(document);
   });
   it("reserves space for upright references below normal and rotated symbols", () => {
     const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 200, rotation: 0 as const, properties: {} };
