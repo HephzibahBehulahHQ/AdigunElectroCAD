@@ -381,6 +381,14 @@ PR #163 merged as `5c4ed14`. GitHub Verify run `43358060417` and Pages deploymen
 
 PR #166 merged as `b7f42a9`. GitHub Verify run `43359574264` and Pages deployment run #164 succeeded.
 
+## Completed increment: M06af — Terminal-based wire branching
+
+- [x] Let users Shift-click compatible target terminals to create multiple branches from a chosen source terminal.
+- [x] Keep the source selected between branch connections and allocate unique wire IDs and net names.
+- [x] Pass 34 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #168 merged as `3a6879c`. GitHub Verify run `43360518718` and Pages deployment run #166 succeeded.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
