@@ -423,6 +423,14 @@ PR #174 merged as `51dc8ac`. GitHub Verify run #698 and Pages deployment run #17
 
 PR #176 merged as `c405de3`. GitHub Verify run #702 and Pages deployment run #174 succeeded. The live site returned HTTP 200 and served `assets/index-BuUQ8_Sp.js` with the exact geometry fields and bounds validation.
 
+## Completed increment: M06ak — Live wire move preview
+
+- [x] Preview moved component groups, connected wire routes, and dependent branch taps together during drag.
+- [x] Keep the preview transient; accepted drops update the document, while rejected or cancelled moves restore the prior drawing and topology.
+- [x] Pass 17 focused tests, production build, GitHub Verify, merge, Pages deployment, and exact live-bundle hash verification.
+
+PR #178 merged as `3c0c6a7`. GitHub Verify succeeded; Pages deployment run #176 succeeded. Production returned HTTP 200 and served `assets/index-tsg_k633.js`, whose SHA-256 matched the local build.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
