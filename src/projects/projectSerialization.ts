@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -134,11 +134,13 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   if (size !== undefined && (size < .5 || size > 2)) throw new Error("Component size must be between 0.5 and 2.");
   const draftingColor = component.draftingColor === undefined ? undefined : textValue(component.draftingColor, "component drafting color", 7);
   if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
+  const customTerminals = component.customTerminals === undefined ? undefined : customTerminalDefinitions(component.customTerminals, definitionId);
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
-    ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId) }),
+    ...(customTerminals === undefined ? {} : { customTerminals }),
+    ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId, customTerminals) }),
     properties: properties(component.properties),
       ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
   };
@@ -193,9 +195,27 @@ function customProperties(value: unknown): Record<string, string> {
   return result;
 }
 
-function terminalLabelOverrides(value: unknown, definitionId: string): Record<string, string> {
+function customTerminalDefinitions(value: unknown, definitionId: string): TerminalDefinition[] {
+  if (definitionId !== "user.indicator-lamp") throw new Error("Custom terminals are only supported on user-defined symbols.");
+  const values = array(value, "Custom component terminals are invalid.");
+  if (values.length < 2 || values.length > 8) throw new Error("A user-defined symbol must have between 2 and 8 terminals.");
+  const terminals = values.map((item) => {
+    const terminal = object(item, "Custom component terminal is invalid.");
+    const id = textValue(terminal.id, "custom terminal id", 8);
+    const label = textValue(terminal.label, "custom terminal label", 8);
+    const kind = terminal.kind;
+    const direction = terminal.direction;
+    if (!/^t[1-8]$/.test(id) || !["control", "power", "protective-earth"].includes(String(kind))) throw new Error("Custom terminal id or kind is invalid.");
+    if (!["input", "output", "bidirectional"].includes(String(direction))) throw new Error("Custom terminal direction is invalid.");
+    return { id, label, kind: kind as TerminalDefinition["kind"], direction: direction as TerminalDefinition["direction"] };
+  });
+  if (new Set(terminals.map((terminal) => terminal.id)).size !== terminals.length || !["t1", "t2"].every((id) => terminals.some((terminal) => terminal.id === id))) throw new Error("Custom terminals must keep unique t1 and t2 identities.");
+  return terminals;
+}
+
+function terminalLabelOverrides(value: unknown, definitionId: string, customTerminals?: TerminalDefinition[]): Record<string, string> {
   const source = object(value, "Component terminal labels are invalid.");
-  const terminals = new Set(catalogById.get(definitionId)?.terminals.map((terminal) => terminal.id) ?? []);
+  const terminals = new Set((customTerminals ?? catalogById.get(definitionId)?.terminals ?? []).map((terminal) => terminal.id));
   const entries = Object.entries(source);
   if (entries.length > terminals.size) throw new Error("Component terminal labels exceed the catalog terminal count.");
   const result: Record<string, string> = {};

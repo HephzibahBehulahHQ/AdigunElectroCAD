@@ -96,13 +96,14 @@ function validateEndpoint(endpoint: TerminalEndpoint, components: Map<string, Ci
     return;
   }
   const definition = definitions.get(component.definitionId);
-  if (definition && !definition.terminals.some((terminal) => terminal.id === endpoint.terminalId)) issues.push({ severity: "error", code: "unknown-terminal", message: `${wireId} references missing terminal ${component.reference}.${endpoint.terminalId}.` });
+  const terminals = component.customTerminals ?? definition?.terminals;
+  if (terminals && !terminals.some((terminal) => terminal.id === endpoint.terminalId)) issues.push({ severity: "error", code: "unknown-terminal", message: `${wireId} references missing terminal ${component.reference}.${endpoint.terminalId}.` });
 }
 
 function resolveTerminal(endpoint: TerminalEndpoint, document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>) {
   const component = document.components.find((item) => item.id === endpoint.componentId);
   const definition = component ? definitions.get(component.definitionId) : undefined;
-  return definition?.terminals.find((terminal) => terminal.id === endpoint.terminalId);
+  return (component?.customTerminals ?? definition?.terminals)?.find((terminal) => terminal.id === endpoint.terminalId);
 }
 
 function sameConnection(from: TerminalEndpoint, to: TerminalEndpoint, expectedFrom: TerminalEndpoint, expectedTo: TerminalEndpoint) {

@@ -66,7 +66,8 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   ] : [];
   for (const component of document.components.filter((item) => document.id !== "reference-dol-motor-starter" || !staticComponentIds.has(item.id))) {
     const definition = catalogById.get(component.definitionId);
-    definition?.terminals.forEach((terminal, index) => {
+    if (!definition) continue;
+    (component.customTerminals ?? definition?.terminals ?? []).forEach((terminal, index) => {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 32 : -32;
       const y = sixTerminal ? index < 3 ? -42 : index < 6 ? 42 : 0 : -15 + Math.floor(index / 2) * 12;
@@ -216,7 +217,7 @@ function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [
   const typeLabel = typeof component.properties.indication === "string" && component.properties.indication.trim() ? component.properties.indication.trim() : definition?.referencePrefix ?? "?";
   const displayLabel = component.displayName?.trim() ? `${component.displayName.trim()} · ${typeLabel}`.slice(0, 32) : typeLabel.slice(0, 24);
   const symbolProperties = { ...component.properties };
-  definition?.terminals.forEach((terminal, index) => { const label = component.terminalLabels?.[terminal.id]; if (label) symbolProperties["terminalLabel" + (index + 1)] = label; });
+  (component.customTerminals ?? definition?.terminals ?? []).forEach((terminal, index) => { const label = component.terminalLabels?.[terminal.id]; if (label) symbolProperties["terminalLabel" + (index + 1)] = label; });
   const origin = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
   const [delta, setDelta] = useState({ x: 0, y: 0 });
@@ -247,7 +248,7 @@ function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [
     onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null); }}
     className={(selectedComponentIds.length ? selectedComponentIds.includes(component.id) : component.id === selectedComponentId) ? "schematic-component selected" : "schematic-component"}>
     <g transform={`translate(${component.x} ${component.y}) scale(${component.size ?? 1}) translate(${-component.x} ${-component.y})`}><g transform={`rotate(${component.rotation} ${component.x} ${component.y})`} style={component.draftingColor ? { "--component-ink": component.draftingColor } as CSSProperties : undefined}><rect x={component.x - 55} y={component.y - 35} width="110" height="70" rx="6" className="selection-boundary" /><rect x={component.x - 47} y={component.y - 27} width="94" height="54" rx="4" className="free-symbol" />{definition?.id === "motor.six-terminal" ? <SixTerminalWindings x={component.x} y={component.y} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} properties={symbolProperties} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g>
-    {definition?.symbolId !== "user-indicator-lamp" && terminalAnchorsForComponent.map(({ endpoint, x, y }) => { const label = component.terminalLabels?.[endpoint.terminalId]; if (!label) return null; const left = x < component.x; return <text key={endpoint.terminalId} x={x + (left ? -5 : 5)} y={y + (y < component.y ? -5 : 12)} textAnchor={left ? "end" : "start"} className="terminal-label custom-terminal-label">{label}</text>; })} <text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
+    {terminalAnchorsForComponent.map(({ endpoint, x, y }) => { if (definition?.symbolId === "user-indicator-lamp" && /^t[12]$/.test(endpoint.terminalId)) return null; const label = component.terminalLabels?.[endpoint.terminalId]; if (!label) return null; const left = x < component.x; return <text key={endpoint.terminalId} x={x + (left ? -5 : 5)} y={y + (y < component.y ? -5 : 12)} textAnchor={left ? "end" : "start"} className="terminal-label custom-terminal-label">{label}</text>; })} <text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
     <text x={component.x} y={component.y + labels.kind} className="free-kind" textAnchor="middle" textLength={displayLabel.length > 12 ? 78 : undefined} lengthAdjust="spacingAndGlyphs">{displayLabel}</text></g>
   </g>;
 }

@@ -42,3 +42,21 @@ it("round-trips user-selected indicator color, indication and terminal labels", 
     color: "#ff00aa", indication: "Machine ready", terminalLabel1: "L+", terminalLabel2: "N",
   });
 });
+
+
+it("persists user-configured terminals and creates connectable anchor locations", () => {
+  const project = createStarterProject();
+  const lamp = project.sheets[0].document.components.find((component) => component.id === "lamp-h1")!;
+  lamp.customTerminals = [
+    { id: "t1", label: "T1", kind: "control", direction: "bidirectional" },
+    { id: "t2", label: "T2", kind: "control", direction: "bidirectional" },
+    { id: "t3", label: "FRAME", kind: "protective-earth", direction: "input" },
+  ];
+  lamp.terminalLabels = { t3: "PE" };
+  const restored = parseProjectJson(JSON.stringify(project));
+  const restoredLamp = restored.sheets[0].document.components.find((component) => component.id === lamp.id)!;
+  expect(restoredLamp.customTerminals).toEqual(lamp.customTerminals);
+  expect(restoredLamp.terminalLabels).toEqual({ t3: "PE" });
+  expect(terminalAnchors(restored.sheets[0].document).find((anchor) => anchor.endpoint.componentId === lamp.id && anchor.endpoint.terminalId === "t3")).toMatchObject({ x: lamp.x - 32, y: lamp.y - 25 });
+  expect(canConnectTerminals(restored.sheets[0].document, catalogById, { componentId: lamp.id, terminalId: "t3" }, { componentId: "lamp-h2", terminalId: "t2" }).ok).toBe(false);
+});
