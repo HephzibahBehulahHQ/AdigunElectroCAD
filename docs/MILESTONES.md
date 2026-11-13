@@ -389,6 +389,15 @@ PR #166 merged as `b7f42a9`. GitHub Verify run `43359574264` and Pages deploymen
 
 PR #168 merged as `3a6879c`. GitHub Verify run `43360518718` and Pages deployment run #166 succeeded.
 
+## Completed increment: M06ag — Editable mid-wire branch attachments
+
+- [x] Click a free-sheet wire route to save a branch attachment and connect it to a compatible catalog terminal.
+- [x] Persist parent wire, source endpoint, and relative route position; redraw the attachment when parent endpoints move.
+- [x] Validate branch references and cascade parent deletion through dependent branches. Electrical topology continues to represent terminal-to-terminal connections; the tap is a drawing attachment, not a standalone equipotential junction node.
+- [x] Pass 62 focused tests, production build, GitHub Verify, merge, and Pages deployment; verify the served bundle includes branch interaction and validation strings.
+
+PR #170 merged as `6a49cd0`. GitHub Verify run #691 and Pages deployment run #168 succeeded. The deployed application returned HTTP 200 and served `assets/index-C4vExyHh.js` with the new branch UI and topology validation.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
