@@ -7,6 +7,14 @@ export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "TON"; timer: `T${0 |
 export interface LadderRung { stages: LadderContact[][]; coil: LadderCoil; }
 export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }];
 
+/** Duplicate a rung beside its source, with a bounded independent copy. */
+export function duplicateLadderRung(rungs: readonly LadderRung[], index: number): LadderRung[] | null {
+  if (!Number.isInteger(index) || index < 0 || index >= rungs.length || rungs.length >= 4) return null;
+  const copy = rungs.map(cloneLadderRung);
+  copy.splice(index + 1, 0, cloneLadderRung(rungs[index]));
+  return copy;
+}
+
 /** Return an independent ladder with one rung moved to another valid position. */
 export function moveLadderRung(rungs: readonly LadderRung[], fromIndex: number, toIndex: number): LadderRung[] | null {
   if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || fromIndex >= rungs.length || toIndex < 0 || toIndex >= rungs.length) return null;
