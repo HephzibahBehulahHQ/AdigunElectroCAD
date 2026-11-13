@@ -64,6 +64,8 @@ export interface SchematicAnnotation {
   x: number;
   y: number;
   color: string;
+  /** User-selected visual size in SVG units; does not affect schematic semantics. */
+  fontSize?: number;
 }
 
 export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";

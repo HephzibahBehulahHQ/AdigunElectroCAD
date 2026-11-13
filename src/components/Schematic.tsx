@@ -102,8 +102,8 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) onMove?.(annotation.id, annotation.x + current.x - start.x, annotation.y + current.y - start.y);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
-    {selected && <rect x="-5" y="-20" width={Math.max(54, annotation.text.length * 9 + 10)} height="28" rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
-    <text x="0" y="0" fill={annotation.color} fontSize="18" fontWeight="600" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
+    {selected && <rect x="-5" y={-(annotation.fontSize ?? 18) * 1.1} width={Math.max((annotation.fontSize ?? 18) * 3, annotation.text.length * (annotation.fontSize ?? 18) * .52 + 10)} height={(annotation.fontSize ?? 18) * 1.35} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
+    <text x="0" y="0" fill={annotation.color} fontSize={annotation.fontSize ?? 18} fontWeight="600" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
   </g>;
 }
 
