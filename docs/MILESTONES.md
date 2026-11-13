@@ -264,6 +264,16 @@ PR #135 merged as `90c9016`. Verify runs `43333087233` and `43333096028` succeed
 PR #137 merged as `15bed16`. Verify runs `43336032081` and `43336039728` succeeded. Pages deployment `43336144882` succeeded; the custom domain remained inaccessible through the available browser route.
 
 
+## Completed increment: M06r — Duplicate drafting graphics
+
+- [x] Duplicate any free-sheet drafting graphic, including a polyline or polygon, from its properties panel.
+- [x] Preserve appearance and path data, assign a new identity and copy tag, and offset the duplicate within the sheet bounds.
+- [x] Pass 7 focused graphic tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #139 merged as `658ee94`. Verify runs `43337243565` and `43337249564` succeeded. Pages deployment `43337370770` succeeded; the custom domain remains inaccessible through the available browser route.
+
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
