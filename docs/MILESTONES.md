@@ -528,3 +528,12 @@ Q1 is a Boolean logic signal in this model. The watch table and scan history mak
 - [x] Pass GitHub Verify run `43398918853`, merge PR #204 as `1f519d5`, and complete Pages deployment run `43399020238`.
 
 The ladder remains a bounded educational editor with a 32-instruction scan limit; this does not establish full IEC language compatibility.
+
+
+## Completed increment: M06aw — Editable XOR ladder branches
+
+- [x] Let users choose OR or XOR per graphical parallel-contact stage and show the choice in the ladder diagram.
+- [x] Compile/import Boolean, numeric comparison and rising/falling edge contacts in XOR groups; scan and preview use the same parity behavior.
+- [x] Pass both exact-head Verify runs `43401190423` and `43401197067`, merge PR #206 as `36840f5`, and complete Pages deployment run `43401296424`.
+
+XOR defines Boolean parity within a user-selected parallel group. The editor still enforces the 32-instruction PLC scan bound and the model remains an educational simulator, not a full IEC language implementation.
