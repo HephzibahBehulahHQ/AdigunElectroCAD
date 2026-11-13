@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { FunctionalSymbol } from "../src/components/functionalSymbols";
+import { IndicatorColorPalette } from "../src/components/IndicatorColorPalette";
 import { terminalAnchors } from "../src/components/Schematic";
 import { canConnectTerminals } from "../src/electrical/topology";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
@@ -61,4 +62,12 @@ it("persists user-configured terminals and creates connectable anchor locations"
   expect(restoredLamp.customTerminalOffsets).toEqual({ t3: { x: 44, y: -24 } });
   expect(terminalAnchors(restored.sheets[0].document).find((anchor) => anchor.endpoint.componentId === lamp.id && anchor.endpoint.terminalId === "t3")).toMatchObject({ x: lamp.x + 44, y: lamp.y - 24 });
   expect(canConnectTerminals(restored.sheets[0].document, catalogById, { componentId: lamp.id, terminalId: "t3" }, { componentId: "lamp-h2", terminalId: "t2" }).ok).toBe(false);
+});
+
+it("provides quick user-selected lamp colors while retaining the custom color picker", () => {
+  const markup = renderToStaticMarkup(createElement(IndicatorColorPalette, { value: "#c62828", onChange: () => undefined }));
+  expect(markup).toContain('aria-label="Indicator color palette"');
+  expect(markup).toContain('aria-label="Set indicator color #c62828"');
+  expect(markup).toContain('aria-pressed="true"');
+  expect(markup).toContain('aria-label="Set indicator color #1565c0"');
 });
