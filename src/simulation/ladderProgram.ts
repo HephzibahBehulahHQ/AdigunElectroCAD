@@ -9,7 +9,7 @@ export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", i
 
 /** Duplicate a rung beside its source, with a bounded independent copy. */
 export function duplicateLadderRung(rungs: readonly LadderRung[], index: number): LadderRung[] | null {
-  if (!Number.isInteger(index) || index < 0 || index >= rungs.length || rungs.length >= 4) return null;
+  if (!Number.isInteger(index) || index < 0 || index >= rungs.length || rungs.length >= 16) return null;
   const copy = rungs.map((rung) => ({
     stages: rung.stages.map((stage) => stage.map((contact) => ({ ...contact }))),
     coil: typeof rung.coil === "object" ? { ...rung.coil } : rung.coil,
@@ -88,7 +88,7 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
 
 /** Each stage is an OR of parallel contacts; stages are connected in series. */
 export function compileLadder(rungs: readonly LadderRung[]): string {
-  if (!rungs.length || rungs.length > 4) throw new Error("Use one to four rungs.");
+  if (!rungs.length || rungs.length > 16) throw new Error("Use one to sixteen rungs.");
   const instructions: string[] = [];
   const numericSource = (value: string) => value === "AI0" || /^D[0-7]$/.test(value);
   const numericOperand = (value: string) => numericSource(value) || /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= Number.MAX_SAFE_INTEGER;
@@ -101,9 +101,9 @@ export function compileLadder(rungs: readonly LadderRung[]): string {
   const orContact = (contact: LadderContact) => isComparison(contact) ? ["PUSH", loadContact(contact), "ORPOP"] : [booleanInstruction(contact, "OR")];
   for (const rung of rungs) {
     const invalidCoil = typeof rung.coil === "string" ? !["OUT", "SET", "RESET"].includes(rung.coil) : rung.coil.type === "TON" ? !/^T[0-3]$/.test(rung.coil.timer) || !Number.isFinite(rung.coil.presetSeconds) || rung.coil.presetSeconds < 0 : rung.coil.type === "OUTPUT" ? !["Q0", "Q1"].includes(rung.coil.address) || !["OUT", "SET", "RESET"].includes(rung.coil.operation) : !/^M[0-7]$/.test(rung.coil.address) || !["OUT", "SET", "RESET"].includes(rung.coil.operation);
-    if (!rung.stages.length || rung.stages.length > 4 || invalidCoil) throw new Error("Use one to four stages and a defined Q0/Q1, memory or TON coil.");
+    if (!rung.stages.length || invalidCoil) throw new Error("Each rung needs at least one stage and a defined Q0/Q1, memory or TON coil.");
     rung.stages.forEach((contacts, stageIndex) => {
-      if (!contacts.length || contacts.length > 4 || contacts.some((contact) => !validContact(contact))) throw new Error("Use one to four valid Boolean or numeric comparison contacts per stage; edge contacts require I0/I1 and cannot be inverted.");
+      if (!contacts.length || contacts.some((contact) => !validContact(contact))) throw new Error("Each stage needs at least one valid Boolean or numeric comparison contact; edge contacts require I0/I1 and cannot be inverted.");
       if (stageIndex === 0) {
         instructions.push(loadContact(contacts[0]));
         for (const contact of contacts.slice(1)) instructions.push(...orContact(contact));

@@ -51,7 +51,7 @@ it("duplicates a rung beside its source with independent contacts and coil setti
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(rungs), onApply: () => undefined }));
   expect(markup).toContain('aria-label="Duplicate rung 1"');
   expect(duplicateLadderRung(rungs, -1)).toBeNull();
-  expect(duplicateLadderRung([...rungs, source, source], 0)).toBeNull();
+  expect(duplicateLadderRung(Array.from({ length: 16 }, () => source), 0)).toBeNull();
 });
 
 
@@ -219,7 +219,25 @@ it.each(["LD I0; PUSH; OUT Q0", "LD I0; ANDPOP; OUT Q0", "PUSH; LD I0; OUT Q0", 
   expect(scanPlcProgram(program, true, true, true)).toMatchObject({ ok: false, output: false });
 });
 
-it("enforces editor shape and executable instruction limits", () => {
+
+it("uses the full 32-instruction budget for larger branch layouts and up to sixteen rungs", () => {
+  const contacts = Array.from({ length: 5 }, (_, index) => ({ address: index % 2 ? "I1" as const : "I0" as const, inverted: false }));
+  const stages = Array.from({ length: 6 }, () => contacts.map((contact) => ({ ...contact })));
+  const branchRung: LadderRung[] = [{ stages, coil: "OUT" }];
+  const branchProgram = compileLadder(branchRung);
+  expect(parseLadder(branchProgram)).toEqual(branchRung);
+  expect(branchProgram.split(";").length).toBeLessThanOrEqual(32);
+
+  const simpleRung: LadderRung = { stages: [[{ address: "I0", inverted: false }]], coil: "OUT" };
+  const sixteenRungs = Array.from({ length: 16 }, () => simpleRung);
+  const program = compileLadder(sixteenRungs);
+  expect(program.split(";")).toHaveLength(32);
+  expect(parseLadder(program)).toEqual(sixteenRungs);
+  expect(() => compileLadder([...sixteenRungs, simpleRung])).toThrow("one to sixteen");
+  expect(duplicateLadderRung(sixteenRungs, 0)).toBeNull();
+});
+
+it("enforces the PLC executable instruction limit", () => {
   expect(() => compileLadder([])).toThrow();
   expect(() => compileLadder([{ stages: [[]], coil: "OUT" }])).toThrow();
   const stage = Array.from({ length: 4 }, () => ({ address: "I0" as const, inverted: false }));
