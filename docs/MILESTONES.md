@@ -582,3 +582,11 @@ AI1 has no predefined sensor assignment. Users choose the components, branches, 
 - [x] Add one-click color swatches to the user-defined H1–H3 indicator symbols while retaining the custom color picker.
 - [x] Keep the indication, wiring, branch, terminal and behavior choices with the project author; the palette changes the symbol fill only.
 - [x] Pass exact-head Verify run `43410808023`, merge PR #217 as `fa4e342`, and complete Pages deployment `43410947890`.
+ 
+## Completed increment: M06bb — Synchronous zero-slip motor operating point
+
+- [x] Support the slip-zero synchronous-speed boundary using an open rotor branch, zero rotor current and torque, and retained stator/magnetizing current.
+- [x] Verify the star/delta boundary and negative-slip rejection; exact-head Verify run `43412358754` passed.
+- [x] Merge PR #219 as `70aa53f` and complete Pages deployment `43412487849`.
+
+This extends the steady-state equivalent-circuit boundary only. Rotor acceleration and electrical transients remain unmodeled.
