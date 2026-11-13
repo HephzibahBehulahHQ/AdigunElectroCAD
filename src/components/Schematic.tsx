@@ -93,7 +93,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  return <g transform={`translate(${annotation.x} ${annotation.y})`} onClick={(event) => { event.stopPropagation(); onSelect(annotation.id); }} onPointerDown={(event) => {
+  return <g transform={`translate(${annotation.x} ${annotation.y}) rotate(${annotation.rotation ?? 0})`} onClick={(event) => { event.stopPropagation(); onSelect(annotation.id); }} onPointerDown={(event) => {
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(annotation.id); origin.current = point(event) ?? null;
     if (origin.current) event.currentTarget.setPointerCapture(event.pointerId);

@@ -119,9 +119,11 @@ describe("project JSON import validation", () => {
   it("persists editable text annotations and accepts older projects without annotations", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = input.sheets[1].document;
-    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0", fontSize: 28 }];
+    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V", x: 180, y: 220, color: "#1565c0", fontSize: 28, rotation: 45 }];
     const imported = parseProjectJson(JSON.stringify(input));
     expect(imported.sheets[1].document.annotations).toEqual(sheet.annotations);
+    delete sheet.annotations[0].rotation;
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].fontSize;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
 
@@ -140,6 +142,11 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 8 and 48");
     input.sheets[1].document.annotations![0].fontSize = 7;
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 8 and 48");
+    input.sheets[1].document.annotations![0].fontSize = 18;
+    input.sheets[1].document.annotations![0].rotation = 360;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 0 and 359 degrees");
+    input.sheets[1].document.annotations![0].rotation = -1;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("between 0 and 359 degrees");
   });
 
   it("persists user-drawn graphics and accepts earlier projects without graphics", () => {
