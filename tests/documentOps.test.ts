@@ -9,10 +9,10 @@ import { createStarterProject } from "../src/projects/starterProject";
 
 describe("component movement", () => {
   it("duplicates a placed instance with an independent edit state, free position, and unique reference", () => {
-    const first = { id: "lamp-1", definitionId: "user.indicator-lamp", reference: "HL1", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, customProperties: { note: "Panel A" } };
+    const first = { id: "lamp-1", definitionId: "user.indicator-lamp", reference: "HL1", displayName: "Panel lamp", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, customProperties: { note: "Panel A" } };
     const source = { ...first, id: "lamp-2", reference: "HL2", x: 520 };
     const copy = duplicateComponentInstance([first, source], source, "lamp-copy", "HL");
-    expect(copy).toMatchObject({ id: "lamp-copy", reference: "HL3", definitionId: source.definitionId, rotation: 90, size: 1.2, draftingColor: "#7b3fa1", properties: source.properties, customProperties: source.customProperties });
+    expect(copy).toMatchObject({ id: "lamp-copy", reference: "HL3", displayName: "Panel lamp", definitionId: source.definitionId, rotation: 90, size: 1.2, draftingColor: "#7b3fa1", properties: source.properties, customProperties: source.customProperties });
     expect(copy).not.toBeNull();
     expect([copy!.x, copy!.y]).not.toEqual([source.x, source.y]);
     expect(copy!.properties).not.toBe(source.properties);

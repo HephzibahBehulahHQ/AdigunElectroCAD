@@ -7,6 +7,20 @@ import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { createReversingCircuit } from "../src/projects/reversingCircuit";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+
+it("renders a user-selected component name beside its editable indication", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  const lamp = { ...createDolMotorStarter().components.find((component) => component.definitionId === "user.indicator-lamp")!, id: "named-lamp", x: 500, y: 350, displayName: "Pump room", properties: { indication: "Ready" } };
+  document.components.push(lamp);
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: lamp.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toContain("Pump room · Ready");
+});
+
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));

@@ -27,6 +27,8 @@ export interface ComponentInstance {
   id: string;
   definitionId: string;
   reference: string;
+  /** Optional user-selected on-sheet instance name; descriptive only. */
+  displayName?: string;
   x: number;
   y: number;
   rotation: 0 | 90 | 180 | 270;
