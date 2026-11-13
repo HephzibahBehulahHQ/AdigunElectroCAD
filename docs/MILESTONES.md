@@ -407,6 +407,14 @@ PR #170 merged as `6a49cd0`. GitHub Verify run #691 and Pages deployment run #16
 
 PR #172 merged as `a101aad`. GitHub Verify run #694 and Pages deployment run #170 succeeded. The deployed application returned HTTP 200 and served `assets/index-iQ0bsLJB.js` with the route editor controls and handle markup.
 
+## Completed increment: M06ai — Direct route-point placement
+
+- [x] Click an editable wire segment in route-edit mode to insert a waypoint at the nearest path position.
+- [x] Preserve bend order and snap along the segment while keeping the new waypoint on the wire axis; expose it as a normal route handle.
+- [x] Pass 31 focused tests, production build, GitHub Verify, merge, Pages deployment, and live-bundle verification.
+
+PR #174 merged as `51dc8ac`. GitHub Verify run #698 and Pages deployment run #172 succeeded. The live site returned HTTP 200 and served `assets/index-DVJyR4kI.js` with the route-click insertion prompt and wide route hit target.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
