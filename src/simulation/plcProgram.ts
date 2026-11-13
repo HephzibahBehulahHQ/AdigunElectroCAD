@@ -65,12 +65,12 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       usesRegisters = true;
       continue;
     }
-    if (["GT", "LT", "EQ", "NE"].includes(operation)) {
+    if (["GT", "GE", "LT", "LE", "EQ", "NE"].includes(operation)) {
       const left = readNumber(address);
       const right = readNumber(parts[2] ?? "");
       const directRawThreshold = address === "AI0" && registerIndex(parts[2] ?? "") < 0;
       if (parts.length !== 3 || (address !== "AI0" && registerIndex(address) < 0) || !validNumber(left) || !validNumber(right) || (directRawThreshold && (!Number.isInteger(right) || right < 0 || right > 27648))) return fail("Comparisons require AI0 or D0–D7 and a numeric operand; direct AI0 thresholds must be integer raw values in 0–27648.");
-      accumulator = operation === "GT" ? left > right : operation === "LT" ? left < right : operation === "EQ" ? left === right : left !== right;
+      accumulator = operation === "GT" ? left > right : operation === "GE" ? left >= right : operation === "LT" ? left < right : operation === "LE" ? left <= right : operation === "EQ" ? left === right : left !== right;
       continue;
     }
     if (operation === "TON") {

@@ -76,7 +76,7 @@ Select a placed level sensor and use its **Live Level Percent** slider to change
 
 Each placed PLC has eight independent numeric registers, D0–D7. They start at zero, retain values across runtime scans and Pause, and reset on Stop or design edits. MOV source destination copies a value. ADD/SUB/MUL/DIV left right destination perform arithmetic. Operands can be AI0, D0–D7 or signed decimal constants; destinations must be D0–D7. Instructions execute unconditionally in program order. Every valid program must assign Q0 or Q1.
 
-GT/LT/EQ/NE can compare a numeric register against another register or constant. Existing direct AI0 comparisons retain their integer raw-threshold range of 0–27648. For example, scale the wired ADC reading to percent before comparing:
+GT/GE/LT/LE/EQ/NE compare a numeric register against another register or constant. GE and LE include equality at the threshold. Existing direct AI0 comparisons retain their integer raw-threshold range of 0–27648. For example, scale the wired ADC reading to percent before comparing:
 
 ```text
 DIV AI0 276.48 D0; GT D0 50; OUT Q0

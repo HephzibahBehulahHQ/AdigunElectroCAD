@@ -537,11 +537,3 @@ The ladder remains a bounded educational editor with a 32-instruction scan limit
 - [x] Pass both exact-head Verify runs `43401190423` and `43401197067`, merge PR #206 as `36840f5`, and complete Pages deployment run `43401296424`.
 
 XOR defines Boolean parity within a user-selected parallel group. The editor still enforces the 32-instruction PLC scan bound and the model remains an educational simulator, not a full IEC language implementation.
-
-
-## Completed increment: M06ax — Not-equal PLC comparison
-
-- [x] Add `NE` to text PLC comparisons and the graphical ladder selector, compiler/import path and live preview.
-- [x] Pass exact-head Verify runs `43403462837` and `43403471245`, merge PR #208 as `5c41e39`, and complete Pages deployment run `43403559172`.
-
-NE is a numeric comparison only; direct AI0 thresholds retain the existing integer raw-value bounds.
