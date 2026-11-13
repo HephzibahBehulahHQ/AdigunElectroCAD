@@ -22,7 +22,7 @@ it("retains registers between scans without mutating the previous bank", () => {
   expect(previous[0]).toBe(9);
 });
 
-it.each(["DIV 1 0 D0", "MOV NaN D0", "MOV 1 D8", "MOV I0 D0", "MUL 9007199254740991 2 D0", "ADD 1 2 AI0", "MOV 0x10 D0"])("rejects invalid numeric instruction %s without returning partial state", (instruction) => {
+it.each(["DIV 1 0 D0", "MOV NaN D0", "MOV 1 D8", "MOV I0 D0", "MUL 9007199254740991 2 D0", "ADD 1 2 AI0", "ADD 1 2 AI1", "MOV 0x10 D0"])("rejects invalid numeric instruction %s without returning partial state", (instruction) => {
   const previous = [12, 0, 0, 0, 0, 0, 0, 0];
   expect(scanPlcProgram(`MOV 99 D0; ${instruction}; LD I0; OUT Q0`, true, false, true, 0, previous)).toMatchObject({ ok: false, output: false });
   expect(previous[0]).toBe(12);
@@ -129,4 +129,9 @@ it("persists PLC memory relays in runtime properties and clears them on Stop", (
 
 it.each([["GE", 50, 50, true], ["GE", 49, 50, false], ["LE", 50, 50, true], ["LE", 51, 50, false]] as const)("compares register values with inclusive %s boundaries", (operation, left, right, expected) => {
   expect(scanPlcProgram(`${operation} D0 ${right}; OUT Q0`, false, false, false, 0, [left])).toMatchObject({ ok: true, output: expected });
+});
+
+it("uses AI1 as an independent raw source for register scaling and comparison", () => {
+  const result = scanPlcProgram("DIV AI1 276.48 D0; GT D0 50; OUT Q0", false, false, false, 0, undefined, [], undefined, 0.1, undefined, false, 20736);
+  expect(result).toMatchObject({ ok: true, output: true, registers: [75, 0, 0, 0, 0, 0, 0, 0] });
 });

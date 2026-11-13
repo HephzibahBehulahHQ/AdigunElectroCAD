@@ -22,6 +22,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
     if (terminalId === "in-b") return { property: "retractCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDirectBound" };
   }
   if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"] };
+  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-1") return { property: "analogInput1", acceptedUnits: ["plc-raw"] };
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") {
     if (["s11", "in-a"].includes(terminalId)) return { property: "channelAClosed", acceptedUnits: ["boolean"] };
     if (["s12", "in-b"].includes(terminalId)) return { property: "channelBClosed", acceptedUnits: ["boolean"] };

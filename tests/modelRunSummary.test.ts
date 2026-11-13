@@ -36,16 +36,17 @@ it("keeps retained PLC state visible when a wired fault inhibits the scan", () =
 
 it("shows the live PLC watch table and recent scan trace for I/O and retained registers", () => {
   const result = evaluateFunctionalModel("catalog-plc-digital-io", {
-    inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true,
-    runtimeD0: 50, runtimeD7: -2, program: "LD AI0; MOV AI0 D0; OUT Q0",
+    inputA: true, inputB: false, analogInput0: 13824, analogInput1: 20736, runtimeQ0: true,
+    runtimeD0: 50, runtimeD7: -2, program: "LD AI0; MOV AI0 D0; GT AI1 13824; OUT Q0",
   });
-  const runtimeScanTrace = JSON.stringify([{ scan: 4, elapsedSeconds: 0.4, input0: true, input1: false, analogInput0: 13824, output: true, registers: [50, 0, 0, 0, 0, 0, 0, -2], status: "ok" }]);
+  const runtimeScanTrace = JSON.stringify([{ scan: 4, elapsedSeconds: 0.4, input0: true, input1: false, analogInput0: 13824, analogInput1: 20736, output: true, registers: [50, 0, 0, 0, 0, 0, 0, -2], status: "ok" }]);
   const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
     componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io", output: result!,
-    evaluatedProperties: { inputA: true, inputB: false, analogInput0: 13824, runtimeQ0: true, runtimeD0: 50, runtimeD7: -2, runtimeM0: true, runtimeT0Elapsed: 0.4, runtimeT0Done: true, program: "LD AI0; MOV AI0 D0; TON T0 1; LD T0; SET M0; LD M0; OUT Q0", runtimeScanTrace },
+    evaluatedProperties: { inputA: true, inputB: false, analogInput0: 13824, analogInput1: 20736, runtimeQ0: true, runtimeD0: 50, runtimeD7: -2, runtimeM0: true, runtimeT0Elapsed: 0.4, runtimeT0Done: true, program: "LD AI0; MOV AI0 D0; GT AI1 13824; TON T0 1; LD T0; SET M0; LD M0; OUT Q0", runtimeScanTrace },
   }] }));
   expect(summary).toContain('aria-label="PLC1 PLC watch table"');
   expect(summary).toContain("AI0");
+  expect(summary).toContain("AI1");
   expect(summary).toContain("13824");
   expect(summary).toContain("D0");
   expect(summary).toContain("50");
@@ -57,6 +58,8 @@ it("shows the live PLC watch table and recent scan trace for I/O and retained re
   expect(summary).toContain("M0");
   expect(summary).toContain('aria-label="PLC1 recent PLC scan trace"');
   expect(summary).toContain("Recent scan trace");
+  expect(summary).toContain("AI0 / AI1 raw");
+  expect(summary).toContain("13824 / 20736");
   expect(summary).toContain("0.4");
   expect(summary).toContain("PLC scan attempts");
 });

@@ -6,7 +6,7 @@ export type PlcTimerStates = Record<`T${0 | 1 | 2 | 3}`, PlcTimerState>;
 export type PlcScanResult = { ok: true; output: boolean; output1?: boolean; registers?: number[]; memory?: PlcMemoryState; timers?: PlcTimerStates } | { ok: false; output: false; error: string };
 
 /** Educational instruction-list scan with Boolean I/O, eight registers and eight internal memory relays. */
-export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[], previousInputs: readonly boolean[] = [], previousTimers?: Partial<PlcTimerStates>, deltaSeconds = 0.1, previousMemory?: readonly boolean[], previousOutput1 = false): PlcScanResult {
+export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean, previousOutput: boolean, analogInput0 = 0, previousRegisters?: readonly number[], previousInputs: readonly boolean[] = [], previousTimers?: Partial<PlcTimerStates>, deltaSeconds = 0.1, previousMemory?: readonly boolean[], previousOutput1 = false, analogInput1 = 0): PlcScanResult {
   const instructions = program.split(/[;\n]/).map((line) => line.trim().toUpperCase()).filter(Boolean);
   const fail = (error: string): PlcScanResult => ({ ok: false, output: false, error });
   if (!instructions.length || instructions.length > 32) return fail("Program requires 1–32 instructions.");
@@ -32,6 +32,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
     const index = registerIndex(operand);
     if (index >= 0) { usesRegisters = true; return registers[index]; }
     if (operand === "AI0") return Number.isInteger(analogInput0) && analogInput0 >= 0 && analogInput0 <= 27648 ? analogInput0 : NaN;
+    if (operand === "AI1") return Number.isInteger(analogInput1) && analogInput1 >= 0 && analogInput1 <= 27648 ? analogInput1 : NaN;
     return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(operand) ? Number(operand) : NaN;
   };
   if (!registers.every(validNumber)) return fail("Register state must contain finite numbers within the safe numeric range.");
@@ -68,8 +69,8 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
     if (["GT", "GE", "LT", "LE", "EQ", "NE"].includes(operation)) {
       const left = readNumber(address);
       const right = readNumber(parts[2] ?? "");
-      const directRawThreshold = address === "AI0" && registerIndex(parts[2] ?? "") < 0;
-      if (parts.length !== 3 || (address !== "AI0" && registerIndex(address) < 0) || !validNumber(left) || !validNumber(right) || (directRawThreshold && (!Number.isInteger(right) || right < 0 || right > 27648))) return fail("Comparisons require AI0 or D0–D7 and a numeric operand; direct AI0 thresholds must be integer raw values in 0–27648.");
+      const directRawThreshold = (address === "AI0" || address === "AI1") && parts[2] !== "AI0" && parts[2] !== "AI1" && registerIndex(parts[2] ?? "") < 0;
+      if (parts.length !== 3 || (address !== "AI0" && address !== "AI1" && registerIndex(address) < 0) || !validNumber(left) || !validNumber(right) || (directRawThreshold && (!Number.isInteger(right) || right < 0 || right > 27648))) return fail("Comparisons require AI0, AI1 or D0–D7 and a numeric operand; direct analog thresholds must be integer raw values in 0–27648.");
       accumulator = operation === "GT" ? left > right : operation === "GE" ? left >= right : operation === "LT" ? left < right : operation === "LE" ? left <= right : operation === "EQ" ? left === right : left !== right;
       continue;
     }

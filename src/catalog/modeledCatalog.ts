@@ -35,7 +35,7 @@ const families: ModeledFamily[] = [
 export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap((family) => Array.from({ length: family.count }, (_, index) => {
   const variant = index + 1;
   const propertiesSchema = family.properties(variant);
-  if (family.id === "plc-digital-io") { propertiesSchema.program = ""; propertiesSchema.analogInput0 = 0; }
+  if (family.id === "plc-digital-io") { propertiesSchema.program = ""; propertiesSchema.analogInput0 = 0; propertiesSchema.analogInput1 = 0; }
   if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
@@ -44,11 +44,11 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     referencePrefix: family.referencePrefix,
     description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
     symbolId: `${family.symbolId}-${String(variant).padStart(2, "0")}`,
-    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "circuit-breaker" ? [{ id: "aux-closed", label: "Q CLOSED", kind: "control" as const, direction: "output" as const }] : []), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }] : [])],
+    terminals: [...family.terminals.map((terminal) => ({ ...terminal })), ...(family.id === "circuit-breaker" ? [{ id: "aux-closed", label: "Q CLOSED", kind: "control" as const, direction: "output" as const }] : []), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }, { id: "ai-1", label: "AI1 raw", kind: "control" as const, direction: "input" as const }] : [])],
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,
-    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/GE/LT/LE/EQ/NE with AI0 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
+    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/GE/LT/LE/EQ/NE with AI0, AI1 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
     standardsReferences: [family.standardsReference],
   };
 }));

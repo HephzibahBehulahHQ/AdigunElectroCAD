@@ -310,3 +310,15 @@ it.each([["GE", 50, 50, true], ["GE", 49, 50, false], ["LE", 50, 50, true], ["LE
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
   expect(markup).toContain(`>${comparison}</option>`);
 });
+
+it("edits, previews and scans an AI1 comparison independently of AI0", () => {
+  const rungs: LadderRung[] = [{ stages: [[{ comparison: "GE", left: "AI1", right: "13824" }]], coil: { type: "OUTPUT", address: "Q1", operation: "OUT" } }];
+  const program = compileLadder(rungs);
+  expect(program).toBe("GE AI1 13824; OUT Q1");
+  expect(parseLadder(program)).toEqual(rungs);
+  const inputs = { input0: false, input1: false, q0: false, q1: false, previousInput0: false, previousInput1: false, analogInput0: 27648, analogInput1: 13824, registers: [] };
+  expect(previewLadder(rungs, inputs)).toMatchObject({ output1: true });
+  expect(scanPlcProgram(program, false, false, false, 27648, undefined, [], undefined, 0.1, undefined, false, 13824)).toMatchObject({ ok: true, output1: true });
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain('<option selected="">AI1</option>');
+});

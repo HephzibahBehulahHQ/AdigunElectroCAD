@@ -29,7 +29,7 @@ export function terminalSignalUnits(definition: ElectricalComponentDefinition, t
     if (["in", "in-a", "in-b"].includes(terminalId)) return ["boolean"];
   }
   if (model === "catalog-plc-digital-io") {
-    if (terminalId === "ai-0") return ["plc-raw"];
+    if (terminalId === "ai-0" || terminalId === "ai-1") return ["plc-raw"];
     if (["in-0", "in-1", "out-0", "out-1"].includes(terminalId)) return ["boolean"];
   }
   if (model === "signal-adc") return terminalId === "in" ? ["milliamp"] : terminalId === "out" ? ["plc-raw"] : undefined;
