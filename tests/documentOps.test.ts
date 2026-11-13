@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponent, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -8,6 +8,17 @@ import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createStarterProject } from "../src/projects/starterProject";
 
 describe("component movement", () => {
+  it("duplicates a placed instance with an independent edit state, free position, and unique reference", () => {
+    const first = { id: "lamp-1", definitionId: "user.indicator-lamp", reference: "HL1", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, customProperties: { note: "Panel A" } };
+    const source = { ...first, id: "lamp-2", reference: "HL2", x: 520 };
+    const copy = duplicateComponentInstance([first, source], source, "lamp-copy", "HL");
+    expect(copy).toMatchObject({ id: "lamp-copy", reference: "HL3", definitionId: source.definitionId, rotation: 90, size: 1.2, draftingColor: "#7b3fa1", properties: source.properties, customProperties: source.customProperties });
+    expect(copy).not.toBeNull();
+    expect([copy!.x, copy!.y]).not.toEqual([source.x, source.y]);
+    expect(copy!.properties).not.toBe(source.properties);
+    expect(copy!.customProperties).not.toBe(source.customProperties);
+  });
+
   it("resizes placed instances only when terminal and label clearance remains valid", () => {
     const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
       { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 180, y: 200, rotation: 0 as const, properties: {} },
