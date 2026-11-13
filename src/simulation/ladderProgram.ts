@@ -10,8 +10,15 @@ export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", i
 /** Duplicate a rung beside its source, with a bounded independent copy. */
 export function duplicateLadderRung(rungs: readonly LadderRung[], index: number): LadderRung[] | null {
   if (!Number.isInteger(index) || index < 0 || index >= rungs.length || rungs.length >= 4) return null;
-  const copy = rungs.map(cloneLadderRung);
-  copy.splice(index + 1, 0, cloneLadderRung(rungs[index]));
+  const copy = rungs.map((rung) => ({
+    stages: rung.stages.map((stage) => stage.map((contact) => ({ ...contact }))),
+    coil: typeof rung.coil === "object" ? { ...rung.coil } : rung.coil,
+  }));
+  const source = rungs[index];
+  copy.splice(index + 1, 0, {
+    stages: source.stages.map((stage) => stage.map((contact) => ({ ...contact }))),
+    coil: typeof source.coil === "object" ? { ...source.coil } : source.coil,
+  });
   return copy;
 }
 
