@@ -471,6 +471,13 @@ PR #188 merged as `7300c26`. GitHub Verify run #733 and Pages deployment run #18
 
 PR #192 merged as `a3a4c2b`. GitHub Verify run #743 and Pages deployment run #187 succeeded.
 
+## Completed increment: M06aq — Duplicate graphical PLC rungs
+
+- [x] Add an adjacent duplicate action for graphical ladder rungs, preserving independent contact and coil settings and the four-rung cap.
+- [x] Pass 94 focused ladder/PLC tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #194 merged as `0a2d31c`. GitHub Verify run #749 and Pages deployment run #189 succeeded.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
