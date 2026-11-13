@@ -76,6 +76,8 @@ export interface SchematicAnnotation {
   lineSpacing?: number;
   /** User-selected visual font style; does not affect schematic semantics. */
   fontStyle?: "normal" | "italic";
+  /** Optional user-selected background fill for the annotation; absent means transparent. */
+  backgroundColor?: string;
 }
 
 export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";

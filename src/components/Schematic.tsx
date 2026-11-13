@@ -109,6 +109,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     if (start && current && Math.hypot(current.x - start.x, current.y - start.y) > 4) onMove?.(annotation.id, annotation.x + current.x - start.x, annotation.y + current.y - start.y);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
+    {annotation.backgroundColor && <rect x={outlineX} y={-size * 1.1} width={width} height={height} rx="2" fill={annotation.backgroundColor} />}
     {selected && <rect x={outlineX} y={-size * 1.1} width={width} height={height} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
     <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight={annotation.fontWeight ?? 600} fontStyle={annotation.fontStyle ?? "normal"} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{lines.map((line, index) => <tspan key={index} x="0" dy={index === 0 ? 0 : size * lineSpacing}>{line || " "}</tspan>)}</text>
   </g>;
