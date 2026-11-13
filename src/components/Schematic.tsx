@@ -22,7 +22,7 @@ interface Props {
   onSelect: (componentId: string, additive?: boolean) => void;
   onGroupSelect?: (componentIds: string[], additive: boolean) => void;
   onWireSelect: (wireId: string) => void;
-  onTerminalSelect: (endpoint: TerminalEndpoint) => void;
+  onTerminalSelect: (endpoint: TerminalEndpoint, continueBranch?: boolean) => void;
   annotationMode?: boolean;
   selectedAnnotationId?: string;
   onAnnotationSelect?: (id: string) => void;
@@ -377,7 +377,7 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
       {document.components.map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} wireMode={wireMode} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
       {document.components.length === 0 && <text x="550" y="410" className="empty-sheet" textAnchor="middle">Select a catalog model and choose Insert to begin this sheet.</text>}
-      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
+      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)} · Shift-click target to continue branch</title></g>)}</g>}
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
     </svg>
   </div>;
@@ -447,7 +447,7 @@ export function Schematic({ document, selectedComponentId, selectedComponentIds 
       </g></g>
 
       {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <PlacedSymbol key={component.id} component={component} selectedComponentId={selectedComponentId} onSelect={onSelect} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
-      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
+      {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)} · Shift-click target to continue branch</title></g>)}</g>}
     </svg>
   </div>;
 }

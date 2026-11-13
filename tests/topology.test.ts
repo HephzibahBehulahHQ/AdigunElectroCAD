@@ -52,4 +52,15 @@ describe("circuit topology validation", () => {
     expect(canConnectTerminals(project, catalogById, { componentId: "supply", terminalId: "l1" }, { componentId: "start", terminalId: "13" })).toEqual(expect.objectContaining({ ok: false }));
     expect(canConnectTerminals(project, catalogById, { componentId: "supply", terminalId: "l1" }, { componentId: "supply", terminalId: "l2" })).toEqual(expect.objectContaining({ ok: false }));
   });
+
+  it("allows the user to branch one source terminal to multiple compatible loads", () => {
+    const project = createDolMotorStarter();
+    project.components.push(
+      { id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 900, y: 180, rotation: 0, properties: {} },
+      { id: "motor-3", definitionId: "motor.three-phase", reference: "M3", x: 900, y: 420, rotation: 0, properties: {} },
+    );
+    const source = { componentId: "supply", terminalId: "l1" };
+    project.wires.push({ id: "branch-a", from: source, to: { componentId: "motor-2", terminalId: "u1" }, points: [] });
+    expect(canConnectTerminals(project, catalogById, source, { componentId: "motor-3", terminalId: "u1" })).toEqual({ ok: true });
+  });
 });

@@ -2,7 +2,7 @@ import { ModelRunSummary } from "../components/ModelRunSummary";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { canPlaceComponent, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
+import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { toggleComponentSelection } from "../cad/componentSelection";
 import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
@@ -793,10 +793,10 @@ export function App() {
     setWireStart(null);
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId("");
     if (!next) setReconnectingWireId("");
-    setNotice(next ? "Wiring mode: select a source terminal, then a compatible target terminal." : "Wiring mode closed.");
+    setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
   };
 
-  const selectWireTerminal = (endpoint: TerminalEndpoint) => {
+  const selectWireTerminal = (endpoint: TerminalEndpoint, continueBranch = false) => {
     if (!wireMode) return;
     if (!wireStart) {
       setWireStart(endpoint);
@@ -822,12 +822,12 @@ export function App() {
       setSelectedWireId(reconnectingWire.id);
       setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
     } else {
-      const wire = { id: `manual-wire-${document.wires.length + 1}`, from: wireStart, to: endpoint, points: [], netName: `MANUAL_${document.wires.length + 1}` };
+      const wire = createManualWire(document, wireStart, endpoint);
       updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
       setSelectedWireId(wire.id);
-      setNotice(`Wire ${wire.netName} created between catalog terminals.`);
+      setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
     }
-    setWireStart(null);
+    setWireStart(continueBranch && !reconnectingWire ? wireStart : null);
     setReconnectingWireId("");
   };
 
