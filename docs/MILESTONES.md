@@ -478,6 +478,14 @@ PR #192 merged as `a3a4c2b`. GitHub Verify run #743 and Pages deployment run #18
 
 PR #194 merged as `0a2d31c`. GitHub Verify run #749 and Pages deployment run #189 succeeded.
 
+## Completed increment: M06ar — Editable freehand drafting paths
+
+- [x] Add a Freehand tool on free sheets that saves user sketches as editable polyline geometry.
+- [x] Let users edit path vertices, name, color, and stroke width; bound the stored path to 1,200 sampled points.
+- [x] Pass 8 focused tests, production build, GitHub Verify, merge, Pages deployment, and live toolbar visibility check.
+
+PR #196 merged as `2bad6fc`. GitHub Verify run #755 and Pages deployment run #191 succeeded. The live free-sheet editor displayed the Freehand tool; drawing into the locally saved browser project was not exercised.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
