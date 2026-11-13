@@ -325,6 +325,14 @@ PR #149 merged as `48ed3ce`. GitHub Verify and Pages deployment `43350902383` su
 
 PR #151 merged as `6386c68`. Verify runs `43351518960` and `43351537821` and Pages deployment `43351639242` succeeded; direct custom-domain bundle inspection remains pending.
 
+## Completed increment: M06y — Editable annotation text weight
+
+- [x] Let users choose standard (400), semi-bold (600), or bold (700) weight for free-sheet text annotations.
+- [x] Persist and validate the optional visual weight while retaining the existing semi-bold appearance for older projects.
+- [x] Verify rendering, serialization, invalid-weight rejection, local build, GitHub Verify, merge, and Pages deployment.
+
+PR #153 merged as `c9d9411`. GitHub Verify and Pages deployment `43352293155` succeeded; direct custom-domain inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
