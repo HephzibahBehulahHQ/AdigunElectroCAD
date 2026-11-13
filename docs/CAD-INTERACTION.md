@@ -13,3 +13,5 @@ In Wiring mode, select a source terminal and then compatible targets. Shift-clic
 This does not yet provide snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
 
 For a selected editable wire on a free sheet, use Edit route points in Properties and Add route point. While route editing is active, click a visible wire segment to insert a waypoint at the nearest position; its coordinate along the wire axis snaps to the 20-unit grid, and it appears as a draggable handle. Drag a handle or focus it and use arrow keys to reshape the orthogonal path; hold Shift with an arrow key to move by 100 units. Right-click a handle or focus it and press Delete to remove the point. Reset to automatic route clears saved route points. Branch wires follow their parent route; edit the parent to reposition its attached branches.
+
+For selected line, rectangle, or ellipse drafting geometry, edit X1, Y1, X2, and Y2 numerically in Properties for exact placement and sizing. Coordinates stay within the 1100 × 780 sheet and the shape must span at least 4 units. Polyline and polygon geometry remains editable by its vertex handles.
