@@ -253,6 +253,17 @@ PR #133 merged as `633c7f9`. Verify runs `43329733302` and `43329763671` and Pag
 PR #135 merged as `90c9016`. Verify runs `43333087233` and `43333096028` succeeded. Pages deployment `43333187689` succeeded; custom-domain bundle inspection remains pending after the hostname failed to resolve in this environment.
 
 
+## Completed increment: M06q — User-defined component data
+
+- [x] Add, rename, edit, and remove up to 20 custom fields on movable component instances.
+- [x] Persist custom field names and values separately from catalog parameters; preserve older project files and reject invalid imported fields.
+- [x] Keep custom data descriptive only so it cannot change electrical simulation behavior.
+- [x] Pass 26 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #137 merged as `15bed16`. Verify runs `43336032081` and `43336039728` succeeded. Pages deployment `43336144882` succeeded; the custom domain remained inaccessible through the available browser route.
+
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
