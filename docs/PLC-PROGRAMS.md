@@ -1,17 +1,23 @@
 # Boolean PLC program execution
 
-Placed PLC digital I/O modules support two Boolean inputs (`I0`, `I1`) and one output (`Q0`). Connect control wires to I0/I1 and use Q0 to command a relay, actuator or contactor. Enter a Program in the property panel and press Run. Each 100 ms runtime scan samples the converged wired inputs, executes instructions in order, and retains Q0 for the next scan. Pause retains state; Stop clears runtime Q0. Editing the design resets runtime state.
+Placed PLC digital I/O modules expose two Boolean inputs (`I0`, `I1`) and two Boolean outputs (`Q0`, `Q1`). Each output has its own connectable terminal, retained state and user-authored program coil; neither output is assigned a fixed device role. Wire either output to the component and terminal you choose. Enter a Program in the property panel and press Run. Each 100 ms runtime scan samples the converged wired inputs, executes instructions in order, and retains both outputs. Pause retains state; Stop clears runtime Q0 and Q1. Editing the design resets runtime state.
 
-An empty Program retains the existing manual Output mode. Nonempty programs begin with Q0 off and ignore manual Output. Invalid programs force Q0 off and display an error in the live I/O result.
+An empty Program retains the manual Output and Output 1 settings for Q0 and Q1. Nonempty programs begin with both outputs off and ignore manual output settings. Invalid programs force both outputs off and display an error in the live I/O result.
 
 Use **Operate** controls above the selected component's design properties to change live Boolean parameters while retaining scan memory. For example, toggle a sensor's **Live Detected** input for START and the PLC's unwired **Live Input B** for STOP. Wired input signals override local parameters. These controls change only the runtime document; Stop discards their changes and restores the configured design. Design-property edits continue to reset runtime state.
 
-Supported Boolean instructions are `LD`, `LDN`, `AND`, `ANDN`, `OR`, `ORN`, `XOR`, `OUT`, `SET` and `RESET`. Separate instructions with semicolons. Logic instructions read I0, I1 or Q0; output instructions write Q0. LD/LDN must precede logic or output operations. SET and RESET share Q0; later instructions take priority. The interpreter accepts at most 32 instructions; the Program property editor accepts up to 2048 characters.
+Supported Boolean instructions are `LD`, `LDN`, `AND`, `ANDN`, `OR`, `ORN`, `XOR`, `OUT`, `SET` and `RESET`. Separate instructions with semicolons. Logic instructions can read I0, I1, Q0 or Q1; output instructions can write either Q0 or Q1. LD/LDN must precede logic or output operations. OUT, SET and RESET apply independently to the addressed output; later instructions writing that same output take priority. A valid program must assign at least one of Q0 or Q1. The interpreter accepts at most 32 instructions; the Program property editor accepts up to 2048 characters. The graphical ladder editor currently authors Q0 coils; Q1 remains available through the text program and direct module output setting.
 
 Start/stop holding circuit, with I0 as START and I1 as STOP:
 
 ```text
 LD I0; OR Q0; ANDN I1; OUT Q0
+```
+
+Independent Q1 output, controlled from I1:
+
+```text
+LD I1; OUT Q1
 ```
 
 Shared set/reset output, with reset priority:
