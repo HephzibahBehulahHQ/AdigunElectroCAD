@@ -75,7 +75,8 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const power = statefulProtection || component.properties.powerLayout === "vertical" ? powerTerminalOffset(definition.simulationModelId, terminal.id) : undefined;
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const size = component.size ?? 1;
-      const offset = rotateOffset((control?.x ?? x) * size, (control?.y ?? y) * size, component.rotation);
+      const terminalOffset = component.customTerminalOffsets?.[terminal.id] ?? control ?? { x, y };
+      const offset = rotateOffset(terminalOffset.x * size, terminalOffset.y * size, component.rotation);
       anchors.push({ ...anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y), power: terminal.kind === "power", vertical: Boolean(power && terminal.kind === "power" && component.rotation % 180 === 0) });
     });
   }

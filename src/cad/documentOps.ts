@@ -123,7 +123,7 @@ export function duplicateComponentInstance(components: ComponentInstance[], sour
   for (const [dx, dy] of positions) {
     const x = source.x + dx; const y = source.y + dy;
     if (canPlaceComponent(augmented, candidateId, x, y)) {
-      return { ...source, id, reference, x, y, properties: { ...source.properties }, ...(source.terminalLabels ? { terminalLabels: { ...source.terminalLabels } } : {}), ...(source.customTerminals ? { customTerminals: source.customTerminals.map((terminal) => ({ ...terminal })) } : {}), ...(source.customProperties ? { customProperties: { ...source.customProperties } } : {}) };
+      return { ...source, id, reference, x, y, properties: { ...source.properties }, ...(source.terminalLabels ? { terminalLabels: { ...source.terminalLabels } } : {}), ...(source.customTerminals ? { customTerminals: source.customTerminals.map((terminal) => ({ ...terminal })) } : {}), ...(source.customTerminalOffsets ? { customTerminalOffsets: Object.fromEntries(Object.entries(source.customTerminalOffsets).map(([terminalId, point]) => [terminalId, { ...point }])) } : {}), ...(source.customProperties ? { customProperties: { ...source.customProperties } } : {}) };
     }
   }
   return null;

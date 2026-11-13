@@ -41,6 +41,8 @@ export interface ComponentInstance {
   terminalLabels?: Record<string, string>;
   /** User-configured terminal set for generic symbol-only components. */
   customTerminals?: TerminalDefinition[];
+  /** User-selected relative anchor positions for added generic-symbol terminals. */
+  customTerminalOffsets?: Record<string, { x: number; y: number }>;
   /** User-defined instance metadata; it does not affect electrical simulation. */
   customProperties?: Record<string, string>;
 }
