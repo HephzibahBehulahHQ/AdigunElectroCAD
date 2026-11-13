@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { catalogById } from "../src/catalog/dolCatalog";
 import { Schematic, terminalAnchors } from "../src/components/Schematic";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -12,13 +13,27 @@ import { addFreeSchematicSheet, createStarterProject } from "../src/projects/sta
 it("renders a user-selected component name beside its editable indication", () => {
   const project = addFreeSchematicSheet(createStarterProject());
   const document = project.sheets[1].document;
-  const lamp = { ...createDolMotorStarter().components.find((component) => component.definitionId === "user.indicator-lamp")!, id: "named-lamp", x: 500, y: 350, displayName: "Pump room", properties: { indication: "Ready" } };
+  const lamp = { ...createDolMotorStarter().components.find((component) => component.definitionId === "user.indicator-lamp")!, id: "named-lamp", x: 500, y: 350, displayName: "Pump room", properties: { indication: "Ready" }, terminalLabels: { t1: "LEFT" } };
   document.components.push(lamp);
   const markup = renderToStaticMarkup(createElement(Schematic, {
     document, selectedComponentId: lamp.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
   }));
   expect(markup).toContain("Pump room · Ready");
+  expect(markup).toContain(">LEFT</text>");
+});
+
+it("shows a user terminal label while preserving the real endpoint identity", () => {
+  const document = createStarDeltaCircuit();
+  const component = document.components[0];
+  const terminalId = catalogById.get(component.definitionId)!.terminals[0].id;
+  component.terminalLabels = { [terminalId]: "LINE+" };
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: component.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toContain('class="terminal-label custom-terminal-label">LINE+</text>');
+  expect(terminalAnchors(document).some((anchor) => anchor.endpoint.componentId === component.id && anchor.endpoint.terminalId === terminalId)).toBe(true);
 });
 
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {

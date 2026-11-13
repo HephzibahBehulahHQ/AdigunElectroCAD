@@ -37,6 +37,8 @@ export interface ComponentInstance {
   /** User-selected schematic ink color; presentation only, with no electrical meaning. */
   draftingColor?: string;
   properties: Record<string, string | number | boolean>;
+  /** User-selected display labels keyed by stable catalog terminal ID; connectivity is unchanged. */
+  terminalLabels?: Record<string, string>;
   /** User-defined instance metadata; it does not affect electrical simulation. */
   customProperties?: Record<string, string>;
 }
