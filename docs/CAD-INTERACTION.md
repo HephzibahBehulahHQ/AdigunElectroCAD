@@ -8,6 +8,6 @@ Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. Durin
 
 Zoom changes display scale from 25% to 200% without changing drawing coordinates. Fit sizes the sheet to its viewport. Menu and toolbar Grid controls share one visibility state. Scroll within the schematic viewport to inspect enlarged drawings.
 
-In Wiring mode, select a source terminal and then compatible targets. Shift-clicking a target keeps the source active so users can add more terminal branches. Each branch currently connects terminals directly; mid-wire junction editing is not supported yet.
+In Wiring mode, select a source terminal and then compatible targets. Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The tap is a drawing attachment; the electrical model still connects the new wire to the selected parent endpoint rather than creating a separate junction node. Removing the parent wire also removes its dependent branches.
 
-This does not yet provide mid-wire junction editing, snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
+This does not yet provide snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
