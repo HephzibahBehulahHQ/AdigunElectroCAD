@@ -46,6 +46,25 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
   });
 
+  it("persists user-defined component data without requiring it in older projects", () => {
+    const input = freeSheetWithComponent();
+    input.sheets[1].document.components[0].customProperties = { Indicator: "Green", "Nominal voltage": "User selected" };
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].customProperties).toEqual(input.sheets[1].document.components[0].customProperties);
+    delete input.sheets[1].document.components[0].customProperties;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+  });
+
+  it.each([
+    { " ": "value" },
+    { ["__proto__"]: "value" },
+    { "A": "one", "a": "two" },
+    { "Long value": "x".repeat(241) },
+  ])("rejects invalid user-defined component data", (customProperties) => {
+    const input = freeSheetWithComponent();
+    input.sheets[1].document.components[0].customProperties = customProperties;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow(/custom component field/i);
+  });
+
   it("rejects malformed component drafting colors", () => {
     const input = freeSheetWithComponent();
     input.sheets[1].document.components[0].draftingColor = "blue";

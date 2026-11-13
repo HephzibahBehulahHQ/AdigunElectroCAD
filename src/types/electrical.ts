@@ -35,6 +35,8 @@ export interface ComponentInstance {
   /** User-selected schematic ink color; presentation only, with no electrical meaning. */
   draftingColor?: string;
   properties: Record<string, string | number | boolean>;
+  /** User-defined instance metadata; it does not affect electrical simulation. */
+  customProperties?: Record<string, string>;
 }
 
 export interface TerminalEndpoint {
