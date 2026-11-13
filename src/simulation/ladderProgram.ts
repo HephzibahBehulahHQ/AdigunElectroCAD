@@ -1,7 +1,7 @@
 export type LadderAddress = "I0" | "I1" | "Q0" | "Q1" | `T${0 | 1 | 2 | 3}` | `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type LadderMemoryAddress = `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export interface LadderBooleanContact { address: LadderAddress; inverted: boolean; edge?: "positive" | "negative"; }
-export interface LadderComparisonContact { comparison: "GT" | "GE" | "LT" | "LE" | "EQ" | "NE"; left: "AI0" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
+export interface LadderComparisonContact { comparison: "GT" | "GE" | "LT" | "LE" | "EQ" | "NE"; left: "AI0" | "AI1" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
 export type LadderContact = LadderBooleanContact | LadderComparisonContact;
 export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "OUTPUT"; address: "Q0" | "Q1"; operation: "OUT" | "SET" | "RESET" } | { type: "TON"; timer: `T${0 | 1 | 2 | 3}`; presetSeconds: number } | { type: "MEMORY"; address: LadderMemoryAddress; operation: "OUT" | "SET" | "RESET" };
 export type LadderStageOperator = "OR" | "XOR";
@@ -38,7 +38,7 @@ export function moveLadderRung(rungs: readonly LadderRung[], fromIndex: number, 
   return copy;
 }
 
-export interface LadderPreviewInputs { input0: boolean; input1: boolean; q0: boolean; q1?: boolean; previousInput0: boolean; previousInput1: boolean; analogInput0: number; registers: readonly number[]; timers?: Partial<Record<`T${0 | 1 | 2 | 3}`, { elapsedSeconds: number; done: boolean }>>; memory?: readonly boolean[]; deltaSeconds?: number; }
+export interface LadderPreviewInputs { input0: boolean; input1: boolean; q0: boolean; q1?: boolean; previousInput0: boolean; previousInput1: boolean; analogInput0: number; analogInput1?: number; registers: readonly number[]; timers?: Partial<Record<`T${0 | 1 | 2 | 3}`, { elapsedSeconds: number; done: boolean }>>; memory?: readonly boolean[]; deltaSeconds?: number; }
 export interface LadderPreview { rungEnergized: boolean[]; contactEnergized: boolean[][][]; output: boolean; output1: boolean; memory: boolean[]; }
 
 /** Preview the next scan's rung conditions from the latest PLC I/O and retained state. */
@@ -57,7 +57,7 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
       const operation = rung.stageOperators?.[stageIndex] ?? "OR";
       const conditions = contacts.map((contact) => {
         if ("comparison" in contact) {
-          const read = (operand: string) => operand === "AI0" ? inputs.analogInput0 : /^D[0-7]$/.test(operand) ? inputs.registers[Number(operand.slice(1))] ?? 0 : Number(operand);
+          const read = (operand: string) => operand === "AI0" ? inputs.analogInput0 : operand === "AI1" ? inputs.analogInput1 ?? 0 : /^D[0-7]$/.test(operand) ? inputs.registers[Number(operand.slice(1))] ?? 0 : Number(operand);
           const left = read(contact.left), right = read(contact.right);
           return contact.comparison === "GT" ? left > right : contact.comparison === "GE" ? left >= right : contact.comparison === "LT" ? left < right : contact.comparison === "LE" ? left <= right : contact.comparison === "EQ" ? left === right : left !== right;
         }
@@ -97,11 +97,11 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
 export function compileLadder(rungs: readonly LadderRung[]): string {
   if (!rungs.length || rungs.length > 16) throw new Error("Use one to sixteen rungs.");
   const instructions: string[] = [];
-  const numericSource = (value: string) => value === "AI0" || /^D[0-7]$/.test(value);
+  const numericSource = (value: string) => value === "AI0" || value === "AI1" || /^D[0-7]$/.test(value);
   const numericOperand = (value: string) => numericSource(value) || /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= Number.MAX_SAFE_INTEGER;
   const isComparison = (contact: LadderContact): contact is LadderComparisonContact => "comparison" in contact;
   const validContact = (contact: LadderContact) => isComparison(contact)
-    ? ["GT", "GE", "LT", "LE", "EQ", "NE"].includes(contact.comparison) && numericSource(contact.left) && numericOperand(contact.right) && !(contact.left === "AI0" && contact.right !== "AI0" && !/^D[0-7]$/.test(contact.right) && (!Number.isInteger(Number(contact.right)) || Number(contact.right) < 0 || Number(contact.right) > 27648))
+    ? ["GT", "GE", "LT", "LE", "EQ", "NE"].includes(contact.comparison) && numericSource(contact.left) && numericOperand(contact.right) && !((contact.left === "AI0" || contact.left === "AI1") && contact.right !== "AI0" && contact.right !== "AI1" && !/^D[0-7]$/.test(contact.right) && (!Number.isInteger(Number(contact.right)) || Number(contact.right) < 0 || Number(contact.right) > 27648))
     : (["I0", "I1", "Q0", "Q1", "T0", "T1", "T2", "T3"].includes(contact.address) || /^M[0-7]$/.test(contact.address)) && typeof contact.inverted === "boolean" && (contact.edge === undefined || (["positive", "negative"].includes(contact.edge) && !contact.inverted && ["I0", "I1"].includes(contact.address)));
   const booleanInstruction = (contact: LadderBooleanContact, operation: "LD" | "AND" | "OR" | "XOR") => `${operation}${contact.edge === "positive" ? "P" : contact.edge === "negative" ? "F" : contact.inverted ? "N" : ""} ${contact.address}`;
   const loadContact = (contact: LadderContact) => isComparison(contact) ? `${contact.comparison} ${contact.left} ${contact.right}` : booleanInstruction(contact, "LD");

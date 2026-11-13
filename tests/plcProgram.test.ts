@@ -9,7 +9,7 @@ it.each([[0, true], [1, false]] as const)("loads NE comparison against a numeric
   expect(scanPlcProgram("NE AI0 1; OUT Q0", false, false, false, raw)).toEqual({ ok: true, output: expected });
 });
 
-it.each(["GT AI1 0; OUT Q0", "GT AI0 NaN; OUT Q0", "GT AI0 -1; OUT Q0", "GT AI0 27649; OUT Q0", "GT AI0 1.5; OUT Q0"])("rejects invalid analog instruction %s", (program) => {
+it.each(["GT AI0 NaN; OUT Q0", "GT AI0 -1; OUT Q0", "GT AI0 27649; OUT Q0", "GT AI0 1.5; OUT Q0"])("rejects invalid analog instruction %s", (program) => {
   expect(scanPlcProgram(program, false, false, true, 0)).toMatchObject({ ok: false, output: false });
 });
 
@@ -45,4 +45,13 @@ it.each([
   ["LD I0; XOR I1; OUT Q0", true, true, false],
 ])("executes %s", (program, a, b, expected) => {
   expect(scanPlcProgram(program as string, a as boolean, b as boolean, false)).toEqual({ ok: true, output: expected });
+});
+
+it("scans independent AI0 and AI1 values and fails closed for invalid AI1", () => {
+  const program = "GT AI0 13824; OUT Q0; GT AI1 13824; OUT Q1";
+  const scan = scanPlcProgram(program, false, false, false, 20736, undefined, [], undefined, 0.1, undefined, false, 6912);
+  expect(scan).toMatchObject({ ok: true, output: true, output1: false });
+  const inverse = scanPlcProgram(program, false, false, false, 6912, undefined, [], undefined, 0.1, undefined, false, 20736);
+  expect(inverse).toMatchObject({ ok: true, output: false, output1: true });
+  for (const raw of [NaN, Infinity, -1, 27649, 0.5]) expect(scanPlcProgram("GT AI1 13824; OUT Q0", false, false, true, 0, undefined, [], undefined, 0.1, undefined, false, raw)).toMatchObject({ ok: false, output: false });
 });
