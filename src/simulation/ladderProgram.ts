@@ -1,7 +1,7 @@
 export type LadderAddress = "I0" | "I1" | "Q0" | "Q1" | `T${0 | 1 | 2 | 3}` | `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type LadderMemoryAddress = `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export interface LadderBooleanContact { address: LadderAddress; inverted: boolean; edge?: "positive" | "negative"; }
-export interface LadderComparisonContact { comparison: "GT" | "LT" | "EQ"; left: "AI0" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
+export interface LadderComparisonContact { comparison: "GT" | "LT" | "EQ" | "NE"; left: "AI0" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
 export type LadderContact = LadderBooleanContact | LadderComparisonContact;
 export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "OUTPUT"; address: "Q0" | "Q1"; operation: "OUT" | "SET" | "RESET" } | { type: "TON"; timer: `T${0 | 1 | 2 | 3}`; presetSeconds: number } | { type: "MEMORY"; address: LadderMemoryAddress; operation: "OUT" | "SET" | "RESET" };
 export type LadderStageOperator = "OR" | "XOR";
@@ -59,7 +59,7 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
         if ("comparison" in contact) {
           const read = (operand: string) => operand === "AI0" ? inputs.analogInput0 : /^D[0-7]$/.test(operand) ? inputs.registers[Number(operand.slice(1))] ?? 0 : Number(operand);
           const left = read(contact.left), right = read(contact.right);
-          return contact.comparison === "GT" ? left > right : contact.comparison === "LT" ? left < right : left === right;
+          return contact.comparison === "GT" ? left > right : contact.comparison === "LT" ? left < right : contact.comparison === "EQ" ? left === right : left !== right;
         }
         const value = contact.address === "I0" ? inputs.input0 : contact.address === "I1" ? inputs.input1 : contact.address === "Q0" ? output : contact.address === "Q1" ? output1 : contact.address.startsWith("T") ? timers[contact.address as `T${0 | 1 | 2 | 3}`]?.done === true : memory[Number(contact.address.slice(1))];
         if (contact.edge === "positive") return value && !(contact.address === "I0" ? inputs.previousInput0 : inputs.previousInput1);
@@ -101,7 +101,7 @@ export function compileLadder(rungs: readonly LadderRung[]): string {
   const numericOperand = (value: string) => numericSource(value) || /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= Number.MAX_SAFE_INTEGER;
   const isComparison = (contact: LadderContact): contact is LadderComparisonContact => "comparison" in contact;
   const validContact = (contact: LadderContact) => isComparison(contact)
-    ? ["GT", "LT", "EQ"].includes(contact.comparison) && numericSource(contact.left) && numericOperand(contact.right) && !(contact.left === "AI0" && contact.right !== "AI0" && !/^D[0-7]$/.test(contact.right) && (!Number.isInteger(Number(contact.right)) || Number(contact.right) < 0 || Number(contact.right) > 27648))
+    ? ["GT", "LT", "EQ", "NE"].includes(contact.comparison) && numericSource(contact.left) && numericOperand(contact.right) && !(contact.left === "AI0" && contact.right !== "AI0" && !/^D[0-7]$/.test(contact.right) && (!Number.isInteger(Number(contact.right)) || Number(contact.right) < 0 || Number(contact.right) > 27648))
     : (["I0", "I1", "Q0", "Q1", "T0", "T1", "T2", "T3"].includes(contact.address) || /^M[0-7]$/.test(contact.address)) && typeof contact.inverted === "boolean" && (contact.edge === undefined || (["positive", "negative"].includes(contact.edge) && !contact.inverted && ["I0", "I1"].includes(contact.address)));
   const booleanInstruction = (contact: LadderBooleanContact, operation: "LD" | "AND" | "OR" | "XOR") => `${operation}${contact.edge === "positive" ? "P" : contact.edge === "negative" ? "F" : contact.inverted ? "N" : ""} ${contact.address}`;
   const loadContact = (contact: LadderContact) => isComparison(contact) ? `${contact.comparison} ${contact.left} ${contact.right}` : booleanInstruction(contact, "LD");
@@ -174,7 +174,7 @@ export function parseLadder(program: string): LadderRung[] | null {
       const parsed = toStages(accumulator); if (!parsed) return null;
       rungs.push({ ...parsed, coil: { type: "TON", timer: address as `T${0 | 1 | 2 | 3}`, presetSeconds } }); accumulator = undefined; continue;
     }
-    if (["GT", "LT", "EQ"].includes(operation)) {
+    if (["GT", "LT", "EQ", "NE"].includes(operation)) {
       if (!extra || instruction.split(/\s+/).length !== 3) return null;
       accumulator = { contact: { comparison: operation as LadderComparisonContact["comparison"], left: address as LadderComparisonContact["left"], right: extra } }; continue;
     }

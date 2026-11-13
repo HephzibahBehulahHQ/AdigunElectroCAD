@@ -290,3 +290,13 @@ it("round-trips XOR groups with comparison and edge contacts", () => {
   expect(parseLadder(edgeProgram)).toEqual(edges);
   expect(scanPlcProgram(edgeProgram, true, false, false)).toMatchObject({ ok: true, output: true });
 });
+it("round-trips and previews not-equal ladder comparisons", () => {
+  const rungs: LadderRung[] = [{ stages: [[{ comparison: "NE", left: "D0", right: "10" }]], coil: "OUT" }];
+  const program = compileLadder(rungs);
+  expect(program).toBe("NE D0 10; OUT Q0");
+  expect(parseLadder(program)).toEqual(rungs);
+  expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [11] }).output).toBe(true);
+  expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [10] }).output).toBe(false);
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain("<option>NE</option>");
+});
