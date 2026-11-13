@@ -107,7 +107,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
     {selected && <rect x={outlineX} y={-size * 1.1} width={width} height={size * 1.35} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
-    <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight="600" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
+    <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight={annotation.fontWeight ?? 600} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{annotation.text}</text>
   </g>;
 }
 

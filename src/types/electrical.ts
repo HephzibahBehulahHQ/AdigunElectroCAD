@@ -70,6 +70,8 @@ export interface SchematicAnnotation {
   rotation?: number;
   /** User-selected visual text alignment; does not affect schematic semantics. */
   textAnchor?: "start" | "middle" | "end";
+  /** User-selected visual font weight; does not affect schematic semantics. */
+  fontWeight?: 400 | 600 | 700;
 }
 
 export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";
