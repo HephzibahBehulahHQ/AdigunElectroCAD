@@ -135,7 +135,7 @@ export function compileLadder(rungs: readonly LadderRung[]): string {
 
 /** Accept only the editable ladder instruction subset and preserve OR/XOR branch groups. */
 export function parseLadder(program: string): LadderRung[] | null {
-  const instructions = program.split(/[;\\n]/).map((line) => line.trim().toUpperCase()).filter(Boolean);
+  const instructions = program.split(/[;\n]/).map((line) => line.trim().toUpperCase()).filter(Boolean);
   if (!instructions.length) return null;
   const rungs: LadderRung[] = [];
   type Expr = { contact: LadderContact } | { operation: "AND" | "OR" | "XOR"; left: Expr; right: Expr };
@@ -158,7 +158,7 @@ export function parseLadder(program: string): LadderRung[] | null {
     return { stages: contacts, ...(operators.some((operation) => operation === "XOR") ? { stageOperators: operators } : {}) };
   };
   for (const instruction of instructions) {
-    const [operation, address, extra] = instruction.split(/\\s+/);
+    const [operation, address, extra] = instruction.split(/\s+/);
     if (operation === "PUSH" && !address && accumulator) { stack.push(accumulator); continue; }
     if (["ANDPOP", "ORPOP", "XORPOP"].includes(operation) && !address && accumulator && stack.length) {
       accumulator = combine(operation === "ANDPOP" ? "AND" : operation === "ORPOP" ? "OR" : "XOR", stack.pop()!, accumulator); continue;
@@ -170,15 +170,15 @@ export function parseLadder(program: string): LadderRung[] | null {
     }
     if (operation === "TON") {
       const presetSeconds = Number(extra);
-      if (!/^T[0-3]$/.test(address ?? "") || !extra || instruction.split(/\\s+/).length !== 3 || !Number.isFinite(presetSeconds) || presetSeconds < 0 || !accumulator || stack.length) return null;
+      if (!/^T[0-3]$/.test(address ?? "") || !extra || instruction.split(/\s+/).length !== 3 || !Number.isFinite(presetSeconds) || presetSeconds < 0 || !accumulator || stack.length) return null;
       const parsed = toStages(accumulator); if (!parsed) return null;
       rungs.push({ ...parsed, coil: { type: "TON", timer: address as `T${0 | 1 | 2 | 3}`, presetSeconds } }); accumulator = undefined; continue;
     }
     if (["GT", "LT", "EQ"].includes(operation)) {
-      if (!extra || instruction.split(/\\s+/).length !== 3) return null;
+      if (!extra || instruction.split(/\s+/).length !== 3) return null;
       accumulator = { contact: { comparison: operation as LadderComparisonContact["comparison"], left: address as LadderComparisonContact["left"], right: extra } }; continue;
     }
-    if (instruction.split(/\\s+/).length !== 2 || (!["I0", "I1", "Q0", "Q1", "T0", "T1", "T2", "T3"].includes(address) && !/^M[0-7]$/.test(address ?? ""))) return null;
+    if (instruction.split(/\s+/).length !== 2 || (!["I0", "I1", "Q0", "Q1", "T0", "T1", "T2", "T3"].includes(address) && !/^M[0-7]$/.test(address ?? ""))) return null;
     const contact: LadderBooleanContact = { address: address as LadderAddress, inverted: operation.endsWith("N"), ...(/[PF]$/.test(operation) ? { edge: operation.endsWith("P") ? "positive" as const : "negative" as const } : {}) };
     if (contact.edge && !["I0", "I1"].includes(address)) return null;
     if (["LD", "LDN", "LDP", "LDF"].includes(operation)) accumulator = { contact };
@@ -193,6 +193,6 @@ export function parseLadder(program: string): LadderRung[] | null {
   if (accumulator || stack.length) return null;
   try {
     const canonical = compileLadder(rungs);
-    return canonical === instructions.map((line) => line.split(/\\s+/).join(" ")).join("; ") ? rungs : null;
+    return canonical === instructions.map((line) => line.split(/\s+/).join(" ")).join("; ") ? rungs : null;
   } catch { return null; }
 }
