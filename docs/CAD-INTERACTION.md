@@ -8,4 +8,6 @@ Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. Durin
 
 Zoom changes display scale from 25% to 200% without changing drawing coordinates. Fit sizes the sheet to its viewport. Menu and toolbar Grid controls share one visibility state. Scroll within the schematic viewport to inspect enlarged drawings.
 
-This does not yet provide snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
+In Wiring mode, select a source terminal and then compatible targets. Shift-clicking a target keeps the source active so users can add more terminal branches. Each branch currently connects terminals directly; mid-wire junction editing is not supported yet.
+
+This does not yet provide mid-wire junction editing, snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
