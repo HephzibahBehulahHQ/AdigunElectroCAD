@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { compileLadder, moveLadderRung, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
+import { compileLadder, duplicateLadderRung, moveLadderRung, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
 import { previewLadder } from "../src/simulation/ladderProgram";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -34,6 +34,24 @@ it("moves rungs without mutating the draft and compiles their new priority order
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(rungs), onApply: () => undefined }));
   expect(markup).toContain('aria-label="Move rung 2 up"');
   expect(markup).toContain('aria-label="Move rung 1 down"');
+});
+
+it("duplicates a rung beside its source with independent contacts and coil settings", () => {
+  const source: LadderRung = { stages: [[{ comparison: "GT", left: "D0", right: "50" }]], coil: { type: "MEMORY", address: "M2", operation: "SET" } };
+  const rungs: LadderRung[] = [source, { stages: [[{ address: "M2", inverted: false }]], coil: "OUT" }];
+  const duplicated = duplicateLadderRung(rungs, 0);
+  expect(duplicated).toEqual([source, source, rungs[1]]);
+  expect(duplicated![1]).not.toBe(source);
+  expect(duplicated![1].stages[0][0]).not.toBe(source.stages[0][0]);
+  expect(duplicated![1].coil).not.toBe(source.coil);
+  const copiedContact = duplicated![1].stages[0][0];
+  if (!("comparison" in copiedContact)) throw new Error("Expected a numeric comparison contact");
+  copiedContact.right = "75";
+  expect((source.stages[0][0] as Extract<typeof copiedContact, { comparison: string }>).right).toBe("50");
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(rungs), onApply: () => undefined }));
+  expect(markup).toContain('aria-label="Duplicate rung 1"');
+  expect(duplicateLadderRung(rungs, -1)).toBeNull();
+  expect(duplicateLadderRung([...rungs, source, source], 0)).toBeNull();
 });
 
 it("round-trips TON timer coils and preview timer contacts", () => {
