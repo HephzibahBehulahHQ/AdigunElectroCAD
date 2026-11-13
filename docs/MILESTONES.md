@@ -398,6 +398,15 @@ PR #168 merged as `3a6879c`. GitHub Verify run `43360518718` and Pages deploymen
 
 PR #170 merged as `6a49cd0`. GitHub Verify run #691 and Pages deployment run #168 succeeded. The deployed application returned HTTP 200 and served `assets/index-C4vExyHh.js` with the new branch UI and topology validation.
 
+## Completed increment: M06ah — Direct orthogonal wire route editing
+
+- [x] Add route points to editable free-sheet wires and show draggable handles while route editing is enabled.
+- [x] Move handles by drag or keyboard, remove them by right-click/Delete, and restore automatic routing.
+- [x] Keep branch routes derived from their parent route so attached taps follow parent edits.
+- [x] Pass 30 focused tests, production build, GitHub Verify, merge, Pages deployment, and verify the served route-editing bundle.
+
+PR #172 merged as `a101aad`. GitHub Verify run #694 and Pages deployment run #170 succeeded. The deployed application returned HTTP 200 and served `assets/index-iQ0bsLJB.js` with the route editor controls and handle markup.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
