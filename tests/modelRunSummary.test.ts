@@ -61,6 +61,23 @@ it("shows the live PLC watch table and recent scan trace for I/O and retained re
   expect(summary).toContain("PLC scan attempts");
 });
 
+
+it("shows Q1 state in the PLC watch table and retained scan trace", () => {
+  const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
+    componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io",
+    output: { label: "I/O state", value: "I0 OFF · I1 ON · Q0 OFF · Q1 ON" },
+    evaluatedProperties: {
+      inputA: false, inputB: true, runtimeQ0: false, runtimeQ1: true,
+      program: "LD I1; OUT Q1",
+      runtimeScanTrace: JSON.stringify([{ scan: 1, elapsedSeconds: 0.1, input0: false, input1: true, analogInput0: 0, output: false, output1: true, registers: Array(8).fill(0), status: "ok" }]),
+    },
+  }] }));
+  expect(summary).toContain("Q1");
+  expect(summary).toContain('aria-label="PLC1 recent PLC scan trace"');
+  expect(summary).toContain("<th>Q1</th>");
+  expect(summary).toContain("<td>ON</td>");
+});
+
 it("shows faults beyond the first two models and restores success after correction", () => {
   const document: CircuitDocument = { id: "summary", name: "Summary", description: "", revision: 1, wires: [], components: [
     { id: "a", definitionId: "logic.output-coil", reference: "K1", x: 0, y: 0, rotation: 0, properties: { input: false } },
