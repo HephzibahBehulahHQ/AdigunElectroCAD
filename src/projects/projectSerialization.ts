@@ -108,7 +108,9 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   if (fontSize !== undefined && (fontSize < 8 || fontSize > 48)) throw new Error("Annotation text size must be between 8 and 48.");
   const rotation = annotation.rotation === undefined ? undefined : finiteNumber(annotation.rotation, "annotation rotation");
   if (rotation !== undefined && (rotation < 0 || rotation >= 360)) throw new Error("Annotation rotation must be between 0 and 359 degrees.");
-  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }) };
+  const textAnchor = annotation.textAnchor === undefined ? undefined : textValue(annotation.textAnchor, "annotation text alignment", 6);
+  if (textAnchor !== undefined && !["start", "middle", "end"].includes(textAnchor)) throw new Error("Annotation text alignment must be left, center, or right.");
+  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }) };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {

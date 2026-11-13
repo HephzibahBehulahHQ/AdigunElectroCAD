@@ -8,7 +8,7 @@ import { addFreeSchematicSheet, createStarterProject } from "../src/projects/sta
 it("renders user-owned text notes with their chosen color on free schematic sheets", () => {
   const project = addFreeSchematicSheet(createStarterProject());
   const document = project.sheets[1].document;
-  document.annotations = [{ id: "note-1", text: "CONTROL BRANCH · USER DEFINED", x: 200, y: 240, color: "#7b3fa1", fontSize: 32, rotation: 32 }];
+  document.annotations = [{ id: "note-1", text: "CONTROL BRANCH · USER DEFINED", x: 200, y: 240, color: "#7b3fa1", fontSize: 32, rotation: 32, textAnchor: "middle" }];
   const markup = renderToStaticMarkup(createElement(Schematic, {
     document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, selectedAnnotationId: "note-1", onAnnotationSelect: () => {},
@@ -17,5 +17,6 @@ it("renders user-owned text notes with their chosen color on free schematic shee
   expect(markup).toContain('fill="#7b3fa1"');
   expect(markup).toContain('font-size="32"');
   expect(markup).toContain('rotate(32)');
+  expect(markup).toContain('text-anchor="middle"');
 });
 
