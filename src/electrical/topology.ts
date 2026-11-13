@@ -1,4 +1,4 @@
-import type { CircuitDocument, ElectricalComponentDefinition, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, ElectricalComponentDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { terminalSignalUnits } from "./signalContracts";
 import { signalDriverConflicts } from "./signalDrivers";
 
@@ -59,6 +59,30 @@ export function validateCircuit(document: CircuitDocument, definitions: Map<stri
     const connectionId = [endpointId(wire.from), endpointId(wire.to)].sort().join("|");
     if (seenConnections.has(connectionId)) issues.push({ severity: "error", code: "duplicate-terminal-connection", message: `${wire.id} duplicates an existing terminal connection.` });
     seenConnections.add(connectionId);
+  }
+
+  const wiresById = new Map(document.wires.map((wire) => [wire.id, wire]));
+  for (const wire of document.wires) {
+    if (!wire.branchOfWireId) continue;
+    const parent = wiresById.get(wire.branchOfWireId);
+    if (!parent || parent.id === wire.id) {
+      issues.push({ severity: "error", code: "invalid-wire-branch-parent", message: `${wire.id} references a missing or self parent wire.` });
+      continue;
+    }
+    const source = wire.branchSource === "to" ? parent.to : parent.from;
+    if (wire.from.componentId !== source.componentId || wire.from.terminalId !== source.terminalId || !Number.isFinite(wire.branchPosition) || wire.branchPosition! <= 0 || wire.branchPosition! >= 1) {
+      issues.push({ severity: "error", code: "invalid-wire-branch-position", message: `${wire.id} has an invalid branch source or position.` });
+    }
+    const ancestry = new Set([wire.id]);
+    let ancestor: Wire | undefined = parent;
+    while (ancestor?.branchOfWireId) {
+      if (ancestry.has(ancestor.id)) {
+        issues.push({ severity: "error", code: "cyclic-wire-branch", message: `${wire.id} belongs to a cyclic wire branch.` });
+        break;
+      }
+      ancestry.add(ancestor.id);
+      ancestor = wiresById.get(ancestor.branchOfWireId);
+    }
   }
 
   for (const message of signalDriverConflicts(document, definitions)) issues.push({ severity: "error", code: "conflicting-signal-drivers", message });

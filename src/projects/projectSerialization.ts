@@ -152,7 +152,14 @@ function parseWire(value: unknown, sheetIndex: number, wireIndex: number): Wire 
   });
   const draftingColor = wire.draftingColor === undefined ? undefined : textValue(wire.draftingColor, "wire drafting color", 7);
   if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Wire drafting color must be a six-digit hex color.");
-  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), draftingColor };
+  const branchOfWireId = wire.branchOfWireId === undefined ? undefined : textValue(wire.branchOfWireId, "branch parent wire id", 120);
+  const branchSource = wire.branchSource === undefined ? undefined : wire.branchSource;
+  const branchPosition = wire.branchPosition === undefined ? undefined : finiteNumber(wire.branchPosition, "branch position");
+  const branchFields = [branchOfWireId, branchSource, branchPosition].filter((field) => field !== undefined).length;
+  if (branchFields !== 0 && branchFields !== 3) throw new Error("Wire branch reference is incomplete.");
+  if (branchSource !== undefined && branchSource !== "from" && branchSource !== "to") throw new Error("Wire branch source must be from or to.");
+  if (branchPosition !== undefined && (branchPosition <= 0 || branchPosition >= 1)) throw new Error("Wire branch position must be between 0 and 1.");
+  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), draftingColor, ...(branchOfWireId ? { branchOfWireId, branchSource: branchSource as "from" | "to", branchPosition } : {}) };
 }
 
 function endpoint(value: unknown, label: string): TerminalEndpoint {

@@ -165,3 +165,26 @@ it("creates uniquely tagged manual wires for user-defined terminal branches", ()
   expect(second.netName).not.toBe(first.netName);
 });
 
+it("removes dependent wire branches when their parent wire is removed", () => {
+  const document = createDolMotorStarter();
+  const parent = document.wires[0];
+  const branch = createManualWire(document, parent.from, { componentId: "motor", terminalId: "u1" }, { wireId: parent.id, source: "from", position: .5 });
+  const nested = createManualWire({ ...document, wires: [...document.wires, branch] }, parent.from, { componentId: "motor", terminalId: "v1" }, { wireId: branch.id, source: "from", position: .5 });
+  const removed = removeWire({ ...document, wires: [...document.wires, branch, nested] }, parent.id);
+  expect(removed.wires.map((wire) => wire.id)).not.toContain(parent.id);
+  expect(removed.wires.map((wire) => wire.id)).not.toContain(branch.id);
+  expect(removed.wires.map((wire) => wire.id)).not.toContain(nested.id);
+});
+
+it("removes dependent wire branches when deleting a component removes their parent", () => {
+  const document = createDolMotorStarter();
+  const parent = document.wires[0];
+  const branch = createManualWire(document, parent.from, { componentId: "motor", terminalId: "u1" }, { wireId: parent.id, source: "from", position: .5 });
+  const nested = createManualWire({ ...document, wires: [...document.wires, branch] }, branch.from, { componentId: "motor-2", terminalId: "u1" }, { wireId: branch.id, source: "from", position: .5 });
+  const result = removeComponent({ ...document, wires: [...document.wires, branch, nested] }, parent.from.componentId);
+  expect(result.removedWireCount).toBeGreaterThan(0);
+  expect(result.document.wires.map((wire) => wire.id)).not.toContain(parent.id);
+  expect(result.document.wires.map((wire) => wire.id)).not.toContain(branch.id);
+  expect(result.document.wires.map((wire) => wire.id)).not.toContain(nested.id);
+});
+

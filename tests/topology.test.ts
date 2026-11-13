@@ -63,4 +63,14 @@ describe("circuit topology validation", () => {
     project.wires.push({ id: "branch-a", from: source, to: { componentId: "motor-2", terminalId: "u1" }, points: [] });
     expect(canConnectTerminals(project, catalogById, source, { componentId: "motor-3", terminalId: "u1" })).toEqual({ ok: true });
   });
+
+  it("validates branched terminal connections and rejects missing branch parents", () => {
+    const project = createDolMotorStarter();
+    project.components.push({ id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 900, y: 180, rotation: 0, properties: {} });
+    const parent = project.wires[0];
+    project.wires.push({ id: "branch", from: parent.from, to: { componentId: "motor-2", terminalId: "u1" }, points: [], branchOfWireId: parent.id, branchSource: "from", branchPosition: .5 });
+    expect(validateCircuit(project, catalogById)).toEqual([]);
+    project.wires[project.wires.length - 1].branchOfWireId = "missing-wire";
+    expect(validateCircuit(project, catalogById)).toEqual(expect.arrayContaining([expect.objectContaining({ code: "invalid-wire-branch-parent" })]));
+  });
 });
