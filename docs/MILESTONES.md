@@ -309,6 +309,14 @@ PR #145 merged as `7ee71b7`. Verify runs `43347489294` and `43347511612` succeed
 
 PR #147 merged as `02a8ce3`. Verify run `43349223442` and Pages deployment `43349348475` succeeded; custom-domain bundle inspection remains pending.
 
+## Completed increment: M06w — Editable annotation rotation
+
+- [x] Let users rotate free-sheet text annotations from 0° to 359° around their placement anchor; rotate the selection outline with the annotation.
+- [x] Persist the optional visual rotation, validate its range, and accept older projects without rotation metadata.
+- [x] Verify rendering, serialization, and out-of-range rejection; pass local build, GitHub Verify, merge, and Pages deployment.
+
+PR #149 merged as `48ed3ce`. GitHub Verify and Pages deployment `43350902383` succeeded; custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
