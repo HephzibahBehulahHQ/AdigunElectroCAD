@@ -72,6 +72,8 @@ export interface SchematicAnnotation {
   textAnchor?: "start" | "middle" | "end";
   /** User-selected visual font weight; does not affect schematic semantics. */
   fontWeight?: 400 | 600 | 700;
+  /** Multiplier for spacing between annotation lines; default 1.2 SVG units per font unit. */
+  lineSpacing?: number;
 }
 
 export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";
