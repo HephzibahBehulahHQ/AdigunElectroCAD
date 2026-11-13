@@ -40,7 +40,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
   for (const instruction of instructions) {
     const parts = instruction.split(/\s+/);
     const [operation, address] = parts;
-    if (["PUSH", "ANDPOP", "ORPOP"].includes(operation)) {
+    if (["PUSH", "ANDPOP", "ORPOP", "XORPOP"].includes(operation)) {
       if (parts.length !== 1 || accumulator === undefined) return fail("Branch instructions require a Boolean accumulator and no operands.");
       if (operation === "PUSH") {
         if (stack.length >= 8) return fail("Boolean branch nesting exceeds eight levels.");
@@ -48,7 +48,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       } else {
         const saved = stack.pop();
         if (saved === undefined) return fail("Boolean branch stack is empty.");
-        accumulator = operation === "ANDPOP" ? saved && accumulator : saved || accumulator;
+        accumulator = operation === "ANDPOP" ? saved && accumulator : operation === "ORPOP" ? saved || accumulator : saved !== accumulator;
       }
       continue;
     }
@@ -85,7 +85,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       continue;
     }
     if (parts.length !== 2) return fail(`Expected operation and address: ${instruction}`);
-    if (["LDP", "LDF", "ANDP", "ANDF", "ORP", "ORF"].includes(operation)) {
+    if (["LDP", "LDF", "ANDP", "ANDF", "ORP", "ORF", "XORP", "XORF"].includes(operation)) {
       if (!["I0", "I1"].includes(address)) return fail("Edge contacts require I0 or I1.");
       const current = address === "I0" ? inputA : inputB;
       const previous = previousInputs[address === "I0" ? 0 : 1] === true;
@@ -93,7 +93,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       if (operation.startsWith("LD")) accumulator = pulse;
       else {
         if (accumulator === undefined) return fail("Logic instructions require a preceding LD/LDN.");
-        accumulator = operation.startsWith("AND") ? accumulator && pulse : accumulator || pulse;
+        accumulator = operation.startsWith("AND") ? accumulator && pulse : operation.startsWith("OR") ? accumulator || pulse : accumulator !== pulse;
       }
       continue;
     }
@@ -109,7 +109,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       }
       continue;
     }
-    if (!["LD", "LDN", "AND", "ANDN", "OR", "ORN", "XOR"].includes(operation)) return fail(`Unsupported operation: ${operation}`);
+    if (!["LD", "LDN", "AND", "ANDN", "OR", "ORN", "XOR", "XORN"].includes(operation)) return fail(`Unsupported operation: ${operation}`);
     if (!["I0", "I1", "Q0", "Q1", "T0", "T1", "T2", "T3"].includes(address) && !/^M[0-7]$/.test(address ?? "")) return fail(`Unsupported address: ${address}`);
     const value = address === "I0" ? inputA : address === "I1" ? inputB : address === "Q0" ? output : address === "Q1" ? output1 : address?.startsWith("T") ? timers[address as keyof PlcTimerStates].done : memory[Number(address?.slice(1))];
     if (address?.startsWith("T")) usesTimers = true;
@@ -122,6 +122,7 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       if (operation === "OR") accumulator = accumulator || value;
       if (operation === "ORN") accumulator = accumulator || !value;
       if (operation === "XOR") accumulator = accumulator !== value;
+      if (operation === "XORN") accumulator = accumulator !== !value;
     }
   }
   if (stack.length) return fail("Boolean branch stack is not balanced.");
