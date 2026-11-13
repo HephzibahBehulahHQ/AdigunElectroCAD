@@ -545,3 +545,11 @@ XOR defines Boolean parity within a user-selected parallel group. The editor sti
 - [x] Pass exact-head Verify runs `43403462837` and `43403471245`, merge PR #208 as `5c41e39`, and complete Pages deployment run `43403559172`.
 
 NE is a numeric comparison only; direct AI0 thresholds retain the existing integer raw-value bounds.
+
+## Completed increment: M06ay — Inclusive numeric PLC comparisons
+
+- [x] Add GE/LE to PLC numeric scanning and the graphical ladder selector, compiler/import path and live preview.
+- [x] Verify equality and adjacent values in focused text and graphical ladder tests; pass both exact-head Verify runs `43404831772` and `43404838329`.
+- [x] Merge PR #210 as `bb35006` and complete Pages deployment run `43404919232`.
+
+GE and LE include equality at the selected numeric threshold. Direct AI0 thresholds remain integer raw values in the documented 0–27648 range.
