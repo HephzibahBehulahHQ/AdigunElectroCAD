@@ -357,6 +357,14 @@ PR #157 merged as `ea06396`. Verify runs `43353550169` and `43353566034` and Pag
 
 PR #159 merged as `67db649`. Verify runs `43354328192` and `43354348944` and Pages deployment `43354457393` succeeded; direct custom-domain inspection remains pending.
 
+## Completed increment: M06ac — Editable annotation background fills
+
+- [x] Let users set custom or palette background colors for free-sheet text annotations and clear the fill to restore transparency.
+- [x] Draw the fill behind the text at the multiline annotation bounds; validate and persist the optional color while accepting older notes.
+- [x] Verify rendering, serialization, invalid-color rejection, focused tests, build, GitHub Verify, merge, and Pages deployment.
+
+PR #161 merged as `454844a`. Verify runs `43355568307` and `43355585024` and Pages deployment `43355692072` succeeded; direct custom-domain inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
