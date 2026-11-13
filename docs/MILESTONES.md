@@ -589,7 +589,7 @@ AI1 has no predefined sensor assignment. Users choose the components, branches, 
 - [x] Verify the star/delta boundary and negative-slip rejection; exact-head Verify run `43412358754` passed.
 - [x] Merge PR #219 as `70aa53f` and complete Pages deployment `43412487849`.
 
-This extends the steady-state equivalent-circuit boundary only. Rotor acceleration and electrical transients remain unmodeled.
+This increment extends the steady-state equivalent-circuit boundary. The separate M06bc increment adds rigid-rotor speed integration; electrical flux transients remain unmodeled.
 
 ## Completed increment: M06bc — User-entered motor speed transient
 
