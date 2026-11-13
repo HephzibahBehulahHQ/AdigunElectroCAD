@@ -1,8 +1,470 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×;õ:-jZ.¶›­–)Ş³R2FVÆ—fW'’Ö–ÆW7FöæW0 ¥WFFVB##bÓÓ2âF†RgVÆÂÖ7FW"vöÂ&VÖ–ç27F—fRâF†—26†V6¶Æ—7B7WÆVÖVçG2Â&F†W"F†â&WÆ6W2ÂF†RÖ7FW"&WVW7BæB&÷BFFVæFâÖ–ÆW7FöæR—26ö×ÆWFRöæÇ’v†VâÆÂ—G27&—FW&–†fRWf–FVæ6Râ&ÖWFW"f&–çG2æB76–ærFW7B66W2Fòæ÷B6÷VçB2F—7F–æ7BfÆ–FFVBFWf–6W2÷"&ö¦V7G2à ¢22&VÆV6RvFW2'’6FVv÷' §ÂvFRÂ6FVv÷'’òÖ–ÆW7FöæRÂfW&–f–&ÆR6ö×ÆWF–öâ7&—FW&–Â7W'&VçB7FFRòWf–FVæ6RÀ§ÂÒÒÒÂÒÒÒÂÒÒÒÂÒÒÒÀ§ÂÓÂ&W÷6—F÷'’æBFWÆ÷–ÖVçB&6VÆ–æRÂ&Wf–WvVB&ö¦V7BÖöæÇ’6öÖÖ—G3²ÖF6†–ærÆö6Â÷&VÖ÷FR'&æ6‚4„²4’FW7Bö'V–ÆBw&VVã²6öæf–wW&VBvW2FWÆ÷–ÖVçBw&VVã²6æöæ–6ÂFöÖ–â&VæFW'2ÖF6†–ær76WG2âÂ6ö×ÆWFRF‡&÷Vv‚"3srâÆFW7BÖ–â#VÂvW2'VâCS“3#“cƒ#†w&VVã²ÖF6†–ær76WG2æBv—&VB&WfW'6–ær6öçG&öÇ2fW&–f–VBöâF†R6æöæ–6ÂFöÖ–ââ&V6†V6²f÷"WfW'’7V'6WVVçB&VÆV6RâÀ§ÂÓ"Â4BVF—F–æræBFVÆ—fW&&ÆW2Â7&VFRöVF—B×VÇF’×6†VWB6—&7V—G2ÂÆ6R÷&÷FFRöÖ÷fRFWf–6W2Â6öææV7B÷&V6öææV7BöFVÆWFRv—&W2ÂVæFòõ&VFòÂ–×÷'BöW‡÷'B¥4ôâõ5drõärõDbv÷&¶fÆ÷ræB$ôÒ÷v—&R÷FW&Ö–æÂ&W÷'G3²fW&–g’&÷VæBG&—2æB&VæFW&VBÆVv–&–Æ—G’âÂ'F–ÂâW†—7F–ærVF—F–æröW‡÷'BFW7G2æBFö726÷fW"7V'6WG3²gVÆÂf÷&ÖBæB&W÷'B66WFæ6R&VÖ–ç2÷Vââ6VR4BÔ”åDU$5D”ôâæÖBæB$ô¤T5BÔ”Õõ%BæÖBâÀ§ÂÓ2Âv—&VB6öçG&öÇ2æB÷vW"Â7GVÂv—&VB7WÇ’÷&WGW&âÂ5D%Bõ5DõÂ†öÆF–æræB&WfW'6–ær–çFW&Æö6²6öçF7G2G&—fR6ö–Ç2æBÖ÷F÷"÷vW#²'&ö¶Vâv—&W2Â6öæfÆ–7F–ær6öÖÖæG2æB&W7F÷&F–öâ†fRFW7FVB÷WF6öÖW2âÂ'F–Ââv—&VB†öÆF–æræB&WfW'6–ær6öçG&öÂ–æ7&VÖVçG2&RFWÆ÷–VBæB'&÷w6W"×fW&–f–VB–â'23sn(	3srâgVÆÂvFR&Wf–Wr&VÖ–ç2÷VââÀ§ÂÓBÂ&÷FV7F–öâæBG–æÖ–2Ö6†–æW2Â7W'&VçBÖG&—fVâ÷fW&ÆöB&W7öç6RÂ&W6WBö6ööÆ–ærÂ7F'FW"6WVVæ6W2æBÖ÷F÷"G&ç6—F–öç2W6RFö7VÖVçFVBÖöFVÇ3²fW&–g’F–ÖR×7FW&V†f–÷"æBfVÇB66W2v–ç7B7FFVB77V×F–öç2âÂ'F–Ââ7W'&VçBÖG&—fVâ÷fW&ÆöBæ÷r–æ6ÇVFW2v—&VB&WfW'6–æræB7F"ÖFVÇFv–æF–ær7W'&VçC²Ö÷F÷"G&ç6–VçBG–æÖ–72æB&÷FV7F–öâ6ö÷&F–æF–öâ&VÖ–â÷VââÀ§ÂÓRÂÄ2æB–ç7G'VÖVçFF–öâÂw&†–6ÂÆFFW"æBFW‡B&öw&×2W†V7WFR6öç6—7FVçFÇ“²äòôä2ÂÆF6‚öVFvW2ÂvFW2Â6ö×&F÷'2æBÖF‚v÷&³²6Vç6÷'2ôD2ôD26''’G—VB6–væÇ3²W'&÷'2–æ†–&—B÷WGWG2v—F†÷WB†–FFVâ7FFR×WFF–öââÂ'F–ÂâÄ2öæÆöræBfVÇBF‡2FW7FVBÂ–æ6ÇVF–ærÆ—fR"3sB6†V6·3²'&öFW"Ä2Â6ö×ÆWFR–ç7G'VÖVçFF–öâÖöFVÇ2æBT’66WFæ6R&VÖ–â÷Vââ6VRÄ2Õ$ôu$Õ2æÖBâÀ§ÂÓbÂ6ö×öæVçBÆ–'&'’ÂWfW'’&WVW7FVB—FVÒÂ–æ6ÇVF–ær6FVv÷&–W2(	3‚Â†2F—7F–æ7BÆVv–&ÆR7–Ö&öÂÂFW&Ö–æÇ2ÂFö7VÖVçFVB&ÖWFW'2Â6öææV7FVB'VçF–ÖR&V†f–÷"æBÖVæ–ævgVÂFW7G3²æòvVæW&–2÷"Æ6V†öÆFW"VçG&–W26÷VçFVB26ö×ÆWFRâÂ'F–ÂâcrgVæ7F–öæÂFVf–æ—F–öç2ÇW2DôÂÂv–æF–æræB&ÖWFW"f&–çG3²ÖçVf7GW&W"fÆ–FF–öâæBgVÆÇ’6÷WÆVBfÇV–Bô…d2÷&VæWv&ÆRö6&ÆRÖöFVÇ2&Ræ÷BW7F&Æ—6†VBâÀ§ÂÓrÂ–æGW7G&–Â&ö¦V7BÆ–'&'’ÂBÆV7BSF—7F–æ7BVæv–æVW&VB&ö¦V7G2v—F‚6÷'&V7BF÷öÆöw’Â&W&öGV6–&ÆR÷W&F–ær6WVVæ6W2ÂW‡V7FVB÷WGWG2æBfVÇB66W3²V6‚ÆöF&ÆRÂ'Vææ&ÆRæBf—7VÆÇ’&Wf–WvVBâÂ'F–ÂâS‚VçG&–W27W'&VçFÇ’–æ6ÇVFRC“’f&–çG2g&öÒf—fR66Væ&–òfÖ–Æ–W2æBæ–æRFVF–6FVBFF—F–öç2âF†—2vFR—2æ÷B6F—6f–VB'’F†÷6R6÷VçG2âÀ§ÂÓ‚Â–FVçF—G’æB&ö¦V7BFFÂ66†VÖ—6öÆF–öâÂ÷væW"$Å2Â&W7G&–7F—fRæöç–Ö÷W2”å4U%BÂ6öæf—&ÖVBVÖ–Â÷77v÷&BæBGvò×7FWæöç–Ö÷W2Ww&FS²Æö6Âö6Æ÷VB6fRöÆöBæB&VfW&Væ6W2v÷&²v—F‚&Vg&W6‚æBGvòW&ÖæVçB66÷VçG2âÂ'F–ÂâW†—7F–ær6–vâÖ–âÂ6Æ÷VBæB$Å2Wf–FVæ6R–âUD‚Õ$Å2ÕdU$”d”4D”ôâÓ##bÓÓ"æÖC²VÖ–ÂWw&FRÂGvòÖ66÷VçB'&÷w6W"—6öÆF–öâæB7&÷72ÖFWf–6R&VfW&Væ6W2&VÖ–âVçfW&–f–VBâÀ§ÂÓ’Âf—7VÂÂ&W7öç6—fRæBÆæwVvR66WFæ6RÂÖF6‚7WÆ–VBv÷&·7FF–öâF&vWC²ÆVv–&ÆR'&æF–æræBÆ&VÇ2Âæò6öÆÆ—6–öç2BFW6·F÷öÖö&–ÆR6—¦W3²W6&ÆR¶W–&ö&BfÆ÷w2ÂÆ–v‡BöF&²F†VÖW2æB&Wf–WvVBVævÆ—6‚ôvW&Öâõ–÷'V&õ–Fv–ââÂ'F–Ââ6†V6¶VB†VFW"öfö÷FW"Æ–÷WG2æB6ö×7B66÷VçB÷7FGW26öçG&öÇ3²gVÆÂ&VfW&Væ6RÖF6‚ÂÆÂf–Ww2æBG&ç6ÆF–öç2&VÖ–â÷Vââ6VRd•5TÂÕD$tUBæÖBâÀ§ÂÓÂF–wVâ&÷BÂfÆöF–ær÷&W6—¦&ÆRöFö6¶&ÆRv–æF÷ræBW'6—7FVæ6S²7GVÂ6çf2Öv&R76—7Fæ6RÂW‡ÆæF–öç2Â6öç6VçFVBFöÖ–2VF—G2ÂV–WB÷Vç&VB&V†f–÷"æB6öæf–wW&VB’6&–Æ—F–W3²FW7BÆÂ&WVW7FVBFFVæGVÒfÆ÷w2âÂ'F–Ââ'VÆRÖ&6VB76—7Fæ6RæBfÆöF–ærv–æF÷rFWÆ÷–VC²vVæW&F—fR’æB'&öFW"Væv–æVW&–ær&V6öæ–ær&Ræ÷B6öæf–wW&VB÷"fW&–f–VBâ6VR&÷F‚&WF–æVB&÷B&WVW7BE…Bf–ÆW2æBfW&–f–6F–öâFö72âÀ§ÂÓÂgVÆÂ&VÆV6R66WFæ6RÂ6Æ÷6RWfW'’Æ–6&ÆRÖ7FW"öFFVæGVÒ7&—FW&–öâv—F‚6÷W&6RÂFW7BÂ&VæFW&VBæBÆ—fRWf–FVæ6S²Fö7VÖVçBÆÂ7W÷'FVBÆ–Ö—G3²g&W6‚gVÆÂ&Vw&W76–öâÂWF†VçF–6F–öâÂ66W76–&–Æ—G’æB7&÷72Ö'&÷w6W"6†V6·3²6ÆVâ&Wf–WvVB&VÆV6RæBFWÆ÷–ÖVçBâÂVæF–ærâÆÂ&V6VF–ærvFW2×W7B&R66WFVC²æòv†öÆR×&öGV7B6ö×ÆWF–öâ6Æ–Ò—2§W7F–f–VBâÀ ¤öæÇ’Ó—2gVÆÇ’Wf–FVæ6VB2&VÆV6R&6VÆ–æRƒöb'&öBvFW3²&÷†–ÖFVÇ’R'’vFR6÷VçBÂæ÷BVff÷'B÷"fVGW&R6ö×ÆWF–öâ’â÷fW&ÆÂ†÷W'26ææ÷B–WB&RW7F–ÖFVB&W7öç6–&Ç“¢F†R&VÖ–æ–ær6ö×öæVçB÷&ö¦V7B'&VGF‚æB66WFæ6Rv÷&²&R7V'7FçF–ÂâW7F–ÖFRV6‚7F—fRFVÆ—fW'’–æ7&VÖVçBgFW"–ç7V7F–ær—G2FWVæFVæ6–W2à ¢226ö×ÆWFVB–æ7&VÖVçC¢Ó6(	Bv—&VB†öÆF–ær6öçG&öÀ ¢Ò·…Ò–ç7V7BW†—7F–ærG'’Ö6öçF7BÂ7WÇ’æB6ö–ÂFW&Ö–æÇ3²&W6W'fRF†R&VfW&Væ6RDôÂ6öçG&öÆÆW"à¢Ò·…Ò–×ÆVÖVçB–FVÂ—6öÆFVB×6÷W&6R7WÇ’÷&WGW&âG&6–æræB7GVÂ5D%Bõ5Dõö†öÆF–ær6öçF7B6öçF–çV—G’à¢Ò·…ÒFW7B'&ö¶Vâ&WGW&âö†öÆF–ærF‡2Â÷fW&ÆöB–çFW''WF–öâÂföÇFvRÖ—6ÖF6‚Â6†÷'B6—&7V—BæB6fVBÖFW6–vâ–Ö×WF&–Æ—G’‡6WfVâfö7W6VB66W276VB’à¢Ò·…Ò6ö×ÆWFRÆ–6F–öâ–çFVw&F–öâæBfVÇBÖ&÷VæF'’&Wf–Ws²ƒC’FW7G2æB&öGV7F–öâ'V–ÆB76VBà¢Ò·…ÒFBâ÷W&&ÆRW†×ÆRæBfW&–g’5D%B÷&VÆV6Rõ5DõöfVÇB÷&V6÷fW'’–âF†RÆö6Â'&÷w6W#²&öGV7F–öâ66WFæ6R&VÖ–ç2&VÆ÷rà¢Ò·…Ò&Wf–WrF–fc²6öÖÖ—B÷V&Æ—6‚öæÇ’F†—2–æ7&VÖVçC²fW&–g’–FVçF–6ÂÆö6Â÷&VÖ÷FR4„æBw&VVâ"6†V6·2à¢Ò·…ÒÖW&vRöFWÆ÷’F‡&÷Vv‚6öæf–wW&VBvW2v÷&¶fÆ÷s²fW&–g’F†R7GVÂÆ—fR&V†f–÷"æB&V6÷&BWf–FVæ6Rà ¤Ó6v266WFVB–â"3sc¢7–æ6‡&öæ—¦VB†VB&Vc6fVVÂÖ–âCƒFc–fÂ7V66W76gVÂvW2'VâCS“#CSƒ6ÂÖF6†–ærÆ—fR76WB–æFW‚ÔG¤×FfÔòæ§6ÂÆ—fR†öÆF–ærõ5Dõö÷fW&ÆöB&V6÷fW'’æB&W7F÷&F–öâöbF†R÷&–v–æÂB×6†VWB&ö¦V7BâF†—2FöW2æ÷B6ö×ÆWFRÓ3¢&WfW'6–ær–çFW&Æö6·2æB'&öFW"6ö–Â÷&÷FV7F–öâ&V†f–÷"&VÖ–â6W&FR–æ7&VÖVçG2à ¢226ö×ÆWFVB–æ7&VÖVçC¢Ó6"(	Bv—&VB&WfW'6–ær–çFW&Æö6·0 ¢Ò·…ÒFB&VÂä2W†–Æ–'’6öçF7BF‚Âv—F‚æò6†ævRFòF†R&VfW&Væ6RDôÂ6öçG&öÆÆW"à¢Ò·…ÒfW&–g’f÷'v&BæB&WfW'6R†öÆF–ærÂ÷÷6–ærÖ6öÖÖæB–æ†–&—F–öâÂ5Dõ÷&W7F'BÂ÷fW&ÆöBÂ'&ö¶Vâ–çFW&Æö6²÷&WGW&âv—&W2æB6–×VÇFæV÷W2Ö6öÖÖæBfVÇG2à¢Ò·…Ò&÷f–FRÆVv–&ÆRFVF–6FVB&ö¦V7C²fW&–g’7GVÂ†6R–çFW&6†ævRæBÖ÷F÷"F—&V7F–öâ–âF†R'&÷w6W"à¢Ò·…Ò'Vâ&Vw&W76–öâö'V–ÆBÂ&Wf–Wr÷V&Æ—6‚÷7–æ6‡&öæ—¦RÂ724’ÂFWÆ÷’æBfW&–g’&öGV7F–öâ&Vf÷&R&ö6VVF–ærà ¤66WFæ6S¢"3srÂ7–æ6‡&öæ—¦VB'&æ6‚svfS#ÂÖW&vR#VÂ7V66W76gVÂvW2'VâCS“3#“cƒ#†ÂÖF6†–ærÆ—fR76WG2–æFW‚Ô'S#7sVÔæ§6æB–æFW‚Ô%T—¥–×„bæ776âÆÂƒS’FW7G2æBF†R&öGV7F–öâ'V–ÆB76VBâ6æöæ–6ÂÖFöÖ–â'&÷w6W"6†V6·2fW&–f–VBf÷'v&B³CC'Òv—F‚´Ó"öfbVæFW"â÷÷6–ær6öÖÖæC²5DõÆVgB5DäD%“²&WfW'6RÓCC'Òv—F‚´ÓöfbVæFW"â÷÷6–ær6öÖÖæC²÷fW&ÆöBG&—÷&W6WBÆVgB5DäD%’âVæFò÷&VÆöB&W7F÷&VBF†R÷&–v–æÂB×6†VWB&ö¦V7Bv—F†÷WB6Æ÷VBw&—FW2âÓ6"—26ö×ÆWFS²VÆV7G&–6Â–çFW&Æö6¶–ær—2æ÷BÖV6†æ–6Â÷"6W'F–f–VB6fWG’–çFW&Æö6²à ¢227F—fR–æ7&VÖVçC¢ÓF(	B7W'&VçBÖG&—fVâF†W&ÖÂ÷fW&Æö@ ¢Ò·…Ò–ç7V7BW†—7F–ærÆöBÖ7W'&VçBG&6–ærÂDôÂF†W&ÖÂ&V†f–÷"æB'VçF–ÖR×7FFR÷&W6WB&÷VæF&–W2à¢Ò·…Ò7V6–g’Fö7VÖVçFVBVGV6F–öæÂF†W&ÖÂÖöFVÂæBv—&R7W'&VçBÖG&—fVâG&—–çFòF†RW†—7F–ær÷vW"ö6öçG&öÂ6—&7V—Bà¢Ò·…ÒfW&–g’6öÆBö†÷BG&—Â6ööÆ–ær÷&W6WBÂF–ÖR×7FW6öç6—7FVæ7’Â7W'&VçB–çFW''WF–öâæB6fVBÖFW6–vâ–Ö×WF&–Æ—G’à¢Ò·…ÒFBö'6W'f&ÆR'VçF–ÖR7FFRæBÖVæ–ævgVÂÆö6Â'&÷w6W"66WFæ6Rà¢Ò·…ÒV&Æ—6‚÷7–æ6‡&öæ—¦RÂ724’ÂæBFWÆ÷’à¢Ò²ÒfW&–g’F†R6ÖR&V†f–÷"öâ&öGV7F–öâà ¥"3s’ÖW&vVB2C†C#†SfÂæBvW2'VâCcCC“#Cf7V66VVFVBâ&öGV7F–öâ–çFW&7F—fR66WFæ6R&VÖ–ç2VæF–ærâ6VRD„U$ÔÂÔõdU$ÄôBæÖBf÷"7W÷'FVB7W'&VçBF‡2æBÆ–Ö—G2à ¢227F—fR–æ7&VÖVçC¢ÓF"(	BF†W&ÖÂ&÷FV7F–öâöâv—&VB&WfW'6–æp ¢Ò·…Ò&WW6RF†RW†—7F–ær&WfW'6–ær÷vW"F÷öÆöw’Âv—&VB#3b6ö–Â&WGW&ç2Â†öÆF–ær6öçF7G2æB÷÷6–ærä2–çFW&Æö6·2à¢Ò·…ÒFB6W&FR7W'&VçBÖG&—fVâ÷fW&ÆöBW†×ÆRv—F‚&WfW'6RÖF—&V7F–öâG&—Â6ööÂ&W6WBæBæòWFöÖF–2&W7F'Bà¢Ò·…ÒfW&–g’F†R÷W&F–ær6WVVæ6RÂF÷öÆöw’æB&WfW'6R6öçF7F÷"–çFW''WF–öâv—F‚fö7W6VBWFöÖFVB6†V6·2à¢Ò·…ÒV&Æ—6‚Â724’ÂÖW&vRæBfW&–g’F†RvW2FWÆ÷–ÖVçBæB&öGV7F–öâ&ö¦V7B&V†f–÷"à ¥"3“bÖW&vVB2FSS3&#&²4’'VâC3#S“CS““v76VBÂæBvW2'VâC3#S“#S#ƒ–6ö×ÆWFVB7V66W76gVÆÇ’âF†RÆ—fR&ö¦V7BÆ–'&'’6†÷w2SrVçG&–W2ÂF†RæWr&ö¦V7N(	—2&WfW'6R×G&—ö6ööÂ×&W6WB6WVVæ6RÂæB76VBF÷öÆöw’÷&V6÷&FVBÖÖöFVÂ6†V6²âF†RÆ—fR6†V6²6VÆV7FVBF†R&ö¦V7B6&BöæÇ“²æò6†VWBv2ÆöFVB÷"6fVBà ¢227F—fR–æ7&VÖVçC¢Ó62(	Bv—&VB7F"ÖFVÇF6öçG&öÀ ¢Ò·…ÒW6R7GVÂ´Óô´Ó"ô´Ó2÷vW"öÆW2æBäò†öÆF–ærôä2–çFW&Æö6²6öçF7G2–ââVF—F&ÆR6—‚×FW&Ö–æÂ6—&7V—Bà¢Ò·…ÒFB†&Gv—&VB5DõÂ5D%BÂÖçVÂ÷fW&ÆöB–çFW''WF–öâÂ"&WGW&ç2ÂR27F"F–ÖW"æB#×2÷Vâ×G&ç6—F–öâF–ÖW"à¢Ò·…ÒfW&–g’F÷öÆöw’Â7F"ö÷VâöFVÇF÷WGWG2Â6öçF7F÷"W†6ÇW6–öâGW&–ærG&ç6—F–öâÂ÷fW&ÆöB7F÷÷&W6WBæB'&ö¶VâFVÇFÖ–çFW&Æö6²&V†f–÷"à¢Ò·…ÒV&Æ—6‚Â724’ÂÖW&vRæBfW&–g’F†RFWÆ÷–VB&ö¦V7B&V†f–÷"à ¥"3“‚ÖW&vVB2ƒSf6#&²4’'VâC3#cS““3VæBvW2'VâC3#cS#cs3C†7V66VVFVBâF†RÆ—fRÆ–'&'’6†÷w2S‚VçG&–W2ÂF†Rv—&VB7F"ÖFVÇFFV×ÆFRÂæB76VBF÷öÆöw’÷&V6÷&FVBÖÖöFVÂ6†V6·2âF†R6†V6²6VÆV7FVBF†R&ö¦V7B6&BöæÇ“²æò6†VWBv2ÆöFVB÷"6fVBà ¥F†R6—‚×FW&Ö–æÂ&Ææ6VBv–æF–ærÖöFVÂ7F–ÆÂFöW2æ÷BfVVBF†R&WF–æVBF†W&ÖÂ÷fW&ÆöB'VçF–ÖS²F†B—2G&6¶VB6W&FVÇ’VæFW"ÓBà ¢227F—fR–æ7&VÖVçC¢ÓF2(	Bv–æF–ærÖFW&—fVB÷fW&ÆöB7W'&Vç@ ¢Ò·…ÒFW&—fRF‡&VR†6R7W'&VçG2g&öÒ÷vW&VB6—‚×FW&Ö–æÂv–æF–ærF÷öÆöw’æB7GVÂ6öçF7F÷"7FFW2–â7F"æBFVÇFà¢Ò·…Ò&÷WFRv–æF–ær7W'&VçBF‡&÷Vv‚F†Rv—&VBcöÆW2æB&W6W'fRVç7W÷'FVBö'—76VB×F‚fVÇB&W÷'F–ærà¢Ò·…ÒfW&–g’7F"öFVÇFÆ–æR7W'&VçBÂF†W&ÖÂG&—Â6ö–Â–çFW''WF–öâÂ6ööÂ&W6WBæBæòWFöÖF–2&W7F'Bà¢Ò·…ÒVæ&ÆRF†W&ÖÂÖöFR–âF†RFVF–6FVBFV×ÆFRæB&V6÷&BâWFöÖF–2FVÇFÖ7W'&VçBG&—Â6ööÂÖF÷vâæBÖçVÂ&W6WB6WVVæ6Rà¢Ò·…ÒV&Æ—6‚Â724’ÂÖW&vRæBfW&–g’&öGV7F–öâ&V†f–÷"à ¥F†Rv–æF–ærÖöFVÂW6W2&Ææ6VBf—†VB–×VFæ6RæB7GVÂF÷öÆöw’â—BFöW2æ÷BÖöFVÂÖ÷F÷"G&ç6–VçG2ÂF÷'VRÂ66VÆW&F–öâÂ7FæF&F—¦VB&VÆ’7W'fW2÷"ÖV6†æ–6Â–çFW&Æö6¶–ærà ¥"3ÖW&vVB2#vV6Ss²4’'VâC3#cƒC3#SfæBvW2'VâC3#cƒSc3sc†76VBâ"3ÖW&vVB2–Vf&&&²4’'VâC3#c“cC#s3–æBvW2'VâC3#c“sccscf76VBâ&öGV7F–öâfW&–f–6F–öâ6†÷w2F†RS‚ÖVçG'’Æ–'&'’Âv—&VB7F"ÖFVÇF&V6÷&BÂWFöÖF–2FVÇFÖ7W'&VçBF†W&ÖÂG&—ö6ööÂ×&W6WB6WVVæ6RæB76VBF÷öÆöw’öÖöFVÂ6†V6·2âF†R&ö¦V7B6&Bv26VÆV7FVBf÷"fW&–f–6F–öã²æò6†VWBv2ÆöFVB÷"6fVBà ¢227F—fR–æ7&VÖVçC¢ÓFB(	B&ÖWFW&—¦VB–æGV7F–öâÖÖ÷F÷"÷W&F–ærö–ç@ ¢Ò·…ÒFB&Ææ6VBW"×†6RBÖWV—fÆVçBÖ6—&7V—B6Æ7VÆF–öâW6–ærW‡Æ–6—B7FF÷"÷&÷F÷"&W6—7Fæ6W2æB&V7Fæ6W2ÂÖvæWF—¦–ær&V7Fæ6RÂg&WVVæ7’ÂöÆR—'2Â7WÇ’föÇFvRÂv–æF–ær6öææV7F–öâæB÷6—F—fR6Æ—à¢Ò·…ÒFW&—fR†6RöÆ–æR7W'&VçBÂ&÷F÷"7W'&VçBÂ7–æ6‡&öæ÷W27VVBæBVÆV7G&öÖvæWF–2F÷'VRv—F†÷WB–çG&öGV6–ær77VÖVBÖ÷F÷"6öç7FçG2à¢Ò·…ÒfW&–g’7F"öFVÇFföÇFvRö7W'&VçB&VÆF–öç2ÂföÇFvR×7V&RF÷'VR66Æ–æræB–çfÆ–B&ÖWFW"&V¦V7F–öâ‡F‡&VRfö7W6VBFW7G2’à¢Ò·…Ò¶VWVç7W÷'FVBÆ–Ö—G2W‡Æ–6—C¢F†—2÷W&F–ærö–çBFöW2æ÷B–WB6–×VÆFRfÇW‚G&ç6–VçG2ÂÖV6†æ–6Â66VÆW&F–öâöÆöBG–æÖ–72Â6GW&F–öâÂ†&Ööæ–72ÂVæ&Ææ6R÷"&÷FV7F—fRÖFWf–6R7W'fW2à¢Ò·…Ò'Vâfö7W6VBFW7G2æB&öGV7F–öâ'V–ÆC²V&Æ—6‚'&æ6‚f÷"&Wf–Wrà¢Ò²ÒÖW&vRöæÇ’gFW"4’7V66VVG3²FWÆ÷’F‡&÷Vv‚6öæf–wW&VBvW2v÷&¶fÆ÷ræBfW&–g’&öGV7F–öâà ¤ÖöFVÂ7G'V7GW&RföÆÆ÷w2F†R&Ææ6VB–æGV7F–öâÖÖ÷F÷"BÖWV—fÆVçB6—&7V—BæBF†WfVæ–âÖWF†öBFW67&–&VB–â´”UBVÆV7G&–2÷vW"Æ–6F–öç5Ò†‡GG3¢òö–WG&W6V&6‚æöæÆ–æVÆ–'&'’çv–ÆW’æ6öÒöFö’óãC’ö–WBÖWã#’ãƒ#"’âF†RW‡Æ–6—B6—&7V—B–çWG2&R&WV—&VBÖ÷F÷"FF²F†RVæ—B×FW7BfÇVW2&R7–çF†WF–2æB&Ræ÷B&W6VçFVB2&VÂÖ÷F÷"à ¢226ö×ÆWFVB–æ7&VÖVçC¢ÓFR(	B7F"ÖFVÇFÆ"Ö÷F÷"÷W&F–ærö–ç@ ¥F†R&Ææ6VB7FVG’×7FFRÖ÷F÷"÷W&F–ærö–çB—2W‡÷6VB–âF†R7F"ÖFVÇFÆ"v—F‚&Ææ²Ö'’ÖFVfVÇBÂW‡Æ–6—BWV—fÆVçBÖ6—&7V—B–çWG2âF†R7F—fR7F"öFVÇF7FvR&W÷'G2†6R7W'&VçBÂÆ–æR7W'&VçBÂVÆV7G&öÖvæWF–2F÷'VRæB7–æ6‡&öæ÷W27VVBBF†RVçFW&VB÷6—F—fR6Æ—â"3BÖW&vVB2cF3c“–²4’æBvW2'VâC3#s3ƒCC““f7V66VVFVBâ&öGV7F–öâ–ç7V7F–öâ6öæf—&ÖVBÆÂV–v‡B–çWG2æBF†R÷Vâ×G&ç6—F–öâÖW76vRâF†RÖöFVÂv2æ÷B6÷WÆVBFòF†R6÷–VB6†VWB÷"÷fW&ÆöB–âF†B&VÆV6S²F†—2—26ö×ÆWFVB6W&FVÇ’–âÓFb&VÆ÷rà ¢227F—fR–æ7&VÖVçC¢ÓFb(	BWV—fÆVçBÖ6—&7V—B7W'&VçBF‡&÷Vv‚v—&VB÷fW&Æö@ ¢Ò·…Ò6÷’F†RÆ"–çFòv—&VB7F'FW"6—&7V—Bv—F‚7GVÂ5D%Bõ5DõÂ7F"öFVÇF6öçF7F÷'2æBcF†W&ÖÂ÷fW&ÆöBà¢Ò·…Ò&W6W'fRW‡Æ–6—BWV—fÆVçBÖ6—&7V—B&ÖWFW'2–âF†R6÷–VBÖ÷F÷"æBW6RF†R÷vW&VB7F"öFVÇFF÷öÆöw’æB7WÇ’g&WVVæ7’f÷"—G2÷W&F–ærö–çBà¢Ò·…Ò&÷WFR&Ææ6VBÆ–æR7W'&VçBF‡&÷Vv‚ÆÂF‡&VR7GVÂc÷vW"öÆW3²–çfÆ–BVæ&ÆVBÖöFVÂFFfVÇG2æBG&—2–ç7FVBöbfÆÆ–ær&6²Fòf—†VB–×VFæ6Rà¢Ò·…ÒfW&–g’7F"7W'&VçBÂFVÇFÆ–æRÖ7W'&VçB&F–òÂc7W'&VçBG&6¶–ærÂF†W&ÖÂG&—Â6ö–ÂG&÷æBF—7Æ–VBF÷'VRö7W'&VçBà¢Ò·…Ò72&VÖ÷FR4’ÂÖW&vRÂFWÆ÷’æBfW&–g’F†R÷W&F–ær–çFW&f6R–â&öGV7F–öâà ¥"3RÖW&vVB2ƒ“6SF²4’'VâC3#sc3ƒs#SF76VBâF†RÆ—fR6—FRW‡÷6W2F†R6÷–VBv—&VB7F'FW"Âc÷fW&ÆöBÂæBG&6V&ÆRÖ÷F÷"WV—fÆVçBÖ6—&7V—B–çWG2âfö7W6VBÆö6ÂfÆ–FF–öã¢CFW7G27&÷72f—fRf–ÆW276VC²&öGV7F–öâ'V–ÆB76VBv—F‚F†RW†—7F–ær6‡Væ²×6—¦Rv&æ–ærà ¢226ö×ÆWFVB–æ7&VÖVçC¢Óf(	B6—‚×FW&Ö–æÂÖ÷F÷"6çf27–Ö&öÀ ¢Ò·…Ò&WÆ6RF†R6—‚v–æF–ær&'2v—F‚â”T2×7G–ÆRF‡&VR×†6RÖ÷F÷"7–Ö&öÂæB6—‚æÖVBÂ6öææV7F&ÆRv–æF–ær–ç2à¢Ò·…ÒW‡FVæBÆ6VÖVçBæB6öÆÆ—6–öâ&÷VæG2f÷"F†RFW&Ö–æÂ6ÆÆ÷WG26òF¦6VçB6ö×öæVçG2&VÖ–â6ÆV"à¢Ò·…ÒfW&–g’–â6ö÷&F–æFW2ÂÆ6VÖVçB6ÆV&æ6RÂ&VÆFVB6—&7V—B&V†f–÷"ÂæB&öGV7F–öâ'V–ÆBà¢Ò·…Ò72&VÖ÷FR4’ÂÖW&vRæBFWÆ÷“²–ç7V7BF†RÆö6ÆÇ’&VæFW&VBÖ÷F÷"6†VWBæBfW&–g’F†RFWÆ÷–VB&öGV7F–öâ'VæFÆR6öçF–ç2F†R7–Ö&öÂà ¥"3bÖW&vVB266SF²4’'VâC3#ƒƒ#3sVæBvW2'VâC3#ƒ#““ƒ7V66VVFVBâÆö6Â&VæFW&VB&Wf–Wr6öæf—&ÖVBF†RSõcõsæBS"õc"õs"–â6ÆÆ÷WG2âF8ïÛh‘éì¶»§q«^u[ÛˆZ[›İÚ]Xˆ™\šYHÛÜšÙ›İÜËY\™ÙK[™YÙ\È\Ş[Y[‚‹HÈH™\šYHHÙ\™Yİ\İÛKYÛXZ[ˆ[™HY\ˆ”È™\ÛÛ][Ûˆ™]\›œË‚‚”ˆÌLÍÈY\™ÙY\ÈMX™YM˜ˆ™\šYH[œÈÌÌÍŒÌŒX[™ÌÌÍŒÎMÌİXØÙYYYˆYÙ\È\Ş[Y[ÌÌÍŒM˜İXØÙYYYÈHİ\İÛHÛXZ[ˆ™[XZ[™Y[˜XØÙ\ÜÚX›H›İYÚH]˜Z[X›Hœ›İÜÙ\ˆ›İ]K‚‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLœˆ8 %\XØ]H˜Y[™ÈÜ˜\XÜÂ‚‹HŞH\XØ]H[Hœ™YK\ÚY]˜Y[™ÈÜ˜\XË[˜ÛY[™ÈHÛ[[™HÜˆÛYÛÛ‹œ›ÛH]È›Ü\Y\È[™[‚‹HŞH™\Ù\™H\X\˜[˜ÙH[™]]K\ÜÚYÛˆH™]ÈY[]H[™ÛÜHYË[™Ù™œÙ]H\XØ]HÚ][ˆHÚY]›İ[™Ë‚‹HŞH\ÜÈÈ›Øİ\ÙYÜ˜\XÈ\İË›ÙXİ[ÛˆZ[›İÚ]Xˆ™\šYHÛÜšÙ›İÜËY\™ÙK[™YÙ\È\Ş[Y[‚‹HÈH™\šYHHÙ\™Yİ\İÛKYÛXZ[ˆ[™HY\ˆ”È™\ÛÛ][Ûˆ™]\›œË‚‚”ˆÌLÎHY\™ÙY\ÈNYNMˆ™\šYH[œÈÌÌÍÌÍMX[™ÌÌÍÌMMİXØÙYYYˆYÙ\È\Ş[Y[ÌÌÍÌÍÌÍÌİXØÙYYYÈHİ\İÛHÛXZ[ˆ™[XZ[œÈ[˜XØÙ\ÜÚX›H›İYÚH]˜Z[X›Hœ›İÜÙ\ˆ›İ]K‚‚ƒBˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLœÈ8 %\XØ]HXÙYÛÛ\Û™[Â‚‹HŞH\XØ]HHXÙYÛÛ\Û™[ÛˆY]X›Hœ™YHÚY]Ë™\Ù\™H]ÈØ][ÙÈ\˜[Y]\œËİ\İÛHšY[Ë˜Y[™ÈÛÛÜ‹Ú^™H[™ÜšY[][Û‹[™\ÜÚYÛˆH[š\]YH™Y™\™[˜ÙH[™ÛX\ˆÜÚ][Û‹‚‹HŞHÚ]™HHÛÜH[™\[™[Y]X›HY]Y]H[™X]™HÚ\™\È[˜ÛÛ›™XİYÛÈ\Ù\œÈÚÛÜÙHH\Ú\™Yœ˜[˜Ú\È[™\›Z[˜[Ë‚‹HŞH\ÜÈLÈ›Øİ\ÙYØØ[\İË›ÙXİ[ÛˆZ[›İÚ]Xˆ™\šYHÛÜšÙ›İÜËY\™ÙK[™YÙ\È\Ş[Y[‚‹HÈH™\šYHHÙ\™Yİ\İÛKYÛXZ[ˆ[™HY\ˆ”È™\ÛÛ][Ûˆ™]\›œË‚‚”ˆÌMHY\™ÙY\ÈÍŒØXN˜ˆ™\šYH[œÈÌÌÎNMŒÍ[™ÌÌÎNMÌÎN[™YÙ\È\Ş[Y[ÌÍÍŒŒ˜İXØÙYYYÈİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL8 %Y]X›HÛÛ\Û™[[œİ[˜ÙH˜[Y\Â‚‹HŞH]\Ù\œÈ˜[YHHXÙYÛÛ\Û™[[™\[™[HÙˆ]ÈØ][ÙÈYš[š][Ûˆ[™™Y™\™[˜ÙHYÎÈÚİÈ]˜[YH™\ÚYH]È[™XØ][Û‹İ\HX™[‚‹HŞH™\Ù\™HH\ØÜš\]™H˜[YH[ˆ›Ú™Xİ”ÓÓˆ[™ÛÜYYÛÛ\Û™[ÈÚ]İ]Ú[™Ú[™ÈÚ[][][Ûˆ™Z]š[ÜÈXØÙ\Û\ˆ›Ú™XİÈÚ]İ]H˜[YK‚‹HŞH\ÜÈÈ›Øİ\ÙYØØ[\İË›ÙXİ[ÛˆZ[›İÚ]Xˆ™\šYHÛÜšÙ›İÜËY\™ÙK[™YÙ\È\Ş[Y[‚‹HÈH™\šYHHÙ\™Yİ\İÛKYÛXZ[ˆ[™HY\ˆ”È™\ÛÛ][Ûˆ™]\›œË‚‚”ˆÌMÈY\™ÙY\ÈŒYMXˆ™\šYH[œÈÌÍMÌMÍ˜[™ÌÍMŒ˜İXØÙYYYˆYÙ\È\Ş[Y[ÌÍMMMLÌİXØÙYYYÈİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLH8 %Y]X›H\›Z[˜[\Ü^HX™[Â‚‹HŞH]\Ù\œÈÙ]\‹Z[œİ[˜ÙH\Ü^HX™[È›ÜˆØ][ÙÈ\›Z[˜[ÈÚ[H™\Ù\š[™ÈİX›H\›Z[˜[QÈ[™[^\İ[™È[XİšXØ[ÛÛ›™Xİ[ÛœË‚‹HŞHÚİÈİ™\œšY\ÈÛˆØÚ[X]XÈŞ[X›ÛË\œÚ\İÛ›H˜[YØ][ÙÈ\›Z[˜[X™[Ë[™ÛÜHİ™\œšY\È[™\[™[HÚ]\XØ]YÛÛ\Û™[Ë‚‹HŞH\ÜÈL›Øİ\ÙYØØ[\İË›ÙXİ[ÛˆZ[›İÚ]Xˆ™\šYHÛÜšÙ›İÜËY\™ÙK[™YÙ\È\Ş[Y[‚‹HÈH™\šYHHÙ\™Yİ\İÛKYÛXZ[ˆ[™HY\ˆ”È™\ÛÛ][Ûˆ™]\›œË‚‚”ˆÌMHY\™ÙY\ÈÙYMÌXØˆ™\šYH[œÈÌÍÍLM[™ÌÍÍLLMŒL˜İXØÙYYYˆYÙ\È\Ş[Y[ÌÍÍŒMÍİXØÙYYYÈİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLˆ8 %Y]X›H[››İ][Ûˆ^Ú^™B‚‹HŞH]\Ù\œÈÙ]Hš\İX[[››İ][ÛˆÚ^™Hœ›ÛHÈÕ‘È[š]È[ˆ›Ü\Y\ÎÈ^\İ[™È[››İ][ÛœÈÙY\HN][š]Y˜][‚‹HŞH™[™\ˆHÙ[XİYÚ^™H[™ØØ[H]ÈÙ[Xİ[Ûˆİ][™NÈ˜[Y]H[™\œÚ\İHÜ[Û˜[Ú^™HÚ]İ]Ú[™Ú[™È[XİšXØ[Ù[X[XÜË‚‹HŞH™\šYHÙ\šX[^˜][Ûˆ›ÜˆÚ^™Y[™Û\ˆ[››İ][ÛœË™Z™Xİİ][Ù‹\˜[™ÙH˜[Y\Ë[™™[™\ˆHÚÜÙ[ˆÚ^™K‚‚”ˆÌMÈY\™ÙY\È˜NÙLØˆ™\šYH[ˆÌÍLŒŒÍ˜[™YÙ\È\Ş[Y[ÌÍLÍÍXİXØÙYYYÈİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLÈ8 %Y]X›H[››İ][Ûˆ›İ][Û‚‚‹HŞH]\Ù\œÈ›İ]Hœ™YK\ÚY]^[››İ][ÛœÈœ›ÛH0¬ÈÍNp¬\›İ[™Z\ˆXÙ[Y[[˜ÚÜÈ›İ]HHÙ[Xİ[Ûˆİ][™HÚ]H[››İ][Û‹‚‹HŞH\œÚ\İHÜ[Û˜[š\İX[›İ][Û‹˜[Y]H]È˜[™ÙK[™XØÙ\Û\ˆ›Ú™XİÈÚ]İ]›İ][ÛˆY]Y]K‚‹HŞH™\šYH™[™\š[™ËÙ\šX[^˜][Û‹[™İ][Ù‹\˜[™ÙH™Z™Xİ[ÛÈ\ÜÈØØ[Z[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMHY\™ÙY\ÈYØÙXˆÚ]Xˆ™\šYH[™YÙ\È\Ş[Y[ÌÍLLŒÎØİXØÙYYYÈİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL8 %Y]X›H[››İ][Ûˆ[YÛ›Y[‚‹HŞH]\Ù\œÈÚÛÜÙHYÙ[\‹ÜˆšYÚ[YÛ›Y[›Üˆœ™YK\ÚY]^[››İ][ÛœÈ[™[YÛˆHÙ[Xİ[Ûˆİ][™HÈH^[˜ÚÜ‹‚‹HŞH\œÚ\İHÜ[Û˜[[YÛ›Y[˜[Y]H]Èİ\ÜY˜[Y\Ë[™ÙY\Û\ˆ[››İ][ÛœÈYX[YÛ™YHY˜][‚‹HŞH™\šYH™[™\š[™È[™Ù\šX[^˜][Û‹\ÜÈ›Øİ\ÙY\İËØZ[[™Ú]Xˆ™\šYKY\™ÙK[™\ŞK‚‚”ˆÌMLHY\™ÙY\ÈŒÎ˜Íˆ™\šYH[œÈÌÍLMLNMŒ[™ÌÍLMLÍÎŒX[™YÙ\È\Ş[Y[ÌÍLMŒÎL˜İXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[™H[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLH8 %Y]X›H[››İ][Ûˆ^ÙZYÚ‚‹HŞH]\Ù\œÈÚÛÜÙHİ[™\™
-
-KÙ[ZKX›Û
-Œ
-KÜˆ›Û
-Ì
-HÙZYÚ›Üˆœ™YK\ÚY]^[››İ][ÛœË‚‹HŞH\œÚ\İ[™˜[Y]HHÜ[Û˜[š\İX[ÙZYÚÚ[H™]Z[š[™ÈH^\İ[™ÈÙ[ZKX›Û\X\˜[˜ÙH›ÜˆÛ\ˆ›Ú™XİË‚‹HŞH™\šYH™[™\š[™ËÙ\šX[^˜][Û‹[˜[Y]ÙZYÚ™Z™Xİ[Û‹ØØ[Z[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMLÈY\™ÙY\ÈÎYMLXˆÚ]Xˆ™\šYH[™YÙ\È\Ş[Y[ÌÍLŒLÌMMXİXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆLˆ8 %][[[™HØÚ[X]XÈ[››İ][ÛœÂ‚‹HŞHY]œ™YK\ÚY][››İ][ÛœÈ[ˆH][[[™HšY[[™™[™\ˆXXÚ[™HÚ]ÛÛœÚ\İ[ÜXÚ[™È[™[YÛ™Y^[˜ÚÜœË‚‹HŞHÚ^™HHÙ[Xİ[Ûˆİ][™HÈHÛ™Ù\İ[™H[™[^ZYÚÈ\œÚ\İ\È[™\ËXXÚ][ÜİMŒÚ\˜Xİ\œË‚‹HŞH™\šYH][[[™H™[™\š[™Ë\œÚ\İ[˜ÙH[™[Z]ÎÈ\ÜÈ›Øİ\ÙY\İËZ[Ú]Xˆ™\šYKY\™ÙH[™YÙ\È\Ş[Y[‚‚”ˆÌMMHY\™ÙY\ÈÙ™Y˜ˆÚ]Xˆ™\šYH[™YÙ\È\Ş[Y[ÌÍLÌŒÌXİXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜XH8 %Y]X›H[››İ][Ûˆ[™HÜXÚ[™Â‚‹HŞH]\Ù\œÈÙ]][[[™H[››İ][ÛˆÜXÚ[™Èœ›ÛHKŒ0åÈÈËŒ0åÈ[™\H]ÈXXÚ™[™\™Y^[™H[™Ù[Xİ[Ûˆ›İ[™Ë‚‹HŞH\œÚ\İ[™˜[Y]HÜ[Û˜[ÜXÚ[™ÈÚ[HÙY\[™ÈKŒ°åÈ\ÈHY˜][›ÜˆÛ\ˆ›İ\Ë‚‹HŞH™\šYH™[™\š[™ËÙ\šX[^˜][Û‹˜[™ÙH™Z™Xİ[Û‹›Øİ\ÙY\İËZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMMÈY\™ÙY\ÈXLŒÎM˜ˆ™\šYH[œÈÌÍLÍMLMX[™ÌÍLÍMŒÍ[™YÙ\È\Ş[Y[ÌÍLÍŒİXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜Xˆ8 %Y]X›H[››İ][Ûˆ][XÈİ[B‚‹HŞH]\Ù\œÈÚÛÜÙH›Ü›X[Üˆ][XÈ^İ[H›Üˆœ™YK\ÚY][››İ][ÛœË‚‹HŞH\œÚ\İHÜ[Û˜[š\İX[İ[K™]Z[ˆ›Ü›X[\ÈHY˜][›ÜˆÛ\ˆ›İ\Ë[™™Z™Xİ[œİ\ÜY[\ÜY˜[Y\Ë‚‹HŞH™\šYH™[™\š[™È[™Ù\šX[^˜][ÛÈ\ÜÈ›Øİ\ÙY\İËZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMNHY\™ÙY\ÈÙXˆ™\šYH[œÈÌÍMÌNL˜[™ÌÍMÍM[™YÙ\È\Ş[Y[ÌÍMMÌÎLØİXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜XÈ8 %Y]X›H[››İ][Ûˆ˜XÚÙÜ›İ[™š[Â‚‹HŞH]\Ù\œÈÙ]İ\İÛHÜˆ[]H˜XÚÙÜ›İ[™ÛÛÜœÈ›Üˆœ™YK\ÚY]^[››İ][ÛœÈ[™ÛX\ˆHš[È™\İÜ™H˜[œÜ\™[˜ŞK‚‹HŞH˜]ÈHš[™Z[™H^]H][[[™H[››İ][Ûˆ›İ[™ÎÈ˜[Y]H[™\œÚ\İHÜ[Û˜[ÛÛÜˆÚ[HXØÙ\[™ÈÛ\ˆ›İ\Ë‚‹HŞH™\šYH™[™\š[™ËÙ\šX[^˜][Û‹[˜[YXÛÛÜˆ™Z™Xİ[Û‹›Øİ\ÙY\İËZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMŒHY\™ÙY\ÈMXˆ™\šYH[œÈÌÍMMMÌØ[™ÌÍMMNL[™YÙ\È\Ş[Y[ÌÍMMLŒÌ˜İXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[œÜXİ[Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜Y8 %ÛÛ\Û™[][K\Ù[Xİ[Ûˆ[™Ü›İ\[İ™[Y[‚‹HŞH]\Ù\œÈÚY
-ĞÛXÚÈ][\HÛÛ\Û™[ÈÛˆY]X›HÚY]È[™ÚİÈ]™\HÙ[XİYÛÛ\Û™[‚‹HŞH[İ™HHÙ[XİYÜ›İ\ÙÙ]\ˆÛˆHŒ][š]ÜšYÈ™Z™XİÛÛ\Ú[ÛœÈ]ÛZXØ[H[™™\Ù\™HÚ\™HÜÛÙŞK‚‹HŞH\ÜÈH\™Ù]Y\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMŒÈY\™ÙY\ÈXÍYMˆÚ]Xˆ™\šYH[ˆÌÍNŒMØ[™YÙ\È\Ş[Y[[ˆÌMŒHİXØÙYYYÈ\™Xİİ\İÛKYÛXZ[ˆ[\˜Xİ[Ûˆ™\šYšXØ][Ûˆ™[XZ[œÈ[™[™Ë‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜YH8 %˜YËX›ŞÛÛ\Û™[Ù[Xİ[Û‚‚‹HŞHÙ[XİXÙYÛÛ\Û™[›Ûİš[ÈÚ]H˜YÈ›Ş[ˆZ]\ˆ\™Xİ[ÛÈÚYY˜YÈYÈÈHİ\œ™[Ü›İ\‚‹HŞHÙY\HÙ[Xİ[Ûˆ›Şİ]ÙˆÚ\š[™Ë[››İ][Û‹[™˜]Ú[™ÈÙ\İ\™\Ë‚‹HŞH\ÜÈˆ\™Ù]Y\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMˆY\™ÙY\ÈÙ˜NXˆÚ]Xˆ™\šYH[ˆÌÍNMMÍ[™YÙ\È\Ş[Y[[ˆÌMİXØÙYYY‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜Yˆ8 %\›Z[˜[X˜\ÙYÚ\™Hœ˜[˜Ú[™Â‚‹HŞH]\Ù\œÈÚYXÛXÚÈÛÛ\]X›H\™Ù]\›Z[˜[ÈÈÜ™X]H][\Hœ˜[˜Ú\Èœ›ÛHHÚÜÙ[ˆÛİ\˜ÙH\›Z[˜[‚‹HŞHÙY\HÛİ\˜ÙHÙ[XİY™]ÙY[ˆœ˜[˜ÚÛÛ›™Xİ[ÛœÈ[™[ØØ]H[š\]YHÚ\™HQÈ[™™]˜[Y\Ë‚‹HŞH\ÜÈÍ\™Ù]Y\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌMY\™ÙY\ÈØMÎXØˆÚ]Xˆ™\šYH[ˆÌÍŒLNÌN[™YÙ\È\Ş[Y[[ˆÌMˆİXØÙYYY‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜YÈ8 %Y]X›HZY]Ú\™Hœ˜[˜Ú]XÚY[Â‚‹HŞHÛXÚÈHœ™YK\ÚY]Ú\™H›İ]HÈØ]™HHœ˜[˜Ú]XÚY[[™ÛÛ›™Xİ]ÈHÛÛ\]X›HØ][ÙÈ\›Z[˜[‚‹HŞH\œÚ\İ\™[Ú\™KÛİ\˜ÙH[™Ú[[™™[]]™H›İ]HÜÚ][ÛÈ™Y˜]ÈH]XÚY[Ú[ˆ\™[[™Ú[È[İ™K‚‹HŞH˜[Y]Hœ˜[˜Ú™Y™\™[˜Ù\È[™Ø\ØØYH\™[[][Ûˆ›İYÚ\[™[œ˜[˜Ú\Ëˆ[XİšXØ[ÜÛÙŞHÛÛ[Y\ÈÈ™\™\Ù[\›Z[˜[]Ë]\›Z[˜[ÛÛ›™Xİ[ÛœÎÈH\\ÈH˜]Ú[™È]XÚY[›İHİ[™[Û™H\]Z\İ[X[[˜İ[Ûˆ›ÙK‚‹HŞH\ÜÈŒˆ›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[È™\šYHHÙ\™Y[™H[˜ÛY\Èœ˜[˜Ú[\˜Xİ[Ûˆ[™˜[Y][Ûˆİš[™ÜË‚‚”ˆÌMÌY\™ÙY\È˜MXÙˆÚ]Xˆ™\šYH[ˆÍLH[™YÙ\È\Ş[Y[[ˆÌMİXØÙYYYˆH\ŞYY\XØ][Ûˆ™]\›™YŒ[™Ù\™Y\ÜÙ]ËÚ[™^PÍ‘^RšœØÚ]H™]Èœ˜[˜ÚRH[™ÜÛÙŞH˜[Y][Û‹‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜Z8 %\™XİÜÙÛÛ˜[Ú\™H›İ]HY][™Â‚‹HŞHY›İ]HÚ[ÈÈY]X›Hœ™YK\ÚY]Ú\™\È[™ÚİÈ˜YÙØX›H[™\ÈÚ[H›İ]HY][™È\È[˜X›Y‚‹HŞH[İ™H[™\ÈH˜YÈÜˆÙ^X›Ø\™™[[İ™H[HHšYÚXÛXÚËÑ[]K[™™\İÜ™H]]ÛX]XÈ›İ][™Ë‚‹HŞHÙY\œ˜[˜Ú›İ]\È\š]™Yœ›ÛHZ\ˆ\™[›İ]HÛÈ]XÚY\È›ÛİÈ\™[Y]Ë‚‹HŞH\ÜÈÌ›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙKYÙ\È\Ş[Y[[™™\šYHHÙ\™Y›İ]KYY][™È[™K‚‚”ˆÌMÌˆY\™ÙY\ÈLLXXYˆÚ]Xˆ™\šYH[ˆÍM[™YÙ\È\Ş[Y[[ˆÌMÌİXØÙYYYˆH\ŞYY\XØ][Ûˆ™]\›™YŒ[™Ù\™Y\ÜÙ]ËÚ[™^ZTLœÓ‹šœØÚ]H›İ]HY]ÜˆÛÛ›ÛÈ[™[™HX\šİ\‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜ZH8 %\™Xİ›İ]K\Ú[XÙ[Y[‚‹HŞHÛXÚÈ[ˆY]X›HÚ\™HÙYÛY[[ˆ›İ]KYY][ÙHÈ[œÙ\HØ^\Ú[]H™X\™\İ]ÜÚ][Û‹‚‹HŞH™\Ù\™H™[™Ü™\ˆ[™Û˜\[Û™ÈHÙYÛY[Ú[HÙY\[™ÈH™]ÈØ^\Ú[ÛˆHÚ\™H^\ÎÈ^ÜÙH]\ÈH›Ü›X[›İ]H[™K‚‹HŞH\ÜÈÌH›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙKYÙ\È\Ş[Y[[™]™KX[™H™\šYšXØ][Û‹‚‚”ˆÌMÍY\™ÙY\ÈLYÎXØˆÚ]Xˆ™\šYH[ˆÍN[™YÙ\È\Ş[Y[[ˆÌMÌˆİXØÙYYYˆH]™HÚ]H™]\›™YŒ[™Ù\™Y\ÜÙ]ËÚ[™^Q’TÒKšœØÚ]H›İ]KXÛXÚÈ[œÙ\[Ûˆ›Û\[™ÚYH›İ]H]\™Ù]‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜Zˆ8 %^Xİ˜Y[™ÈÙ[ÛY]B‚‹HŞHY[Y\šXÈKÖLKÖ‹ÖLˆ›Ü\Y\È›Üˆ[™K™Xİ[™ÛK[™[\ÙH˜Y[™ÈÜ˜\XÜË‚‹HŞH[™›Ü˜ÙHÚY]›İ[™È[™Z[š[][H˜]ØX›HÜ[œÎÈÙY\Û[[™H[™ÛYÛÛˆY][™ÈÛˆ™\^[™\Ë‚‹HŞH\ÜÈLH›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙKYÙ\È\Ş[Y[[™]™KX[™H™\šYšXØ][Û‹‚‚”ˆÌMÍˆY\™ÙY\ÈÍYLØˆÚ]Xˆ™\šYH[ˆÍÌˆ[™YÙ\È\Ş[Y[[ˆÌMÍİXØÙYYYˆH]™HÚ]H™]\›™YŒ[™Ù\™Y\ÜÙ]ËÚ[™^PUTNÔÜšœØÚ]H^XİÙ[ÛY]HšY[È[™›İ[™È˜[Y][Û‹‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜ZÈ8 %]™HÚ\™H[İ™H™]šY]Â‚‹HŞH™]šY]È[İ™YÛÛ\Û™[Ü›İ\ËÛÛ›™XİYÚ\™H›İ]\Ë[™\[™[œ˜[˜Ú\ÈÙÙ]\ˆ\š[™È˜YË‚‹HŞHÙY\H™]šY]È˜[œÚY[ÈXØÙ\Y›ÜÈ\]HHØİ[Y[Ú[H™Z™XİYÜˆØ[˜Ù[Y[İ™\È™\İÜ™HHš[Üˆ˜]Ú[™È[™ÜÛÙŞK‚‹HŞH\ÜÈMÈ›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙKYÙ\È\Ş[Y[[™^Xİ]™KX[™H\Ú™\šYšXØ][Û‹‚‚”ˆÌMÎY\™ÙY\ÈØÌÍ˜MØˆÚ]Xˆ™\šYHİXØÙYYYÈYÙ\È\Ş[Y[[ˆÌMÍˆİXØÙYYYˆ›ÙXİ[Ûˆ™]\›™YŒ[™Ù\™Y\ÜÙ]ËÚ[™^]Ù×ÚÍŒÌËšœØÚÜÙHÒKLMˆX]ÚYHØØ[Z[‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜[8 %\Ù\‹XÛÛ™šYİ\™YŞ[X›Û\›Z[˜[Â‚‹HŞHÛÛ™šYİ\™HÙ[™\šXÈ\Ù\ˆŞ[X›ÛÈÚ]¸ $Î\›Z[˜[[˜ÚÜœËY]X›H\Ü^HX™[Ë\›Z[˜[Ú[™Ë[™\™Xİ[ÛœÎÈ™\Ù\™HİX›HKÕˆY[]Y\È[™™]™[™[[İš[™ÈÛÛ›™XİYYY[œË‚‹HŞH™\Ù\™H\›Z[˜[ÛÛ™šYİ\˜][Ûˆ›İYÚ›Ú™Xİ[\ÜÙ^Ü[™ÛÛ\Û™[\XØ][ÛÈÙY\H[™XØ]ÜˆŞ[X›Û[Û›HÚ]›È\Üİ[YY›ÛYÙKÚ\š[™ËX[Y˜Xİ\™\‹ÜˆÚ[][]Y[\™Z]š[Ü‹‚‹HŞH\ÜÈ›Øİ\ÙY\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌNY\™ÙY\ÈØØL˜XØˆÚ]Xˆ™\šYH[œÈÍÌM‹ÈÍÌMÈ[™YÙ\È\Ş[Y[[ˆÌMÎİXØÙYYYˆ\™Xİ›ÙXİ[ÛˆT“[™[™H™\šYšXØ][ÛˆÛİ[›İ™HÛÛ\]Yœ›ÛH\È[š\›Û›Y[™XØ]\ÙHHİ\İÛHÛXZ[ˆY›İ™\ÛÛ™K‚‚ˆÈÈÛÛ\]Y[˜Ü™[Y[ˆL˜[H8 %\Ù\‹\ÜÚ][Û™Y\›Z[˜[[˜ÚÜœÂ‚‹HŞH]\Ù\œÈÜÚ][ÛˆYYŞ[X›Û\›Z[˜[ÈÚ]ØØ[ÖHÙ™œÙ]ÎÈ›İ]H[™ØØ[HH[˜ÚÜœÈÚ]Z\ˆÛÛ\Û™[[™™[™\ˆÚ\™\È[™\›Z[˜[X™[È]HÚÜÙ[ˆÚ[Ë‚‹HŞH\œÚ\İÙ™œÙ]Ë™\Ù\™H[™\[™[ÛÜY\ÈÚ[ˆ\XØ][™Ë™[[İ™HÙ™œÙ]ÈÚ]Z\ˆ\›Z[˜[[™™Z™Xİ[\ÜY˜[Y\Èİ]ÚYHHMŒ‹Œ][š]›İ[™Ë‚‹HŞH\ÜÈˆ›Øİ\ÙY\İÈ\ÈHØÚ[X]XËX[˜ÚÜˆ\İË›ÙXİ[ÛˆZ[Ú]Xˆ™\šYKY\™ÙK[™YÙ\È\Ş[Y[‚‚”ˆÌNˆY\™ÙY\ÈŒÍÍÙXˆÚ]Xˆ™\šYH[œÈÍÌŒÈÍÌŒH[™YÙ\È\Ş[Y[[ˆÌNİXØÙYYY‚‚ˆÈÈ\‹Z[˜Ü™[Y[X›XØ][Ûˆ[B‚‘š[š\Ú]ÈØœÙ\˜X›H™Z]š[Üˆ[™ÚXÚÜË™]šY]ÈH^XİÚ[™ÙYš[\ËÛÛ[Z]Ü\ÚHš\ÚX›Hœ˜[˜Ú[™™]Z[ˆH˜Yˆ[[™XYKˆY\ˆÒHİXØÙYYËY\™ÙH[™\ŞH\Ú[™ÈHÛÛ™šYİ\™YÛÜšÙ›İÎÈ™\šYHHÙ\™YZ[[™\™Ù]Y™Z]š[Üˆ™Y›Ü™Hİ\[™ÈH™^[˜Ü™[Y[ˆ™\Ù\™H[™š[š\ÚYÛÜšÈÙ\\˜][Kˆ™]™\ˆ[˜ÛYHÜ™Y[X[ËØXÚ\Ë[œ™[]Yš[\ÈÜˆØØ[\İÙÜËˆ™XÛÜ™˜Z[\™\È[™[™\šYšYY›İ[™\šY\È[œİXYÙˆX\šÚ[™ÈØ]\ÈÛÛ\]K‚‚
+# Delivery milestones
+
+Updated 2026-11-03. The full master goal remains active. This checklist supplements, rather than replaces, the master request and Bot addenda. A milestone is complete only when all its criteria have evidence. Parameter variants and passing test cases do not count as distinct validated devices or projects.
+
+## Release gates by category
+
+| Gate | Category / milestone | Verifiable completion criteria | Current state / evidence |
+| --- | --- | --- | --- |
+| M01 | Repository and deployment baseline | Reviewed project-only commits; matching local/remote branch SHA; CI test/build green; configured Pages deployment green; canonical domain renders matching assets. | Complete through PR #77. Latest main `a1210ea`, Pages run `41593296828` green; matching assets and wired reversing controls verified on the canonical domain. Recheck for every subsequent release. |
+| M02 | CAD editing and deliverables | Create/edit multi-sheet circuits, place/rotate/move devices, connect/reconnect/delete wires, Undo/Redo, import/export JSON/SVG/PNG/PDF workflow and BOM/wire/terminal reports; verify round trips and rendered legibility. | Partial. Existing editing/export tests and docs cover subsets; full format and report acceptance remains open. See CAD-INTERACTION.md and PROJECT-IMPORT.md. |
+| M03 | Wired controls and power | Actual wired supply/return, START/STOP, holding and reversing interlock contacts drive coils and motor power; broken wires, conflicting commands and restoration have tested outcomes. | Partial. Wired holding and reversing control increments are deployed and browser-verified in PRs #76â€“77. Full gate review remains open. |
+| M04 | Protection and dynamic machines | Current-driven overload response, reset/cooling, starter sequences and motor transitions use documented models; verify time-step behavior and fault cases against stated assumptions. | Partial. Current-driven overload now includes wired reversing and star-delta winding current; motor transient dynamics and protection coordination remain open. |
+| M05 | PLC and instrumentation | Graphical ladder and text programs execute consistently; NO/NC, latch/edges, gates, comparators and math work; sensors/ADC/DAC carry typed signals; errors inhibit outputs without hidden state mutation. | Partial. PLC/analog and fault paths tested, including live PR #74 checks; broader PLC, complete instrumentation models and UI acceptance remain open. See PLC-PROGRAMS.md. |
+| M06 | Component library | Every requested item, including categories 11â€“18, has a distinct legible symbol, terminals, documented parameters, connected runtime behavior and meaningful tests; no generic or placeholder entries counted as complete. | Partial. 67 functional definitions plus DOL, winding and parameter variants; manufacturer validation and fully coupled fluid/HVAC/renewable/cable models are not established. |
+| M07 | Industrial project library | At least 500 distinct engineered projects with correct topology, reproducible operating sequences, expected outputs and fault cases; each loadable, runnable and visually reviewed. | Partial. 508 entries currently include 499 variants from five scenario families and nine dedicated additions. This gate is not satisfied by those counts. |
+| M08 | Identity and project data | Schema isolation, owner RLS, restrictive anonymous INSERT, confirmed email/password and two-step anonymous upgrade; local/cloud save/load and preferences work with refresh and two permanent accounts. | Partial. Existing sign-in, cloud and RLS evidence in AUTH-RLS-VERIFICATION-2026-11-02.md; email upgrade, two-account browser isolation and cross-device preferences remain unverified. |
+| M09 | Visual, responsive and language acceptance | Match supplied workstation target; legible branding and labels, no collisions at desktop/mobile sizes; usable keyboard flows, light/dark themes and reviewed English/German/Yoruba/Pidgin. | Partial. Checked header/footer layouts and compact account/status controls; full reference match, all views and translations remain open. See VISUAL-TARGET.md. |
+| M10 | Adigun Bot | Floating/resizable/dockable window and persistence; actual canvas-aware assistance, explanations, consented atomic edits, quiet/unread behavior and configured AI capabilities; test all requested addendum flows. | Partial. Rule-based assistance and floating window deployed; generative AI and broader engineering reasoning are not configured or verified. See both retained Bot request TXT files and verification docs. |
+| M11 | Full release acceptance | Close every applicable master/addendum criterion with source, test, rendered and live evidence; document all supported limits; fresh full regression, authentication, accessibility and cross-browser checks; clean reviewed release and deployment. | Pending. All preceding gates must be accepted; no whole-product completion claim is justified. |
+
+Only M01 is fully evidenced as a release baseline (1 of 11 broad gates; approximately 10% by gate count, not effort or feature completion). Overall hours cannot yet be estimated responsibly: the remaining component/project breadth and acceptance work are substantial. Estimate each active delivery increment after inspecting its dependencies.
+
+## Completed increment: M03a â€” Wired holding control
+
+- [x] Inspect existing dry-contact, supply and coil terminals; preserve the reference DOL controller.
+- [x] Implement ideal isolated-source supply/return tracing and actual START/STOP/holding contact continuity.
+- [x] Test broken return/holding paths, overload interruption, voltage mismatch, short circuit and saved-design immutability (seven focused cases passed).
+- [x] Complete application integration and fault-boundary review; 849 tests and production build passed.
+- [x] Add an operable example and verify START/release/STOP/fault/recovery in the local browser; production acceptance remains below.
+- [x] Review diff; commit/publish only this increment; verify identical local/remote SHA and green PR checks.
+- [x] Merge/deploy through configured Pages workflow; verify the actual live behavior and record evidence.
+
+M03a was accepted in PR #76: synchronized head `2ef3fee`, main `484a69f`, successful Pages run `41590245813`, matching live asset `index-DzMtavmO.js`, live holding/STOP/overload recovery and restoration of the original 14-sheet project. This does not complete M03: reversing interlocks and broader coil/protection behavior remain separate increments.
+
+## Completed increment: M03b â€” Wired reversing interlocks
+
+- [x] Add a real NC auxiliary contact path, with no change to the reference DOL controller.
+- [x] Verify forward and reverse holding, opposing-command inhibition, STOP/restart, overload, broken interlock/return wires and simultaneous-command faults.
+- [x] Provide a legible dedicated project; verify actual phase interchange and motor direction in the browser.
+- [x] Run regression/build, review/publish/synchronize, pass CI, deploy and verify production before proceeding.
+
+Acceptance: PR #77, synchronized branch `77fae21`, merge `a1210ea`, successful Pages run `41593296828`, matching live assets `index-Bu23w5mA.js` and `index-BUIzYmxF.css`. All 859 tests and the production build passed. Canonical-domain browser checks verified forward +1440 rpm with KM2 off under an opposing command; STOP left STANDBY; reverse -1440 rpm with KM1 off under an opposing command; overload trip/reset left STANDBY. Undo/reload restored the original 14-sheet project without cloud writes. M03b is complete; electrical interlocking is not a mechanical or certified safety interlock.
+
+## Active increment: M04a â€” Current-driven thermal overload
+
+- [x] Inspect existing load-current tracing, DOL thermal behavior and runtime-state/reset boundaries.
+- [x] Specify a documented educational thermal model and wire current-driven trip into the existing power/control circuit.
+- [x] Verify cold/hot trip, cooling/reset, time-step consistency, current interruption and saved-design immutability.
+- [x] Add observable runtime state and meaningful local browser acceptance.
+- [x] Publish/synchronize, pass CI, and deploy.
+- [ ] Verify the same behavior on production.
+
+PR #79 merged as `d8d28e6`, and Pages run `41614492416` succeeded. Production interactive acceptance remains pending. See THERMAL-OVERLOAD.md for supported current paths and limits.
+
+## Active increment: M04b â€” Thermal protection on wired reversing
+
+- [x] Reuse the existing reversing power topology, wired 230 V coil returns, holding contacts and opposing NC interlocks.
+- [x] Add a separate current-driven overload example with reverse-direction trip, cool reset and no automatic restart.
+- [x] Verify the operating sequence, topology and reverse contactor interruption with focused automated checks.
+- [x] Publish, pass CI, merge and verify the Pages deployment and production project behavior.
+
+PR #96 merged as `de532b2`; CI run `43259145997` passed, and Pages run `43259252819` completed successfully. The live project library shows 507 entries, the new projectâ€™s reverse-trip/cool-reset sequence, and a passed topology/recorded-model check. The live check selected the project card only; no sheet was loaded or saved.
+
+## Active increment: M03c â€” Wired star-delta control
+
+- [x] Use actual KM1/KM2/KM3 power poles and NO holding/NC interlock contacts in an editable six-terminal circuit.
+- [x] Add hardwired STOP, START, manual overload interruption, A2 returns, a 5 s star timer and a 200 ms open-transition timer.
+- [x] Verify topology, star/open/delta outputs, contactor exclusion during transition, overload stop/reset and broken delta-interlock behavior.
+- [x] Publish, pass CI, merge and verify the deployed project behavior.
+
+PR #98 merged as `8506cb2`; CI run `43265109935` and Pages run `43265267348` succeeded. The live library shows 508 entries, the wired star-delta template, and passed topology/recorded-model checks. The check selected the project card only; no sheet was loaded or saved.
+
+The six-terminal balanced winding model still does not feed the retained thermal overload runtime; that is tracked separately under M04.
+
+## Active increment: M04c â€” Winding-derived overload current
+
+- [x] Derive three phase currents from powered six-terminal winding topology and actual contactor states in star and delta.
+- [x] Route winding current through the wired F1 poles and preserve unsupported/bypassed-path fault reporting.
+- [x] Verify star/delta line current, thermal trip, coil interruption, cool reset and no automatic restart.
+- [x] Enable thermal mode in the dedicated template and record an automatic delta-current trip, cool-down and manual reset sequence.
+- [x] Publish, pass CI, merge and verify production behavior.
+
+The winding model uses balanced fixed impedance and actual topology. It does not model motor transients, torque, acceleration, standardized relay curves or mechanical interlocking.
+
+PR #100 merged as `27ece71`; CI run `43268432156` and Pages run `43268563768` passed. PR #101 merged as `9efbabb`; CI run `43269642739` and Pages run `43269766766` passed. Production verification shows the 508-entry library, wired star-delta record, automatic delta-current thermal trip/cool-reset sequence and passed topology/model checks. The project card was selected for verification; no sheet was loaded or saved.
+
+## Active increment: M04d â€” Parameterized induction-motor operating point
+
+- [x] Add a balanced per-phase T-equivalent-circuit calculation using explicit stator/rotor resistances and reactances, magnetizing reactance, frequency, pole pairs, supply voltage, winding connection and positive slip.
+- [x] Derive phase/line current, rotor current, synchronous speed and electromagnetic torque without introducing assumed motor constants.
+- [x] Verify star/delta voltage/current relations, voltage-square torque scaling and invalid parameter rejection (three focused tests).
+- [x] Keep unsupported limits explicit: this operating point does not yet simulate flux transients, mechanical acceleration/load dynamics, saturation, harmonics, unbalance or protective-device curves.
+- [x] Run focused tests and production build; publish branch for review.
+- [ ] Merge only after CI succeeds; deploy through configured Pages workflow and verify production.
+
+Model structure follows the balanced induction-motor T-equivalent circuit and Thevenin method described in [IET Electric Power Applications](https://ietresearch.onlinelibrary.wiley.com/doi/10.1049/iet-epa.2019.0822). The explicit circuit inputs are required motor data; the unit-test values are synthetic and are not presented as a real motor.
+
+## Completed increment: M04e â€” Star-delta lab motor operating point
+
+The balanced steady-state motor operating point is exposed in the star-delta lab with blank-by-default, explicit equivalent-circuit inputs. The active star/delta stage reports phase current, line current, electromagnetic torque and synchronous speed at the entered positive slip. PR #104 merged as `64ac699`; CI and Pages run `43273844996` succeeded. Production inspection confirmed all eight inputs and the open-transition message. The model was not coupled to the copied sheet or overload in that release; this is completed separately in M04f below.
+
+## Active increment: M04f â€” Equivalent-circuit current through wired overload
+
+- [x] Copy the lab into a wired starter circuit with actual START/STOP, star/delta contactors and F1 thermal overload.
+- [x] Preserve explicit equivalent-circuit parameters in the copied motor and use the powered star/delta topology and supply frequency for its operating point.
+- [x] Route balanced line current through all three actual F1 power poles; invalid enabled model data faults and trips instead of falling back to fixed impedance.
+- [x] Verify star current, delta line-current ratio, F1 current tracking, thermal trip, coil drop and displayed torque/current.
+- [x] Pass remote CI, merge, deploy and verify the operating interface in production.
+
+PR #105 merged as `893e114`; CI run `43276387254` passed. The live site exposes the copied wired starter, F1 overload, and traceable motor equivalent-circuit inputs. Focused local validation: 41 tests across five files passed; production build passed with the existing chunk-size warning.
+
+## Completed increment: M06a â€” Six-terminal motor canvas symbol
+
+- [x] Replace the six winding bars with an IEC-style three-phase motor symbol and six named, connectable winding pins.
+- [x] Extend placement and collision bounds for the terminal callouts so adjacent components remain clear.
+- [x] Verify pin coordinates, placement clearance, related circuit behavior, and production build.
+- [x] Pass remote CI, merge and deploy; inspect the locally rendered motor sheet and verify the deployed production bundle contains the symbol.
+
+PR #106 merged as `3a3e1ad`; CI run `43280182375` and Pages run `43280299800` succeeded. Local rendered review confirmed the U1/V1/W1 and U2/V2/W2 pin callouts. The motor's PE endpoint lacked a visible pin and is tracked in M06b below. The symbol adds no motor ratings or manufacturer-specific geometry.
+
+## Completed increment: M06b â€” Visible protective-earth motor terminal
+
+- [x] Draw a visible PE pin, protective-earth lead and label on the six-terminal motor symbol.
+- [x] Verify the PE drawing matches the model's connectable PE anchor.
+- [x] Pass remote CI, merge, deploy and inspect the rendered symbol in production.
+
+PR #107 merged as `3715043`; CI run `43281398034` and Pages run `43281618846` succeeded. The deployed bundle includes the green PE lead, terminal marker and label; the symbol PE pin matches the connectable model endpoint.
+
+## Completed increment: M06c â€” Three-pole breaker and thermal-overload symbols
+
+- [x] Draw dedicated three-pole breaker poles and overload heater paths instead of generic diagonal marks.
+- [x] Align model-backed phase terminals to their matching drawn poles without requiring a placement flag.
+- [x] Reflect the modeled breaker open/closed and overload healthy/tripped state in symbol accessibility and appearance.
+- [x] Pass focused and full tests, build, remote CI, merge and deployment verification.
+
+PR #108 merged as `be8368e`; both remote verification runs `43285335212` and `43285343988` passed, and Pages deployment `43285458375` succeeded. Production returned HTTP 200 for the app and `/assets/index-CC9f58ll.js`; the served bundle includes breaker open/closed and overload healthy/tripped labels. Local validation passed all 919 tests and the production build. The existing bundle-size warning remains.
+
+## Completed increment: M06d â€” Rendered canvas clearance and overload state
+
+- [x] Inspect the rendered power/control schematic at 85% canvas zoom and 57% fit against the supplied motor-starter reference.
+- [x] Review breaker, contactor, overload, motor pins, labels, wires and toolbar controls for visible collisions. No overlaps were observed; at 85% the sheet scrolls within the viewport, and Fit shows the complete sheet.
+- [x] Replace the reference sheetâ€™s hollow overload blocks with three connected heater paths and normally-closed trip contacts; show all three outputs open on trip and align output anchors to the drawn contacts.
+- [x] Pass focused render checks, full CI and production build; merge, deploy and inspect the live drawing.
+
+PR #110 merged as `4966118`. CI runs `43289702910` and `43289692073` passed, and Pages deployment `43289863977` passed. Production inspection confirmed the three heater paths and trip contacts at 85% zoom; the full sheet was clear at 57% Fit. Visual review found no menu/icon, component or wire overlaps. This schematic remains an educational abstraction and does not claim manufacturer-specific overload geometry.
+
+## Completed increment: M06e â€” Visible breaker and contactor terminal identities
+
+- [x] Label the reference DOL breaker poles 1/3/5 and 2/4/6 using the model's terminal identities.
+- [x] Label the contactor poles 1/L1, 3/L2, 5/L3 and 2/T1, 4/T2, 6/T3.
+- [x] Render and review at 85% and 57% Fit zoom; labels remain beside their wires with no visible collisions.
+- [x] Pass focused render tests, CI, merge and deployed production verification.
+
+PR #112 merged as `28b1860`. CI runs `43290846303` and `43290838032` passed, and Pages deployment `43290966721` succeeded. The live canvas showed each terminal label on the corresponding breaker/contactor pole at both zoom levels.
+
+## Completed increment: M06f â€” Visible overload pole terminal identities
+
+- [x] Label the three overload heater inputs and outputs as 1/2, 3/4 and 5/6, aligned to their actual terminal anchors.
+- [x] Keep the overload terminal numbers clear of the heater zigzags, trip contacts, output conductors and F1 95â€“96 control contact.
+- [x] Add focused render assertions; inspect production at 85% and 57% Fit zoom.
+- [x] Pass CI, merge and deployment verification.
+
+PR #114 merged as `2257f25`. CI runs `43291819172` and `43291810566` passed, and Pages deployment `43292007489` succeeded. The deployed DOL canvas shows F1 inputs 1/3/5 and outputs 2/4/6 alongside their poles at both zoom levels, with no visible overlap.
+
+## Completed increment: M06g â€” DOL control terminal identities
+
+- [x] Inspect the current reference DOL model and available repository documentation for H1/H2/H3 functions and branches. No lamp definition or authoritative branch mapping is present; ask the client to confirm functions/wiring before implementation.
+- [x] Render the existing STOP terminals 21/22 and START terminals 13/14 beside their connected reference anchors.
+- [x] Test terminal-to-anchor alignment and inspect normal/fit views for label, conductor and symbol clearance.
+- [x] Pass focused tests, CI, merge, deployment and production inspection.
+
+PR #116 merged as `920fb83`. Its verification run `43298345712` and Pages deployment `43293742977` succeeded. Production inspection at 82% canvas zoom and Fit (52%) confirmed STOP 21/22 and START 13/14 remain adjacent to their contact anchors with readable labels and clearance from the conductors. The current production build was subsequently updated by PR #117 and Pages deployment `43300433874`.
+
+Client direction (2026-11-12): keep H1/H2/H3 user-configurable. Do not infer their functions or branches; users choose the colors, terminal labels, wiring, indication text and reference tags.
+
+## Completed increment: M06h â€” User-configurable indicator placeholders
+
+- [x] Add H1/H2/H3 as unassigned, unconnected indicator symbols in the reference DOL sheet; preserve their generic symbol-only status.
+- [x] Let users edit each symbol's color, indication text, terminal labels and reference, and connect its stable terminal IDs to chosen branches using the existing wire editor.
+- [x] Verify import/export persistence, editable placement and wireable terminal anchors, with no simulated electrical behavior or invented ratings.
+- [x] Pass focused checks, CI, merge, deployment and production visual inspection.
+
+PR #119 merged as `a4047e9`. Verification run `43309716359` and Pages deployment `43309815669` succeeded. Production inspection at 52% Fit showed H1/H2/H3 as unconnected indicator symbols; selecting H1 exposed the color picker, editable indication, terminal labels, and reference tag. The project suite passed (925 tests) and `npm run build` succeeded.
+
+## Completed increment: M06i â€” Editable schematic text annotations
+
+- [x] Place, select, move, edit, recolor, and remove user-owned text annotations on free schematic sheets.
+- [x] Preserve annotations in project JSON with bounded positions, text, colors, annotation counts and unique IDs; keep older projects importable.
+- [x] Pass focused render and serialization checks, the complete local suite (928 tests), build and GitHub Verify workflow.
+- [x] Merge, deploy and inspect the production Text tool and placement mode.
+
+PR #121 merged as `5312782`. GitHub Verify run `43313996809` succeeded. Production inspection at `https://adigunelectrocad.hephzibahbehulah.com/` confirmed the Text tool is available on a free sheet and activates placement mode. The live project was not modified during this inspection; annotation rendering, chosen color and text persistence were verified by focused tests.
+
+## Completed increment: M06j â€” Editable free-sheet drawing graphics
+
+- [x] Draw lines, rectangles and ellipses on free schematic sheets; select and move them on the grid.
+- [x] Let users edit each graphic's name/tag, color and stroke width, with an on-canvas label.
+- [x] Persist bounded geometry in project JSON, retain compatibility with earlier projects, and keep graphics separate from electrical connectivity.
+- [x] Pass focused rendering/serialization tests, the full local suite (932 tests), build, GitHub Verify, merge and deployment.
+
+PR #123 merged as `568fab2`. GitHub Verify run `43318329213` and Pages deployment `43318444682` succeeded. Local browser inspection confirmed rectangle drawing and editing the name, palette color and stroke width. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the drawing tool and color palette. No production project data was changed.
+
+## Completed increment: M06k â€” Fill colors for drafting shapes
+
+- [x] Set custom or palette fill colors for rectangles and ellipses, or clear the fill; keep lines unfilled.
+- [x] Preserve optional fill colors in project JSON, validate their format, and accept earlier projects without fill settings.
+- [x] Pass the full local suite (933 tests), production build, GitHub Verify, merge, deployment and local browser inspection.
+
+PR #125 merged as `e049920`. Verify runs `43320113513` and `43320106081` passed; Pages deployment `43320223240` succeeded. Local browser inspection confirmed a palette-filled ellipse. Production page and JavaScript bundle returned HTTP 200, with the served bundle containing both the fill palette and no-fill option.
+
+## Increment M06l â€” Resizeable free-sheet drawing graphics
+
+- [x] Add corner handles to resize rectangles and ellipses, plus endpoint handles to reshape lines on the grid.
+- [x] Keep edits within sheet bounds, enforce the 4-unit minimum span, and record them through project history.
+- [x] Pass the full local suite (934 tests), production build, GitHub Verify, merge, Pages deployment and local browser interaction.
+- [x] Inspect the served custom-domain build after DNS resolution returned; production page and bundle returned HTTP 200 and the bundle includes resize-handle markup.
+
+PR #127 merged as `8bd10b0`. Verify run `43321985037` and Pages deployment `43322087430` succeeded; a Pages artifact was produced for the merged commit. Local browser inspection confirmed resizing a rectangle corner and either line endpoint. After DNS resolution returned during the M06m rollout, the production page and bundle both returned HTTP 200 and the current bundle contained the resize-handle markup.
+
+## Completed increment: M06m â€” Editable component drafting colors
+
+- [x] Let users set a custom or palette drafting color on placed components and reset to the default.
+- [x] Keep drafting color separate from engineering properties and simulation behavior; validate and persist it while accepting older project files.
+- [x] Pass focused local checks (19 tests), build, GitHub Verify, merge, Pages deployment and production bundle inspection.
+
+PR #129 merged as `a7f2210`. GitHub Verify runs `43325008843` and `43325040088` and Pages deployment `43325171843` succeeded. The production page and JavaScript bundle returned HTTP 200; the served bundle contains the component color picker, palette/reset control and custom symbol ink rendering.
+
+## Completed increment: M06n â€” Editable electrical wire colors
+
+- [x] Let users set custom or palette colors for individual electrical wires and reset to the default.
+- [x] Keep conductor appearance separate from net names and terminal endpoints; validate and persist optional colors while accepting older projects.
+- [x] Pass focused local checks (22 tests), build, GitHub Verify, merge, Pages deployment and production bundle inspection.
+
+PR #131 merged as `a77d4d5`. GitHub Verify runs `43327163305` and `43327187398` and Pages deployment `43327301587` succeeded. Production page and bundle returned HTTP 200; the deployed bundle contains the wire color picker, palette and reset controls.
+
+## Completed increment: M06o â€” Editable polyline and polygon drafting
+
+- [x] Add point-by-point polyline and polygon tools with double-click or Enter to finish and Escape to cancel.
+- [x] Let users move whole paths, edit individual vertices, set stroke color and fill polygons; keep drawing geometry separate from electrical connectivity.
+- [x] Persist bounded vertices, validate path length and polygon area, and accept older projects without path data.
+- [x] Pass focused local checks (25 tests), build, GitHub Verify and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #133 merged as `633c7f9`. Verify runs `43329733302` and `43329763671` and Pages deployment `43329864660` succeeded. A live custom-domain request could not resolve its hostname in this environment; production bundle inspection remains pending.
+
+## Completed increment: M06p â€” Edit polyline and polygon vertices
+
+- [x] Insert a snapped vertex by double-clicking a path edge; remove a selected vertex with right-click.
+- [x] Enforce bounds, minimum vertex counts, duplicate-point checks, and non-collapsed polygon area while keeping graphic paths separate from electrical connectivity.
+- [x] Pass 29 focused tests, production build, both GitHub Verify runs, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #135 merged as `90c9016`. Verify runs `43333087233` and `43333096028` succeeded. Pages deployment `43333187689` succeeded; custom-domain bundle inspection remains pending after the hostname failed to resolve in this environment.
+
+
+## Completed increment: M06q â€” User-defined component data
+
+- [x] Add, rename, edit, and remove up to 20 custom fields on movable component instances.
+- [x] Persist custom field names and values separately from catalog parameters; preserve older project files and reject invalid imported fields.
+- [x] Keep custom data descriptive only so it cannot change electrical simulation behavior.
+- [x] Pass 26 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #137 merged as `15bed16`. Verify runs `43336032081` and `43336039728` succeeded. Pages deployment `43336144882` succeeded; the custom domain remained inaccessible through the available browser route.
+
+
+## Completed increment: M06r â€” Duplicate drafting graphics
+
+- [x] Duplicate any free-sheet drafting graphic, including a polyline or polygon, from its properties panel.
+- [x] Preserve appearance and path data, assign a new identity and copy tag, and offset the duplicate within the sheet bounds.
+- [x] Pass 7 focused graphic tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #139 merged as `658ee94`. Verify runs `43337243565` and `43337249564` succeeded. Pages deployment `43337370770` succeeded; the custom domain remains inaccessible through the available browser route.
+
+
+## Completed increment: M06s â€” Duplicate placed components
+
+- [x] Duplicate a placed component on editable free sheets, preserve its catalog parameters, custom fields, drafting color, size and orientation, and assign a unique reference and clear position.
+- [x] Give the copy independent editable metadata and leave wires unconnected so users choose the desired branches and terminals.
+- [x] Pass 13 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #141 merged as `c63aa86`. Verify runs `43339962834` and `43339970398` and Pages deployment `43340083622` succeeded; custom-domain bundle inspection remains pending.
+
+## Completed increment: M06t â€” Editable component instance names
+
+- [x] Let users name a placed component independently of its catalog definition and reference tag; show that name beside its indication/type label.
+- [x] Preserve the descriptive name in project JSON and copied components without changing simulation behavior; accept older projects without a name.
+- [x] Pass 47 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #143 merged as `4f0dae5`. Verify runs `43345427176` and `43345460442` succeeded. Pages deployment `43345569530` succeeded; custom-domain bundle inspection remains pending.
+
+## Completed increment: M06u â€” Editable terminal display labels
+
+- [x] Let users set per-instance display labels for catalog terminals while preserving stable terminal IDs and all existing electrical connections.
+- [x] Show overrides on schematic symbols, persist only valid catalog terminal labels, and copy overrides independently with duplicated components.
+- [x] Pass 50 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #145 merged as `7ee71b7`. Verify runs `43347489294` and `43347511612` succeeded. Pages deployment `43347617648` succeeded; custom-domain bundle inspection remains pending.
+
+## Completed increment: M06v â€” Editable annotation text size
+
+- [x] Let users set a visual annotation size from 8 to 48 SVG units in Properties; existing annotations keep the 18-unit default.
+- [x] Render the selected size and scale its selection outline; validate and persist the optional size without changing electrical semantics.
+- [x] Verify serialization for sized and older annotations, reject out-of-range values, and render the chosen size.
+
+PR #147 merged as `02a8ce3`. Verify run `43349223442` and Pages deployment `43349348475` succeeded; custom-domain bundle inspection remains pending.
+
+## Completed increment: M06w â€” Editable annotation rotation
+
+- [x] Let users rotate free-sheet text annotations from 0Â° to 359Â° around their placement anchor; rotate the selection outline with the annotation.
+- [x] Persist the optional visual rotation, validate its range, and accept older projects without rotation metadata.
+- [x] Verify rendering, serialization, and out-of-range rejection; pass local build, GitHub Verify, merge, and Pages deployment.
+
+PR #149 merged as `48ed3ce`. GitHub Verify and Pages deployment `43350902383` succeeded; custom-domain bundle inspection remains pending.
+
+## Completed increment: M06x â€” Editable annotation alignment
+
+- [x] Let users choose left, center, or right alignment for free-sheet text annotations and align the selection outline to the text anchor.
+- [x] Persist the optional alignment, validate its supported values, and keep older annotations left-aligned by default.
+- [x] Verify rendering and serialization, pass focused tests/build and GitHub Verify, merge, and deploy.
+
+PR #151 merged as `6386c68`. Verify runs `43351518960` and `43351537821` and Pages deployment `43351639242` succeeded; direct custom-domain bundle inspection remains pending.
+
+## Completed increment: M06y â€” Editable annotation text weight
+
+- [x] Let users choose standard (400), semi-bold (600), or bold (700) weight for free-sheet text annotations.
+- [x] Persist and validate the optional visual weight while retaining the existing semi-bold appearance for older projects.
+- [x] Verify rendering, serialization, invalid-weight rejection, local build, GitHub Verify, merge, and Pages deployment.
+
+PR #153 merged as `c9d9411`. GitHub Verify and Pages deployment `43352293155` succeeded; direct custom-domain inspection remains pending.
+
+## Completed increment: M06z â€” Multiline schematic annotations
+
+- [x] Edit free-sheet annotations in a multiline field and render each line with consistent spacing and aligned text anchors.
+- [x] Size the selection outline to the longest line and full text height; persist up to 8 lines, each at most 160 characters.
+- [x] Verify multiline rendering, persistence and limits; pass focused tests, build, GitHub Verify, merge and Pages deployment.
+
+PR #155 merged as `7fdb8af`. GitHub Verify and Pages deployment `43353082631` succeeded; direct custom-domain inspection remains pending.
+
+## Completed increment: M06aa â€” Editable annotation line spacing
+
+- [x] Let users set multiline annotation spacing from 1.0Ã— to 3.0Ã— and apply it to each rendered text line and selection bounds.
+- [x] Persist and validate optional spacing while keeping 1.2Ã— as the default for older notes.
+- [x] Verify rendering, serialization, range rejection, focused tests, build, GitHub Verify, merge, and Pages deployment.
+
+PR #157 merged as `ea06396`. Verify runs `43353550169` and `43353566034` and Pages deployment `43353660824` succeeded; direct custom-domain inspection remains pending.
+
+## Completed increment: M06ab â€” Editable annotation italic style
+
+- [x] Let users choose normal or italic text style for free-sheet annotations.
+- [x] Persist the optional visual style, retain normal as the default for older notes, and reject unsupported imported values.
+- [x] Verify rendering and serialization; pass focused tests, build, GitHub Verify, merge, and Pages deployment.
+
+PR #159 merged as `67db649`. Verify runs `43354328192` and `43354348944` and Pages deployment `43354457393` succeeded; direct custom-domain inspection remains pending.
+
+## Completed increment: M06ac â€” Editable annotation background fills
+
+- [x] Let users set custom or palette background colors for free-sheet text annotations and clear the fill to restore transparency.
+- [x] Draw the fill behind the text at the multiline annotation bounds; validate and persist the optional color while accepting older notes.
+- [x] Verify rendering, serialization, invalid-color rejection, focused tests, build, GitHub Verify, merge, and Pages deployment.
+
+PR #161 merged as `454844a`. Verify runs `43355568307` and `43355585024` and Pages deployment `43355692072` succeeded; direct custom-domain inspection remains pending.
+
+## Completed increment: M06ad â€” Component multi-selection and group movement
+
+- [x] Let users Shift+Click multiple components on editable sheets and show every selected component.
+- [x] Move a selected group together on the 20-unit grid; reject collisions atomically and preserve wire topology.
+- [x] Pass 25 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #163 merged as `5c4ed14`. GitHub Verify run `43358060417` and Pages deployment run #161 succeeded; direct custom-domain interaction verification remains pending.
+
+## Completed increment: M06ae â€” Drag-box component selection
+
+- [x] Select placed component footprints with a drag box in either direction; Shift-drag adds to the current group.
+- [x] Keep the selection box out of wiring, annotation, and drawing gestures.
+- [x] Pass 26 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #166 merged as `b7f42a9`. GitHub Verify run `43359574264` and Pages deployment run #164 succeeded.
+
+## Completed increment: M06af â€” Terminal-based wire branching
+
+- [x] Let users Shift-click compatible target terminals to create multiple branches from a chosen source terminal.
+- [x] Keep the source selected between branch connections and allocate unique wire IDs and net names.
+- [x] Pass 34 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #168 merged as `3a6879c`. GitHub Verify run `43360518718` and Pages deployment run #166 succeeded.
+
+## Completed increment: M06ag â€” Editable mid-wire branch attachments
+
+- [x] Click a free-sheet wire route to save a branch attachment and connect it to a compatible catalog terminal.
+- [x] Persist parent wire, source endpoint, and relative route position; redraw the attachment when parent endpoints move.
+- [x] Validate branch references and cascade parent deletion through dependent branches. Electrical topology continues to represent terminal-to-terminal connections; the tap is a drawing attachment, not a standalone equipotential junction node.
+- [x] Pass 62 focused tests, production build, GitHub Verify, merge, and Pages deployment; verify the served bundle includes branch interaction and validation strings.
+
+PR #170 merged as `6a49cd0`. GitHub Verify run #691 and Pages deployment run #168 succeeded. The deployed application returned HTTP 200 and served `assets/index-C4vExyHh.js` with the new branch UI and topology validation.
+
+## Completed increment: M06ah â€” Direct orthogonal wire route editing
+
+- [x] Add route points to editable free-sheet wires and show draggable handles while route editing is enabled.
+- [x] Move handles by drag or keyboard, remove them by right-click/Delete, and restore automatic routing.
+- [x] Keep branch routes derived from their parent route so attached taps follow parent edits.
+- [x] Pass 30 focused tests, production build, GitHub Verify, merge, Pages deployment, and verify the served route-editing bundle.
+
+PR #172 merged as `a101aad`. GitHub Verify run #694 and Pages deployment run #170 succeeded. The deployed application returned HTTP 200 and served `assets/index-iQ0bsLJB.js` with the route editor controls and handle markup.
+
+## Completed increment: M06ai â€” Direct route-point placement
+
+- [x] Click an editable wire segment in route-edit mode to insert a waypoint at the nearest path position.
+- [x] Preserve bend order and snap along the segment while keeping the new waypoint on the wire axis; expose it as a normal route handle.
+- [x] Pass 31 focused tests, production build, GitHub Verify, merge, Pages deployment, and live-bundle verification.
+
+PR #174 merged as `51dc8ac`. GitHub Verify run #698 and Pages deployment run #172 succeeded. The live site returned HTTP 200 and served `assets/index-DVJyR4kI.js` with the route-click insertion prompt and wide route hit target.
+
+## Completed increment: M06aj â€” Exact drafting geometry
+
+- [x] Add numeric X1/Y1/X2/Y2 properties for line, rectangle, and ellipse drafting graphics.
+- [x] Enforce sheet bounds and minimum drawable spans; keep polyline and polygon editing on vertex handles.
+- [x] Pass 11 focused tests, production build, GitHub Verify, merge, Pages deployment, and live-bundle verification.
+
+PR #176 merged as `c405de3`. GitHub Verify run #702 and Pages deployment run #174 succeeded. The live site returned HTTP 200 and served `assets/index-BuUQ8_Sp.js` with the exact geometry fields and bounds validation.
+
+## Completed increment: M06ak â€” Live wire move preview
+
+- [x] Preview moved component groups, connected wire routes, and dependent branch taps together during drag.
+- [x] Keep the preview transient; accepted drops update the document, while rejected or cancelled moves restore the prior drawing and topology.
+- [x] Pass 17 focused tests, production build, GitHub Verify, merge, Pages deployment, and exact live-bundle hash verification.
+
+PR #178 merged as `3c0c6a7`. GitHub Verify succeeded; Pages deployment run #176 succeeded. Production returned HTTP 200 and served `assets/index-tsg_k633.js`, whose SHA-256 matched the local build.
+
+## Completed increment: M06al â€” User-configured symbol terminals
+
+- [x] Configure generic user symbols with 2â€“8 terminal anchors, editable display labels, terminal kinds, and directions; preserve stable T1/T2 identities and prevent removing connected added pins.
+- [x] Preserve terminal configuration through project import/export and component duplication; keep the indicator symbol-only with no assumed voltage, wiring, manufacturer, or simulated lamp behavior.
+- [x] Pass 48 focused tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #180 merged as `3ca2b5c`. GitHub Verify runs #716/#717 and Pages deployment run #178 succeeded. Direct production URL and bundle verification could not be completed from this environment because the custom domain did not resolve.
+
+## Completed increment: M06am â€” User-positioned terminal anchors
+
+- [x] Let users position added symbol terminals with local X/Y offsets; rotate and scale the anchors with their component and render wires and terminal labels at the chosen points.
+- [x] Persist offsets, preserve independent copies when duplicating, remove offsets with their terminal, and reject imported values outside the -60..60-unit bounds.
+- [x] Pass 66 focused tests plus 9 schematic-anchor tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #182 merged as `d6377f9`. GitHub Verify runs #720/#721 and Pages deployment run #180 succeeded.
+
+## Completed increment: M06an â€” Convert drafted geometry into a user symbol
+
+- [x] Convert a selected drafted graphic into a generic user symbol, centered and fitted to the symbol body; retain vector geometry and editable color.
+- [x] Keep component naming, configurable/connectable terminals, project persistence, and duplication; bound imported graphic geometry.
+- [x] Pass 72 focused tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #184 merged as `f58dbf0`. GitHub Verify run #725 and Pages deployment run #182 succeeded. Its authoring workflow is documented in PR #186, merged as `72187e5`; Verify run #729 and Pages deployment run #183 succeeded.
+
+## Completed increment: M06ao â€” Combine drafted shapes into user symbols
+
+- [x] Shift-click multiple drafted graphics and convert the composition into one user-defined symbol.
+- [x] Center and fit the composition while retaining each shapeâ€™s color, fill, and stroke; keep component naming and terminal editing available.
+- [x] Pass 54 focused tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #188 merged as `7300c26`. GitHub Verify run #733 and Pages deployment run #184 succeeded. The selection workflow is documented in PR #190, merged as `6e38810`; Verify run #736 and Pages deployment run #185 succeeded.
+
+## Per-increment publication rule
+
+Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
+
+
