@@ -292,6 +292,15 @@ PR #141 merged as `c63aa86`. Verify runs `43339962834` and `43339970398` and Pag
 
 PR #143 merged as `4f0dae5`. Verify runs `43345427176` and `43345460442` succeeded. Pages deployment `43345569530` succeeded; custom-domain bundle inspection remains pending.
 
+## Completed increment: M06u — Editable terminal display labels
+
+- [x] Let users set per-instance display labels for catalog terminals while preserving stable terminal IDs and all existing electrical connections.
+- [x] Show overrides on schematic symbols, persist only valid catalog terminal labels, and copy overrides independently with duplicated components.
+- [x] Pass 50 focused local tests, production build, both GitHub Verify workflows, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #145 merged as `7ee71b7`. Verify runs `43347489294` and `43347511612` succeeded. Pages deployment `43347617648` succeeded; custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
