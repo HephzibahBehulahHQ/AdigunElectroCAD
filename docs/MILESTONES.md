@@ -560,3 +560,11 @@ GE and LE include equality at the selected numeric threshold. Direct AI0 thresho
 - [x] Confirm Pause retains timer/output state, Stop clears T0 and Q0, and restore the original local project program without a cloud save.
 
 Production result and scope limits are recorded in `PLC-PROGRAMS.md`.
+
+## Completed increment: M05b — Complete numeric comparator selection in PLC lab
+
+- [x] Expose greater-than, greater-or-equal, less-than, less-or-equal, equal-to and not-equal in the PLC Control & Analog Lab.
+- [x] Keep ordered boundary comparisons exact; use the documented 0.000001 tolerance for EQ/NE; align component help, tests and PLC guide.
+- [x] Pass exact-head Verify runs `43406611123` and `43406634534`, merge PR #213 as `f099f05`, and complete Pages deployment `43406737965`.
+
+This PLC lab comparator is a local preview and does not replace scanned, wired PLC program instructions.
