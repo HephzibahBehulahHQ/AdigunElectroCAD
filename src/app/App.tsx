@@ -5,7 +5,7 @@ import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { toggleComponentSelection } from "../cad/componentSelection";
-import type { WireBranchSource } from "../cad/wirePath";
+import { appendWireRoutePoint, type WireBranchSource } from "../cad/wirePath";
 import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
 import { duplicateSchematicGraphic } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
@@ -36,7 +36,7 @@ import { bindProjectExitSave } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalEndpoint, Wire } from "../types/electrical";
-import { Schematic } from "../components/Schematic";
+import { Schematic, terminalAnchors } from "../components/Schematic";
 import { ReversingLab } from "../components/ReversingLab";
 import { StarDeltaLab } from "../components/StarDeltaLab";
 
@@ -85,6 +85,7 @@ export function App() {
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
   const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
+  const [wireRouteEditId, setWireRouteEditId] = useState("");
   const [selectedAnnotationId, setSelectedAnnotationId] = useState("");
   const [annotationMode, setAnnotationMode] = useState(false);
   const [selectedGraphicId, setSelectedGraphicId] = useState("");
@@ -269,6 +270,7 @@ export function App() {
 
   const selectWire = (wireId: string) => {
     setSelectedWireId(wireId);
+    setWireRouteEditId("");
     setComponentSelection("");
     setWireMode(false);
     setWireStart(null);
@@ -752,6 +754,7 @@ export function App() {
     setActiveSheetId(sheetId);
     setComponentSelection(sheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
+    setWireRouteEditId("");
     setSelectedAnnotationId(""); setSelectedGraphicId(""); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(false);
     setWireStart(null);
@@ -793,6 +796,7 @@ export function App() {
   const toggleWireMode = () => {
     const next = !wireMode;
     setWireMode(next);
+    setWireRouteEditId("");
     setWireStart(null);
     setWireBranchStart(null);
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId("");
@@ -871,8 +875,33 @@ export function App() {
     updateDocument({ ...document, wires, revision: document.revision + 1 });
   };
 
+  const updateWireRoute = (wireId: string, points: SchematicGraphicPoint[]) => {
+    if (!document.wires.some((wire) => wire.id === wireId && !wire.branchOfWireId)) return;
+    updateDocument({ ...document, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, points } : wire), revision: document.revision + 1 });
+  };
+
+  const addSelectedWireRoutePoint = () => {
+    if (!selectedWire || selectedWire.branchOfWireId) return;
+    const anchors = terminalAnchors(document);
+    const from = anchors.find((anchor) => anchor.endpoint.componentId === selectedWire.from.componentId && anchor.endpoint.terminalId === selectedWire.from.terminalId);
+    const to = anchors.find((anchor) => anchor.endpoint.componentId === selectedWire.to.componentId && anchor.endpoint.terminalId === selectedWire.to.terminalId);
+    if (!from || !to) { setNotice("Could not find the selected wire's catalog terminal positions."); return; }
+    const points = appendWireRoutePoint(from, to, selectedWire.points, from.vertical ?? false, to.vertical ?? false);
+    if (points.length === selectedWire.points.length) { setNotice("This route already has a point at the available position."); return; }
+    updateWireRoute(selectedWire.id, points);
+    setWireRouteEditId(selectedWire.id);
+    setNotice("Route point added. Drag its handle to edit the wire path.");
+  };
+
+  const resetSelectedWireRoute = () => {
+    if (!selectedWire || selectedWire.branchOfWireId) return;
+    updateWireRoute(selectedWire.id, []);
+    setNotice("Wire route reset to its automatic orthogonal path.");
+  };
+
   const reconnectSelectedWire = () => {
     if (!selectedWire) return;
+    setWireRouteEditId("");
     setWireMode(true);
     setWireStart(selectedWire.from);
     setWireBranchStart(null);
@@ -886,6 +915,7 @@ export function App() {
     const updated = removeWire(document, selectedWire.id);
     updateDocument(updated);
     setSelectedWireId("");
+    setWireRouteEditId("");
     if (wireBranchStart && !updated.wires.some((wire) => wire.id === wireBranchStart.wireId)) { setWireStart(null); setWireBranchStart(null); }
     const removedCount = before - updated.wires.length;
     setNotice(removedCount > 1 ? `Wire ${selectedWire.netName ?? selectedWire.id} and ${removedCount - 1} dependent branch${removedCount === 2 ? "" : "es"} removed. Use Undo to restore them.` : `Wire ${selectedWire.netName ?? selectedWire.id} removed. Use Undo to restore it.`);
@@ -1181,7 +1211,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
@@ -1189,7 +1219,7 @@ export function App() {
           <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
           {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
-          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
+          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} onChange={updateSelectedGraphic} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
           {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
           {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
           <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
@@ -1284,9 +1314,9 @@ function isValidCustomFieldName(name: string) {
   return name.length > 0 && name.length <= 40 && !["__proto__", "constructor", "prototype"].includes(name.toLowerCase());
 }
 
-function WireProperties({ wire, onNetNameChange, onColorChange, onReconnect, onRemove }: { wire: Wire; onNetNameChange: (netName: string) => void; onColorChange: (color: string | undefined) => void; onReconnect: () => void; onRemove: () => void }) {
+function WireProperties({ wire, onNetNameChange, onColorChange, onReconnect, onRemove, routeEditable, routeEditing, onRouteEditToggle, onRoutePointAdd, onRouteReset }: { wire: Wire; onNetNameChange: (netName: string) => void; onColorChange: (color: string | undefined) => void; onReconnect: () => void; onRemove: () => void; routeEditable: boolean; routeEditing: boolean; onRouteEditToggle: () => void; onRoutePointAdd: () => void; onRouteReset: () => void }) {
   const palette = ["#68788b", "#d5242a", "#d39700", "#59708f", "#167a52", "#1565c0", "#7b3fa1"];
-  return <section className="properties-form wire-properties"><label>Net name<input defaultValue={wire.netName ?? wire.id} key={wire.id + (wire.netName ?? "")} onBlur={(event) => onNetNameChange(event.target.value)} /></label><label>Wire color<input aria-label="Wire color" type="color" value={wire.draftingColor ?? "#68788b"} onChange={(event) => onColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Wire color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set wire color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onColorChange(color)} />)}<button type="button" aria-label="Reset wire color" title="Default color" onClick={() => onColorChange(undefined)}>↺</button></div><label>From terminal<input value={`${wire.from.componentId}.${wire.from.terminalId}`} readOnly /></label><label>To terminal<input value={`${wire.to.componentId}.${wire.to.terminalId}`} readOnly /></label><p>Wire color is drafting appearance only. Reconnecting changes its target terminal and recalculates the orthogonal path.</p><button className="reconnect-wire" onClick={onReconnect}>Reconnect target terminal</button><button className="remove-component" onClick={onRemove}>Delete wire</button></section>;
+  return <section className="properties-form wire-properties"><label>Net name<input defaultValue={wire.netName ?? wire.id} key={wire.id + (wire.netName ?? "")} onBlur={(event) => onNetNameChange(event.target.value)} /></label><label>Wire color<input aria-label="Wire color" type="color" value={wire.draftingColor ?? "#68788b"} onChange={(event) => onColorChange(event.target.value)} /></label><div className="annotation-palette" aria-label="Wire color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set wire color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onColorChange(color)} />)}<button type="button" aria-label="Reset wire color" title="Default color" onClick={() => onColorChange(undefined)}>↺</button></div><label>From terminal<input value={`${wire.from.componentId}.${wire.from.terminalId}`} readOnly /></label><label>To terminal<input value={`${wire.to.componentId}.${wire.to.terminalId}`} readOnly /></label><p>Wire color is drafting appearance only. Reconnecting changes its target terminal and recalculates the orthogonal path.</p>{routeEditable && <><strong>Orthogonal route</strong><button type="button" onClick={onRouteEditToggle}>{routeEditing ? "Stop editing route" : "Edit route points"}</button><button type="button" onClick={onRoutePointAdd}>Add route point</button>{wire.points.length > 0 && <button type="button" onClick={onRouteReset}>Reset to automatic route</button>}<p>Drag a route handle to change the path. Right-click or focus and press Delete to remove a point.</p></>}{wire.branchOfWireId && <p>Branch route follows its parent wire. Edit the parent route to reposition this attachment.</p>}<button className="reconnect-wire" onClick={onReconnect}>Reconnect target terminal</button><button className="remove-component" onClick={onRemove}>Delete wire</button></section>;
 }
 
 function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: SchematicAnnotation; onChange: (patch: Partial<Pick<SchematicAnnotation, "text" | "color" | "fontSize" | "rotation" | "textAnchor" | "fontWeight" | "lineSpacing" | "fontStyle" | "backgroundColor">>) => void; onRemove: () => void }) {

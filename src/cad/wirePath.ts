@@ -21,6 +21,15 @@ export function orthogonalWireVertices(from: Point, to: Point, bends: readonly P
   return vertices;
 }
 
+export function appendWireRoutePoint(from: Point, to: Point, bends: readonly Point[] = [], fromVertical = false, toVertical = false): Point[] {
+  const vertices = orthogonalWireVertices(from, to, bends, fromVertical, toVertical);
+  if (vertices.length < 2) return [...bends];
+  const end = vertices.at(-1)!; const start = vertices.at(-2)!;
+  const point = { x: Math.round((start.x + end.x) / 2), y: Math.round((start.y + end.y) / 2) };
+  if (bends.some((bend) => bend.x === point.x && bend.y === point.y)) return [...bends];
+  return [...bends, point];
+}
+
 export function wireBranchAtPoint(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, point: Point, tolerance = 18): { source: WireBranchSource; position: number } | null {
   const candidates = [
     { source: "from" as const, vertices: orthogonalWireVertices(from, to, bends, fromVertical, toVertical) },
