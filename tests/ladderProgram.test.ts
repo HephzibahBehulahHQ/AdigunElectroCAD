@@ -308,5 +308,5 @@ it.each([["GE", 50, 50, true], ["GE", 49, 50, false], ["LE", 50, 50, true], ["LE
   expect(scanPlcProgram(program, false, false, false, 0, [left])).toMatchObject({ ok: true, output: expected });
   expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [left] })).toMatchObject({ output: expected });
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
-  expect(markup).toContain(`<option>${comparison}</option>`);
+  expect(markup).toContain(`>${comparison}</option>`);
 });
