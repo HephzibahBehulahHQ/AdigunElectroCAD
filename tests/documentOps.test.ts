@@ -9,17 +9,21 @@ import { createStarterProject } from "../src/projects/starterProject";
 
 describe("component movement", () => {
   it("duplicates a placed instance with an independent edit state, free position, and unique reference", () => {
-    const first = { id: "lamp-1", definitionId: "user.indicator-lamp", reference: "HL1", displayName: "Panel lamp", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, terminalLabels: { t1: "L+", t2: "N" }, customTerminalOffsets: { t3: { x: 44, y: -24 } }, customProperties: { note: "Panel A" } };
-    const source = { ...first, id: "lamp-2", reference: "HL2", x: 520 };
-    const copy = duplicateComponentInstance([first, source], source, "lamp-copy", "HL");
-    expect(copy).toMatchObject({ id: "lamp-copy", reference: "HL3", displayName: "Panel lamp", definitionId: source.definitionId, rotation: 90, size: 1.2, draftingColor: "#7b3fa1", properties: source.properties, terminalLabels: source.terminalLabels, customProperties: source.customProperties });
+    const first = { id: "lamp-1", definitionId: "user.drawn-symbol", reference: "U1", displayName: "Panel lamp", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, terminalLabels: { t1: "L+", t2: "N" }, customTerminals: [{ id: "t1", label: "T1", kind: "control", direction: "bidirectional" }, { id: "t2", label: "T2", kind: "control", direction: "bidirectional" }, { id: "t3", label: "T3", kind: "control", direction: "bidirectional" }], customTerminalOffsets: { t3: { x: 44, y: -24 } }, customSymbolGraphics: [{ kind: "line", x1: -10, y1: 0, x2: 10, y2: 0, color: "#19324f", strokeWidth: 2 }], customProperties: { note: "Panel A" } };
+    const source = { ...first, id: "lamp-2", reference: "U2", x: 520 };
+    const copy = duplicateComponentInstance([first, source], source, "symbol-copy", "U");
+    expect(copy).toMatchObject({ id: "symbol-copy", reference: "U3", displayName: "Panel lamp", definitionId: source.definitionId, rotation: 90, size: 1.2, draftingColor: "#7b3fa1", properties: source.properties, terminalLabels: source.terminalLabels, customProperties: source.customProperties });
     expect(copy).not.toBeNull();
     expect([copy!.x, copy!.y]).not.toEqual([source.x, source.y]);
     expect(copy!.properties).not.toBe(source.properties);
     expect(copy!.terminalLabels).not.toBe(source.terminalLabels);
+    expect(copy!.customTerminals).toEqual(source.customTerminals);
+    expect(copy!.customTerminals).not.toBe(source.customTerminals);
     expect(copy!.customTerminalOffsets).toEqual(source.customTerminalOffsets);
     expect(copy!.customTerminalOffsets).not.toBe(source.customTerminalOffsets);
     expect(copy!.customTerminalOffsets?.t3).not.toBe(source.customTerminalOffsets?.t3);
+    expect(copy!.customSymbolGraphics).toEqual(source.customSymbolGraphics);
+    expect(copy!.customSymbolGraphics).not.toBe(source.customSymbolGraphics);
     expect(copy!.customProperties).not.toBe(source.customProperties);
   });
 

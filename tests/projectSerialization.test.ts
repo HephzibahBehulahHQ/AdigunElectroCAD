@@ -69,6 +69,16 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component display name");
   });
 
+  it("round-trips authored user-symbol drawing geometry and rejects out-of-bounds primitives", () => {
+    const input = freeSheetWithComponent();
+    const component = input.sheets[1].document.components[0];
+    component.definitionId = "user.drawn-symbol";
+    component.customSymbolGraphics = [{ kind: "rectangle", x1: -24, y1: -16, x2: 24, y2: 16, color: "#19324f", fillColor: "#cfe2f3", strokeWidth: 3 }];
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].customSymbolGraphics).toEqual(component.customSymbolGraphics);
+    component.customSymbolGraphics[0].x2 = 56;
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("symbol drawing bounds");
+  });
+
   it("persists user-positioned added terminals and rejects offsets outside the symbol workspace", () => {
     const input = freeSheetWithComponent();
     const component = input.sheets[1].document.components[0];

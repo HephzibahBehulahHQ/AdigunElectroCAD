@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -136,12 +136,14 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
   const customTerminals = component.customTerminals === undefined ? undefined : customTerminalDefinitions(component.customTerminals, definitionId);
   const customTerminalOffsets = component.customTerminalOffsets === undefined ? undefined : customTerminalOffsetsValue(component.customTerminalOffsets, definitionId, customTerminals);
+  const customSymbolGraphics = component.customSymbolGraphics === undefined ? undefined : userSymbolGraphics(component.customSymbolGraphics, definitionId);
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
     ...(customTerminals === undefined ? {} : { customTerminals }),
     ...(customTerminalOffsets === undefined ? {} : { customTerminalOffsets }),
+    ...(customSymbolGraphics === undefined ? {} : { customSymbolGraphics }),
     ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId, customTerminals) }),
     properties: properties(component.properties),
       ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
@@ -198,7 +200,7 @@ function customProperties(value: unknown): Record<string, string> {
 }
 
 function customTerminalDefinitions(value: unknown, definitionId: string): TerminalDefinition[] {
-  if (definitionId !== "user.indicator-lamp") throw new Error("Custom terminals are only supported on user-defined symbols.");
+  if (!isUserSymbolDefinition(definitionId)) throw new Error("Custom terminals are only supported on user-defined symbols.");
   const values = array(value, "Custom component terminals are invalid.");
   if (values.length < 2 || values.length > 8) throw new Error("A user-defined symbol must have between 2 and 8 terminals.");
   const terminals = values.map((item) => {
@@ -216,7 +218,7 @@ function customTerminalDefinitions(value: unknown, definitionId: string): Termin
 }
 
 function customTerminalOffsetsValue(value: unknown, definitionId: string, customTerminals?: TerminalDefinition[]): Record<string, { x: number; y: number }> {
-  if (definitionId !== "user.indicator-lamp" || !customTerminals) throw new Error("Custom terminal positions require configured user-symbol terminals.");
+  if (!isUserSymbolDefinition(definitionId) || !customTerminals) throw new Error("Custom terminal positions require configured user-symbol terminals.");
   const source = object(value, "Custom terminal positions are invalid.");
   const entries = Object.entries(source);
   if (entries.length > 6) throw new Error("A user symbol may position at most 6 added terminals.");
@@ -231,6 +233,53 @@ function customTerminalOffsetsValue(value: unknown, definitionId: string, custom
     result[terminalId] = { x, y };
   }
   return result;
+}
+
+function userSymbolGraphics(value: unknown, definitionId: string): UserSymbolGraphic[] {
+  if (definitionId !== "user.drawn-symbol") throw new Error("Custom drawing geometry is only supported on user-drawn symbols.");
+  const values = array(value, "User symbol graphics are invalid.");
+  if (!values.length || values.length > 40) throw new Error("A user-drawn symbol must contain between 1 and 40 drawing primitives.");
+  return values.map((item) => {
+    const graphic = object(item, "User symbol graphic is invalid.");
+    if (!["line", "rectangle", "ellipse", "polyline", "polygon"].includes(String(graphic.kind))) throw new Error("User symbol graphic kind is invalid.");
+    const kind = graphic.kind as UserSymbolGraphic["kind"];
+    let points: SchematicGraphicPoint[] | undefined;
+    let x1: number; let y1: number; let x2: number; let y2: number;
+    if (kind === "polyline" || kind === "polygon") {
+      const values = array(graphic.points, "User symbol graphic vertices are invalid.");
+      if (values.length > 200) throw new Error("A user symbol path may have at most 200 vertices.");
+      points = values.map((value) => {
+        const point = object(value, "User symbol graphic vertex is invalid.");
+        const x = finiteNumber(point.x, "user symbol vertex x"); const y = finiteNumber(point.y, "user symbol vertex y");
+        if (x < -55 || x > 55 || y < -35 || y > 35) throw new Error("User symbol geometry must stay within the symbol drawing bounds.");
+        return { x, y };
+      });
+      const minimum = kind === "polygon" ? 3 : 2;
+      if (points.length < minimum || points.some((point, index) => index > 0 && point.x === points![index - 1].x && point.y === points![index - 1].y)) throw new Error(`User symbol ${kind} needs at least ${minimum} distinct consecutive vertices.`);
+      const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
+      x1 = Math.min(...xs); y1 = Math.min(...ys); x2 = Math.max(...xs); y2 = Math.max(...ys);
+      const length = points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point.x - points![index].x, point.y - points![index].y), 0);
+      const area = kind === "polygon" ? Math.abs(points.reduce((sum, point, index) => { const next = points![(index + 1) % points!.length]; return sum + point.x * next.y - next.x * point.y; }, 0)) / 2 : 0;
+      if (length < 4 || (kind === "polygon" && area < 4)) throw new Error("User symbol path must span at least 4 units and polygons must enclose an area.");
+    } else {
+      x1 = finiteNumber(graphic.x1, "user symbol x1"); y1 = finiteNumber(graphic.y1, "user symbol y1");
+      x2 = finiteNumber(graphic.x2, "user symbol x2"); y2 = finiteNumber(graphic.y2, "user symbol y2");
+      if ([x1, x2].some((x) => x < -55 || x > 55) || [y1, y2].some((y) => y < -35 || y > 35)) throw new Error("User symbol geometry must stay within the symbol drawing bounds.");
+      if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("User symbol graphic must span at least 4 units.");
+    }
+    const color = textValue(graphic.color, "user symbol stroke color", 7);
+    if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("User symbol stroke color must be a six-digit hex color.");
+    if ((kind === "line" || kind === "polyline") && graphic.fillColor != null) throw new Error("Only closed user symbol shapes support a fill color.");
+    const fillColor = graphic.fillColor === undefined ? undefined : graphic.fillColor === null ? null : textValue(graphic.fillColor, "user symbol fill color", 7);
+    if (typeof fillColor === "string" && !/^#[0-9a-f]{6}$/i.test(fillColor)) throw new Error("User symbol fill color must be a six-digit hex color.");
+    const strokeWidth = finiteNumber(graphic.strokeWidth, "user symbol stroke width");
+    if (strokeWidth < 1 || strokeWidth > 12) throw new Error("User symbol stroke width must be between 1 and 12.");
+    return { kind, x1, y1, x2, y2, ...(points ? { points } : {}), color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
+  });
+}
+
+function isUserSymbolDefinition(definitionId: string) {
+  return definitionId === "user.indicator-lamp" || definitionId === "user.drawn-symbol";
 }
 
 function terminalLabelOverrides(value: unknown, definitionId: string, customTerminals?: TerminalDefinition[]): Record<string, string> {

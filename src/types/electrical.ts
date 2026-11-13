@@ -43,6 +43,8 @@ export interface ComponentInstance {
   customTerminals?: TerminalDefinition[];
   /** User-selected relative anchor positions for added generic-symbol terminals. */
   customTerminalOffsets?: Record<string, { x: number; y: number }>;
+  /** User-authored drawing geometry, local to this symbol instance's origin. */
+  customSymbolGraphics?: UserSymbolGraphic[];
   /** User-defined instance metadata; it does not affect electrical simulation. */
   customProperties?: Record<string, string>;
 }
@@ -109,6 +111,9 @@ export interface SchematicGraphic {
   fillColor?: string | null;
   strokeWidth: number;
 }
+
+/** One user-drawn primitive stored relative to a reusable component symbol origin. */
+export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name">;
 
 export interface CircuitDocument {
   id: string;
