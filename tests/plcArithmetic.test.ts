@@ -126,3 +126,7 @@ it("persists PLC memory relays in runtime properties and clears them on Stop", (
   expect(resetCircuitClock(afterFault, catalogById).components.find((component) => component.id === "plc")!.properties.runtimeM0).toBeUndefined();
 });
 
+
+it.each([["GE", 50, 50, true], ["GE", 49, 50, false], ["LE", 50, 50, true], ["LE", 51, 50, false]] as const)("compares register values with inclusive %s boundaries", (operation, left, right, expected) => {
+  expect(scanPlcProgram(`${operation} D0 ${right}; OUT Q0`, false, false, false, 0, [left])).toMatchObject({ ok: true, output: expected });
+});

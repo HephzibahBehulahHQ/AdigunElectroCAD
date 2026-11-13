@@ -300,3 +300,13 @@ it("round-trips and previews not-equal ladder comparisons", () => {
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
   expect(markup).toContain(">NE</option>");
 });
+
+it.each([["GE", 50, 50, true], ["GE", 49, 50, false], ["LE", 50, 50, true], ["LE", 51, 50, false]] as const)("compiles, imports and previews inclusive %s ladder comparisons", (comparison, left, right, expected) => {
+  const rungs: LadderRung[] = [{ stages: [[{ comparison, left: "D0", right: String(right) }]], coil: "OUT" }];
+  const program = compileLadder(rungs);
+  expect(parseLadder(program)).toEqual(rungs);
+  expect(scanPlcProgram(program, false, false, false, 0, [left])).toMatchObject({ ok: true, output: expected });
+  expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [left] })).toMatchObject({ output: expected });
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
+  expect(markup).toContain(`<option>${comparison}</option>`);
+});
