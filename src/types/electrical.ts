@@ -66,6 +66,8 @@ export interface SchematicAnnotation {
   color: string;
   /** User-selected visual size in SVG units; does not affect schematic semantics. */
   fontSize?: number;
+  /** User-selected visual rotation in degrees; does not affect schematic semantics. */
+  rotation?: number;
 }
 
 export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline" | "polygon";

@@ -106,7 +106,9 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Annotation color must be a six-digit hex color.");
   const fontSize = annotation.fontSize === undefined ? undefined : finiteNumber(annotation.fontSize, "annotation text size");
   if (fontSize !== undefined && (fontSize < 8 || fontSize > 48)) throw new Error("Annotation text size must be between 8 and 48.");
-  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }) };
+  const rotation = annotation.rotation === undefined ? undefined : finiteNumber(annotation.rotation, "annotation rotation");
+  if (rotation !== undefined && (rotation < 0 || rotation >= 360)) throw new Error("Annotation rotation must be between 0 and 359 degrees.");
+  return { id: textValue(annotation.id, "annotation id", 120), text: textValue(annotation.text, "annotation text", 160), x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }) };
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
