@@ -78,6 +78,33 @@ export function canPlaceComponent(components: ComponentInstance[], componentId: 
   return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, movingSize, component));
 }
 
+export function duplicateComponentInstance(components: ComponentInstance[], source: ComponentInstance, id: string, referencePrefix: string): ComponentInstance | null {
+  if (components.some((component) => component.id === id) || !components.some((component) => component.id === source.id)) return null;
+  const usedReferences = new Set(components.map((component) => component.reference.toLowerCase()));
+  let suffix = 1;
+  while (usedReferences.has(`${referencePrefix}${suffix}`.toLowerCase())) suffix += 1;
+  const reference = `${referencePrefix}${suffix}`;
+  const candidateId = `__duplicate_candidate__${id}`;
+  const candidate: ComponentInstance = { ...source, id: candidateId };
+  const augmented = [...components, candidate];
+  const positions = duplicatePlacementOffsets();
+  for (const [dx, dy] of positions) {
+    const x = source.x + dx; const y = source.y + dy;
+    if (canPlaceComponent(augmented, candidateId, x, y)) {
+      return { ...source, id, reference, x, y, properties: { ...source.properties }, ...(source.customProperties ? { customProperties: { ...source.customProperties } } : {}) };
+    }
+  }
+  return null;
+}
+
+function duplicatePlacementOffsets() {
+  const offsets: Array<[number, number]> = [];
+  for (let distance = 40; distance <= 400; distance += 40) {
+    offsets.push([distance, distance], [0, distance], [-distance, distance], [distance, 0], [-distance, 0], [0, -distance], [distance, -distance], [-distance, -distance]);
+  }
+  return offsets;
+}
+
 export function resizeComponent(document: CircuitDocument, componentId: string, size: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(size) || size < .5 || size > 2) return { document, ok: false, reason: "Symbol size must be between 50% and 200%." };
