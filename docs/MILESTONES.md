@@ -317,6 +317,14 @@ PR #147 merged as `02a8ce3`. Verify run `43349223442` and Pages deployment `4334
 
 PR #149 merged as `48ed3ce`. GitHub Verify and Pages deployment `43350902383` succeeded; custom-domain bundle inspection remains pending.
 
+## Completed increment: M06x — Editable annotation alignment
+
+- [x] Let users choose left, center, or right alignment for free-sheet text annotations and align the selection outline to the text anchor.
+- [x] Persist the optional alignment, validate its supported values, and keep older annotations left-aligned by default.
+- [x] Verify rendering and serialization, pass focused tests/build and GitHub Verify, merge, and deploy.
+
+PR #151 merged as `6386c68`. Verify runs `43351518960` and `43351537821` and Pages deployment `43351639242` succeeded; direct custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
