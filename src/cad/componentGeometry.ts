@@ -22,6 +22,11 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
   if (modelId === "user-indicator-symbol") {
     if (terminalId === "t1") return { x: -32, y: -13 };
     if (terminalId === "t2") return { x: 32, y: -13 };
+    const pin = /^t([3-8])$/.exec(terminalId);
+    if (pin) {
+      const index = Number(pin[1]) - 3;
+      return { x: index % 2 ? 32 : -32, y: index < 2 ? -25 : index < 4 ? -1 : 11 };
+    }
   }
   if (modelId === "control-supply-v1") return { x: 47, y: terminalId === "line" ? -12 : 12 };
   if (modelId === "pushbutton-start-v1" || modelId === "pushbutton-stop-v1") return { x: ["13", "21"].includes(terminalId) ? -47 : 47, y: 0 };

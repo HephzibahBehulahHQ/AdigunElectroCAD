@@ -39,6 +39,8 @@ export interface ComponentInstance {
   properties: Record<string, string | number | boolean>;
   /** User-selected display labels keyed by stable catalog terminal ID; connectivity is unchanged. */
   terminalLabels?: Record<string, string>;
+  /** User-configured terminal set for generic symbol-only components. */
+  customTerminals?: TerminalDefinition[];
   /** User-defined instance metadata; it does not affect electrical simulation. */
   customProperties?: Record<string, string>;
 }
