@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { compileLadder, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
+import { compileLadder, moveLadderRung, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
 import { previewLadder } from "../src/simulation/ladderProgram";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -16,6 +16,24 @@ it("round-trips the start/stop ladder and compiles its actual holding program", 
   const program = compileLadder(holding);
   expect(program).toBe("LD I0; OR Q0; ANDN I1; OUT Q0");
   expect(parseLadder(program.toLowerCase().replaceAll("; ", "\n"))).toEqual(holding);
+});
+
+it("moves rungs without mutating the draft and compiles their new priority order", () => {
+  const rungs: LadderRung[] = [
+    { stages: [[{ address: "I0", inverted: false }]], coil: "SET" },
+    { stages: [[{ address: "I1", inverted: false }]], coil: "RESET" },
+    { stages: [[{ address: "Q0", inverted: false }]], coil: "OUT" },
+  ];
+  const moved = moveLadderRung(rungs, 2, 1);
+  expect(moved).not.toBeNull();
+  expect(compileLadder(moved!)).toBe("LD I0; SET Q0; LD Q0; OUT Q0; LD I1; RESET Q0");
+  expect(compileLadder(rungs)).toBe("LD I0; SET Q0; LD I1; RESET Q0; LD Q0; OUT Q0");
+  expect(moved).not.toBe(rungs);
+  expect(moveLadderRung(rungs, -1, 0)).toBeNull();
+  expect(moveLadderRung(rungs, 0, 3)).toBeNull();
+  const markup = renderToStaticMarkup(createElement(LadderEditor, { program: compileLadder(rungs), onApply: () => undefined }));
+  expect(markup).toContain('aria-label="Move rung 2 up"');
+  expect(markup).toContain('aria-label="Move rung 1 down"');
 });
 
 it("round-trips TON timer coils and preview timer contacts", () => {
