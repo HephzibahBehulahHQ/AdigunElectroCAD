@@ -5,6 +5,7 @@ import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { toggleComponentSelection } from "../cad/componentSelection";
+import type { WireBranchSource } from "../cad/wirePath";
 import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
 import { duplicateSchematicGraphic } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
@@ -82,6 +83,7 @@ export function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
+  const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
   const [selectedAnnotationId, setSelectedAnnotationId] = useState("");
   const [annotationMode, setAnnotationMode] = useState(false);
@@ -270,6 +272,7 @@ export function App() {
     setComponentSelection("");
     setWireMode(false);
     setWireStart(null);
+    setWireBranchStart(null);
     setReconnectingWireId("");
     setSelectedAnnotationId("");
     setSelectedGraphicId("");
@@ -791,6 +794,7 @@ export function App() {
     const next = !wireMode;
     setWireMode(next);
     setWireStart(null);
+    setWireBranchStart(null);
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId("");
     if (!next) setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
@@ -800,6 +804,7 @@ export function App() {
     if (!wireMode) return;
     if (!wireStart) {
       setWireStart(endpoint);
+      setWireBranchStart(null);
       setNotice("Wire start selected. Choose a compatible target terminal.");
       return;
     }
@@ -814,7 +819,7 @@ export function App() {
     const check = canConnectTerminals(validationDocument, catalogById, wireStart, endpoint);
     if (!check.ok) {
       setNotice(check.reason ?? "The selected terminals cannot be connected.");
-      setWireStart(reconnectingWire?.from ?? null);
+      setWireStart(reconnectingWire?.from ?? wireStart);
       return;
     }
     if (reconnectingWire) {
@@ -822,13 +827,24 @@ export function App() {
       setSelectedWireId(reconnectingWire.id);
       setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
     } else {
-      const wire = createManualWire(document, wireStart, endpoint);
+      const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
       updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
       setSelectedWireId(wire.id);
       setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
     }
     setWireStart(continueBranch && !reconnectingWire ? wireStart : null);
+    setWireBranchStart(continueBranch && !reconnectingWire ? wireBranchStart : null);
     setReconnectingWireId("");
+  };
+
+  const selectWireBranch = (wireId: string, source: WireBranchSource, position: number) => {
+    if (!wireMode || reconnectingWireId) return;
+    const wire = document.wires.find((item) => item.id === wireId);
+    if (!wire || !Number.isFinite(position) || position <= 0 || position >= 1) return;
+    const endpoint = source === "from" ? wire.from : wire.to;
+    setWireStart(endpoint);
+    setWireBranchStart({ wireId, source, position });
+    setNotice(`Branch origin selected on ${wire.netName ?? wire.id}. Choose a compatible target terminal; Shift-click to add more branches here.`);
   };
 
   const renameSelectedWire = (netName: string) => {
@@ -859,15 +875,20 @@ export function App() {
     if (!selectedWire) return;
     setWireMode(true);
     setWireStart(selectedWire.from);
+    setWireBranchStart(null);
     setReconnectingWireId(selectedWire.id);
     setNotice(`Reconnecting ${selectedWire.netName ?? selectedWire.id}: choose a replacement target terminal.`);
   };
 
   const removeSelectedWire = () => {
     if (!selectedWire) return;
-    updateDocument(removeWire(document, selectedWire.id));
+    const before = document.wires.length;
+    const updated = removeWire(document, selectedWire.id);
+    updateDocument(updated);
     setSelectedWireId("");
-    setNotice(`Wire ${selectedWire.netName ?? selectedWire.id} removed. Use Undo to restore it.`);
+    if (wireBranchStart && !updated.wires.some((wire) => wire.id === wireBranchStart.wireId)) { setWireStart(null); setWireBranchStart(null); }
+    const removedCount = before - updated.wires.length;
+    setNotice(removedCount > 1 ? `Wire ${selectedWire.netName ?? selectedWire.id} and ${removedCount - 1} dependent branch${removedCount === 2 ? "" : "es"} removed. Use Undo to restore them.` : `Wire ${selectedWire.netName ?? selectedWire.id} removed. Use Undo to restore it.`);
   };
 
   const updateReference = (reference: string) => {
@@ -1052,6 +1073,8 @@ export function App() {
     }
     const result = removeComponent(document, selectedComponent.id);
     updateDocument(result.document);
+    if (wireStart?.componentId === selectedComponent.id || (wireBranchStart && !result.document.wires.some((wire) => wire.id === wireBranchStart.wireId))) { setWireStart(null); setWireBranchStart(null); }
+    if (selectedWireId && !result.document.wires.some((wire) => wire.id === selectedWireId)) setSelectedWireId("");
     setComponentSelection("");
     setNotice(`${selectedComponent.reference} removed${result.removedWireCount ? ` with ${result.removedWireCount} connected wire${result.removedWireCount === 1 ? "" : "s"}` : ""}. Use Undo to restore it.`);
   };
@@ -1158,7 +1181,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 

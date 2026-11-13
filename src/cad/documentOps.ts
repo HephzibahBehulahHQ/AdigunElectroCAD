@@ -3,10 +3,10 @@ import { componentFootprint, componentFitsSheet } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
 
-export function createManualWire(document: CircuitDocument, from: TerminalEndpoint, to: TerminalEndpoint): Wire {
+export function createManualWire(document: CircuitDocument, from: TerminalEndpoint, to: TerminalEndpoint, branch?: { wireId: string; source: "from" | "to"; position: number }): Wire {
   let index = 1;
   while (document.wires.some((wire) => wire.id === `manual-wire-${index}` || wire.netName === `MANUAL_${index}`)) index++;
-  return { id: `manual-wire-${index}`, from, to, points: [], netName: `MANUAL_${index}` };
+  return { id: `manual-wire-${index}`, from, to, points: [], netName: `MANUAL_${index}`, ...(branch ? { branchOfWireId: branch.wireId, branchSource: branch.source, branchPosition: branch.position } : {}) };
 }
 
 export function moveComponentToGrid(document: CircuitDocument, componentId: string, x: number, y: number): { document: CircuitDocument; ok: boolean; reason?: string } {
@@ -81,7 +81,13 @@ export function reconnectWire(document: CircuitDocument, wireId: string, target:
 
 export function removeWire(document: CircuitDocument, wireId: string): CircuitDocument {
   if (!document.wires.some((wire) => wire.id === wireId)) return document;
-  return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => wire.id !== wireId) };
+  const removed = new Set([wireId]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const wire of document.wires) if (wire.branchOfWireId && removed.has(wire.branchOfWireId) && !removed.has(wire.id)) { removed.add(wire.id); changed = true; }
+  }
+  return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => !removed.has(wire.id)) };
 }
 
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string): { x: number; y: number } | null {
@@ -141,7 +147,14 @@ export function resizeComponent(document: CircuitDocument, componentId: string, 
 
 export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
   if (!document.components.some((component) => component.id === componentId)) return { document, removedWireCount: 0 };
-  const wires = document.wires.filter((wire) => wire.from.componentId !== componentId && wire.to.componentId !== componentId);
+  const removedRoots = document.wires.filter((wire) => wire.from.componentId === componentId || wire.to.componentId === componentId).map((wire) => wire.id);
+  const removed = new Set(removedRoots);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const wire of document.wires) if (wire.branchOfWireId && removed.has(wire.branchOfWireId) && !removed.has(wire.id)) { removed.add(wire.id); changed = true; }
+  }
+  const wires = document.wires.filter((wire) => !removed.has(wire.id));
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
 

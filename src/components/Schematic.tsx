@@ -1,11 +1,11 @@
-import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint } from "../types/electrical";
+import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, Wire } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
 import { componentsInMarquee } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
-import { orthogonalWirePath } from "../cad/wirePath";
+import { orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
   onSelect: (componentId: string, additive?: boolean) => void;
   onGroupSelect?: (componentIds: string[], additive: boolean) => void;
   onWireSelect: (wireId: string) => void;
+  onWireBranchStart?: (wireId: string, source: WireBranchSource, position: number) => void;
   onTerminalSelect: (endpoint: TerminalEndpoint, continueBranch?: boolean) => void;
   annotationMode?: boolean;
   selectedAnnotationId?: string;
@@ -262,9 +263,18 @@ function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: num
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
+function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const branchRouteForWire = (wire: Wire, seen = new Set<string>()): { point: { x: number; y: number }; points: { x: number; y: number }[] } | null => {
+    if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
+    const parent = document.wires.find((item) => item.id === wire.branchOfWireId);
+    const from = parent && anchorIndex.get(endpointKey(parent.from)); const to = parent && anchorIndex.get(endpointKey(parent.to));
+    if (!parent || !from || !to) return null;
+    const nextSeen = new Set(seen); nextSeen.add(wire.id);
+    const parentBranch = branchRouteForWire(parent, nextSeen);
+    return wireBranchRoute(from, to, parentBranch?.points ?? parent.points, from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
+  };
   const graphicStart = useRef<{ x: number; y: number } | null>(null);
   const selectionGesture = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
@@ -367,10 +377,27 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
       <text x="65" y="55" className="drawing-title">FREE ELECTRICAL SCHEMATIC SHEET</text>
       <text x="65" y="80" className="sheet-note">Insert catalog components, wire compatible terminals and move placed symbols on the grid.</text>
       {isPathMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
+      {wireMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click a wire to place a junction, then choose a compatible terminal. Shift-click targets to continue branching.</text>}
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        if (!from || !to) return null;
+        const branch = branchRouteForWire(wire);
+        const points = branch?.points ?? wire.points;
+        const path = wirePath(from, to, points);
+        const startBranch = (event: PointerEvent<SVGPathElement>) => {
+          event.stopPropagation();
+          const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
+          const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+          if (!point) return;
+          const route = wireBranchAtPoint(from, to, points, from.vertical ?? false, to.vertical ?? false, point);
+          if (route) onWireBranchStart?.(wire.id, route.source, route.position);
+        };
+        return <g key={wire.id}>
+          <path d={path} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} />
+          {wireMode && onWireBranchStart && <path d={path} className="wire-branch-hit-target" role="button" tabIndex={0} aria-label={`Create a branch from ${wire.netName ?? wire.id}`} onClick={startBranch} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onWireBranchStart(wire.id, "from", .5); } }} />}
+          {branch && <circle cx={branch.point.x} cy={branch.point.y} r="5" className="wire-junction" aria-label={`Electrical junction on ${wire.netName ?? wire.id}`} />}
+        </g>;
       })}
       {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
@@ -383,8 +410,8 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
   </div>;
 }
 
-export function Schematic({ document, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} />;
+export function Schematic({ document, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, onTerminalSelect, onMove, zoom = .85, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onWireBranchStart={onWireBranchStart} onTerminalSelect={onTerminalSelect} onMove={onMove} zoom={zoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;

@@ -39,6 +39,18 @@ describe("project JSON import validation", () => {
     expect(imported.sheets[0].document.wires).toHaveLength(20);
   });
 
+  it("round-trips parent-linked branch metadata and rejects incomplete branch data", () => {
+    const input = createStarterProject();
+    const document = input.sheets[0].document;
+    document.components.push({ id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 900, y: 180, rotation: 0, properties: {} });
+    const parent = document.wires[0];
+    document.wires.push({ id: "branch-wire", from: parent.from, to: { componentId: "motor-2", terminalId: "u1" }, points: [], branchOfWireId: parent.id, branchSource: "from", branchPosition: .45 });
+    expect(parseProjectJson(JSON.stringify(input)).sheets[0].document.wires.at(-1)).toMatchObject({ branchOfWireId: parent.id, branchSource: "from", branchPosition: .45 });
+    const malformed = JSON.parse(JSON.stringify(input));
+    delete malformed.sheets[0].document.wires.at(-1).branchPosition;
+    expect(() => parseProjectJson(JSON.stringify(malformed))).toThrow("branch reference is incomplete");
+  });
+
   it("persists optional component drafting colors and accepts older projects without them", () => {
     const input = freeSheetWithComponent();
     input.sheets[1].document.components[0].draftingColor = "#7b3fa1";

@@ -56,6 +56,12 @@ export interface Wire {
   netName?: string;
   /** User-selected conductor stroke color; presentation only. */
   draftingColor?: string;
+  /** The wire this branch is attached to; absent on ordinary terminal-to-terminal wires. */
+  branchOfWireId?: string;
+  /** Parent endpoint from which the branch route begins. */
+  branchSource?: "from" | "to";
+  /** Relative position along the parent wire path, from 0 to 1. */
+  branchPosition?: number;
 }
 
 export interface SchematicAnnotation {
