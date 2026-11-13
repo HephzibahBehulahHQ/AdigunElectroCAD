@@ -320,5 +320,5 @@ it("edits, previews and scans an AI1 comparison independently of AI0", () => {
   expect(previewLadder(rungs, inputs)).toMatchObject({ output1: true });
   expect(scanPlcProgram(program, false, false, false, 27648, undefined, [], undefined, 0.1, undefined, false, 13824)).toMatchObject({ ok: true, output1: true });
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
-  expect(markup).toContain("<option>AI1</option>");
+  expect(markup).toContain('<option selected="">AI1</option>');
 });
