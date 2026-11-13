@@ -463,6 +463,14 @@ PR #184 merged as `f58dbf0`. GitHub Verify run #725 and Pages deployment run #18
 
 PR #188 merged as `7300c26`. GitHub Verify run #733 and Pages deployment run #184 succeeded. The selection workflow is documented in PR #190, merged as `6e38810`; Verify run #736 and Pages deployment run #185 succeeded.
 
+## Completed increment: M06ap — Reorder graphical ladder rungs
+
+- [x] Add bounded Move Up/Move Down controls so users can change rung order in the graphical ladder editor.
+- [x] Compile rungs in the displayed order, preserving later-rung priority and leaving the draft unchanged when a move is invalid.
+- [x] Pass 93 focused ladder/PLC tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #192 merged as `a3a4c2b`. GitHub Verify run #743 and Pages deployment run #187 succeeded.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
