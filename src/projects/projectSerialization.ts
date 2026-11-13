@@ -119,6 +119,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
+    ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
     properties: properties(component.properties),
       ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),

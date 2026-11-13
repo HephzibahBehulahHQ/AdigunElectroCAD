@@ -46,6 +46,16 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
   });
 
+  it("persists optional user-selected component names and accepts older projects without them", () => {
+    const input = freeSheetWithComponent();
+    input.sheets[1].document.components[0].displayName = "Pump room supply";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.components[0].displayName).toBe("Pump room supply");
+    delete input.sheets[1].document.components[0].displayName;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+    input.sheets[1].document.components[0].displayName = "x".repeat(81);
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component display name");
+  });
+
   it("persists user-defined component data without requiring it in older projects", () => {
     const input = freeSheetWithComponent();
     input.sheets[1].document.components[0].customProperties = { Indicator: "Green", "Nominal voltage": "User selected" };
