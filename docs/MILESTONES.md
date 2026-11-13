@@ -301,6 +301,14 @@ PR #143 merged as `4f0dae5`. Verify runs `43345427176` and `43345460442` succeed
 
 PR #145 merged as `7ee71b7`. Verify runs `43347489294` and `43347511612` succeeded. Pages deployment `43347617648` succeeded; custom-domain bundle inspection remains pending.
 
+## Completed increment: M06v — Editable annotation text size
+
+- [x] Let users set a visual annotation size from 8 to 48 SVG units in Properties; existing annotations keep the 18-unit default.
+- [x] Render the selected size and scale its selection outline; validate and persist the optional size without changing electrical semantics.
+- [x] Verify serialization for sized and older annotations, reject out-of-range values, and render the chosen size.
+
+PR #147 merged as `02a8ce3`. Verify run `43349223442` and Pages deployment `43349348475` succeeded; custom-domain bundle inspection remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
