@@ -365,6 +365,14 @@ PR #159 merged as `67db649`. Verify runs `43354328192` and `43354348944` and Pag
 
 PR #161 merged as `454844a`. Verify runs `43355568307` and `43355585024` and Pages deployment `43355692072` succeeded; direct custom-domain inspection remains pending.
 
+## Completed increment: M06ad — Component multi-selection and group movement
+
+- [x] Let users Shift+Click multiple components on editable sheets and show every selected component.
+- [x] Move a selected group together on the 20-unit grid; reject collisions atomically and preserve wire topology.
+- [x] Pass 25 targeted tests, production build, GitHub Verify, merge, and Pages deployment.
+
+PR #163 merged as `5c4ed14`. GitHub Verify run `43358060417` and Pages deployment run #161 succeeded; direct custom-domain interaction verification remains pending.
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
