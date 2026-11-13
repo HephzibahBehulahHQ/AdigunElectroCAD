@@ -243,6 +243,16 @@ PR #131 merged as `a77d4d5`. GitHub Verify runs `43327163305` and `43327187398` 
 
 PR #133 merged as `633c7f9`. Verify runs `43329733302` and `43329763671` and Pages deployment `43329864660` succeeded. A live custom-domain request could not resolve its hostname in this environment; production bundle inspection remains pending.
 
+## Completed increment: M06p — Edit polyline and polygon vertices
+
+- [x] Insert a snapped vertex by double-clicking a path edge; remove a selected vertex with right-click.
+- [x] Enforce bounds, minimum vertex counts, duplicate-point checks, and non-collapsed polygon area while keeping graphic paths separate from electrical connectivity.
+- [x] Pass 29 focused tests, production build, both GitHub Verify runs, merge, and Pages deployment.
+- [ ] Verify the served custom-domain bundle after DNS resolution returns.
+
+PR #135 merged as `90c9016`. Verify runs `43333087233` and `43333096028` succeeded. Pages deployment `43333187689` succeeded; custom-domain bundle inspection remains pending after the hostname failed to resolve in this environment.
+
+
 ## Per-increment publication rule
 
 Finish its observable behavior and checks, review the exact changed files, commit/push a visible branch, and retain a draft PR until ready. After CI succeeds, merge and deploy using the configured workflow; verify the served build and targeted behavior before starting the next increment. Preserve unfinished work separately. Never include credentials, caches, unrelated files or local test logs. Record failures and unverified boundaries instead of marking gates complete.
