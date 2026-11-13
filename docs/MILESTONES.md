@@ -576,3 +576,9 @@ This PLC lab comparator is a local preview and does not replace scanned, wired P
 - [x] Merge PR #215 as `7fc3657`; merged test/build and Pages deployment run `43409436336` passed.
 
 AI1 has no predefined sensor assignment. Users choose the components, branches, terminals and program behavior. Physical input diagnostics and wire-break/overrange faults remain unimplemented.
+
+## Completed increment: M06ba — User-selected indicator color palette
+
+- [x] Add one-click color swatches to the user-defined H1–H3 indicator symbols while retaining the custom color picker.
+- [x] Keep the indication, wiring, branch, terminal and behavior choices with the project author; the palette changes the symbol fill only.
+- [x] Pass exact-head Verify run `43410808023`, merge PR #217 as `fa4e342`, and complete Pages deployment `43410947890`.
