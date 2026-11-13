@@ -298,5 +298,5 @@ it("round-trips and previews not-equal ladder comparisons", () => {
   expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [11] }).output).toBe(true);
   expect(previewLadder(rungs, { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [10] }).output).toBe(false);
   const markup = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => undefined }));
-  expect(markup).toContain("<option>NE</option>");
+  expect(markup).toContain(">NE</option>");
 });
