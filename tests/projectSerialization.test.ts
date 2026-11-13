@@ -119,7 +119,7 @@ describe("project JSON import validation", () => {
   it("persists editable text annotations and accepts older projects without annotations", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = input.sheets[1].document;
-    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V\nTerminal A1 · branch K1", x: 180, y: 220, color: "#1565c0", fontSize: 28, rotation: 45, textAnchor: "middle", fontWeight: 700, lineSpacing: 1.5 }];
+    sheet.annotations = [{ id: "note-1", text: "Panel feed · 400 V\nTerminal A1 · branch K1", x: 180, y: 220, color: "#1565c0", fontSize: 28, rotation: 45, textAnchor: "middle", fontWeight: 700, lineSpacing: 1.5, fontStyle: "italic" }];
     const imported = parseProjectJson(JSON.stringify(input));
     expect(imported.sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].textAnchor;
@@ -127,6 +127,8 @@ describe("project JSON import validation", () => {
     delete sheet.annotations[0].fontWeight;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].lineSpacing;
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
+    delete sheet.annotations[0].fontStyle;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
     delete sheet.annotations[0].rotation;
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations).toEqual(sheet.annotations);
@@ -165,6 +167,9 @@ describe("project JSON import validation", () => {
     input.sheets[1].document.annotations![0].text = "first\nsecond";
     input.sheets[1].document.annotations![0].lineSpacing = 3.1;
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("line spacing must be between 1 and 3");
+    input.sheets[1].document.annotations![0].lineSpacing = 1.2;
+    input.sheets[1].document.annotations![0].fontStyle = "obliq" as "normal";
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("font style must be normal or italic");
   });
 
   it("persists user-drawn graphics and accepts earlier projects without graphics", () => {
