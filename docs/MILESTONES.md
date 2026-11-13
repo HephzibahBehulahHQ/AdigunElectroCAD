@@ -553,3 +553,10 @@ NE is a numeric comparison only; direct AI0 thresholds retain the existing integ
 - [x] Merge PR #210 as `bb35006` and complete Pages deployment run `43404919232`.
 
 GE and LE include equality at the selected numeric threshold. Direct AI0 thresholds remain integer raw values in the documented 0–27648 range.
+
+## Completed verification: M05a — Production TON behavior
+
+- [x] Observe a 0.2 s T0 TON program completing through the PLC watch table on the deployed desktop app.
+- [x] Confirm Pause retains timer/output state, Stop clears T0 and Q0, and restore the original local project program without a cloud save.
+
+Production result and scope limits are recorded in `PLC-PROGRAMS.md`.
