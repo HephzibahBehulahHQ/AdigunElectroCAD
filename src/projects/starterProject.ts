@@ -1,4 +1,5 @@
 import { createDolMotorStarter } from "./dolMotorStarter";
+import { createTwoMotorSequence } from "./twoMotorSequence";
 import type { ProjectTemplate } from "./templateLibrary";
 import type { CircuitDocument, CircuitSheet, ElectricalProject } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
@@ -9,6 +10,17 @@ export const createStarterProject = (): ElectricalProject => ({
   description: "Editable direct-on-line motor starter project with a reference circuit and additional free schematic sheets.",
   revision: 1,
   sheets: [{ id: "sheet-dol", name: "Power & Control Circuit", kind: "reference-dol", document: createDolMotorStarter() }],
+});
+
+export const createMotorStarterWorkbook = (): ElectricalProject => ({
+  id: "motor-starter-workbook",
+  name: "Motor starter workbook",
+  description: "A connected two-motor sequence project alongside the DOL reference circuit. The two sheets are separate schematics; cross-sheet electrical nets are not modeled.",
+  revision: 1,
+  sheets: [
+    { id: "sheet-dol", name: "DOL reference", kind: "reference-dol", document: createDolMotorStarter() },
+    { id: "sheet-two-motor", name: "Two-motor sequence", kind: "free-schematic", document: createTwoMotorSequence() },
+  ],
 });
 
 export function addFreeSchematicSheet(project: ElectricalProject): ElectricalProject {
@@ -41,3 +53,4 @@ export function loadTemplateIntoSheet(project: ElectricalProject, sheetId: strin
 function blankDocument(id: string, name: string): CircuitDocument {
   return { id, name, description: "Free-form electrical schematic sheet.", components: [], wires: [], revision: 1 };
 }
+
