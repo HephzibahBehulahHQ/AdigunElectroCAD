@@ -21,7 +21,7 @@ import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from ".
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
-import { createProjectReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
+import { createProjectReport, createProjectWideReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
@@ -150,6 +150,7 @@ export function App() {
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
+  const projectReport = useMemo(() => createProjectWideReport(project.sheets.map((sheet, index) => ({ name: `${sheet.name} · Sheet ${index + 1}`, document: sheet.document })), catalogById), [project.sheets]);
   const circuitModelRuns = useMemo(() => executeCircuitModels(runtimeDocument ?? document, catalogById), [document, runtimeDocument]);
   const selectedPlcRun = circuitModelRuns.find((run) => run.componentId === selectedComponentId && run.modelId === "catalog-plc-digital-io");
   const ladderPreviewInputs = selectedPlcRun && !selectedPlcRun.output.error ? { input0: selectedPlcRun.evaluatedProperties.inputA === true, input1: selectedPlcRun.evaluatedProperties.inputB === true, q0: selectedPlcRun.evaluatedProperties.runtimeQ0 === true, q1: selectedPlcRun.evaluatedProperties.runtimeQ1 === true || selectedPlcRun.evaluatedProperties.output1 === true, previousInput0: selectedPlcRun.evaluatedProperties.runtimeInput0Previous === true, previousInput1: selectedPlcRun.evaluatedProperties.runtimeInput1Previous === true, analogInput0: Number(selectedPlcRun.evaluatedProperties.analogInput0 ?? 0), analogInput1: Number(selectedPlcRun.evaluatedProperties.analogInput1 ?? 0), registers: Array.from({ length: 8 }, (_, index) => Number(selectedPlcRun.evaluatedProperties[`runtimeD${index}`] ?? 0)), memory: Array.from({ length: 8 }, (_, index) => selectedPlcRun.evaluatedProperties[`runtimeM${index}`] === true), timers: Object.fromEntries([0, 1, 2, 3].map((index) => [`T${index}`, { elapsedSeconds: Number(selectedPlcRun.evaluatedProperties[`runtimeT${index}Elapsed`] ?? 0), done: selectedPlcRun.evaluatedProperties[`runtimeT${index}Done`] === true }])), deltaSeconds: 0.1 } : undefined;
@@ -833,15 +834,16 @@ export function App() {
     setNotice(`${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
   };
 
-  const exportReport = (section: ReportSection) => {
-    const blob = new Blob([reportCsv(report, section)], { type: "text/csv;charset=utf-8" });
+  const exportReport = (section: ReportSection, scope: "sheet" | "project") => {
+    const selectedReport = scope === "project" ? projectReport : report;
+    const blob = new Blob([reportCsv(selectedReport, section)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = window.document.createElement("a");
     anchor.href = url;
-    anchor.download = `adigun-electro-cad-${section}.csv`;
+    anchor.download = `adigun-electro-cad-${scope}-${section}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
-    setNotice(`${section === "bom" ? "BOM" : section === "wires" ? "Wire list" : "Terminal list"} CSV exported.`);
+    setNotice(`${scope === "project" ? "Project " : "Active-sheet "}${section === "bom" ? "BOM" : section === "wires" ? "wire list" : "terminal list"} CSV exported.`);
   };
 
   const toggleWireMode = () => {
@@ -1367,7 +1369,7 @@ export function App() {
         </div>
       </section>
 
-      {reportsOpen && <ProjectReports sheetName={activeSheet.name} report={report} onExport={exportReport} onClose={() => setReportsOpen(false)} />}
+      {reportsOpen && <ProjectReports projectName={project.name} sheetName={activeSheet.name} sheetReport={report} projectReport={projectReport} onExport={exportReport} onClose={() => setReportsOpen(false)} />}
 
       <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span>{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
     </main>
@@ -1473,8 +1475,28 @@ function GraphicProperties({ graphic, selectionCount, stackCapabilities, onStack
   </section>;
 }
 
-function ProjectReports({ sheetName, report, onExport, onClose }: { sheetName: string; report: ProjectReport; onExport: (section: ReportSection) => void; onClose: () => void }) {
-  return <section className="report-panel" aria-label="Engineering reports"><div className="report-heading"><div><strong>Engineering reports</strong><span>{sheetName}</span></div><div className="report-actions"><button onClick={() => onExport("bom")}>Export BOM CSV</button><button onClick={() => onExport("wires")}>Export wires CSV</button><button onClick={() => onExport("terminals")}>Export terminals CSV</button><button onClick={onClose}>Close reports</button></div></div><div className="report-grid"><ReportTable title="Bill of materials" headers={["Component", "Category", "Qty", "References"]} rows={report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")])} /><ReportTable title="Wire list" headers={["Net", "From", "To"]} rows={report.wires.map((line) => [line.netName, line.from, line.to])} /><ReportTable title="Terminal list" headers={["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction])} /></div></section>;
+function ProjectReports({ projectName, sheetName, sheetReport, projectReport, onExport, onClose }: { projectName: string; sheetName: string; sheetReport: ProjectReport; projectReport: ProjectReport; onExport: (section: ReportSection, scope: "sheet" | "project") => void; onClose: () => void }) {
+  const [scope, setScope] = useState<"sheet" | "project">("sheet");
+  const report = scope === "project" ? projectReport : sheetReport;
+  const projectScope = scope === "project";
+  return <section className="report-panel" aria-label="Engineering reports">
+    <div className="report-heading">
+      <div><strong>Engineering reports</strong><span>{projectScope ? projectName : sheetName}</span></div>
+      <div className="report-actions">
+        <button type="button" aria-pressed={!projectScope} onClick={() => setScope("sheet")}>Active sheet</button>
+        <button type="button" aria-pressed={projectScope} onClick={() => setScope("project")}>Entire project</button>
+        <button onClick={() => onExport("bom", scope)}>Export BOM CSV</button>
+        <button onClick={() => onExport("wires", scope)}>Export wires CSV</button>
+        <button onClick={() => onExport("terminals", scope)}>Export terminals CSV</button>
+        <button onClick={onClose}>Close reports</button>
+      </div>
+    </div>
+    <div className="report-grid">
+      <ReportTable title="Bill of materials" headers={["Component", "Category", "Qty", "References"]} rows={report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")])} />
+      <ReportTable title="Wire list" headers={projectScope ? ["Sheet", "Net", "From", "To"] : ["Net", "From", "To"]} rows={report.wires.map((line) => projectScope ? [line.sheet ?? "", line.netName, line.from, line.to] : [line.netName, line.from, line.to])} />
+      <ReportTable title="Terminal list" headers={projectScope ? ["Sheet", "Reference", "Terminal", "Kind", "Direction"] : ["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => projectScope ? [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction] : [line.reference, line.terminal, line.kind, line.direction])} />
+    </div>
+  </section>;
 }
 
 function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
