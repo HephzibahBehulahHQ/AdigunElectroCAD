@@ -9,6 +9,8 @@ export function powerTerminalOffset(modelId: string, terminalId: string, poles =
     if (terminalId === "pe") return { x: 47, y: 0 };
   }
   if (modelId === "catalog-motor-starter") {
+    const phase = /^l([123])-(in|out)$/.exec(terminalId);
+    if (phase) return { x: [-24, 0, 24][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
     if (terminalId === "a1") return { x: -16, y: -47 };
     if (terminalId === "a2") return { x: 16, y: -47 };
     const auxiliary: Record<string, { x: number; y: number }> = { "aux-13": { x: -47, y: -12 }, "aux-14": { x: -47, y: 12 }, "aux-21": { x: 47, y: -12 }, "aux-22": { x: 47, y: 12 } };
