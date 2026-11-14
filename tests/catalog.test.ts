@@ -46,6 +46,16 @@ describe("IEC-oriented component catalog", () => {
     }
   });
 
+  it("matches relay changeover-contact counts with three-terminal common/NC/NO sets", () => {
+    for (const [variant, count] of [[1, 1], [2, 2], [3, 3]] as const) {
+      const relay = modeledCatalog.find((definition) => definition.id === `iec.interface-relay.${String(variant).padStart(2, "0")}`)!;
+      expect(relay.propertiesSchema.changeoverContacts).toBe(count);
+      expect(relay.terminals.filter((terminal) => /^[1-3][124]$/.test(terminal.id)).map((terminal) => terminal.id)).toEqual(
+        Array.from({ length: count }, (_, index) => [`${index + 1}1`, `${index + 1}2`, `${index + 1}4`]).flat(),
+      );
+    }
+  });
+
   it("provides terminal and standards metadata for every entry", () => {
     for (const definition of componentCatalog) {
       expect(definition.referencePrefix).not.toBe("");
