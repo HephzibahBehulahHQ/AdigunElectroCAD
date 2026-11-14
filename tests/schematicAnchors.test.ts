@@ -234,7 +234,7 @@ it("shows real pins and labels on free-sheet three-phase source and motor symbol
 it("positions four-pole breaker neutral and catalog motor-starter auxiliary terminals", () => {
   const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
     { id: "q4", definitionId: "iec.circuit-breaker.04", reference: "Q4", x: 300, y: 220, rotation: 0 as const, properties: { poles: 4 } },
-    { id: "km4", definitionId: "iec.motor-starter.04", reference: "KM4", x: 650, y: 420, rotation: 0 as const, properties: { auxiliaryNoContacts: 4 } },
+    { id: "km4", definitionId: "iec.motor-starter.01", reference: "KM1", x: 650, y: 420, rotation: 0 as const, properties: { auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 } },
   ] };
   const anchors = terminalAnchors(document);
   const relative = (componentId: string, terminalId: string) => {
@@ -246,10 +246,10 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("q4", "l3-out")).toEqual([12, 27]);
   expect(relative("q4", "n-in")).toEqual([36, -27]);
   expect(relative("q4", "n-out")).toEqual([36, 27]);
-  expect(relative("km4", "aux-13")).toEqual([47, -30]);
-  expect(relative("km4", "aux-14")).toEqual([47, -22]);
-  expect(relative("km4", "aux-43")).toEqual([47, 18]);
-  expect(relative("km4", "aux-44")).toEqual([47, 26]);
+  expect(relative("km4", "aux-13")).toEqual([-47, -12]);
+  expect(relative("km4", "aux-14")).toEqual([-47, 12]);
+  expect(relative("km4", "aux-21")).toEqual([47, -12]);
+  expect(relative("km4", "aux-22")).toEqual([47, 12]);
 });
 
 it("draws a scaled panel meter with separate supply, measurement, and common pins", () => {
