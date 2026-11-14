@@ -41,6 +41,15 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
   if (modelId === "control-supply-v1") return { x: 47, y: terminalId === "line" ? -12 : 12 };
   if (modelId === "pushbutton-start-v1" || modelId === "pushbutton-stop-v1") return { x: ["13", "21"].includes(terminalId) ? -47 : 47, y: 0 };
   if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
+  if (modelId === "catalog-interface-relay") {
+    if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
+    const contact = /^([1-3])([124])$/.exec(terminalId);
+    if (contact) {
+      const column = [-30, 0, 30][Number(contact[1]) - 1];
+      const terminal = contact[2];
+      return { x: column + (terminal === "2" ? -8 : terminal === "4" ? 8 : 0), y: terminal === "1" ? -27 : 27 };
+    }
+  }
   if (modelId === "catalog-on-delay-timer") {
     if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
     if (terminalId === "16") return { x: 47, y: -12 };
