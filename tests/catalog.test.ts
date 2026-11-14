@@ -26,6 +26,20 @@ describe("IEC-oriented component catalog", () => {
     }
   });
 
+  it("matches breaker pole count and contactor auxiliary count with real terminals", () => {
+    const breaker3 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.01")!;
+    const breaker4 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.04")!;
+    expect(breaker3.propertiesSchema.poles).toBe(3);
+    expect(breaker3.terminals.filter((terminal) => terminal.kind === "power")).toHaveLength(6);
+    expect(breaker4.propertiesSchema.poles).toBe(4);
+    expect(breaker4.terminals.filter((terminal) => terminal.kind === "power").map((terminal) => terminal.id)).toEqual(["l1-in", "l2-in", "l3-in", "l1-out", "l2-out", "l3-out", "n-in", "n-out"]);
+    for (const [variant, count] of [[1, 1], [2, 2], [4, 4]] as const) {
+      const starter = modeledCatalog.find((definition) => definition.id === `iec.motor-starter.${String(variant).padStart(2, "0")}`)!;
+      expect(starter.propertiesSchema.auxiliaryNoContacts).toBe(count);
+      expect(starter.terminals.filter((terminal) => terminal.id.startsWith("aux-")).length).toBe(count * 2);
+    }
+  });
+
   it("provides terminal and standards metadata for every entry", () => {
     for (const definition of componentCatalog) {
       expect(definition.referencePrefix).not.toBe("");

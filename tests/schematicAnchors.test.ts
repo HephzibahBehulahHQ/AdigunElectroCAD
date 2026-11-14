@@ -191,3 +191,36 @@ it("shows real pins and labels on free-sheet three-phase source and motor symbol
   expect(svg).toContain(">M</text>");
   expect(svg).toContain(">3~</text>");
 });
+
+it("positions four-pole breaker neutral and catalog motor-starter auxiliary terminals", () => {
+  const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
+    { id: "q4", definitionId: "iec.circuit-breaker.04", reference: "Q4", x: 300, y: 220, rotation: 0 as const, properties: { poles: 4 } },
+    { id: "km4", definitionId: "iec.motor-starter.04", reference: "KM4", x: 650, y: 420, rotation: 0 as const, properties: { auxiliaryNoContacts: 4 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (componentId: string, terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.componentId === componentId && item.endpoint.terminalId === terminalId)!;
+    const component = document.components.find((item) => item.id === componentId)!;
+    return [anchor.x - component.x, anchor.y - component.y];
+  };
+  expect(relative("q4", "l1-in")).toEqual([-36, -27]);
+  expect(relative("q4", "l3-out")).toEqual([12, 27]);
+  expect(relative("q4", "n-in")).toEqual([36, -27]);
+  expect(relative("q4", "n-out")).toEqual([36, 27]);
+  expect(relative("km4", "aux-13")).toEqual([47, -30]);
+  expect(relative("km4", "aux-14")).toEqual([47, -22]);
+  expect(relative("km4", "aux-43")).toEqual([47, 18]);
+  expect(relative("km4", "aux-44")).toEqual([47, 26]);
+});
+
+it("uses dedicated symbols for modeled four-pole breakers and multi-aux starters", () => {
+  const breaker = catalogById.get("iec.circuit-breaker.04")!;
+  const starter = catalogById.get("iec.motor-starter.04")!;
+  expect(hasDedicatedFunctionalSymbol(breaker.symbolId)).toBe(true);
+  expect(hasDedicatedFunctionalSymbol(starter.symbolId)).toBe(true);
+  const breakerSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: breaker.symbolId, x: 100, y: 100, properties: breaker.propertiesSchema }));
+  const starterSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: starter.symbolId, x: 100, y: 100, properties: starter.propertiesSchema }));
+  expect(breakerSvg).toContain('aria-label="4-pole circuit breaker, open"');
+  expect(breakerSvg.match(/<path /g)).toHaveLength(4);
+  expect(starterSvg).toContain('aria-label="Motor starter with three main poles and 4 auxiliary NO contacts"');
+});

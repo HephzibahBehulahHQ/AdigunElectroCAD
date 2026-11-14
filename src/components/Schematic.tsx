@@ -82,7 +82,7 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const sixTerminal = definition.id === "motor.six-terminal";
       const x = sixTerminal ? index < 6 ? [-30, 0, 30][index % 3] : -47 : index % 2 ? 47 : -47;
       const y = sixTerminal ? index < 3 ? -42 : index < 6 ? 42 : 0 : -18 + Math.floor(index / 2) * 12;
-      const power = powerTerminalOffset(definition.simulationModelId, terminal.id);
+      const power = powerTerminalOffset(definition.simulationModelId, terminal.id, Number(component.properties.poles) || 3);
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const size = component.size ?? 1;
       const terminalOffset = component.customTerminalOffsets?.[terminal.id] ?? control ?? { x, y };
