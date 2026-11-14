@@ -20,7 +20,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
     const closed = properties.closed === true;
     const poles = Number(properties.poles) === 4 ? 4 : 3;
     const offsets = poles === 4 ? [-36, -12, 12, 36] : [-32, 0, 32];
-    return <g className={mark} aria-label={`${poles}-pole circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+    return <g className={mark} aria-label={`${poles === 4 ? "Four" : "Three"}-pole circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
       {offsets.map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset - 7} ${y - 12} H ${x + offset - 2} M ${closed ? `M ${x + offset - 2} ${y - 12} V ${y + 8}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 7} ${y + 1}`} M ${x + offset + 2} ${y + 8} H ${x + offset + 7} V ${y + 27}`} /></g>)}
     </g>;
   }
