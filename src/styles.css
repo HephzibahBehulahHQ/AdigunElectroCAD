@@ -334,3 +334,38 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .continuation-points ol { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.5; }
 .continuation-properties input[type="color"] { min-height: 38px; padding: 3px; }
 
+
+.component-context-menu {
+  position: fixed;
+  z-index: 2000;
+  display: grid;
+  min-width: 204px;
+  gap: 4px;
+  padding: 8px;
+  color: #e8f2ff;
+  background: #0b1b30;
+  border: 1px solid #3b638b;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px #0008;
+}
+.component-context-menu strong {
+  overflow: hidden;
+  padding: 6px 8px 8px;
+  border-bottom: 1px solid #294866;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.component-context-menu button {
+  width: 100%;
+  padding: 7px 9px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  text-align: left;
+}
+.component-context-menu button:hover,
+.component-context-menu button:focus-visible { background: #193553; outline: 1px solid #38bdf8; }
+.component-context-menu button:disabled { opacity: .45; cursor: not-allowed; }
+.component-context-menu button.danger { color: #ff9a9a; }
