@@ -21,7 +21,8 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ templates, selected, verification, onSelect, onLoad }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad }: {
+  active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
   verification: TemplateVerification;
@@ -36,7 +37,7 @@ export function ProjectLibraryPanel({ templates, selected, verification, onSelec
   const pages = Math.max(1, Math.ceil(filtered.length / 5));
   const currentPage = Math.min(page, pages - 1);
   const visible = filtered.slice(currentPage * 5, currentPage * 5 + 5);
-  return <aside className="panel project-library-panel" aria-label="Project library">
+  return <section className="dock-content project-library-panel" aria-label="Project library" hidden={!active}>
     <div className="panel-title"><strong>Project Library</strong><span>{templates.length} entries</span></div>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />
@@ -64,5 +65,6 @@ export function ProjectLibraryPanel({ templates, selected, verification, onSelec
       <p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : verification.failedExpectations.join(" ")}</p>
       <button className="primary wide" onClick={onLoad}>Load into free sheet</button>
     </section>
-  </aside>;
+  </section>;
 }
+
