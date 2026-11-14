@@ -52,8 +52,8 @@ it("derives the same three pole currents from forward and reversed wired feeds",
     circuit = setCircuitBooleanInput(circuit, catalogById, command, "pressed", false);
     const properties = executeCircuitModels(circuit, catalogById).find(r => r.reference === "F1")!.evaluatedProperties;
     expect(properties.runtimeCurrentError).toBe("");
-    expect([properties.runtimePhase1CurrentA, properties.runtimePhase2CurrentA, properties.runtimePhase3CurrentA]).toEqual([14.1, 14.1, 14.1]);
-    expect(properties.runtimeLoadCurrentA).toBe(14.1);
+    expect([properties.runtimePhase1CurrentA, properties.runtimePhase2CurrentA, properties.runtimePhase3CurrentA]).toEqual([14.3, 14.3, 14.3]);
+    expect(properties.runtimeLoadCurrentA).toBe(14.3);
     circuit = setCircuitBooleanInput(circuit, catalogById, "breaker", "closed", false);
     expect(executeCircuitModels(circuit, catalogById).find(r => r.reference === "F1")?.evaluatedProperties.runtimeLoadCurrentA).toBe(0);
     expect(JSON.stringify(createWiredReversingCircuit())).toBe(saved);

@@ -83,10 +83,12 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       if (p.runtimeThermalError) p.runtimeSignalError = p.runtimeThermalError;
     }
   }
-  if (document.id !== "reference-dol-motor-starter") for (const [id, coil] of evaluateWiredControl(document, catalog)) {
+  const wiredCoils = document.id !== "reference-dol-motor-starter" ? evaluateWiredControl(document, catalog) : new Map();
+  for (const [id, coil] of wiredCoils) {
     const active = properties.get(id)!;
     active.energized = coil.energized;
     active.runtimeCoilVoltageV = coil.voltageV;
+    active.runtimeCoilEnergized = coil.energized;
     if (coil.error) active.runtimeSignalError = coil.error;
   }
   const signals = new Map<string, FunctionalSignal>();
@@ -125,6 +127,20 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       }
     }
     if (!propagateWires(document, definitionsByComponent, signals) && !changed) break;
+  }
+  const hasPhysicalControlSupply = document.components.some(component => {
+    const model = definitionsByComponent.get(component.id)?.simulationModelId;
+    return model === "control-supply-v1" || model === "catalog-dc-control-supply";
+  });
+  if (hasPhysicalControlSupply) for (const [id, coil] of wiredCoils) {
+    const active = properties.get(id);
+    if (!active) continue;
+    // A1 Boolean feedback can loop through NC interlocks; when a real control
+    // supply is present, use the evaluated voltage across A1/A2 as authority.
+    active.energized = coil.energized;
+    active.runtimeCoilVoltageV = coil.voltageV;
+    active.runtimeCoilEnergized = coil.energized;
+    if (coil.error) active.runtimeSignalError = coil.error;
   }
   // Trace each phase through actual wires and closed switching paths.
   // Component commands alone cannot supply a motor with power.
