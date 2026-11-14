@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { componentCatalog, dolCatalog } from "../src/catalog/dolCatalog";
 import { modeledCatalog } from "../src/catalog/modeledCatalog";
-import { evaluateFunctionalModel, hasFunctionalModel } from "../src/simulation/functionalModels";
+import { evaluateFunctionalModel, evaluateFunctionalSignal, hasFunctionalModel } from "../src/simulation/functionalModels";
+import { functionalOutputTerminals } from "../src/electrical/signalContracts";
 
 describe("IEC-oriented component catalog", () => {
   it("contains the required distribution of unique modeled entries", () => {
@@ -111,3 +112,20 @@ describe("IEC-oriented component catalog", () => {
   });
 });
 
+
+describe("source-backed Siemens overload relay", () => {
+  it("exposes the correct three-pole, NC-trip, and NO-trip terminals", () => {
+    const overload = dolCatalog.find((definition) => definition.id === "overload.thermal")!;
+    expect(overload.name).toContain("3RU2126-4AB0");
+    expect(overload.terminals.map((terminal) => terminal.id)).toEqual([
+      "l1-in", "l2-in", "l3-in", "t1", "t2", "t3", "aux-95", "aux-96", "aux-97", "aux-98",
+    ]);
+    expect(overload.propertiesSchema).toMatchObject({ settingMinA: 11, settingMaxA: 16, tripClass: 10 });
+    expect(overload.standardsReferences.some((source) => source.includes("3RU2126-4AB0"))).toBe(true);
+    expect(functionalOutputTerminals(overload).map((terminal) => terminal.id)).toEqual(["aux-96", "aux-98"]);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: false }, "aux-96")?.value).toBe(true);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: false }, "aux-98")?.value).toBe(false);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: true }, "aux-96")?.value).toBe(false);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: true }, "aux-98")?.value).toBe(true);
+  });
+});

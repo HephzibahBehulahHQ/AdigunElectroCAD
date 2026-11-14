@@ -111,6 +111,10 @@ it("aligns breaker and overload phase anchors with the dedicated three-pole symb
   expect(relative(overload.id, "l1-in")).toEqual([-32, -27]);
   expect(relative(overload.id, "t2")).toEqual([0, 27]);
   expect(relative(overload.id, "t3")).toEqual([32, 27]);
+  expect(relative(overload.id, "aux-95")).toEqual([-47, -12]);
+  expect(relative(overload.id, "aux-96")).toEqual([-47, 12]);
+  expect(relative(overload.id, "aux-97")).toEqual([47, -12]);
+  expect(relative(overload.id, "aux-98")).toEqual([47, 12]);
 });
 
 it("keeps scaled symbol terminals connected to the scaled canvas instance", () => {

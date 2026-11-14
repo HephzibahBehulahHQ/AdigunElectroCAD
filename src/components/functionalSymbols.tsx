@@ -132,8 +132,16 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   }
   if (symbolId === "overload-3p") {
     const tripped = properties.tripped === true || properties.runtimeThermalTripped === true;
-    return <g className={mark} aria-label={`Three-phase thermal overload relay, ${tripped ? "tripped" : "not tripped"}`} data-state={tripped ? "tripped" : "healthy"}>
+    const contact95Closed = !tripped;
+    const contact97Closed = tripped;
+    return <g className={mark} aria-label={`Siemens SIRIUS 3RU2126-4AB0 three-pole Class 10 overload relay, 95/96 ${contact95Closed ? "closed" : "open"}, 97/98 ${contact97Closed ? "closed" : "open"}`} data-state={tripped ? "tripped" : "healthy"}>
       {[-32, 0, 32].map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset} ${y - 12} L ${x + offset - 5} ${y - 7} L ${x + offset + 5} ${y - 2} L ${x + offset - 5} ${y + 3} L ${x + offset + 5} ${y + 8} L ${x + offset} ${y + 12} V ${y + 27}`} /></g>)}
+      <path d={contact95Closed
+        ? `M ${x - 47} ${y - 12} H ${x - 25} V ${y + 12} H ${x - 47}`
+        : `M ${x - 47} ${y - 12} H ${x - 31} L ${x - 22} ${y - 2} M ${x - 25} ${y + 3} V ${y + 12} H ${x - 47}`} />
+      <path d={contact97Closed
+        ? `M ${x + 47} ${y - 12} H ${x + 25} V ${y + 12} H ${x + 47}`
+        : `M ${x + 47} ${y - 12} H ${x + 31} L ${x + 22} ${y - 2} M ${x + 25} ${y + 3} V ${y + 12} H ${x + 47}`} />
       <circle cx={x + 19} cy={y + 18} r="3" fill={tripped ? "#c62828" : "#16824a"} aria-label={tripped ? "Tripped" : "Healthy"} />
     </g>;
   }

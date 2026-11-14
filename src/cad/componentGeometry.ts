@@ -16,6 +16,17 @@ export function powerTerminalOffset(modelId: string, terminalId: string, poles =
     const auxiliary: Record<string, { x: number; y: number }> = { "aux-13": { x: -47, y: -12 }, "aux-14": { x: -47, y: 12 }, "aux-21": { x: 47, y: -12 }, "aux-22": { x: 47, y: 12 } };
     if (auxiliary[terminalId]) return auxiliary[terminalId];
   }
+  if (modelId === "thermal-overload-dol-v1") {
+    const input = /^l([123])-in$/.exec(terminalId);
+    if (input) return { x: [-32, 0, 32][Number(input[1]) - 1], y: -27 };
+    const output = /^t([123])$/.exec(terminalId);
+    if (output) return { x: [-32, 0, 32][Number(output[1]) - 1], y: 27 };
+    const auxiliary: Record<string, { x: number; y: number }> = {
+      "aux-95": { x: -47, y: -12 }, "aux-96": { x: -47, y: 12 },
+      "aux-97": { x: 47, y: -12 }, "aux-98": { x: 47, y: 12 },
+    };
+    if (auxiliary[terminalId]) return auxiliary[terminalId];
+  }
   if (modelId === "catalog-variable-frequency-drive") {
     const input = /^l([123])-in$/.exec(terminalId);
     if (input) return { x: -47, y: [-20, 0, 20][Number(input[1]) - 1] };
