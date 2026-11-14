@@ -149,10 +149,15 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   }
   if (symbolId.startsWith("starter-")) {
     const energized = properties.energized === true;
-    return <g className={mark} aria-label={`Siemens SIRIUS 3RT2025-1BB40 contactor, three main poles, one NO auxiliary and one NC auxiliary, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "idle"}>
-      <rect x={x - 15} y={y - 8} width="30" height="22" />
-      {[-24, 0, 24].map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset - 6} ${y - 12} H ${x + offset - 2} M ${energized ? `M ${x + offset - 2} ${y - 12} V ${y + 9}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 6} ${y - 2}`} M ${x + offset + 2} ${y + 9} H ${x + offset + 6} V ${y + 27}`} /></g>)}
-      <path d={`M ${x - 46} ${y - 12} H ${x - 36} M ${x - 36} ${y - 12} L ${x - 25} ${y - 19} M ${x - 21} ${y - 12} H ${x - 11} M ${x + 11} ${y - 12} H ${x + 21} M ${x + 21} ${y - 12} H ${x + 36} M ${x + 36} ${y - 12} H ${x + 46} M ${x - 46} ${y + 12} H ${x - 36} M ${x - 36} ${y + 12} L ${x - 25} ${y + 5} M ${x - 21} ${y + 12} H ${x - 11} M ${x + 11} ${y + 12} H ${x + 21} M ${x + 21} ${y + 12} L ${x + 36} ${y + 5} M ${x + 36} ${y + 12} H ${x + 46}`} />
+    return <g className={mark} aria-label={`Siemens SIRIUS 3RT2025-1BB40 contactor, three main poles, one NO auxiliary and one NC auxiliary, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "de-energized"}>
+      {[-24, 0, 24].map(offset => <g key={offset}>
+        <path d={`M ${x + offset} ${y - 27} V ${y - 12}`} />
+        <path d={`M ${x + offset - 6} ${y - 12} H ${x + offset - 2}`} />
+        <path d={energized ? `M ${x + offset - 2} ${y - 12} L ${x + offset + 2} ${y + 9}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 6} ${y - 2}`} />
+        <path d={`M ${x + offset + 2} ${y + 9} H ${x + offset + 6} V ${y + 27}`} />
+      </g>)}
+      <path d={`M ${x - 16} ${y - 47} H ${x - 12} C ${x - 4} ${y - 59}, ${x - 4} ${y - 35}, ${x} ${y - 47} C ${x + 4} ${y - 59}, ${x + 4} ${y - 35}, ${x + 12} ${y - 47} H ${x + 16}`} />
+      <path d={`M ${x - 47} ${y - 12} H ${x - 36} M ${x - 47} ${y + 12} H ${x - 36} ${energized ? `M ${x - 36} ${y - 12} V ${y + 12}` : `M ${x - 36} ${y - 12} L ${x - 26} ${y - 1} M ${x - 26} ${y + 12} H ${x - 36}`} M ${x + 47} ${y - 12} H ${x + 36} M ${x + 47} ${y + 12} H ${x + 36} ${energized ? `M ${x + 36} ${y - 12} L ${x + 26} ${y - 1} M ${x + 26} ${y + 12} H ${x + 36}` : `M ${x + 36} ${y - 12} V ${y + 12}`} `} />
     </g>;
   }
   if (symbolId === "contactor-3p") return <g className={mark} aria-label="Three-pole contactor"><rect x={x - 16} y={y - 4} width="32" height="16" />{[-24, 0, 24].map(offset => <path key={offset} d={`M ${x + offset - 5} ${y - 22} L ${x + offset + 5} ${y - 10}`} />)}</g>;
