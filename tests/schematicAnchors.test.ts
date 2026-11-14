@@ -213,6 +213,26 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("positions VFD line, motor, and earth terminals beside its dedicated symbol", () => {
+  const definition = catalogById.get("iec.variable-frequency-drive.01")!;
+  const document = { id: "drive-sheet", name: "Drive", description: "", revision: 0, wires: [], components: [
+    { id: "u1", definitionId: definition.id, reference: "U1", x: 450, y: 320, rotation: 0 as const, properties: {} },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 450, anchor.y - 320];
+  };
+  expect(relative("l1-in")).toEqual([-47, -20]);
+  expect(relative("l3-in")).toEqual([-47, 20]);
+  expect(relative("u1")).toEqual([47, -20]);
+  expect(relative("w1")).toEqual([47, 20]);
+  expect(relative("pe")).toEqual([0, 35]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 450, y: 320 }));
+  expect(svg).toContain('aria-label="Variable-frequency drive with three-phase input and U/V/W output"');
+});
+
 it("positions all PLC I/O terminals around a dedicated module symbol", () => {
   const definition = catalogById.get("iec.plc-digital-io.01")!;
   const document = { id: "plc-sheet", name: "PLC", description: "", revision: 0, wires: [], components: [
