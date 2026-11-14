@@ -1,8 +1,11 @@
+Warning: truncated output (original token count: 40294)
+Total output lines: 1890
+
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
-import { catalogById, componentCatalog, dolCatalog } from "../catalog/dolCatalog";
+import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { controlTerminalOffset } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
@@ -209,7 +212,7 @@ export function App() {
   const selectedContinuation = project.continuations?.find((item) => item.id === selectedContinuationId);
   const selectedAnnotation = document.annotations?.find((annotation) => annotation.id === selectedAnnotationId);
   const selectedGraphic = document.graphics?.find((graphic) => graphic.id === selectedGraphicId);
-  const selectedDefinition = catalogById.get(selectedDefinitionId) ?? componentCatalog[0];
+  const selectedDefinition = componentLibraryById.get(selectedDefinitionId) ?? componentLibraryCatalog[0];
   const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
@@ -236,7 +239,7 @@ export function App() {
       valve, cylinder: cylinderPosition(50, valve, 1, 4), pumpLpm: pumpFlowLpm(10, 1000), forceN: hydraulicCylinderForceN(industrialPressureBar, 50), reliefOpen: reliefValveOpen(industrialPressureBar, 180), frlBar: frlOutletPressureBar(8, 6, 0.4), compressorLpm: compressorDeliveryLpm(120, extend || retract), temperatureNext, thermostat: thermostatOn(industrialTemperatureC, 21, 2, false), humidistat: humidistatOn(65, 60, 4, false), damper: damperPosition(30, industrialTemperatureC > 23 ? 100 : 20, 1, 10), solarW, batterySoc: batteryStateOfCharge(60, solarW / 48, 100, 1 / 60), inverterW: inverterAcPowerW(solarW, 0.93, 1000), gridTie: gridTieClosed(true, 0.05), safety: safetyRelayEnergized(industrialSafetyA, industrialSafetyB, true), curtainClear: lightCurtainClear(false), phaseHealthy: phaseHealthy(true, true, true), leakageTrip: earthLeakageTripped(12, 30), voltageDrop: threePhaseVoltageDropV(industrialCableCurrentA, 100, 1.5), cableLoss: threePhaseCableLossW(industrialCableCurrentA, 100, 1.5),
     };
   }, [industrialCableCurrentA, industrialDirection, industrialPressureBar, industrialSafetyA, industrialSafetyB, industrialSolarIrradiance, industrialTemperatureC]);
-  const filteredCatalog = componentCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
+  const filteredCatalog = componentLibraryCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     window.document.documentElement.dataset.theme = theme;
@@ -1377,20 +1380,7 @@ export function App() {
       const name = rawName.trim();
       const fields = selectedComponent.customProperties ?? {};
       if (!isValidCustomFieldName(name) || value.length > 240 || Object.keys(fields).length >= 20 || Object.keys(fields).some((key) => key.toLowerCase() === name.toLowerCase())) {
-        setNotice("Use a unique field name of 1–40 characters and a value of at most 240 characters; a component can have up to 20 custom fields.");
-        return false;
-      }
-      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
-      setNotice(`${selectedComponent.reference} custom field ${name} added. It does not affect simulation.`);
-      return true;
-    };
-
-    const updateSelectedCustomProperty = (name: string, value: string) => {
-      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
-      const fields = selectedComponent.customProperties ?? {};
-      if (!Object.prototype.hasOwnProperty.call(fields, name) || value.length > 240) return;
-      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
-      setNotice(`${selectedComponent.reference} custom field ${name} updated. It does not affect simulation.`);
+        setNotice("Use a unique field name…294 tokens truncated… updated. It does not affect simulation.`);
     };
 
     const renameSelectedCustomProperty = (previousName: string, rawName: string) => {
@@ -1640,7 +1630,7 @@ export function App() {
 
       <section className={`workspace${componentPanelOpen ? "" : " component-panel-collapsed"}${rightPanelOpen ? "" : " properties-panel-collapsed"}`}>
         <aside className="panel component-panel">
-          <div className="panel-title"><strong hidden={!componentPanelOpen}>Component Library</strong><span hidden={!componentPanelOpen}>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span><button type="button" className="panel-toggle" aria-expanded={componentPanelOpen} aria-label={componentPanelOpen ? "Close component library" : "Open component library"} title={componentPanelOpen ? "Close component library" : "Open component library"} onClick={() => setComponentPanelOpen((open) => !open)}>{componentPanelOpen ? "‹" : "›"}</button></div>
+          <div className="panel-title"><strong hidden={!componentPanelOpen}>Component Library</strong><span hidden={!componentPanelOpen}>{componentLibraryCatalog.length} selectable models · source-backed and generic</span><button type="button" className="panel-toggle" aria-expanded={componentPanelOpen} aria-label={componentPanelOpen ? "Close component library" : "Open component library"} title={componentPanelOpen ? "Close component library" : "Open component library"} onClick={() => setComponentPanelOpen((open) => !open)}>{componentPanelOpen ? "‹" : "›"}</button></div>
           <div className="component-panel-content" hidden={!componentPanelOpen}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
           <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); }} />
