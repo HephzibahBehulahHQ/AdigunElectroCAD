@@ -30,3 +30,17 @@ function chooseOffset(minimum: number, maximum: number, limit: number, offset: n
   if (minimum - offset >= 0) return -offset;
   return 0;
 }
+
+
+export type GraphicStackOrder = "backward" | "forward" | "back" | "front";
+
+export function reorderSchematicGraphic(graphics: SchematicGraphic[], id: string, order: GraphicStackOrder): SchematicGraphic[] {
+  const from = graphics.findIndex((graphic) => graphic.id === id);
+  if (from < 0) return graphics;
+  const to = order === "back" ? 0 : order === "front" ? graphics.length - 1 : from + (order === "forward" ? 1 : -1);
+  if (to < 0 || to >= graphics.length || to === from) return graphics;
+  const next = [...graphics];
+  const [graphic] = next.splice(from, 1);
+  next.splice(to, 0, graphic);
+  return next;
+}
