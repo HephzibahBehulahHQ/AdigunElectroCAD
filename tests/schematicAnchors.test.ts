@@ -213,6 +213,24 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("draws a feed-through terminal block and positions both wire terminals", () => {
+  const definition = catalogById.get("iec.feed-through-terminal.01")!;
+  const document = { id: "terminal-sheet", name: "Terminal", description: "", revision: 0, wires: [], components: [
+    { id: "x1", definitionId: definition.id, reference: "X1", x: 360, y: 280, rotation: 0 as const, properties: { continuityClosed: false } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 360, anchor.y - 280];
+  };
+  expect(relative("1")).toEqual([-47, 0]);
+  expect(relative("2")).toEqual([47, 0]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 360, y: 280, properties: { continuityClosed: false } }));
+  expect(svg).toContain('aria-label="Feed-through terminal block, open"');
+  expect(svg).toContain('data-state="open"');
+});
+
 it("places and draws selector switch NO/NC contacts", () => {
   const definition = catalogById.get("iec.selector-switch.02")!;
   const document = { id: "selector-sheet", name: "Selector", description: "", revision: 0, wires: [], components: [
