@@ -65,13 +65,13 @@ export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createMotorStarterWorkbook());
   const latestProject = useRef(project);
   latestProject.current = project;
-  const [activeSheetId, setActiveSheetId] = useState("sheet-two-motor");
+  const [activeSheetId, setActiveSheetId] = useState("sheet-source");
   const [schematicZoom, setSchematicZoom] = useState(.85);
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
-  const [selectedComponentId, setSelectedComponentId] = useState("contactor");
-  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(["contactor"]);
-  const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
+  const [selectedComponentId, setSelectedComponentId] = useState("distribution-source");
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(["distribution-source"]);
+  const [selectedDefinitionId, setSelectedDefinitionId] = useState("supply.three-phase");
   const [componentPanelOpen, setComponentPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [search, setSearch] = useState("");
@@ -771,13 +771,17 @@ export function App() {
   };
 
   const restoreDol = () => {
-    recordEdit(createMotorStarterWorkbook());
-    setActiveSheetId("sheet-two-motor");
-    setComponentSelection("km1");
+    const starter = createMotorStarterWorkbook();
+    recordEdit(starter);
+    const firstSheet = starter.sheets[0];
+    setActiveSheetId(firstSheet.id);
+    setComponentSelection(firstSheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
+    setWireMode(false);
+    setWireStart(null);
     setDirty(true);
     setSimulation(initialDolState());
-    setNotice(t.projectRestored);
+    setNotice("Nine-motor feeder workbook restored with all ten sheets.");
   };
 
   const undo = () => {
