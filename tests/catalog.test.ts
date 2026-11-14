@@ -6,13 +6,13 @@ import { functionalOutputTerminals } from "../src/electrical/signalContracts";
 
 describe("IEC-oriented component catalog", () => {
   it("contains the required distribution of unique modeled entries", () => {
-    expect(modeledCatalog).toHaveLength(488);
+    expect(modeledCatalog).toHaveLength(490);
     expect(componentCatalog.length).toBeGreaterThanOrEqual(563);
     expect(new Set(componentCatalog.map((definition) => definition.id)).size).toBe(componentCatalog.length);
     expect(new Set(modeledCatalog.map((definition) => definition.name)).size).toBe(modeledCatalog.length);
     expect(modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")?.name).toBe("Induction motor · 110V/9A");
     expect(Object.fromEntries(Array.from(new Set(modeledCatalog.map((definition) => definition.category))).map((category) => [category, modeledCatalog.filter((definition) => definition.category === category).length]))).toMatchObject({
-      "Power Supply": 32, "Circuit Breakers": 40, "Protection Devices": 35, "Contactors & Starters": 1, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
+      "Power Supply": 33, "Circuit Breakers": 41, "Protection Devices": 35, "Contactors & Starters": 1, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
     });
   });
 
