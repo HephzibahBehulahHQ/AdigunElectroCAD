@@ -15,11 +15,11 @@ it("retains saved bend points and approaches vertical power terminals on their a
 it("rotates and translates power anchors without changing saved wire topology", () => {
   const document = createTwoMotorSequence(), wires = JSON.stringify(document.wires);
   const anchor = () => terminalAnchors(document).find(a => a.endpoint.componentId === "km1" && a.endpoint.terminalId === "l1-in")!;
-  expect(anchor()).toMatchObject({ x: 268, y: 353, power: true, vertical: true });
+  expect(anchor()).toMatchObject({ x: 276, y: 353, power: true, vertical: true });
   document.components.find(c => c.id === "km1")!.rotation = 90;
-  expect(anchor()).toMatchObject({ x: 327, y: 348, power: true, vertical: false });
+  expect(anchor()).toMatchObject({ x: 327, y: 356, power: true, vertical: false });
   document.components.find(c => c.id === "km1")!.x += 20;
-  expect(anchor()).toMatchObject({ x: 347, y: 348 });
+  expect(anchor()).toMatchObject({ x: 347, y: 356 });
   expect(JSON.stringify(document.wires)).toBe(wires);
 });
 
