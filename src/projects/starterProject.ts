@@ -1,4 +1,4 @@
-import { createDolMotorStarter } from "./dolMotorStarter";
+import { createSourcedDolMotorStarter } from "./sourcedDolMotorStarter";
 import { createMotorFeederWorkbook } from "./motorFeederWorkbook";
 import type { ProjectTemplate } from "./templateLibrary";
 import type { CircuitDocument, CircuitSheet, ElectricalProject } from "../types/electrical";
@@ -9,7 +9,7 @@ export const createStarterProject = (): ElectricalProject => ({
   name: "DOL Motor Starter — 7.5 kW",
   description: "Editable direct-on-line motor starter project with a reference circuit and additional free schematic sheets.",
   revision: 1,
-  sheets: [{ id: "sheet-dol", name: "Power & Control Circuit", kind: "reference-dol", document: createDolMotorStarter() }],
+  sheets: [{ id: "sheet-dol", name: "Power & Control Circuit", kind: "reference-dol", document: createSourcedDolMotorStarter() }],
 });
 
 export const createMotorStarterWorkbook = createMotorFeederWorkbook;
