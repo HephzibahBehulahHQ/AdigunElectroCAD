@@ -57,6 +57,14 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
       return { x: column + (terminal === "2" ? -8 : terminal === "4" ? 8 : 0), y: terminal === "1" ? -27 : 27 };
     }
   }
+  if (modelId === "catalog-safety-relay") {
+    if (terminalId === "a1") return { x: -24, y: -56 };
+    if (terminalId === "a2") return { x: 24, y: -56 };
+    const inputY: Record<string, number> = { s11: -35, s52: -21, s21: -7, s22: 7, s12: 21, s34: 35 };
+    if (inputY[terminalId] !== undefined) return { x: -74, y: inputY[terminalId] };
+    const outputIndex = ["13", "14", "23", "24", "33", "34", "41", "42"].indexOf(terminalId);
+    if (outputIndex >= 0) return { x: 74, y: -42 + outputIndex * 12 };
+  }
   if (modelId === "catalog-control-transformer") {
     if (terminalId === "p1") return { x: -47, y: -12 };
     if (terminalId === "p2") return { x: -47, y: 12 };
