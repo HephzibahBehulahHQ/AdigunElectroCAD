@@ -16,6 +16,29 @@ it("runs the wired star, open-transition, delta, overload and reset sequence", (
   const result = verifyProjectTemplate(template, catalogById);
   expect(validateCircuit(createWiredStarDeltaCircuit(), catalogById)).toEqual([]);
   expect(result).toMatchObject({ passed: true, topologyIssues: [], failedExpectations: [] });
+  const document = createWiredStarDeltaCircuit();
+  const byId = new Map(document.components.map(component => [component.id, component]));
+  for (const id of ["forward", "star", "delta"]) expect(byId.get(id)).toMatchObject({ definitionId: "iec.motor-starter.01", properties: { coilVoltageV: 24, coilDc: true, ratedCurrentA: 17, ratedPowerKw: 7.5 } });
+  expect(byId.get("control-psu")).toMatchObject({ definitionId: "iec.dc-control-supply.01", properties: { inputVoltageV: 230, nominalVoltageV: 24 } });
+  expect(byId.get("overload")?.properties).toMatchObject({ settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10 });
+  expect(document.wires).toContainEqual(expect.objectContaining({ from: { componentId: "control", terminalId: "line" }, to: { componentId: "control-psu", terminalId: "line-in" } }));
+  expect(document.wires).toContainEqual(expect.objectContaining({ from: { componentId: "control-psu", terminalId: "plus-out" }, to: { componentId: "stop", terminalId: "21" } }));
+});
+
+it("inhibits source-backed coils when the SITOP AC input is disconnected", () => {
+  const document = createWiredStarDeltaCircuit();
+  document.wires = document.wires.filter(wire => !(wire.from.componentId === "control" && wire.to.componentId === "control-psu"));
+  let runtime = setCircuitBooleanInput(document, catalogById, "breaker", "closed", true);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "start", "pressed", true);
+  expect(evaluateWiredControl(runtime, catalogById).get("forward")).toMatchObject({ energized: false, voltageV: 0, error: expect.stringContaining("no connected 230 V AC input") });
+});
+
+it("rejects a DC supply connected to a coil configured for AC", () => {
+  const document = createWiredStarDeltaCircuit();
+  document.components.find(component => component.id === "forward")!.properties.coilDc = false;
+  let runtime = setCircuitBooleanInput(document, catalogById, "breaker", "closed", true);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "start", "pressed", true);
+  expect(evaluateWiredControl(runtime, catalogById).get("forward")).toMatchObject({ energized: false, voltageV: 0, error: expect.stringContaining("supply type (AC/DC)") });
 });
 
 it("requires the star contactor NC auxiliary path before delta can energize", () => {
@@ -29,7 +52,7 @@ it("requires the star contactor NC auxiliary path before delta can energize", ()
   expect(evaluateWiredControl(runtime, catalogById).get("delta")?.energized).toBe(true);
   runtime.wires = runtime.wires.filter(wire => !(wire.from.componentId === "star" && wire.from.terminalId === "aux-22" && wire.to.componentId === "delta" && wire.to.terminalId === "a1"));
   expect(evaluateWiredControl(runtime, catalogById).get("delta")?.energized).toBe(false);
-  expect(motor(runtime)).toContain("OPEN");
+  expect(motor(runtime)).toContain("STAR");
 });
 
 it("uses the 200 ms transition timer to keep both branch contactors open", () => {

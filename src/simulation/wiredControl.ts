@@ -2,17 +2,22 @@ import type { CircuitDocument, ElectricalComponentDefinition } from "../types/el
 
 export interface WiredCoilState { energized: boolean; voltageV: number; error?: string; }
 
-/** Ideal isolated AC control supplies and dry contacts; no impedance or pickup curve. */
+/** Ideal isolated AC/DC control supplies and dry contacts; no impedance or pickup curve. */
 export function evaluateWiredControl(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): Map<string, WiredCoilState> {
   const model = (id: string) => catalog.get(document.components.find(c => c.id === id)?.definitionId ?? "")?.simulationModelId;
   const props = (id: string) => {
     const c = document.components.find(c => c.id === id)!;
     return { ...catalog.get(c.definitionId)?.propertiesSchema, ...c.properties };
   };
-  const contactors = document.components.filter(c => model(c.id) === "contactor-dol-v1");
+  const isContactor = (id: string) => ["contactor-dol-v1", "catalog-motor-starter"].includes(model(id) ?? "");
+  const contactors = document.components.filter(c => isContactor(c.id) && document.wires.some(wire =>
+    (wire.from.componentId === c.id && ["a1", "a2"].includes(wire.from.terminalId)) ||
+    (wire.to.componentId === c.id && ["a1", "a2"].includes(wire.to.terminalId))));
   const timers = document.components.filter(c => model(c.id) === "catalog-on-delay-timer" && typeof props(c.id).coilVoltageV === "number");
   const coils = [...contactors, ...timers];
-  const sources = document.components.filter(c => model(c.id) === "control-supply-v1");
+  const acSources = document.components.filter(c => model(c.id) === "control-supply-v1");
+  const dcSources = document.components.filter(c => model(c.id) === "catalog-dc-control-supply");
+  const sources = [...acSources, ...dcSources];
   if (!coils.length) return new Map();
   let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true || (model(c.id) === "catalog-on-delay-timer" && props(c.id).energized === true)]));
   const seen = new Set<string>();
@@ -39,8 +44,8 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       if (m === "pushbutton-start-v1" && p.pressed === true) link(key(c.id, "13"), key(c.id, "14"));
       if (m === "pushbutton-stop-v1" && p.pressed !== true) link(key(c.id, "21"), key(c.id, "22"));
       if (m === "thermal-overload-dol-v1" && p.tripped !== true && !(p.thermalEnabled === true && p.runtimeThermalTripped === true)) link(key(c.id, "aux-95"), key(c.id, "aux-96"));
-      if (m === "contactor-dol-v1" && state.get(c.id)) link(key(c.id, "aux-13"), key(c.id, "aux-14"));
-      if (m === "contactor-dol-v1" && !state.get(c.id) && isControl(c.id, "aux-21") && isControl(c.id, "aux-22")) link(key(c.id, "aux-21"), key(c.id, "aux-22"));
+      if (isContactor(c.id) && state.get(c.id)) link(key(c.id, "aux-13"), key(c.id, "aux-14"));
+      if (isContactor(c.id) && !state.get(c.id) && isControl(c.id, "aux-21") && isControl(c.id, "aux-22")) link(key(c.id, "aux-21"), key(c.id, "aux-22"));
       if (m === "catalog-on-delay-timer") {
         const done = state.get(c.id) === true && Number(p.elapsedSeconds) >= Number(p.delaySeconds);
         link(key(c.id, "15"), key(c.id, done ? "18" : "16"));
@@ -52,22 +57,45 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       for (let n = 0; n < queue.length; n++) for (const next of graph.get(queue[n]) ?? []) if (!visited.has(next)) { visited.add(next); queue.push(next); }
       return visited;
     };
+    const supplyPorts = (supplyId: string) => model(supplyId) === "catalog-dc-control-supply"
+      ? { live: "plus-out", return: "zero-out", voltage: props(supplyId).nominalVoltageV, dc: true }
+      : { live: "line", return: "neutral", voltage: props(supplyId).voltageV, dc: false };
+    const supplyError = (supplyId: string): string | undefined => {
+      const p = props(supplyId);
+      if (p.outputEnabled === false) return "Control supply output is disabled.";
+      if (model(supplyId) !== "catalog-dc-control-supply") return undefined;
+      const input = document.components.find(c => acSources.some(source => source.id === c.id &&
+        ((reachable(key(source.id, "line")).has(key(supplyId, "line-in")) && reachable(key(source.id, "neutral")).has(key(supplyId, "neutral-in"))) ||
+         (reachable(key(source.id, "line")).has(key(supplyId, "neutral-in")) && reachable(key(source.id, "neutral")).has(key(supplyId, "line-in"))))));
+      if (!input) return "24 V DC supply has no connected 230 V AC input.";
+      if (props(input.id).outputEnabled === false) return "24 V DC supply input source is disabled.";
+      if (reachable(key(input.id, "line")).has(key(input.id, "neutral"))) return "24 V DC supply input line and neutral are shorted.";
+      if (Math.abs(Number(props(input.id).voltageV) - Number(p.inputVoltageV)) > Number(p.inputVoltageV) * 1e-6) return "24 V DC supply input voltage does not match its rating.";
+      return undefined;
+    };
     const result = new Map<string, WiredCoilState>();
     for (const coil of coils) {
       const a = reachable(key(coil.id, "a1"));
       const b = reachable(key(coil.id, "a2"));
-      const attached = sources.filter(s => [a, b].some(net => net.has(key(s.id, "line")) || net.has(key(s.id, "neutral"))));
+      const attached = sources.filter(s => {
+        const ports = supplyPorts(s.id);
+        return [a, b].some(net => net.has(key(s.id, ports.live)) || net.has(key(s.id, ports.return)));
+      });
       let value: WiredCoilState = { energized: false, voltageV: 0 };
       if (attached.length > 1) value.error = "Multiple control supplies reach this coil; isolated-source calculation is required.";
       else if (attached.length === 1) {
         const supply = attached[0];
-        const line = key(supply.id, "line"), neutral = key(supply.id, "neutral");
-        if (reachable(line).has(neutral)) value.error = "Control supply line and neutral are shorted.";
-        else if ((a.has(line) && b.has(neutral)) || (a.has(neutral) && b.has(line))) {
-          const voltage = props(supply.id).voltageV;
+        const ports = supplyPorts(supply.id);
+        const live = key(supply.id, ports.live), neutral = key(supply.id, ports.return);
+        const disabled = supplyError(supply.id);
+        if (disabled) value.error = disabled;
+        else if (reachable(live).has(neutral)) value.error = "Control supply output terminals are shorted.";
+        else if ((a.has(live) && b.has(neutral)) || (!ports.dc && a.has(neutral) && b.has(live))) {
+          const voltage = ports.voltage;
           const coilProperties = props(coil.id);
           const rating = coilProperties.coilVoltageV ?? coilProperties.nominalVoltageV;
           if (typeof voltage !== "number" || !Number.isFinite(voltage) || voltage <= 0 || typeof rating !== "number" || !Number.isFinite(rating) || rating <= 0) value.error = "Supply and coil voltage ratings must be finite positive numbers.";
+          else if (typeof coilProperties.coilDc === "boolean" && coilProperties.coilDc !== ports.dc) value.error = "Applied control supply type (AC/DC) differs from the coil rating.";
           else {
             value.voltageV = voltage;
             value.energized = Math.abs(voltage - rating) <= rating * 1e-6;
