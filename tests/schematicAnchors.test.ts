@@ -213,6 +213,24 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("draws the solenoid actuator and positions its coil terminals", () => {
+  const definition = catalogById.get("iec.solenoid-actuator.01")!;
+  const document = { id: "actuator-sheet", name: "Actuator", description: "", revision: 0, wires: [], components: [
+    { id: "y1", definitionId: definition.id, reference: "Y1", x: 340, y: 250, rotation: 0 as const, properties: { energized: true, returnSpring: true } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 340, anchor.y - 250];
+  };
+  expect(relative("a1")).toEqual([-47, -12]);
+  expect(relative("a2")).toEqual([-47, 12]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 340, y: 250, properties: { energized: true, returnSpring: true } }));
+  expect(svg).toContain('aria-label="Solenoid actuator, energized"');
+  expect(svg).toContain('data-state="energized"');
+});
+
 it("draws a feed-through terminal block and positions both wire terminals", () => {
   const definition = catalogById.get("iec.feed-through-terminal.01")!;
   const document = { id: "terminal-sheet", name: "Terminal", description: "", revision: 0, wires: [], components: [
