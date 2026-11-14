@@ -246,6 +246,14 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("q4", "l3-out")).toEqual([12, 27]);
   expect(relative("q4", "n-in")).toEqual([36, -27]);
   expect(relative("q4", "n-out")).toEqual([36, 27]);
+  expect(relative("km4", "l1-in")).toEqual([-24, -27]);
+  expect(relative("km4", "l2-in")).toEqual([0, -27]);
+  expect(relative("km4", "l3-in")).toEqual([24, -27]);
+  expect(relative("km4", "l1-out")).toEqual([-24, 27]);
+  expect(relative("km4", "l2-out")).toEqual([0, 27]);
+  expect(relative("km4", "l3-out")).toEqual([24, 27]);
+  expect(relative("km4", "a1")).toEqual([-16, -47]);
+  expect(relative("km4", "a2")).toEqual([16, -47]);
   expect(relative("km4", "aux-13")).toEqual([-47, -12]);
   expect(relative("km4", "aux-14")).toEqual([-47, 12]);
   expect(relative("km4", "aux-21")).toEqual([47, -12]);
@@ -461,14 +469,15 @@ it("renders dedicated three-phase source and motor symbols for editable catalog 
   expect(motor).toContain(">3~</text>");
 });
 
-it("uses dedicated symbols for modeled four-pole breakers and multi-aux starters", () => {
+it("renders the identified Siemens contactor with its main poles and NO/NC auxiliaries", () => {
   const breaker = catalogById.get("iec.circuit-breaker.04")!;
-  const starter = catalogById.get("iec.motor-starter.04")!;
+  const starter = catalogById.get("iec.motor-starter.01")!;
   expect(hasDedicatedFunctionalSymbol(breaker.symbolId)).toBe(true);
   expect(hasDedicatedFunctionalSymbol(starter.symbolId)).toBe(true);
   const breakerSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: breaker.symbolId, x: 100, y: 100, properties: breaker.propertiesSchema }));
   const starterSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: starter.symbolId, x: 100, y: 100, properties: starter.propertiesSchema }));
   expect(breakerSvg).toContain('aria-label="4-pole circuit breaker, open"');
   expect(breakerSvg.match(/<path /g)).toHaveLength(4);
-  expect(starterSvg).toContain('aria-label="Motor starter with three main poles and 4 auxiliary NO contacts"');
+  expect(starterSvg).toContain("three main poles, one NO auxiliary and one NC auxiliary");
+  expect(starterSvg).toContain('data-state="idle"');
 });
