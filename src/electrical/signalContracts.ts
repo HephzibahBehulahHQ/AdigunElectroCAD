@@ -5,12 +5,13 @@ const numeric: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz
 
 export function functionalOutputTerminal(definition: ElectricalComponentDefinition): TerminalDefinition | undefined {
   const model = definition.simulationModelId;
-  const outputId = model === "catalog-circuit-breaker" ? "aux-closed" : model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
+  const outputId = model === "catalog-circuit-breaker" ? "aux-closed" : model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" || model === "catalog-safety-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
   return definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
 }
 
 export function functionalOutputTerminals(definition: ElectricalComponentDefinition): TerminalDefinition[] {
   if (definition.simulationModelId === "catalog-plc-digital-io") return definition.terminals.filter((terminal) => terminal.id === "out-0" || terminal.id === "out-1");
+  if (definition.simulationModelId === "catalog-safety-relay") return definition.terminals.filter((terminal) => ["14", "24", "34", "42"].includes(terminal.id));
   const output = functionalOutputTerminal(definition);
   return output ? [output] : [];
 }
@@ -43,6 +44,6 @@ export function terminalSignalUnits(definition: ElectricalComponentDefinition, t
   if (model.startsWith("logic-") && ["in", "in-a", "in-b", "out"].includes(terminalId)) return ["boolean"];
   if (["catalog-motor-starter", "catalog-interface-relay", "catalog-solenoid-actuator", "catalog-on-delay-timer"].includes(model) && terminalId === "a1") return ["boolean"];
   if ((model === "catalog-on-delay-timer" && terminalId === "18") || (model === "catalog-interface-relay" && terminalId === "14") || (model === "thermal-overload-dol-v1" && terminalId === "aux-96")) return ["boolean"];
-  if ((model === "catalog-safety-relay" && ["s11", "s21", "s34", "14"].includes(terminalId)) || (model === "safety-dual-relay" && ["in-a", "in-b", "reset", "out"].includes(terminalId)) || (model === "catalog-feed-through-terminal" && ["1", "2"].includes(terminalId))) return ["boolean"];
+  if ((model === "catalog-safety-relay" && ["s11", "s21", "s34", "14", "24", "34", "42"].includes(terminalId)) || (model === "safety-dual-relay" && ["in-a", "in-b", "reset", "out"].includes(terminalId)) || (model === "catalog-feed-through-terminal" && ["1", "2"].includes(terminalId))) return ["boolean"];
   return undefined;
 }
