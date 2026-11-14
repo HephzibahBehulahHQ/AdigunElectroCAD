@@ -14,6 +14,7 @@ import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchemati
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
+import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
 import { verifyProjectTemplate } from "../projects/templateVerification";
 import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn, signOut, signUp, startAnonymousPreview } from "../services/auth";
@@ -109,6 +110,7 @@ export function App() {
   const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
   const [selectedContinuationId, setSelectedContinuationId] = useState("");
+  const [draggedSheetId, setDraggedSheetId] = useState("");
   const [componentContextMenu, setComponentContextMenu] = useState<{ componentId: string; x: number; y: number } | null>(null);
   const [wireRouteEditId, setWireRouteEditId] = useState("");
   const [selectedAnnotationId, setSelectedAnnotationId] = useState("");
@@ -948,6 +950,44 @@ export function App() {
     setNotice(`${sheet.name} added. Insert a catalog component to begin the schematic.`);
   };
 
+  const moveSheetTab = (sourceSheetId: string, targetSheetId: string) => {
+    const next = reorderProjectSheet(project, sourceSheetId, targetSheetId);
+    if (next === project) return;
+    recordEdit(next);
+    setDraggedSheetId("");
+    setNotice("Sheet order changed. Cross-sheet labels keep their original source references.");
+  };
+
+  const removeSheetTab = (sheetId: string) => {
+    const sheetIndex = project.sheets.findIndex((sheet) => sheet.id === sheetId);
+    const sheet = project.sheets[sheetIndex];
+    if (!sheet) return;
+    const result = removeProjectSheet(project, sheetId);
+    if (!result.removed) {
+      setNotice("A project must keep at least one sheet.");
+      return;
+    }
+    recordEdit(result.project);
+    if (activeSheetId === sheetId) {
+      const nextActive = result.project.sheets[Math.min(sheetIndex, result.project.sheets.length - 1)];
+      setActiveSheetId(nextActive.id);
+      setComponentSelection(nextActive.document.components[0]?.id ?? "");
+      setSelectedWireId("");
+      setSelectedAnnotationId("");
+      setSelectedGraphicId("");
+      setSelectedGraphicIds([]);
+      setWireMode(false);
+      setWireStart(null);
+      setWireBranchStart(null);
+      setCrossSheetContinuationMode(false);
+      setCrossSheetContinuationStart(null);
+      setCrossSheetContinuationExtendId("");
+      setRuntimeDocument(null);
+    }
+    if (selectedContinuationId && !result.project.continuations?.some((item) => item.id === selectedContinuationId)) setSelectedContinuationId("");
+    setNotice(`${sheet.name} removed. ${result.removedContinuations ? `${result.removedContinuations} affected continuation(s) removed` : "Cross-sheet links preserved"}; Undo restores the sheet.`);
+  };
+
   const selectSheet = (sheetId: string) => {
     const sheet = project.sheets.find((item) => item.id === sheetId);
     if (!sheet) return;
@@ -1032,7 +1072,7 @@ export function App() {
     setReconnectingWireId("");
     setAnnotationMode(false);
     setGraphicMode(null);
-    setNotice(`Choose a compatible terminal on a later sheet to extend ${selectedContinuation.label}; its original source reference will be kept.`);
+    setNotice(`Choose a compatible terminal on another sheet to extend ${selectedContinuation.label}; its original source reference will be kept.`);
   };
 
   const selectWireTerminal = (endpoint: TerminalEndpoint, continueBranch = false) => {
@@ -1552,7 +1592,7 @@ export function App() {
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Component</button></div></details>
-        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.findIndex((sheet) => sheet.id === selectedContinuation.points.at(-1)?.sheetId) >= project.sheets.length - 1}>Extend selected continuation</button></div></details>
+        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
@@ -1613,7 +1653,7 @@ export function App() {
         </aside>
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
-          <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
+          <div className="sheet-tabs" role="tablist" aria-label="Project sheets">{project.sheets.map((sheet, index) => <div key={sheet.id} className={`sheet-tab ${sheet.id === activeSheet.id ? "active" : ""} ${draggedSheetId === sheet.id ? "dragging" : ""}`} draggable onDragStart={(event) => { if ((event.target as HTMLElement).closest(".sheet-tab-remove")) { event.preventDefault(); return; } setDraggedSheetId(sheet.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", sheet.id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); const sourceId = event.dataTransfer.getData("text/plain") || draggedSheetId; moveSheetTab(sourceId, sheet.id); }} onDragEnd={() => setDraggedSheetId("")} title="Drag to reorder sheet"><button type="button" role="tab" aria-selected={sheet.id === activeSheet.id} className="sheet-tab-select" onClick={() => selectSheet(sheet.id)} onKeyDown={(event) => { if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return; event.preventDefault(); const target = project.sheets[index + (event.key === "ArrowLeft" ? -1 : 1)]; if (target) moveSheetTab(sheet.id, target.id); }}>{sheet.name} · Sheet {index + 1}</button><button type="button" className="sheet-tab-remove" aria-label={`Remove ${sheet.name}`} title="Remove sheet (Undo restores it)" disabled={project.sheets.length <= 1} onClick={(event) => { event.stopPropagation(); removeSheetTab(sheet.id); }}>×</button></div>)}<button className="add-sheet-tab" onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
           <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
