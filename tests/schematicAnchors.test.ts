@@ -213,6 +213,27 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("draws and anchors the on-delay relay coil and 15/16/18 changeover contact", () => {
+  const definition = catalogById.get("iec.on-delay-timer.01")!;
+  const document = { id: "timer-sheet", name: "Timer", description: "", revision: 0, wires: [], components: [
+    { id: "kt1", definitionId: definition.id, reference: "KT1", x: 420, y: 300, rotation: 0 as const, properties: { energized: true, elapsedSeconds: 2, delaySeconds: 2 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 420, anchor.y - 300];
+  };
+  expect(relative("a1")).toEqual([-47, -12]);
+  expect(relative("a2")).toEqual([-47, 12]);
+  expect(relative("15")).toEqual([0, 27]);
+  expect(relative("16")).toEqual([47, -12]);
+  expect(relative("18")).toEqual([47, 12]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { energized: true, elapsedSeconds: 2, delaySeconds: 2 } }));
+  expect(svg).toContain('aria-label="On-delay timer, timed contact made"');
+  expect(svg).toContain('data-state="timed"');
+});
+
 it("positions VFD line, motor, and earth terminals beside its dedicated symbol", () => {
   const definition = catalogById.get("iec.variable-frequency-drive.01")!;
   const document = { id: "drive-sheet", name: "Drive", description: "", revision: 0, wires: [], components: [
