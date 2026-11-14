@@ -40,6 +40,15 @@ describe("IEC-oriented component catalog", () => {
     expect(drive.terminals.some((terminal) => terminal.id === "a1" || terminal.id === "a2")).toBe(false);
   });
 
+  it("models the panel-meter measurement lead as an input", () => {
+    const meter = modeledCatalog.find((definition) => definition.id === "iec.panel-meter.01")!;
+    expect(meter.terminals.map((terminal) => [terminal.id, terminal.label, terminal.direction])).toEqual([
+      ["supply", "+24V", "input"],
+      ["signal", "MEAS", "input"],
+      ["common", "0V", "bidirectional"],
+    ]);
+  });
+
   it("matches selector contact IDs and resting state to NO/NC variants", () => {
     const no = modeledCatalog.find((definition) => definition.id === "iec.selector-switch.01")!;
     const nc = modeledCatalog.find((definition) => definition.id === "iec.selector-switch.02")!;
