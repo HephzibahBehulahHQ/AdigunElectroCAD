@@ -1249,42 +1249,51 @@ export function App() {
 
       <nav className="menu-row" aria-label="Project actions">
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
-        <button onClick={undo} disabled={!history.undo.length}>Edit · Undo</button>
-        <button onClick={redo} disabled={!history.redo.length}>Edit · Redo</button>
-        <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>View · Grid</button>
-        <button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Insert · Component</button>
-        <button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Electrical · Validate</button>
-        <button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation</button>
+        <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
+
+        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
+        <details><summary>Insert</summary><div className="menu-popover"><button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Component</button></div></details>
+        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button></div></details>
+        <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
       </nav>
 
       <section className="tool-row" aria-label="CAD and simulation tools">
-        <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
-        <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
-        <button className="tool-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶<span>Undo</span></button>
-        <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
-        <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
-        {!isReferenceSheet && <>
-          <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setComponentSelection(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
-          <button className={graphicMode === "line" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("line")} aria-label="Draw line">／<span>Line</span></button>
-          <button className={graphicMode === "rectangle" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("rectangle")} aria-label="Draw rectangle">▭<span>Rectangle</span></button>
-          <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
-          <button className={graphicMode === "polyline" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polyline")} aria-label="Draw polyline">⌁<span>Polyline</span></button>
-          <button className={graphicMode === "polygon" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polygon")} aria-label="Draw polygon">⬠<span>Polygon</span></button>
-          <button className={graphicMode === "freehand" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("freehand")} aria-label="Draw freehand path">✎<span>Freehand</span></button>
-        </>}
-        <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
-        <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
-        <button onClick={() => setSchematicZoom((value) => Math.min(2, Math.round((value + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
-        <button onClick={() => { const viewport = window.document.querySelector(".drawing-area .schematic-wrap"); if (viewport) { setSchematicZoom(Math.max(.25, Math.min(2, (viewport.clientWidth - 16) / 1100, (viewport.clientHeight - 16) / 780))); viewport.scrollTo(0, 0); } }} aria-label="Fit schematic sheet">Fit</button>
-        <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
-        <button id="adigun-bot-launcher" className="bot-button" onClick={() => setBotActivation((value) => value + 1)} aria-expanded={botOpen}>◌ Adigun BOT{botUnread && <span className="bot-unread" aria-label="Pending Bot suggestion">●</span>}</button>
-        <span className="tool-divider" />
-        <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
-        <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
-        <button className="danger" onClick={() => { setIsRunning(false); if (isReferenceSheet) runAction("reset"); else setRuntimeDocument(resetCircuitClock(document, catalogById)); }}>■ Stop</button>
-        <button onClick={() => runAction("trip-overload")} disabled={!isReferenceSheet}>⚠ Trip F1</button>
+        <div className="tool-group" aria-label="Selection and editing"><span className="tool-group-label">Edit</span><div className="tool-group-actions">
+          <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
+          <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
+          <button className="tool-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶<span>Undo</span></button>
+          <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
+        </div></div>
+        <div className="tool-group" aria-label="Drawing tools"><span className="tool-group-label">Draw</span><div className="tool-group-actions">
+          <button className={wireMode ? "tool-button selected" : "tool-button"} onClick={toggleWireMode}>⌁<span>Wiring</span></button>
+          {!isReferenceSheet && <>
+            <button className={annotationMode ? "tool-button selected" : "tool-button"} onClick={() => { const nextMode = !annotationMode; setAnnotationMode(nextMode); setGraphicMode(null); setWireMode(false); setWireStart(null); setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setComponentSelection(""); setSelectedWireId(""); setNotice(nextMode ? "Click the sheet to place a text annotation." : "Text placement ended."); }}>T<span>Text</span></button>
+            <button className={graphicMode === "line" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("line")} aria-label="Draw line">／<span>Line</span></button>
+            <button className={graphicMode === "rectangle" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("rectangle")} aria-label="Draw rectangle">▭<span>Rectangle</span></button>
+            <button className={graphicMode === "ellipse" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("ellipse")} aria-label="Draw ellipse">◯<span>Ellipse</span></button>
+            <button className={graphicMode === "polyline" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polyline")} aria-label="Draw polyline">⌁<span>Polyline</span></button>
+            <button className={graphicMode === "polygon" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("polygon")} aria-label="Draw polygon">⬠<span>Polygon</span></button>
+            <button className={graphicMode === "freehand" ? "tool-button selected" : "tool-button"} onClick={() => activateGraphicTool("freehand")} aria-label="Draw freehand path">✎<span>Freehand</span></button>
+          </>}
+        </div></div>
+        <div className="tool-group" aria-label="Canvas view"><span className="tool-group-label">View</span><div className="tool-group-actions">
+          <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
+          <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
+          <button onClick={() => setSchematicZoom((value) => Math.min(2, Math.round((value + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
+          <button onClick={() => { const viewport = window.document.querySelector(".drawing-area .schematic-wrap"); if (viewport) { setSchematicZoom(Math.max(.25, Math.min(2, (viewport.clientWidth - 16) / 1100, (viewport.clientHeight - 16) / 780))); viewport.scrollTo(0, 0); } }} aria-label="Fit schematic sheet">Fit</button>
+          <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
+        </div></div>
+        <div className="tool-group tool-group-assistant" aria-label="Design assistant"><span className="tool-group-label">Assistant</span><div className="tool-group-actions">
+          <button id="adigun-bot-launcher" className="bot-button" onClick={() => setBotActivation((value) => value + 1)} aria-expanded={botOpen}>◌ Adigun BOT{botUnread && <span className="bot-unread" aria-label="Pending Bot suggestion">●</span>}</button>
+        </div></div>
+        <div className="tool-group tool-group-simulation" aria-label="Simulation controls"><span className="tool-group-label">Simulation</span><div className="tool-group-actions">
+          <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
+          <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
+          <button className="danger" onClick={() => { setIsRunning(false); if (isReferenceSheet) runAction("reset"); else setRuntimeDocument(resetCircuitClock(document, catalogById)); }}>■ Stop</button>
+          <button onClick={() => runAction("trip-overload")} disabled={!isReferenceSheet}>⚠ Trip F1</button>
+        </div></div>
       </section>
 
       <section className="workspace">

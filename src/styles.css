@@ -188,3 +188,41 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 @media (max-width: 1100px) {
   .tool-row { width: 100%; min-width: 0; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 }
+
+/* Workbench hierarchy: main menus, grouped tools, full-height drawing surface. */
+.menu-row { flex: 0 0 auto; gap: 4px; }
+.menu-row details > summary { display: flex; align-items: center; gap: 7px; }
+.menu-row details > summary::after { content: "▾"; color: var(--muted); font-size: .62rem; }
+.menu-row details[open] > summary::after { content: "▴"; }
+.tool-row { align-items: stretch; min-height: 76px; gap: 0; padding: 5px 12px; }
+.tool-group { display: flex; flex: 0 0 auto; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 0 9px; border-right: 1px solid var(--border); }
+.tool-group-label { color: var(--muted); font-size: .54rem; font-weight: 800; letter-spacing: .12em; line-height: 1; text-transform: uppercase; }
+.tool-group-actions { display: flex; align-items: center; gap: 4px; }
+.tool-group-actions > button:not(.tool-button) { min-height: 34px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-2); font-size: .7rem; white-space: nowrap; }
+.tool-group-actions > button:not(.tool-button):hover:not(:disabled) { border-color: #22d3ee; }
+.tool-group .tool-button { min-width: 48px; min-height: 42px; padding: 4px 6px; }
+.tool-group-assistant { border-right: 0; }
+.tool-group-assistant .bot-button { min-height: 36px; border-color: #269ed4; color: #8ce9ff; }
+.tool-group-simulation { margin-left: auto; padding-right: 0; border-right: 0; }
+.tool-group-simulation .run { border-color: #19a870 !important; background: #0d7a53 !important; }
+.tool-group-simulation .danger { border-color: #cf4759 !important; background: #8b2938 !important; }
+
+@media (min-width: 1101px) {
+  .app-shell { height: 100dvh; min-height: 600px; }
+  .app-shell > .workspace { flex: 1 1 0; min-height: 0; }
+  .workspace { align-items: stretch; }
+  .workspace > .panel, .workspace > .drawing-area { min-height: 0; max-height: none; }
+  .workspace > .drawing-area { height: 100%; }
+  .schematic-wrap { height: auto; min-height: 0; }
+  .schematic { min-height: 0; }
+  .engineering-console { flex: 0 0 auto; max-height: 220px; overflow: hidden; }
+  .console-view { max-height: 174px; overflow: auto; }
+}
+
+@media (max-width: 760px) {
+  .tool-group { padding-inline: 7px; }
+  .tool-group-label { font-size: .5rem; }
+  .tool-group-actions { gap: 3px; }
+  .tool-group .tool-button { min-width: 45px; }
+  .tool-group-simulation { margin-left: 0; }
+}
