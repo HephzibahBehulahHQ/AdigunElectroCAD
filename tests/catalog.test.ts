@@ -40,6 +40,17 @@ describe("IEC-oriented component catalog", () => {
     expect(drive.terminals.some((terminal) => terminal.id === "a1" || terminal.id === "a2")).toBe(false);
   });
 
+  it("matches selector contact IDs and resting state to NO/NC variants", () => {
+    const no = modeledCatalog.find((definition) => definition.id === "iec.selector-switch.01")!;
+    const nc = modeledCatalog.find((definition) => definition.id === "iec.selector-switch.02")!;
+    expect(no.propertiesSchema.contactForm).toBe("NO");
+    expect(no.propertiesSchema.closed).toBe(false);
+    expect(no.terminals.map((terminal) => terminal.id)).toEqual(["13", "14"]);
+    expect(nc.propertiesSchema.contactForm).toBe("NC");
+    expect(nc.propertiesSchema.closed).toBe(true);
+    expect(nc.terminals.map((terminal) => terminal.id)).toEqual(["21", "22"]);
+  });
+
   it("matches breaker pole count and contactor auxiliary count with real terminals", () => {
     const breaker3 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.01")!;
     const breaker4 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.04")!;
