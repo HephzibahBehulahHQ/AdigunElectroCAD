@@ -104,6 +104,11 @@ export function App() {
   const [reportsOpen, setReportsOpen] = useState(false);
   const [consoleView, setConsoleView] = useState<"labs">("labs");
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
+  const projectsMenuRef = useRef<HTMLDetailsElement | null>(null);
+  const projectsMenuPinnedRef = useRef(false);
+  const [projectsMenuPinned, setProjectsMenuPinned] = useState(false);
+  const setProjectsPinned = (pinned: boolean) => { projectsMenuPinnedRef.current = pinned; setProjectsMenuPinned(pinned); };
+  const closeProjectsMenu = () => { if (projectsMenuRef.current) projectsMenuRef.current.open = false; setProjectsPinned(false); };
   const [isLabPage, setIsLabPage] = useState(() => window.location.hash.toUpperCase() === "#LAB");
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
@@ -114,6 +119,16 @@ export function App() {
   const [plcMath, setPlcMath] = useState<MathOperation>("add");
   const [plcLeft, setPlcLeft] = useState(50);
   const [plcRight, setPlcRight] = useState(40);
+
+  useEffect(() => {
+    const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
+      if (projectsMenuPinnedRef.current && !projectsMenuRef.current?.contains(event.target as Node)) closeProjectsMenu();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && projectsMenuRef.current?.open) closeProjectsMenu(); };
+    window.document.addEventListener("pointerdown", closeOnOutsidePointer);
+    window.document.addEventListener("keydown", closeOnEscape);
+    return () => { window.document.removeEventListener("pointerdown", closeOnOutsidePointer); window.document.removeEventListener("keydown", closeOnEscape); };
+  }, []);
 
   useEffect(() => {
     const syncLabRoute = () => setIsLabPage(window.location.hash.toUpperCase() === "#LAB");
@@ -1329,14 +1344,21 @@ export function App() {
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
         const current = (event.target as Element).closest<HTMLDetailsElement>("details");
         if (current && event.pointerType === "mouse") current.open = true;
-        event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (menu !== current) menu.open = false; });
+        event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
+          if (menu !== current && !(menu.matches(".projects-menu") && projectsMenuPinnedRef.current)) menu.open = false;
+        });
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
-        window.setTimeout(() => { if (!nav.matches(":hover")) nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; }); }, 140);
+        window.setTimeout(() => { if (!nav.matches(":hover")) nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (!projectsMenuPinnedRef.current || !menu.matches(".projects-menu")) menu.open = false; }); }, 140);
       }} onClickCapture={(event) => {
-        if ((event.target as Element).closest(".menu-popover button, .menu-popover input")) {
+        const target = event.target as Element;
+        if (target.closest(".projects-menu")) {
+          if (target.closest(".project-menu-close, .project-menu-popover .primary.wide")) window.setTimeout(closeProjectsMenu, 0);
+          return;
+        }
+        if (target.closest(".menu-popover button, .menu-popover input")) {
           const nav = event.currentTarget;
-          window.setTimeout(() => nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; }), 0);
+          window.setTimeout(() => nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (!projectsMenuPinnedRef.current || !menu.matches(".projects-menu")) menu.open = false; }), 0);
         }
       }}>
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
@@ -1348,7 +1370,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
-        <details className="projects-menu"><summary>Projects</summary><div className="menu-popover project-menu-popover"><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef}><summary onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
@@ -1443,10 +1465,14 @@ export function App() {
           <button type="button" className="console-collapse" aria-expanded={!consoleCollapsed} onClick={() => setConsoleCollapsed((collapsed) => !collapsed)}>{consoleCollapsed ? "Show console" : "Hide console"}</button>
         </nav>
         <div className="console-view laboratory-view" aria-label="Laboratory controls and results" hidden={!isLabPage}>
-        <div className="lab-content-section lab-status"><h3>Lab status</h3><div className="lab-status-grid"><span>Motor model: <strong>{simulation.motorState.toUpperCase()}</strong></span><span>Terminal wires: <strong>{document.wires.length}</strong></span><span>Topology: <strong>{topologyIssues.length ? `${topologyIssues.length} issue(s)` : "Valid"}</strong></span></div></div>
+        <section className="lab-introduction" aria-labelledby="lab-page-title">
+          <div className="lab-intro-copy"><span className="lab-kicker">ADIGUN ELECTROCAD · LAB</span><h1 id="lab-page-title">Simulation workbench</h1><p>Explore independent motor, PLC, and industrial-device models. Changing lab controls does not change the active CAD sheet.</p><p>To edit a starter circuit in CAD, use its <strong>Copy power circuit to new editable sheet</strong> action.</p></div>
+          <div className="lab-how-to"><strong>How to use the labs</strong><ol><li>Set inputs and conditions.</li><li>Operate the controls in a starter bench.</li><li>Read the calculated results below.</li><li>Copy a starter circuit when you want to edit it in CAD.</li></ol></div>
+        </section>
+        <div className="lab-content-section lab-status"><h3>Current CAD sheet · read-only context</h3><div className="lab-status-grid"><span>Motor model: <strong>{simulation.motorState.toUpperCase()}</strong></span><span>Terminal wires: <strong>{document.wires.length}</strong></span><span>Topology: <strong>{topologyIssues.length ? `${topologyIssues.length} issue(s)` : "Valid"}</strong></span></div></div>
         <div className="lab-content-section lab-inputs"><h3>Inputs and conditions</h3>
-        <section className="console-section plc-lab" aria-label="PLC logic and analog signal laboratory"><strong>PLC Control &amp; Analog Lab</strong><span className="badge running">FUNCTIONAL</span><div className="plc-controls"><label>Input A (NO / NC)<input type="checkbox" checked={plcInputA} onChange={(event) => { setPlcPreviousInputA(plcInputA); setPlcInputA(event.target.checked); }} /></label><label>Input B<input type="checkbox" checked={plcInputB} onChange={(event) => setPlcInputB(event.target.checked)} /></label><label>Logic gate<select value={plcGate} onChange={(event) => setPlcGate(event.target.value as LogicGate)}><option value="and">AND</option><option value="or">OR</option><option value="not">NOT</option><option value="nand">NAND</option><option value="nor">NOR</option><option value="xor">XOR</option></select></label><label>Comparator<select value={plcComparator} onChange={(event) => setPlcComparator(event.target.value as Comparator)}><option value="greater-than">Greater than</option><option value="greater-or-equal">Greater than or equal to</option><option value="less-than">Less than</option><option value="less-or-equal">Less than or equal to</option><option value="equal-to">Equal to</option><option value="not-equal">Not equal to</option></select></label><label>Math block<select value={plcMath} onChange={(event) => setPlcMath(event.target.value as MathOperation)}><option value="add">Add</option><option value="subtract">Subtract</option><option value="multiply">Multiply</option><option value="divide">Divide</option></select></label><label>Value A<input type="number" value={plcLeft} onChange={(event) => setPlcLeft(Number(event.target.value) || 0)} /></label><label>Value B<input type="number" value={plcRight} onChange={(event) => setPlcRight(Number(event.target.value) || 0)} /></label><label>Level sensor {levelPercent}%<input type="range" min="0" max="100" value={levelPercent} onChange={(event) => setLevelPercent(Number(event.target.value))} /></label></div></section>
-        <section className="console-section industrial-lab" aria-label="Industrial device laboratory"><strong>Industrial Device Lab</strong><span className="badge running">FUNCTIONAL</span><div className="plc-controls industrial-controls"><label>Actuator command<select value={industrialDirection} onChange={(event) => setIndustrialDirection(event.target.value as Direction)}><option value="extend">Extend</option><option value="retract">Retract</option><option value="hold">Hold</option></select></label><label>Hydraulic pressure {industrialPressureBar} bar<input type="range" min="0" max="250" value={industrialPressureBar} onChange={(event) => setIndustrialPressureBar(Number(event.target.value))} /></label><label>Zone temperature {industrialTemperatureC}°C<input type="range" min="0" max="40" value={industrialTemperatureC} onChange={(event) => setIndustrialTemperatureC(Number(event.target.value))} /></label><label>Solar irradiance {industrialSolarIrradiance} W/m²<input type="range" min="0" max="1000" value={industrialSolarIrradiance} onChange={(event) => setIndustrialSolarIrradiance(Number(event.target.value))} /></label><label>Cable current {industrialCableCurrentA} A<input type="range" min="0" max="100" value={industrialCableCurrentA} onChange={(event) => setIndustrialCableCurrentA(Number(event.target.value))} /></label><label>Safety channel A<input type="checkbox" checked={industrialSafetyA} onChange={(event) => setIndustrialSafetyA(event.target.checked)} /></label><label>Safety channel B<input type="checkbox" checked={industrialSafetyB} onChange={(event) => setIndustrialSafetyB(event.target.checked)} /></label></div></section>
+        <section className="console-section plc-lab" aria-label="PLC logic and analog signal laboratory"><strong>PLC logic &amp; analog</strong><span className="badge">Interactive model</span><p className="lab-bench-description">Practice digital inputs, logic gates, comparisons, math, and a level-sensor signal. The resulting values appear in Results and readings.</p><div className="plc-controls"><label>Input A (NO / NC)<input type="checkbox" checked={plcInputA} onChange={(event) => { setPlcPreviousInputA(plcInputA); setPlcInputA(event.target.checked); }} /></label><label>Input B<input type="checkbox" checked={plcInputB} onChange={(event) => setPlcInputB(event.target.checked)} /></label><label>Logic gate<select value={plcGate} onChange={(event) => setPlcGate(event.target.value as LogicGate)}><option value="and">AND</option><option value="or">OR</option><option value="not">NOT</option><option value="nand">NAND</option><option value="nor">NOR</option><option value="xor">XOR</option></select></label><label>Comparator<select value={plcComparator} onChange={(event) => setPlcComparator(event.target.value as Comparator)}><option value="greater-than">Greater than</option><option value="greater-or-equal">Greater than or equal to</option><option value="less-than">Less than</option><option value="less-or-equal">Less than or equal to</option><option value="equal-to">Equal to</option><option value="not-equal">Not equal to</option></select></label><label>Math block<select value={plcMath} onChange={(event) => setPlcMath(event.target.value as MathOperation)}><option value="add">Add</option><option value="subtract">Subtract</option><option value="multiply">Multiply</option><option value="divide">Divide</option></select></label><label>Value A<input type="number" value={plcLeft} onChange={(event) => setPlcLeft(Number(event.target.value) || 0)} /></label><label>Value B<input type="number" value={plcRight} onChange={(event) => setPlcRight(Number(event.target.value) || 0)} /></label><label>Level sensor {levelPercent}%<input type="range" min="0" max="100" value={levelPercent} onChange={(event) => setLevelPercent(Number(event.target.value))} /></label></div></section>
+        <section className="console-section industrial-lab" aria-label="Industrial device laboratory"><strong>Industrial devices</strong><span className="badge">Interactive model</span><p className="lab-bench-description">Adjust actuator, process, and safety inputs; review the modelled pneumatic, hydraulic, HVAC, solar, and cable readings.</p><div className="plc-controls industrial-controls"><label>Actuator command<select value={industrialDirection} onChange={(event) => setIndustrialDirection(event.target.value as Direction)}><option value="extend">Extend</option><option value="retract">Retract</option><option value="hold">Hold</option></select></label><label>Hydraulic pressure {industrialPressureBar} bar<input type="range" min="0" max="250" value={industrialPressureBar} onChange={(event) => setIndustrialPressureBar(Number(event.target.value))} /></label><label>Zone temperature {industrialTemperatureC}°C<input type="range" min="0" max="40" value={industrialTemperatureC} onChange={(event) => setIndustrialTemperatureC(Number(event.target.value))} /></label><label>Solar irradiance {industrialSolarIrradiance} W/m²<input type="range" min="0" max="1000" value={industrialSolarIrradiance} onChange={(event) => setIndustrialSolarIrradiance(Number(event.target.value))} /></label><label>Cable current {industrialCableCurrentA} A<input type="range" min="0" max="100" value={industrialCableCurrentA} onChange={(event) => setIndustrialCableCurrentA(Number(event.target.value))} /></label><label>Safety channel A<input type="checkbox" checked={industrialSafetyA} onChange={(event) => setIndustrialSafetyA(event.target.checked)} /></label><label>Safety channel B<input type="checkbox" checked={industrialSafetyB} onChange={(event) => setIndustrialSafetyB(event.target.checked)} /></label></div></section>
         </div>
         <div className="lab-content-section lab-actions"><h3>Actions and starter benches</h3>
         <StarDeltaLab onLoadCircuit={(circuit) => {
