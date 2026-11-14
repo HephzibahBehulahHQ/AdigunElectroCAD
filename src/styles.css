@@ -272,3 +272,10 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
   .tool-group-simulation { margin-left: 0; }
 }
 
+
+.lab-content-section { min-width:0; padding:10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.lab-content-section h3 { margin:0 0 8px; font-size:.75rem; }
+.lab-status-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:6px; }
+.lab-status-grid span { padding:7px; border-left:2px solid #3c7fb1; background:var(--surface-2); font-size:.68rem; }
+.lab-readings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:6px; min-width:0; }
+.lab-readings-grid > div { min-width:0; margin:0; }
