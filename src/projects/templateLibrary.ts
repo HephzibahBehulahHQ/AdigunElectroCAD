@@ -48,6 +48,13 @@ const connectedMotorWires: Scenario["wires"] = [
   [2, "l1-out", 3, "u1"], [2, "l2-out", 3, "v1"], [2, "l3-out", 3, "w1"],
 ];
 
+const driveFeederWires: Scenario["wires"] = [
+  [0, "l1-out", 1, "l1-in"], [0, "l2-out", 1, "l2-in"], [0, "l3-out", 1, "l3-in"],
+  [1, "l1-out", 2, "l1-in"], [1, "l2-out", 2, "l2-in"], [1, "l3-out", 2, "l3-in"],
+  [2, "u1", 3, "u1"], [2, "v1", 3, "v1"], [2, "w1", 3, "w1"],
+  [0, "pe", 2, "pe"], [2, "pe", 3, "pe"],
+];
+
 const scenarios: Scenario[] = [
   {
     id: "motor-feeder", name: "Motor feeder", category: "Motor Control",
@@ -58,7 +65,7 @@ const scenarios: Scenario[] = [
   },
   {
     id: "drive-feeder", name: "Variable-speed drive feeder", category: "Drives",
-    definitions: ["ac-supply", "circuit-breaker", "variable-frequency-drive", "induction-motor"], references: ["X1", "Q1", "U1", "M1"], wires: connectedMotorWires,
+    definitions: ["ac-supply", "circuit-breaker", "variable-frequency-drive", "induction-motor"], references: ["X1", "Q1", "U1", "M1"], wires: driveFeederWires,
     testSequence: (ordinal) => ["Enable X1 and close Q1.", `Command U1 to ${25 + (ordinal % 20)} Hz.`, "Confirm the drive output and enabled motor model."],
     properties: (ordinal) => profile({ outputEnabled: true }, { closed: true }, { enabled: true, commandHz: 25 + (ordinal % 20) }, { energized: true }),
     expectations: () => [{ reference: "Q1", label: "Breaker path", valueIncludes: "CLOSED" }, { reference: "U1", label: "VFD output", valueIncludes: "Hz" }, { reference: "M1", label: "Nominal motor point", valueIncludes: "rpm" }],
