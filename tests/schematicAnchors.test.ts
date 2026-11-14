@@ -14,7 +14,7 @@ import { addFreeSchematicSheet, createStarterProject } from "../src/projects/sta
 it("renders a user-selected component name beside its editable indication", () => {
   const project = addFreeSchematicSheet(createStarterProject());
   const document = project.sheets[1].document;
-  const lamp = { ...createDolMotorStarter().components.find((component) => component.definitionId === "user.indicator-lamp")!, id: "named-lamp", x: 500, y: 350, displayName: "Pump room", properties: { indication: "Ready" }, terminalLabels: { t1: "LEFT" } };
+  const lamp = { id: "named-lamp", definitionId: "user.indicator-lamp", reference: "H1", x: 500, y: 350, rotation: 0 as const, displayName: "Pump room", properties: { indication: "Ready" }, terminalLabels: { t1: "LEFT" } };
   document.components.push(lamp);
   const markup = renderToStaticMarkup(createElement(Schematic, {
     document, selectedComponentId: lamp.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,

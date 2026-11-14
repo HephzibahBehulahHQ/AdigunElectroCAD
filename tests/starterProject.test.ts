@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { catalogById } from "../src/catalog/dolCatalog";
+import { validateCircuit } from "../src/electrical/topology";
 import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { validateProjectContinuations } from "../src/projects/projectContinuations";
@@ -12,8 +14,8 @@ describe("multi-sheet starter project", () => {
     expect(next.sheets).toHaveLength(2);
     expect(next.sheets[1]).toMatchObject({ kind: "free-schematic", name: "Free schematic 1" });
     expect(next.sheets[1].document).toMatchObject({ components: [], wires: [] });
-    expect(next.sheets[0].document.components).toHaveLength(11);
-    expect(next.sheets[0].document.components.filter((component) => component.definitionId === "user.indicator-lamp").map((component) => component.reference)).toEqual(["H1", "H2", "H3"]);
+    expect(next.sheets[0].document.components).toHaveLength(8);
+    expect(next.sheets[0].document.components.some((component) => component.properties.indication === "Unassigned")).toBe(false);
   });
   it("updates only the selected sheet document", () => {
     const project = addFreeSchematicSheet(createStarterProject());
@@ -24,12 +26,23 @@ describe("multi-sheet starter project", () => {
   });
 });
 
+
+it("keeps every DOL reference component on a valid catalog terminal and removes unassigned placeholders", () => {
+  const document = createStarterProject().sheets[0].document;
+  expect(validateCircuit(document, catalogById).filter((issue) => issue.severity === "error")).toEqual([]);
+  expect(document.components.map((component) => component.reference)).toEqual(["X1", "Q1", "KM1", "F1", "M1", "X2", "S0", "S1"]);
+  for (const component of document.components) {
+    expect(document.wires.some((wire) => wire.from.componentId === component.id || wire.to.componentId === component.id), component.reference).toBe(true);
+  }
+});
+
 it("starts with a ten-sheet motor-feeder project linked by source and destination terminals", () => {
   const project = createMotorStarterWorkbook();
   expect(project.sheets).toHaveLength(10);
   expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply · 9 feeders", ...Array.from({ length: 9 }, (_, index) => `M${index + 1} · DOL feeder`)]);
   expect(project.continuations).toHaveLength(36);
   expect(validateProjectContinuations(project)).toEqual([]);
+  for (const sheet of project.sheets) expect(validateCircuit(sheet.document, catalogById).filter((issue) => issue.severity === "error")).toEqual([]);
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G15", "M8"], ["L2", "K15", "O8"], ["L3", "G15", "Q8"]] as const) {
       const continuation = project.continuations!.find((item) => item.id === `feed-m${ordinal}-${conductor.toLowerCase()}`)!;
