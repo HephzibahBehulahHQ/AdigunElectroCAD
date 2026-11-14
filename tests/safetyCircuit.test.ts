@@ -3,6 +3,8 @@ import { catalogById } from "../src/catalog/dolCatalog";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import type { CircuitDocument } from "../src/types/electrical";
+import { functionalOutputTerminals } from "../src/electrical/signalContracts";
+import { evaluateFunctionalSignal } from "../src/simulation/functionalModels";
 
 it.each(["iec.safety-relay.01", "safety.dual-relay"])("runs wired reset and channel interruption for %s", (definitionId) => {
   const catalogModel = definitionId.startsWith("iec.");
@@ -16,7 +18,7 @@ it.each(["iec.safety-relay.01", "safety.dual-relay"])("runs wired reset and chan
     ],
     wires: [
       { id: "w1", from: { componentId: "channel", terminalId: "out" }, to: { componentId: "relay", terminalId: catalogModel ? "s11" : "in-a" }, points: [] },
-      { id: "w2", from: { componentId: "reset", terminalId: "out" }, to: { componentId: "relay", terminalId: "reset" }, points: [] },
+      { id: "w2", from: { componentId: "reset", terminalId: "out" }, to: { componentId: "relay", terminalId: catalogModel ? "s34" : "reset" }, points: [] },
       { id: "w3", from: { componentId: "relay", terminalId: catalogModel ? "14" : "out" }, to: { componentId: "output", terminalId: "in" }, points: [] },
     ],
   };
@@ -54,4 +56,12 @@ it.each(["iec.safety-relay.01", "safety.dual-relay"])("runs wired reset and chan
   runtime = resetCircuitClock(runtime, catalogById);
   expect(output()).toBe("OFF");
   expect(design.components[2].properties.runtimeSafetyArmed).toBeUndefined();
+});
+
+it("exposes the three NO safety contacts and the NC auxiliary contact as separate outputs", () => {
+  const definition = catalogById.get("iec.safety-relay.01")!;
+  expect(functionalOutputTerminals(definition).map((terminal) => terminal.id)).toEqual(["14", "24", "34", "42"]);
+  const properties = { channelAClosed: true, channelBClosed: true, runtimeSafetyArmed: true };
+  for (const terminalId of ["14", "24", "34"]) expect(evaluateFunctionalSignal("catalog-safety-relay", properties, terminalId)?.value).toBe(true);
+  expect(evaluateFunctionalSignal("catalog-safety-relay", properties, "42")?.value).toBe(false);
 });

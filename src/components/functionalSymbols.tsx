@@ -189,7 +189,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   if (symbolId === "solar-inverter") return <g className={mark}><rect x={x - 23} y={cy - 14} width="46" height="28" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>DC~</text></g>;
   if (symbolId === "solar-grid-tie") return <g className={mark}><path d={`M ${x - 25} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 25} M ${x - 7} ${cy + 10} L ${x + 7} ${cy - 10}`} /><path d={`M ${x + 20} ${cy - 14} V ${cy + 14}`} /></g>;
 
-  if (symbolId === "safety-relay") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>SR</text></g>;
+  if (symbolId === "safety-relay" || /^safety-relay-\d+$/.test(symbolId)) return <g className={mark} aria-label="Pilz PNOZ X2.7P safety relay, 24 volts AC/DC, three safety normally-open contacts and one auxiliary normally-closed contact">
+    <rect x={x - 54} y={y - 38} width="108" height="76" rx="4" />
+    <text x={x} y={y - 5} textAnchor="middle" className={text}>PILZ</text>
+    <text x={x} y={y + 15} textAnchor="middle" className={text}>PNOZ X2.7P</text>
+    <path d={`M ${x - 44} ${y - 26} H ${x - 30} M ${x - 30} ${y - 26} L ${x - 20} ${y - 34} M ${x - 10} ${y - 26} H ${x + 4} M ${x + 4} ${y - 26} L ${x + 14} ${y - 34} M ${x + 24} ${y - 26} H ${x + 40} M ${x - 40} ${y + 28} H ${x - 26} M ${x - 26} ${y + 28} H ${x - 10}`} />
+  </g>;
   if (symbolId === "safety-light-curtain") return <g className={mark}><path d={`M ${x - 18} ${cy - 16} V ${cy + 16} M ${x + 18} ${cy - 16} V ${cy + 16}`} />{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 13} ${cy + offset} H ${x + 13}`} />)}</g>;
   if (symbolId === "safety-pull-cord") return <g className={mark}><path d={`M ${x - 28} ${cy - 8} H ${x + 18} M ${x + 8} ${cy - 8} V ${cy + 12} M ${x} ${cy + 12} H ${x + 16}`} /></g>;
   if (symbolId === "safety-zero-speed") return <g className={mark}><circle cx={x} cy={cy} r="15" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>0</text></g>;

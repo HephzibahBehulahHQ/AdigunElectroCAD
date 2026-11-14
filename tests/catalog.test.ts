@@ -5,13 +5,13 @@ import { evaluateFunctionalModel, hasFunctionalModel } from "../src/simulation/f
 
 describe("IEC-oriented component catalog", () => {
   it("contains the required distribution of unique modeled entries", () => {
-    expect(modeledCatalog).toHaveLength(563);
-    expect(componentCatalog.length).toBeGreaterThanOrEqual(638);
+    expect(modeledCatalog).toHaveLength(532);
+    expect(componentCatalog.length).toBeGreaterThanOrEqual(607);
     expect(new Set(componentCatalog.map((definition) => definition.id)).size).toBe(componentCatalog.length);
     expect(new Set(modeledCatalog.map((definition) => definition.name)).size).toBe(modeledCatalog.length);
     expect(modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")?.name).toBe("Induction motor · 110V/9A");
     expect(Object.fromEntries(Array.from(new Set(modeledCatalog.map((definition) => definition.category))).map((category) => [category, modeledCatalog.filter((definition) => definition.category === category).length]))).toMatchObject({
-      "Power Supply": 32, "Circuit Breakers": 40, "Protection Devices": 35, "Contactors & Starters": 45, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 32,
+      "Power Supply": 32, "Circuit Breakers": 40, "Protection Devices": 35, "Contactors & Starters": 45, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
     });
   });
 
@@ -24,6 +24,18 @@ describe("IEC-oriented component catalog", () => {
       expect(definition.documentation).toContain("engineering abstraction");
       if (definition.id === "plc-digital-io") expect(definition.documentation).toContain("GT/GE/LT/LE/EQ/NE");
     }
+  });
+
+  it("uses the documented Pilz PNOZ X2.7P terminal and contact set", () => {
+    const relay = modeledCatalog.find((definition) => definition.id === "iec.safety-relay.01")!;
+    expect(relay.name).toBe("Pilz PNOZ X2.7P · 24V AC/DC (777305)");
+    expect(relay.terminals.map((terminal) => terminal.id)).toEqual([
+      "a1", "a2", "s11", "s52", "s21", "s22", "s12", "s34",
+      "13", "14", "23", "24", "33", "34", "41", "42",
+    ]);
+    expect(relay.terminals.some((terminal) => terminal.id === "reset")).toBe(false);
+    expect(relay.propertiesSchema.ratedCurrentA).toBeUndefined();
+    expect(relay.standardsReferences.some((source) => source.includes("1004081-EN-24.pdf"))).toBe(true);
   });
 
   it("models the three-phase source with output-only phase terminals and protective earth", () => {

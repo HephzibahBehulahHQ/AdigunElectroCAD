@@ -64,6 +64,18 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   expect(render(true)).toContain('r="7" class="terminal-anchor"');
 });
 
+it("lays out every documented PNOZ terminal outside its module symbol", () => {
+  const definition = catalogById.get("iec.safety-relay.01")!;
+  const component = { id: "SR1", definitionId: definition.id, reference: "SR1", x: 300, y: 300, rotation: 0 as const, properties: definition.propertiesSchema };
+  const document = { id: "safety-relay-sheet", name: "Safety relay", description: "", revision: 1, components: [component], wires: [] };
+  const anchors = terminalAnchors(document).filter((pin) => pin.endpoint.componentId === component.id);
+  expect(anchors).toHaveLength(16);
+  expect(new Set(anchors.map((pin) => `${pin.x}:${pin.y}`)).size).toBe(16);
+  const symbol = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: component.x, y: component.y }));
+  expect(symbol).toContain("PNOZ X2.7P safety relay");
+  expect(symbol).toContain("PNOZ X2.7P");
+});
+
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));

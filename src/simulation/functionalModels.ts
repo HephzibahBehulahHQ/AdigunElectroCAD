@@ -182,7 +182,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", !bool(properties, "tripped"));
-  if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", safetyOutput(properties));
+  if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", terminalId === "42" ? !safetyOutput(properties) : safetyOutput(properties));
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
   if (modelId === "catalog-on-delay-timer") {
     const error = timerParameterError(properties);

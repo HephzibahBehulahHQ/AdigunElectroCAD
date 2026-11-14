@@ -50,7 +50,16 @@ const families: ModeledFamily[] = [
   { id: "panel-meter", name: "Panel meter", category: "Measuring & Indication", referencePrefix: "P", symbolId: "meter", standardsReference: "IEC 61557", terminals: meter3(), series: "digital meter", count: 25, simulationModelId: "catalog-panel-meter", simulationSupport: "numerical", abstraction: "scaled electrical measurement input", properties: (v) => baseProperties(v, { measuredValue: 0, scaleMaximum: 10 * v, measurementKind: ["Voltage", "Current", "Power", "Frequency"][((v - 1) % 4)] }) },
   { id: "variable-frequency-drive", name: "Variable-frequency drive", category: "Drives & Power Electronics", referencePrefix: "U", symbolId: "vfd", standardsReference: "IEC 61800-5-1", terminals: vfdPower(), series: "variable-frequency drive", count: 32, simulationModelId: "catalog-variable-frequency-drive", simulationSupport: "numerical", abstraction: "three-phase drive power path with commanded output-frequency calculation", properties: (v) => baseProperties(v, { enabled: false, commandHz: 0, maximumFrequencyHz: 50 + ((v - 1) % 4) * 10, ratedPowerKw: Number((0.37 + v * 1.1).toFixed(2)) }) },
   { id: "solenoid-actuator", name: "Solenoid actuator", category: "Industrial Loads & Actuators", referencePrefix: "Y", symbolId: "actuator", standardsReference: "IEC 60204-1", terminals: control2(), series: "solenoid actuator", count: 35, simulationModelId: "catalog-solenoid-actuator", simulationSupport: "control-logic", abstraction: "energized actuator position", properties: (v) => baseProperties(v, { energized: false, strokeMm: 5 + v * 2, returnSpring: v % 2 === 0 }) },
-  { id: "safety-relay", name: "Safety relay", category: "Safety & Signalling", referencePrefix: "KSR", symbolId: "safety-relay", standardsReference: "IEC 62061", terminals: [...control2(), { id: "s11", label: "S11", kind: "control", direction: "input" }, { id: "s12", label: "S12", kind: "control", direction: "input" }, { id: "14", label: "14 enable", kind: "control", direction: "output" }], series: "dual-channel", count: 32, simulationModelId: "catalog-safety-relay", simulationSupport: "control-logic", abstraction: "dual-channel safety enable state", properties: (v) => baseProperties(v, { channelAClosed: true, channelBClosed: true, reset: true, safetyCategory: 1 + ((v - 1) % 4) }) },
+  { id: "safety-relay", name: "Pilz PNOZ X2.7P · 24V AC/DC (777305)", category: "Safety & Signalling", referencePrefix: "KSR", symbolId: "safety-relay", standardsReference: "IEC 62061", terminals: [
+    { id: "a1", label: "A1", kind: "control", direction: "input" }, { id: "a2", label: "A2", kind: "control", direction: "input" },
+    { id: "s11", label: "S11", kind: "control", direction: "bidirectional" }, { id: "s52", label: "S52", kind: "control", direction: "bidirectional" },
+    { id: "s21", label: "S21", kind: "control", direction: "bidirectional" }, { id: "s22", label: "S22", kind: "control", direction: "bidirectional" },
+    { id: "s12", label: "S12", kind: "control", direction: "bidirectional" }, { id: "s34", label: "S34", kind: "control", direction: "input" },
+    { id: "13", label: "13", kind: "control", direction: "bidirectional" }, { id: "14", label: "14", kind: "control", direction: "bidirectional" },
+    { id: "23", label: "23", kind: "control", direction: "bidirectional" }, { id: "24", label: "24", kind: "control", direction: "bidirectional" },
+    { id: "33", label: "33", kind: "control", direction: "bidirectional" }, { id: "34", label: "34", kind: "control", direction: "bidirectional" },
+    { id: "41", label: "41", kind: "control", direction: "bidirectional" }, { id: "42", label: "42", kind: "control", direction: "bidirectional" },
+  ], series: "PNOZ X2.7P · 24 V AC/DC", count: 1, simulationModelId: "catalog-safety-relay", simulationSupport: "control-logic", abstraction: "manufacturer-documented 3 safety NO contacts and 1 auxiliary NC contact", properties: () => ({ nominalVoltageV: 24, channelAClosed: true, channelBClosed: true, reset: false }) },
 ];
 
 export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap((family) => Array.from({ length: family.count }, (_, index) => {
@@ -61,17 +70,17 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
   if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
-    name: `${family.name} · ${propertiesSchema.nominalVoltageV}V/${Math.round(Number(propertiesSchema.ratedCurrentA))}A`,
+    name: family.id === "safety-relay" ? family.name : `${family.name} · ${propertiesSchema.nominalVoltageV}V/${Math.round(Number(propertiesSchema.ratedCurrentA))}A`,
     category: family.category,
     referencePrefix: family.referencePrefix,
-    description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
+    description: family.id === "safety-relay" ? "Pilz PNOZ X2.7P, 24 V AC/DC, order 777305; terminal and contact set follows operating manual 1004081-EN-24." : `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
     symbolId: `${family.symbolId}-${String(variant).padStart(2, "0")}`,
-    terminals: [...terminals.map((terminal) => ({ ...terminal })), ...(family.id === "circuit-breaker" ? [{ id: "aux-closed", label: "Q CLOSED", kind: "control" as const, direction: "output" as const }] : []), ...(family.id === "safety-relay" ? [{ id: "reset", label: "RESET", kind: "control" as const, direction: "input" as const }] : []), ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }, { id: "ai-1", label: "AI1 raw", kind: "control" as const, direction: "input" as const }] : [])],
+    terminals: [...terminals.map((terminal) => ({ ...terminal })), ...(family.id === "circuit-breaker" ? [{ id: "aux-closed", label: "Q CLOSED", kind: "control" as const, direction: "output" as const }] : []),  ...(family.id === "plc-digital-io" ? [{ id: "ai-0", label: "AI0 raw", kind: "control" as const, direction: "input" as const }, { id: "ai-1", label: "AI1 raw", kind: "control" as const, direction: "input" as const }] : [])],
     propertiesSchema,
     simulationModelId: family.simulationModelId,
     simulationSupport: family.simulationSupport,
-    documentation: `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/GE/LT/LE/EQ/NE with AI0, AI1 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
-    standardsReferences: [family.standardsReference],
+    documentation: family.id === "safety-relay" ? "Source-backed terminal map for Pilz PNOZ X2.7P 24 V AC/DC, order 777305. Follow Pilz operating manual 1004081-EN-24 and perform the machine-specific safety assessment; its terminal map is an engineering abstraction for educational schematic use." : `Supported ${family.abstraction}. This is a documented IEC-oriented engineering abstraction, not a manufacturer-certified record.${family.id === "plc-digital-io" ? " Program: Boolean I0/I1/Q0/Q1 with OUT/SET/RESET output coils; GT/GE/LT/LE/EQ/NE with AI0, AI1 or D0–D7; MOV/ADD/SUB/MUL/DIV into D0–D7. Separate instructions with semicolons. Run scans at 100 ms; Stop clears Q0/Q1 and registers. Empty Program uses manual Output. See PLC-PROGRAMS.md for syntax and limits." : ""}`,
+    standardsReferences: family.id === "safety-relay" ? [family.standardsReference, "Pilz PNOZ X2.7P Operating Manual 1004081-EN-24 (order 777305)", "https://www.pilz.com/download/open/PNOZ_X2_7P_Operat_Manual_1004081-EN-24.pdf"] : [family.standardsReference],
   };
 }));
 
