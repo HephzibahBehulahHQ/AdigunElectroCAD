@@ -5,13 +5,13 @@ import { evaluateFunctionalModel, hasFunctionalModel } from "../src/simulation/f
 
 describe("IEC-oriented component catalog", () => {
   it("contains the required distribution of unique modeled entries", () => {
-    expect(modeledCatalog).toHaveLength(532);
-    expect(componentCatalog.length).toBeGreaterThanOrEqual(607);
+    expect(modeledCatalog).toHaveLength(488);
+    expect(componentCatalog.length).toBeGreaterThanOrEqual(563);
     expect(new Set(componentCatalog.map((definition) => definition.id)).size).toBe(componentCatalog.length);
     expect(new Set(modeledCatalog.map((definition) => definition.name)).size).toBe(modeledCatalog.length);
     expect(modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")?.name).toBe("Induction motor · 110V/9A");
     expect(Object.fromEntries(Array.from(new Set(modeledCatalog.map((definition) => definition.category))).map((category) => [category, modeledCatalog.filter((definition) => definition.category === category).length]))).toMatchObject({
-      "Power Supply": 32, "Circuit Breakers": 40, "Protection Devices": 35, "Contactors & Starters": 45, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
+      "Power Supply": 32, "Circuit Breakers": 40, "Protection Devices": 35, "Contactors & Starters": 1, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
     });
   });
 
@@ -79,11 +79,13 @@ describe("IEC-oriented component catalog", () => {
     expect(breaker3.terminals.filter((terminal) => terminal.kind === "power")).toHaveLength(6);
     expect(breaker4.propertiesSchema.poles).toBe(4);
     expect(breaker4.terminals.filter((terminal) => terminal.kind === "power").map((terminal) => terminal.id)).toEqual(["l1-in", "l2-in", "l3-in", "l1-out", "l2-out", "l3-out", "n-in", "n-out"]);
-    for (const [variant, count] of [[1, 1], [2, 2], [4, 4]] as const) {
-      const starter = modeledCatalog.find((definition) => definition.id === `iec.motor-starter.${String(variant).padStart(2, "0")}`)!;
-      expect(starter.propertiesSchema.auxiliaryNoContacts).toBe(count);
-      expect(starter.terminals.filter((terminal) => terminal.id.startsWith("aux-")).length).toBe(count * 2);
-    }
+    const starter = modeledCatalog.find((definition) => definition.id === "iec.motor-starter.01")!;
+    expect(starter.name).toBe("Siemens SIRIUS 3RT2025-1BB40 · 17A/7.5kW");
+    expect(starter.terminals.map((terminal) => terminal.id)).toEqual(["l1-in", "l2-in", "l3-in", "l1-out", "l2-out", "l3-out", "a1", "a2", "aux-13", "aux-14", "aux-21", "aux-22"]);
+    expect(starter.propertiesSchema.coilVoltageV).toBe(24);
+    expect(starter.propertiesSchema.coilDc).toBe(true);
+    expect(starter.terminals.some((terminal) => terminal.id === "aux-21")).toBe(true);
+    expect(starter.standardsReferences.some((source) => source.includes("3RT2025-1BB40"))).toBe(true);
   });
 
   it("matches relay changeover-contact counts with three-terminal common/NC/NO sets", () => {
