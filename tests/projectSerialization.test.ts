@@ -31,6 +31,30 @@ describe("project JSON import validation", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     expect(parseProjectJson(JSON.stringify(input))).toEqual(input);
   });
+  it("round-trips ordered, terminal-backed continuations while retaining the original source page", () => {
+    const input = addFreeSchematicSheet(addFreeSchematicSheet(createStarterProject()));
+    const source = input.sheets[0].document.components.find((component) => component.id === "supply")!;
+    const breaker = input.sheets[0].document.components.find((component) => component.id === "breaker")!;
+    const continuationBreaker = { ...breaker, id: "breaker-page-2", reference: "Q2", x: 320, y: 260, properties: { ...breaker.properties } };
+    const destinationBreaker = { ...breaker, id: "breaker-page-3", reference: "Q3", x: 320, y: 260, properties: { ...breaker.properties } };
+    input.sheets[1].document.components.push(continuationBreaker);
+    input.sheets[2].document.components.push(destinationBreaker);
+    input.continuations = [{
+      id: "power-l1-main",
+      label: "L1",
+      conductorColor: "#dc2626",
+      points: [
+        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1" } },
+        { sheetId: input.sheets[1].id, gridReference: "2.1", role: "continuation", endpoint: { componentId: continuationBreaker.id, terminalId: "l1-in" } },
+        { sheetId: input.sheets[2].id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationBreaker.id, terminalId: "l1-in" } },
+      ],
+    }];
+    expect(parseProjectJson(JSON.stringify(input)).continuations).toEqual(input.continuations);
+    const malformed = JSON.parse(JSON.stringify(input));
+    malformed.continuations[0].points[2].role = "continuation";
+    expect(() => parseProjectJson(JSON.stringify(malformed))).toThrow("mark point 3 as destination");
+  });
+
   it("round-trips a valid starter project", () => {
     const original = createStarterProject();
     const imported = parseProjectJson(JSON.stringify(original));
