@@ -2,11 +2,18 @@ import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
 export function powerTerminalOffset(modelId: string, terminalId: string, poles = 3): { x: number; y: number } | undefined {
-  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-fuse-switch", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-fuse-switch", "catalog-variable-frequency-drive", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
   if (modelId === "three-phase-source-v1") {
     const sourcePhase = /^l([123])$/.exec(terminalId);
     if (sourcePhase) return { x: [-24, 0, 24][Number(sourcePhase[1]) - 1], y: -35 };
     if (terminalId === "pe") return { x: 47, y: 0 };
+  }
+  if (modelId === "catalog-variable-frequency-drive") {
+    const input = /^l([123])-in$/.exec(terminalId);
+    if (input) return { x: -47, y: [-20, 0, 20][Number(input[1]) - 1] };
+    const output = { u1: -20, v1: 0, w1: 20 }[terminalId as "u1" | "v1" | "w1"];
+    if (output !== undefined) return { x: 47, y: output };
+    if (terminalId === "pe") return { x: 0, y: 35 };
   }
   const phase = /^l([123])-(in|out)$/.exec(terminalId);
   if (phase) return { x: modelId === "catalog-circuit-breaker" && poles === 4 ? [-36, -12, 12][Number(phase[1]) - 1] : [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
