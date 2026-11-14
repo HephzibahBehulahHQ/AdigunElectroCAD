@@ -107,9 +107,6 @@ function anchor(componentId: string, terminalId: string, x: number, y: number): 
 function wirePath(from: TerminalAnchor, to: TerminalAnchor, points: readonly { x: number; y: number }[] = []): string { return orthogonalWirePath(from, to, points, from.vertical, to.vertical); }
 
 function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotation: SchematicAnnotation; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onAnnotationMove"] }) {
-  const componentFrame = definition?.simulationModelId === "catalog-safety-relay"
-    ? { selectX: 82, selectY: 62, selectWidth: 164, selectHeight: 124, symbolX: 64, symbolY: 48, symbolWidth: 128, symbolHeight: 96 }
-    : { selectX: 55, selectY: 35, selectWidth: 110, selectHeight: 70, symbolX: 47, symbolY: 27, symbolWidth: 94, symbolHeight: 54 };
   const origin = useRef<{ x: number; y: number } | null>(null);
   const size = annotation.fontSize ?? 18;
   const lines = annotation.text.split(/\r?\n/);
@@ -232,6 +229,9 @@ function PlacedSymbol({ component, selectedComponentId, selectedComponentIds = [
   const typeLabel = typeof component.properties.indication === "string" && component.properties.indication.trim() ? component.properties.indication.trim() : definition?.referencePrefix ?? "?";
   const displayLabel = component.displayName?.trim() ? `${component.displayName.trim()} · ${typeLabel}`.slice(0, 32) : typeLabel.slice(0, 24);
   const symbolProperties = { ...component.properties };
+  const componentFrame = definition?.simulationModelId === "catalog-safety-relay"
+    ? { selectX: 82, selectY: 62, selectWidth: 164, selectHeight: 124, symbolX: 64, symbolY: 48, symbolWidth: 128, symbolHeight: 96 }
+    : { selectX: 55, selectY: 35, selectWidth: 110, selectHeight: 70, symbolX: 47, symbolY: 27, symbolWidth: 94, symbolHeight: 54 };
   (component.customTerminals ?? definition?.terminals ?? []).forEach((terminal, index) => { const label = component.terminalLabels?.[terminal.id]; if (label) symbolProperties["terminalLabel" + (index + 1)] = label; });
   const origin = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
