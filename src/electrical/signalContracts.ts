@@ -43,6 +43,6 @@ export function terminalSignalUnits(definition: ElectricalComponentDefinition, t
   if (model.startsWith("logic-") && ["in", "in-a", "in-b", "out"].includes(terminalId)) return ["boolean"];
   if (["catalog-motor-starter", "catalog-interface-relay", "catalog-solenoid-actuator", "catalog-on-delay-timer"].includes(model) && terminalId === "a1") return ["boolean"];
   if ((model === "catalog-on-delay-timer" && terminalId === "18") || (model === "catalog-interface-relay" && terminalId === "14") || (model === "thermal-overload-dol-v1" && terminalId === "aux-96")) return ["boolean"];
-  if ((model === "catalog-safety-relay" && ["s11", "s12", "reset", "14"].includes(terminalId)) || (model === "safety-dual-relay" && ["in-a", "in-b", "reset", "out"].includes(terminalId)) || (model === "catalog-feed-through-terminal" && ["1", "2"].includes(terminalId))) return ["boolean"];
+  if ((model === "catalog-safety-relay" && ["s11", "s21", "s34", "14"].includes(terminalId)) || (model === "safety-dual-relay" && ["in-a", "in-b", "reset", "out"].includes(terminalId)) || (model === "catalog-feed-through-terminal" && ["1", "2"].includes(terminalId))) return ["boolean"];
   return undefined;
 }
