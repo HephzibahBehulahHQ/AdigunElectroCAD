@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 40294)
-Total output lines: 1890
-
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
@@ -1380,7 +1377,20 @@ export function App() {
       const name = rawName.trim();
       const fields = selectedComponent.customProperties ?? {};
       if (!isValidCustomFieldName(name) || value.length > 240 || Object.keys(fields).length >= 20 || Object.keys(fields).some((key) => key.toLowerCase() === name.toLowerCase())) {
-        setNotice("Use a unique field name…294 tokens truncated… updated. It does not affect simulation.`);
+        setNotice("Use a unique field name of 1–40 characters and a value of at most 240 characters; a component can have up to 20 custom fields.");
+        return false;
+      }
+      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
+      setNotice(`${selectedComponent.reference} custom field ${name} added. It does not affect simulation.`);
+      return true;
+    };
+
+    const updateSelectedCustomProperty = (name: string, value: string) => {
+      if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
+      const fields = selectedComponent.customProperties ?? {};
+      if (!Object.prototype.hasOwnProperty.call(fields, name) || value.length > 240) return;
+      updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customProperties: { ...fields, [name]: value } } : component), revision: document.revision + 1 });
+      setNotice(`${selectedComponent.reference} custom field ${name} updated. It does not affect simulation.`);
     };
 
     const renameSelectedCustomProperty = (previousName: string, rawName: string) => {
