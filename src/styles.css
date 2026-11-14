@@ -324,3 +324,8 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .lab-how-to ol { margin:6px 0 0; padding-left:20px; color:var(--muted); line-height:1.55; }
 .lab-bench-description { margin:5px 0 10px; color:var(--muted); font-size:.68rem; line-height:1.45; }
 @media(max-width:800px) { .lab-introduction { grid-template-columns:minmax(0,1fr); } }
+
+.project-continuation-marker { cursor: pointer; outline: none; }
+.project-continuation-marker rect { fill: #f8fbff; stroke-width: 1.5; }
+.project-continuation-marker text { font: 700 10px Inter, ui-sans-serif, sans-serif; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
+.project-continuation-marker:focus rect, .project-continuation-marker:hover rect { stroke-width: 2.5; filter: drop-shadow(0 1px 2px #14263c); }
