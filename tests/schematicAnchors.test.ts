@@ -213,6 +213,18 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("renders dedicated three-phase source and motor symbols for editable catalog devices", () => {
+  expect(hasDedicatedFunctionalSymbol("supply-ac-01")).toBe(true);
+  expect(hasDedicatedFunctionalSymbol("motor-01")).toBe(true);
+  const source = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "supply-ac-01", x: 100, y: 100 }));
+  const motor = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "motor-01", x: 100, y: 100 }));
+  expect(source).toContain('aria-label="Three-phase AC supply"');
+  expect(source).toContain(">3~</text>");
+  expect(motor).toContain('aria-label="Three-phase induction motor"');
+  expect(motor).toContain(">M</text>");
+  expect(motor).toContain(">3~</text>");
+});
+
 it("uses dedicated symbols for modeled four-pole breakers and multi-aux starters", () => {
   const breaker = catalogById.get("iec.circuit-breaker.04")!;
   const starter = catalogById.get("iec.motor-starter.04")!;
