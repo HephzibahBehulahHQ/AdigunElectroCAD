@@ -279,3 +279,23 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .lab-status-grid span { padding:7px; border-left:2px solid #3c7fb1; background:var(--surface-2); font-size:.68rem; }
 .lab-readings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:6px; min-width:0; }
 .lab-readings-grid > div { min-width:0; margin:0; }
+
+.menu-row .lab-route-link { margin-left:auto; white-space:nowrap; }
+.projects-menu > summary { display:flex; align-items:center; gap:7px; padding:7px 10px; font-size:.74rem; font-weight:700; cursor:pointer; }
+.projects-menu > summary::after { content:"▾"; color:var(--muted); font-size:.62rem; }
+.projects-menu[open] > summary::after { content:"▴"; }
+.project-menu-popover { top:100%; right:0; left:auto; width:min(440px,90vw); max-height:calc(100dvh - 110px); overflow:auto; z-index:20; }
+.project-menu-popover .project-library-panel { display:block; width:100%; max-height:none; overflow:visible; }
+.editor-console { display:none !important; }
+.lab-route-active { height:100dvh; min-height:0; overflow:hidden; }
+.lab-route-active .menu-row, .lab-route-active .tool-row, .lab-route-active .workspace { display:none !important; }
+.lab-route-active .auth-panel { display:none !important; }
+.lab-route-active > .app-header { flex:0 0 auto; }
+.lab-route-nav { flex:0 0 auto; display:flex; align-items:center; gap:14px; min-height:38px; padding:4px 14px; border-bottom:1px solid var(--border); background:var(--surface); }
+.lab-route-nav a { color:var(--text); font-size:.75rem; font-weight:750; text-decoration:none; }
+.lab-route-nav a:hover { color:#22d3ee; }
+.lab-route-nav strong { color:var(--muted); font-size:.76rem; }
+.lab-route-console { display:grid; flex:1 1 0; min-height:0; max-height:none; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr); overflow:hidden; }
+.lab-route-console .console-tabs { display:none; }
+.lab-route-console .console-view.laboratory-view { display:grid; min-height:0; max-height:none; grid-column:1; overflow:auto; overscroll-behavior:contain; }
+@media (max-width:760px) { .lab-route-active .app-header { display:none; } .lab-route-nav { min-height:42px; } .project-menu-popover { right:auto; left:0; } }
