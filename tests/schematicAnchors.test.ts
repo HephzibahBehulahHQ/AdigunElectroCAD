@@ -33,7 +33,7 @@ it("shows a user terminal label while preserving the real endpoint identity", ()
     document, selectedComponentId: component.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
   }));
-  expect(markup).toContain('class="terminal-label custom-terminal-label">LINE+</text>');
+  expect(markup).toContain('class="free-terminal-label">LINE+</text>');
   expect(terminalAnchors(document).some((anchor) => anchor.endpoint.componentId === component.id && anchor.endpoint.terminalId === terminalId)).toBe(true);
 });
 
