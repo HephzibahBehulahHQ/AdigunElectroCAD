@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation } from "../src/projects/projectContinuations";
+import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
