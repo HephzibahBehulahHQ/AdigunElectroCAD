@@ -10,7 +10,7 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
   expect(project.sheets).toHaveLength(10);
   expect(project.continuations).toHaveLength(36);
   expect(validateProjectContinuations(project)).toEqual([]);
-  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["iec.ac-supply.01"]);
+  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["generic.iec.ac-supply"]);
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheet = project.sheets[ordinal];

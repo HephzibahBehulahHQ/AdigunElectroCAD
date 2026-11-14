@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { componentCatalog, dolCatalog } from "../src/catalog/dolCatalog";
+import { catalogById, componentCatalog, componentLibraryCatalog, dolCatalog, genericComponentProfiles } from "../src/catalog/dolCatalog";
 import { modeledCatalog } from "../src/catalog/modeledCatalog";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, hasFunctionalModel } from "../src/simulation/functionalModels";
 import { functionalOutputTerminals } from "../src/electrical/signalContracts";
 
 describe("IEC-oriented component catalog", () => {
+  it("offers one clearly generic profile per modeled family and keeps sourced devices distinct", () => {
+    expect(componentLibraryCatalog.length).toBeLessThan(200);
+    expect(componentLibraryCatalog.map((definition) => definition.id)).not.toContain("iec.induction-motor.03");
+    expect(componentLibraryCatalog.map((definition) => definition.id)).toContain("iec.induction-motor.41");
+    expect(componentLibraryCatalog.map((definition) => definition.id)).toContain("iec.motor-starter.01");
+    const motor = genericComponentProfiles.find((definition) => definition.id === "generic.iec.induction-motor")!;
+    expect(motor.name).toBe("Generic Induction motor");
+    expect(motor.propertiesSchema).toMatchObject({ nominalVoltageV: 0, ratedCurrentA: 0, ratedPowerKw: 0, nominalSpeedRpm: 0 });
+    expect(motor.documentation).toContain("not a named manufacturer's device");
+    expect(catalogById.get("iec.induction-motor.03")).toBeDefined();
+    const unsourcedMotor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")!;
+    expect(unsourcedMotor.documentation).not.toContain("Source-backed");
+    expect(unsourcedMotor.documentation).not.toContain("Siemens SIMOTICS");
+  });
+
   it("contains the required distribution of unique modeled entries", () => {
     expect(modeledCatalog).toHaveLength(491);
     expect(componentCatalog.length).toBeGreaterThanOrEqual(563);

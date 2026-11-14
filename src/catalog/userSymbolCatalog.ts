@@ -1,13 +1,13 @@
 import type { ElectricalComponentDefinition } from "../types/electrical";
 
-/** Generic schematic placeholders configured by the project author. */
+/** User-authored schematic symbols with editable connection points. */
 export const userSymbolCatalog: ElectricalComponentDefinition[] = [
   {
     id: "user.indicator-lamp",
-    name: "User-defined indicator",
+    name: "Custom indicator lamp",
     category: "User Symbols",
     referencePrefix: "HL",
-    description: "A generic, user-configured indicator symbol with two editable terminal labels.",
+    description: "A user-configured indicator symbol with editable color, text, and two connection terminals.",
     symbolId: "user-indicator-lamp",
     terminals: [
       { id: "t1", label: "T1", kind: "control", direction: "bidirectional" },
@@ -16,7 +16,7 @@ export const userSymbolCatalog: ElectricalComponentDefinition[] = [
     propertiesSchema: { color: "#64748b", indication: "Unassigned", terminalLabel1: "T1", terminalLabel2: "T2" },
     simulationModelId: "user-indicator-symbol",
     simulationSupport: "symbol-only",
-    documentation: "Symbol-only placeholder. The project author chooses the indication, color from the picker or palette, terminal labels, and wiring. No voltage, current, manufacturer, or simulated lamp behavior is assumed.",
+    documentation: "User-authored symbol. Choose its indication, color, terminal labels, and wiring. No voltage, current, manufacturer, or simulated lamp behavior is assigned until specified.",
     standardsReferences: [],
   },
   {
