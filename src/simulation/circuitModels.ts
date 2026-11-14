@@ -23,9 +23,14 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   }
   if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"] };
   if (modelId === "catalog-plc-digital-io" && terminalId === "ai-1") return { property: "analogInput1", acceptedUnits: ["plc-raw"] };
-  if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") {
-    if (["s11", "in-a"].includes(terminalId)) return { property: "channelAClosed", acceptedUnits: ["boolean"] };
-    if (["s12", "in-b"].includes(terminalId)) return { property: "channelBClosed", acceptedUnits: ["boolean"] };
+  if (modelId === "catalog-safety-relay") {
+    if (terminalId === "s11") return { property: "channelAClosed", acceptedUnits: ["boolean"] };
+    if (terminalId === "s21") return { property: "channelBClosed", acceptedUnits: ["boolean"] };
+    if (terminalId === "s34") return { property: "reset", acceptedUnits: ["boolean"] };
+  }
+  if (modelId === "safety-dual-relay") {
+    if (terminalId === "in-a") return { property: "channelAClosed", acceptedUnits: ["boolean"] };
+    if (terminalId === "in-b") return { property: "channelBClosed", acceptedUnits: ["boolean"] };
     if (terminalId === "reset") return { property: "reset", acceptedUnits: ["boolean"] };
   }
   if (modelId === "catalog-motor-starter" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
