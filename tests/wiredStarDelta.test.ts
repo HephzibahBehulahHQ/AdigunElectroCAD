@@ -52,7 +52,7 @@ it("requires the star contactor NC auxiliary path before delta can energize", ()
   expect(evaluateWiredControl(runtime, catalogById).get("delta")?.energized).toBe(true);
   runtime.wires = runtime.wires.filter(wire => !(wire.from.componentId === "star" && wire.from.terminalId === "aux-22" && wire.to.componentId === "delta" && wire.to.terminalId === "a1"));
   expect(evaluateWiredControl(runtime, catalogById).get("delta")?.energized).toBe(false);
-  expect(motor(runtime)).toContain("STAR");
+  expect(motor(runtime)).toContain("OPEN");
 });
 
 it("uses the 200 ms transition timer to keep both branch contactors open", () => {

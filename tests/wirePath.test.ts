@@ -36,13 +36,13 @@ it.each([createTwoMotorSequence, createWiredReversingCircuit])("keeps routes cle
       const ny = tokens[i] === "V" ? Number(tokens[i + 1]) : y;
       for (const c of document.components.filter(c => c.id !== wire.from.componentId && c.id !== wire.to.componentId)) {
         if ((y === ny && y > c.y - 27 && y < c.y + 27 && Math.max(x, nx) > c.x - 47 && Math.min(x, nx) < c.x + 47) ||
-            (x === nx && x > c.x - 47 && x < c.x + 47 && Math.max(y, ny) > c.y - 27 && Math.min(y, ny) < c.y + 27)) conflicts.push(`${wire.from.componentId}->${wire.to.componentId} crosses ${c.reference}`);
+            (x === nx && x > c.x - 47 && x < c.x + 47 && Math.max(y, ny) > c.y - 27 && Math.min(y, ny) < c.y + 27)) conflicts.push(`${wire.id} ${wire.from.componentId}->${wire.to.componentId} crosses ${c.reference}`);
       }
       for (const c of document.components) {
         const kind = catalogById.get(c.definitionId)!.referencePrefix;
         for (const [text, top, bottom, width] of [[c.reference, c.y + 37, c.y + 54, c.reference.length * 5], [kind, c.y + 57, c.y + 71, kind.length * 4]] as const) {
           if ((y === ny && y > top && y < bottom && Math.max(x, nx) > c.x - width && Math.min(x, nx) < c.x + width) ||
-              (x === nx && x > c.x - width && x < c.x + width && Math.max(y, ny) > top && Math.min(y, ny) < bottom)) conflicts.push(`${wire.from.componentId}->${wire.to.componentId} crosses label ${text}`);
+              (x === nx && x > c.x - width && x < c.x + width && Math.max(y, ny) > top && Math.min(y, ny) < bottom)) conflicts.push(`${wire.id} ${wire.from.componentId}->${wire.to.componentId} crosses label ${text} at ${c.reference} on ${x},${y}->${nx},${ny}`);
         }
       }
       x = nx; y = ny;

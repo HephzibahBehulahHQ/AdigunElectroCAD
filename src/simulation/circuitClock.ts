@@ -73,7 +73,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
-    if (model === "contactor-dol-v1") return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
+    if (["contactor-dol-v1", "catalog-motor-starter"].includes(model ?? "")) return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
     if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       if (active.runtimeSignalError) return component;
