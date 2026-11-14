@@ -44,6 +44,6 @@ it("aggregates BOM, wires, and terminals across sheets with sheet context", () =
   expect(report.wires[0]).toMatchObject({ sheet: "Power · Sheet 1", netName: "L1" });
   expect(report.terminals).toHaveLength(88);
   expect(report.terminals[0].sheet).toBe("Power · Sheet 1");
-  expect(reportCsv(report, "wires").split("\\n")[0]).toBe('"Sheet","Net","From","To"');
-  expect(reportCsv(report, "terminals").split("\\n")[0]).toBe('"Sheet","Reference","Terminal","Kind","Direction"');
+  expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To"');
+  expect(reportCsv(report, "terminals").split("\n")[0]).toBe('"Sheet","Reference","Terminal","Kind","Direction"');
 });
