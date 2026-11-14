@@ -64,6 +64,10 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
       return { x: index % 2 ? 32 : -32, y: index < 2 ? -25 : index < 4 ? -1 : 11 };
     }
   }
+  if (modelId === "catalog-dc-control-supply") {
+    const offsets: Record<string, { x: number; y: number }> = { "line-in": { x: -47, y: -12 }, "neutral-in": { x: -47, y: 12 }, "plus-out": { x: 47, y: -12 }, "zero-out": { x: 47, y: 12 } };
+    return offsets[terminalId];
+  }
   if (modelId === "control-supply-v1") return { x: 47, y: terminalId === "line" ? -12 : 12 };
   if (modelId === "pushbutton-start-v1" || modelId === "pushbutton-stop-v1") return { x: ["13", "21"].includes(terminalId) ? -47 : 47, y: 0 };
   if (modelId === "catalog-circuit-breaker" && terminalId === "aux-closed") return { x: 47, y: 0 };
