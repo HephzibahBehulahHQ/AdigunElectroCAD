@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { createProjectContinuation, resolveProjectNet } from "../src/projects/projectContinuations";
+import { createProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation } from "../src/projects/projectContinuations";
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
@@ -61,4 +61,39 @@ it("rejects same-sheet, missing-terminal, and incompatible-kind continuation att
     { sheetId: destination.id, endpoint: { componentId: "destination-control", terminalId: "line" } },
   );
   expect(incompatible.ok).toBe(false);
+});
+
+function linkedProject() {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const [source, destination] = project.sheets;
+  const supply = source.document.components.find((component) => component.id === "supply")!;
+  const breaker = { ...createDolMotorStarter().components.find((component) => component.id === "breaker")!, id: "destination-breaker", reference: "Q2" };
+  destination.document.components.push(breaker);
+  const result = createProjectContinuation(project,
+    { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: destination.id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } });
+  if (!result.ok) throw new Error(result.reason);
+  return { project: result.project, source, destination, supply, breaker, continuation: result.continuation };
+}
+
+it("edits the continuation label and color without changing its connected net", () => {
+  const { project, source, destination, supply, breaker, continuation } = linkedProject();
+  const changed = updateProjectContinuation(project, continuation.id, { label: "PUMP-L1", conductorColor: "#1155cc" });
+  expect(changed.continuations?.[0]).toMatchObject({ label: "PUMP-L1", conductorColor: "#1155cc", points: continuation.points });
+  expect(resolveProjectNet(changed, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } })).toContainEqual({
+    sheetId: destination.id,
+    endpoint: { componentId: breaker.id, terminalId: "l1-in" },
+  });
+  expect(updateProjectContinuation(changed, continuation.id, { label: " " })).toBe(changed);
+  expect(updateProjectContinuation(changed, continuation.id, { conductorColor: "red" })).toBe(changed);
+});
+
+it("removes a continuation without deleting local devices or wires", () => {
+  const { project, source, continuation } = linkedProject();
+  const removed = removeProjectContinuation(project, continuation.id);
+  expect(removed.continuations).toEqual([]);
+  expect(removed.sheets).toEqual(project.sheets);
+  expect(resolveProjectNet(removed, { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } })).not.toContainEqual(
+    expect.objectContaining({ sheetId: "sheet-free-1" }),
+  );
 });

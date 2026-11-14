@@ -11,6 +11,8 @@ export function validateProjectContinuations(project: ElectricalProject): string
   for (const continuation of project.continuations ?? []) {
     if (seenIds.has(continuation.id)) issues.push(`Duplicate project continuation id: ${continuation.id}`);
     seenIds.add(continuation.id);
+    if (!continuation.label.trim() || continuation.label.length > 64) issues.push(`Continuation ${continuation.id} must have a label of 1–64 characters.`);
+    if (!/^#[0-9a-fA-F]{6}$/.test(continuation.conductorColor)) issues.push(`Continuation ${continuation.id} has an invalid conductor color.`);
     const points = continuation.points;
     if (points.length < 2) { issues.push(`Continuation ${continuation.label} must reach at least two sheets.`); continue; }
     const seenSheets = new Set<string>();
@@ -171,4 +173,29 @@ export function createProjectContinuation(
   const issues = validateProjectContinuations(next);
   if (issues.length) return { ok: false, reason: issues[0] };
   return { ok: true, project: next, continuation };
+}
+
+
+export type ProjectContinuationEdit = Pick<ProjectContinuation, "label" | "conductorColor">;
+
+/** Update only user-editable continuation presentation fields. */
+export function updateProjectContinuation(project: ElectricalProject, continuationId: string, edit: Partial<ProjectContinuationEdit>): ElectricalProject {
+  const existing = project.continuations?.find((item) => item.id === continuationId);
+  if (!existing) return project;
+  const label = edit.label === undefined ? existing.label : edit.label.trim();
+  const conductorColor = edit.conductorColor ?? existing.conductorColor;
+  if (!label || label.length > 64 || !/^#[0-9a-fA-F]{6}$/.test(conductorColor)) return project;
+  if (label === existing.label && conductorColor === existing.conductorColor) return project;
+  return {
+    ...project,
+    revision: project.revision + 1,
+    continuations: project.continuations!.map((item) => item.id === continuationId ? { ...item, label, conductorColor } : item),
+  };
+}
+
+/** Remove one project net without changing its devices or local wires. */
+export function removeProjectContinuation(project: ElectricalProject, continuationId: string): ElectricalProject {
+  if (!project.continuations?.some((item) => item.id === continuationId)) return project;
+  const continuations = project.continuations.filter((item) => item.id !== continuationId);
+  return { ...project, revision: project.revision + 1, continuations };
 }
