@@ -109,6 +109,7 @@ export function App() {
   const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
   const [selectedContinuationId, setSelectedContinuationId] = useState("");
+  const [componentContextMenu, setComponentContextMenu] = useState<{ componentId: string; x: number; y: number } | null>(null);
   const [wireRouteEditId, setWireRouteEditId] = useState("");
   const [selectedAnnotationId, setSelectedAnnotationId] = useState("");
   const [annotationMode, setAnnotationMode] = useState(false);
@@ -201,6 +202,7 @@ export function App() {
   const [runtimeDocument, setRuntimeDocument] = useState<CircuitDocument | null>(null);
   const isReferenceSheet = activeSheet.kind === "reference-dol";
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
+  const contextComponent = componentContextMenu ? document.components.find((component) => component.id === componentContextMenu.componentId) : undefined;
   const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
   const selectedContinuation = project.continuations?.find((item) => item.id === selectedContinuationId);
   const selectedAnnotation = document.annotations?.find((annotation) => annotation.id === selectedAnnotationId);
@@ -371,6 +373,32 @@ export function App() {
     setGraphicMode(null);
     setReconnectingWireId("");
   };
+
+  const openComponentContextMenu = (componentId: string, clientX: number, clientY: number) => {
+    selectComponent(componentId);
+    setComponentContextMenu({
+      componentId,
+      x: Math.max(8, Math.min(clientX, window.innerWidth - 220)),
+      y: Math.max(8, Math.min(clientY, window.innerHeight - 240)),
+    });
+  };
+
+  useEffect(() => {
+    if (!componentContextMenu) return;
+    const dismiss = (event: globalThis.PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest(".component-context-menu")) return;
+      setComponentContextMenu(null);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setComponentContextMenu(null);
+    };
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [componentContextMenu]);
 
   const selectComponents = (componentIds: string[], additive: boolean) => {
     setRightDockView("properties");
@@ -1467,6 +1495,14 @@ export function App() {
 
   return (
     <main className={isLabPage ? "app-shell lab-route-active" : "app-shell"}>
+      {componentContextMenu && contextComponent && <div className="component-context-menu" role="menu" aria-label={`Actions for ${contextComponent.reference}`} style={{ left: componentContextMenu.x, top: componentContextMenu.y }} onContextMenu={(event) => event.preventDefault()}>
+        <strong>{contextComponent.reference} · {catalogById.get(contextComponent.definitionId)?.name ?? "Component"}</strong>
+        <button role="menuitem" onClick={() => setComponentContextMenu(null)}>Properties and terminals</button>
+        <button role="menuitem" onClick={() => { setComponentContextMenu(null); toggleWireMode(); }}>Wire terminals</button>
+        <button role="menuitem" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); rotateSelectedComponent(); }}>Rotate 90°</button>
+        <button role="menuitem" disabled={isReferenceSheet} onClick={() => { setComponentContextMenu(null); duplicateSelectedComponent(); }}>Duplicate</button>
+        <button role="menuitem" className="danger" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); removeSelectedComponent(); }}>Delete component</button>
+      </div>}
       <header className="app-header">
         <div className="brand-lockup">
           <img src={`${import.meta.env.BASE_URL}assets/hephzibah-behulah-official.jpg`} alt="Hephzibah Behulah" />
@@ -1578,7 +1614,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
