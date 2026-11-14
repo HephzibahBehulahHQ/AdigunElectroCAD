@@ -213,6 +213,25 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("draws a scaled panel meter with separate supply, measurement, and common pins", () => {
+  const definition = catalogById.get("iec.panel-meter.01")!;
+  const document = { id: "meter-sheet", name: "Meter", description: "", revision: 0, wires: [], components: [
+    { id: "p1", definitionId: definition.id, reference: "P1", x: 420, y: 300, rotation: 0 as const, properties: { measurementKind: "Voltage", measuredValue: 48, scaleMaximum: 100 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 420, anchor.y - 300];
+  };
+  expect(relative("supply")).toEqual([-47, -14]);
+  expect(relative("common")).toEqual([-47, 14]);
+  expect(relative("signal")).toEqual([47, 0]);
+  expect(definition.terminals.find((terminal) => terminal.id === "signal")?.direction).toBe("input");
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { measurementKind: "Voltage", measuredValue: 48, scaleMaximum: 100 } }));
+  expect(svg).toContain('aria-label="Digital panel meter, Voltage, 48.0 V"');
+});
+
 it("draws the solenoid actuator and positions its coil terminals", () => {
   const definition = catalogById.get("iec.solenoid-actuator.01")!;
   const document = { id: "actuator-sheet", name: "Actuator", description: "", revision: 0, wires: [], components: [
