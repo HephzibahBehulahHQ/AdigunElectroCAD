@@ -69,6 +69,10 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "18") return { x: 47, y: 12 };
     if (terminalId === "15") return { x: 0, y: 27 };
   }
+  if (modelId === "catalog-solenoid-actuator") {
+    if (terminalId === "a1") return { x: -47, y: -12 };
+    if (terminalId === "a2") return { x: -47, y: 12 };
+  }
   if (modelId === "catalog-feed-through-terminal") {
     if (terminalId === "1") return { x: -47, y: 0 };
     if (terminalId === "2") return { x: 47, y: 0 };
