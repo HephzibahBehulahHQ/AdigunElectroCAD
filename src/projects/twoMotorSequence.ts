@@ -7,12 +7,12 @@ export function createTwoMotorSequence(): CircuitDocument {
   const components = [
     component("supply", "iec.ac-supply.01", "X1", 500, 140, { powerLayout: "vertical", outputEnabled: true, frequencyHz: 50, nominalVoltageV: 400 }),
     component("breaker", "iec.circuit-breaker.01", "Q1", 500, 260, { powerLayout: "vertical", closed: true, nominalVoltageV: 400, ratedCurrentA: 32, poles: 3 }),
-    component("km1", "iec.motor-starter.01", "KM1", 300, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 17, coilVoltageV: 24 }),
-    component("km2", "iec.motor-starter.01", "KM2", 700, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 18, coilVoltageV: 24 }),
-    component("f1", "overload.thermal", "F1", 300, 500, { powerLayout: "vertical", tripped: false, settingA: 14.3 }),
-    component("f2", "overload.thermal", "F2", 700, 500, { powerLayout: "vertical", tripped: false, settingA: 15.2 }),
-    component("m1", "iec.induction-motor.01", "M1", 300, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470 }),
-    component("m2", "iec.induction-motor.01", "M2", 700, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470 }),
+    component("km1", "iec.motor-starter.01", "KM1", 300, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 17, ratedPowerKw: 7.5, coilVoltageV: 24, coilDc: true, auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 }),
+    component("km2", "iec.motor-starter.01", "KM2", 700, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 17, ratedPowerKw: 7.5, coilVoltageV: 24, coilDc: true, auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 }),
+    component("f1", "overload.thermal", "F1", 300, 500, { powerLayout: "vertical", tripped: false, settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10 }),
+    component("f2", "overload.thermal", "F2", 700, 500, { powerLayout: "vertical", tripped: false, settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10 }),
+    component("m1", "iec.induction-motor.01", "M1", 300, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Delta" }),
+    component("m2", "iec.induction-motor.01", "M2", 700, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Delta" }),
     component("start", "logic.no-contact", "S1", 100, 140, { input: false }),
     component("stop", "logic.no-contact", "S0", 100, 300, { input: false }),
     component("plc", "iec.plc-digital-io.01", "PLC1", 100, 460, { program: "LDP I0; OR Q0; ANDN I1; OUT Q0" }),
@@ -52,7 +52,7 @@ export function createTwoMotorSequence(): CircuitDocument {
   connect("run", "out", "second", "in-b", [{ x: 1040, y: 360 }, { x: 1040, y: 280 }, { x: 680, y: 280 }, { x: 680, y: 212 }]);
   connect("timer", "18", "second", "in-a", [{ x: 1030, y: 200 }, { x: 1030, y: 100 }, { x: 670, y: 100 }, { x: 670, y: 188 }]);
   connect("second", "out", "km2", "a1", [{ x: 820, y: 200 }, { x: 820, y: 310 }, { x: 630, y: 310 }, { x: 630, y: 368 }]);
-  return { id: "two-motor-sequence", name: "Two-motor staggered starter", description: "Two actual three-phase branches, NC overload permits, breaker-state feedback, fresh-edge START and a 3-second second-motor delay. Boolean control and nominal motor models; no thermal trip curve or mechanical acceleration calculation.", revision: 1, components, wires };
+  return { id: "two-motor-sequence", name: "Two-motor staggered starter", description: "Two Siemens 7.5 kW DOL feeders use modeled SIRIUS contactors, 3RU thermal overload relays and an IEC three-pole source breaker. M1 starts on a fresh START edge; M2 follows after 3 seconds. The shared 32 A breaker and each 14.3 A overload are shown; branch short-circuit coordination, mechanical acceleration and thermal trip curves are outside this educational model.", revision: 2, components, wires };
 }
 
 export function createTwoMotorTemplate(): ProjectTemplate {
@@ -74,5 +74,5 @@ export function createTwoMotorTemplate(): ProjectTemplate {
     step("Either overload stops the shared sequence", .1, [{ reference: "F2", properties: { tripped: true } }], false, false),
     step("Overload reset cannot restart held START", 4, [{ reference: "F2", properties: { tripped: false } }], false, false),
   ];
-  return { id: "two-motor-sequence", name: "Two-motor staggered starter", category: "Motor Control", level: "Advanced", description: "M1 starts on a fresh START edge; M2 follows after 3 seconds. STOP, Q1 opening or either overload removes the shared run permit. Restoration requires a released and newly pressed START.", document: createTwoMotorSequence(), operatingSequence, testSequence: operatingSequence.map(s => s.name), expectedOutputs: [{ reference: "M1", label: "Nominal motor point", valueIncludes: "STANDBY" }, { reference: "M2", label: "Nominal motor point", valueIncludes: "STANDBY" }, { reference: "T1", label: "Timer contact", valueIncludes: "0.0 / 3.0 s" }] };
+  return { id: "two-motor-sequence", name: "Two-motor staggered starter", category: "Motor Control", level: "Advanced", description: "Two modeled Siemens 7.5 kW feeders: press START to run M1, then M2 starts after 3 seconds. STOP, Q1 opening or either 14.3 A overload removes the shared run permit. Branch short-circuit coordination is not simulated.", document: createTwoMotorSequence(), operatingSequence, testSequence: operatingSequence.map(s => s.name), expectedOutputs: [{ reference: "M1", label: "Nominal motor point", valueIncludes: "STANDBY" }, { reference: "M2", label: "Nominal motor point", valueIncludes: "STANDBY" }, { reference: "T1", label: "Timer contact", valueIncludes: "0.0 / 3.0 s" }] };
 }

@@ -50,3 +50,24 @@ it("does not run M2 with a missing power phase despite its control command", () 
   expect(runs.find(r => r.componentId === "m1")!.output.value).toContain("1470 rpm");
   expect(runs.find(r => r.componentId === "m2")!.output.value).toBe("STANDBY");
 });
+
+it("uses the modeled Siemens devices and matching nameplate overload settings", () => {
+  const design = createTwoMotorSequence();
+  const byId = new Map(design.components.map(component => [component.id, component]));
+  expect(byId.get("breaker")?.definitionId).toBe("iec.circuit-breaker.01");
+  for (const id of ["km1", "km2"]) {
+    expect(byId.get(id)?.definitionId).toBe("iec.motor-starter.01");
+    expect(byId.get(id)?.properties).toMatchObject({ ratedPowerKw: 7.5, ratedCurrentA: 17, coilVoltageV: 24, coilDc: true, auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 });
+  }
+  for (const id of ["f1", "f2"]) {
+    expect(byId.get(id)?.definitionId).toBe("overload.thermal");
+    expect(byId.get(id)?.properties).toMatchObject({ settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10 });
+  }
+  for (const id of ["m1", "m2"]) {
+    expect(byId.get(id)?.definitionId).toBe("iec.induction-motor.01");
+    expect(byId.get(id)?.properties).toMatchObject({ ratedPowerKw: 7.5, ratedCurrentA: 14.3, nominalSpeedRpm: 1470, nominalVoltageV: 400, frequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Delta" });
+  }
+  expect(byId.get("f1")?.properties.settingA).toBe(14.3);
+  expect(byId.get("f2")?.properties.settingA).toBe(14.3);
+  expect(design.description).toContain("branch short-circuit coordination");
+});
