@@ -32,6 +32,14 @@ describe("IEC-oriented component catalog", () => {
     expect(supply.terminals.slice(0, 3).every((terminal) => terminal.direction === "output")).toBe(true);
   });
 
+  it("models VFD line, U/V/W, and protective-earth terminals", () => {
+    const drive = modeledCatalog.find((definition) => definition.id === "iec.variable-frequency-drive.01")!;
+    expect(drive.terminals.map((terminal) => terminal.id)).toEqual(["l1-in", "l2-in", "l3-in", "u1", "v1", "w1", "pe"]);
+    expect(drive.terminals.slice(0, 3).every((terminal) => terminal.direction === "input")).toBe(true);
+    expect(drive.terminals.slice(3, 6).every((terminal) => terminal.direction === "output")).toBe(true);
+    expect(drive.terminals.some((terminal) => terminal.id === "a1" || terminal.id === "a2")).toBe(false);
+  });
+
   it("matches breaker pole count and contactor auxiliary count with real terminals", () => {
     const breaker3 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.01")!;
     const breaker4 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.04")!;
