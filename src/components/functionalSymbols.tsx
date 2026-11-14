@@ -2,7 +2,7 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || symbolId.startsWith("motor-") || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
@@ -17,7 +17,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
     return <g className={mark} aria-label="User-defined indicator symbol"><path d={`M ${x - 32} ${cy} H ${x - 12} M ${x + 12} ${cy} H ${x + 32}`} /><circle cx={x} cy={cy} r="12" fill={color} fillOpacity=".32" /><path d={`M ${x - 6} ${cy - 6} L ${x + 6} ${cy + 6} M ${x - 6} ${cy + 6} L ${x + 6} ${cy - 6}`} /><text x={x - 24} y={cy + 24} textAnchor="middle" className={text} textLength="32" lengthAdjust="spacingAndGlyphs">{terminal1}</text><text x={x + 24} y={cy + 24} textAnchor="middle" className={text} textLength="32" lengthAdjust="spacingAndGlyphs">{terminal2}</text></g>;
   }
   if (symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${cy} Q ${x - 6} ${cy - 9} ${x} ${cy} T ${x + 11} ${cy}`} /><text x={x} y={y + 20} textAnchor="middle" className={text}>3~</text></g>;
-  if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || /^motor-\\d+$/.test(symbolId)) return <g className={mark} aria-label="Three-phase induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
+  if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) return <g className={mark} aria-label="Three-phase induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
     const closed = properties.closed === true;
     const poles = Number(properties.poles) === 4 ? 4 : 3;
