@@ -37,4 +37,3 @@ export function applyStarDeltaState(document: CircuitDocument, state: StarDeltaS
     return { ...component, properties };
   }) };
 }
-

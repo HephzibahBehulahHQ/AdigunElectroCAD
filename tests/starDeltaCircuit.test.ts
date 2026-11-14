@@ -27,4 +27,3 @@ it("derives star/delta current and invalid overlap from actual power wiring", ()
   invalid.components.find((component) => component.id === "star")!.properties.energized = true;
   expect(output(invalid)).toContain("INVALID");
 });
-
