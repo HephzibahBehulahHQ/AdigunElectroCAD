@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 5138)
-Total output lines: 312
-
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { parseProjectJson } from "../src/projects/projectSerialization";
@@ -162,7 +159,16 @@ describe("project JSON import validation", () => {
 
   it("rejects malformed component drafting colors", () => {
     const input = freeSheetWithComponent();
-    input.sheets[1].document.components[0].draftingColor…138 tokens truncated…).not.toThrow();
+    input.sheets[1].document.components[0].draftingColor = "blue";
+    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Component drafting color");
+  });
+
+  it("persists optional wire drafting colors and accepts older projects without them", () => {
+    const input = createStarterProject();
+    input.sheets[0].document.wires[0].draftingColor = "#7b3fa1";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[0].document.wires[0].draftingColor).toBe("#7b3fa1");
+    delete input.sheets[0].document.wires[0].draftingColor;
+    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
   });
 
   it("rejects malformed wire drafting colors", () => {

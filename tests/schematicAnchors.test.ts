@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 8465)
-Total output lines: 512
-
 import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -146,7 +143,215 @@ it("renders breaker and overload symbols with their real open/closed and trip st
 
 
 
-it("renders three connected zigzag heater poles and shows the tripped …3465 tokens truncated…toEqual([47, 12]);
+it("renders three connected zigzag heater poles and shows the tripped interruption", () => {
+  const document = createDolMotorStarter();
+  expect(terminalAnchors(document).find((item) => item.endpoint.componentId === "overload" && item.endpoint.terminalId === "t1")).toMatchObject({ x: 165, y: 449 });
+  const render = (overloadTripped: boolean) => renderToStaticMarkup(createElement(Schematic, {
+    document,
+    selectedComponentId: "",
+    selectedWireId: "",
+    simulation: { ...initialDolState(), overloadTripped },
+    wireMode: false,
+    wireStart: null,
+    onSelect: () => undefined,
+    onWireSelect: () => undefined,
+    onTerminalSelect: () => undefined,
+  }));
+  const healthy = render(false);
+  for (const label of ["1", "3", "5", "2", "4", "6", "1/L1", "3/L2", "5/L3", "2/T1", "4/T2", "6/T3"]) expect(healthy).toContain(`>${label}</text>`);
+  const tripped = render(true);
+  expect(healthy.match(/class="terminal-label overload-terminal-label"/g)).toHaveLength(6);
+  for (const label of ["1", "3", "5", "2", "4", "6"]) expect(healthy).toContain(`class="terminal-label overload-terminal-label">${label}</text>`);
+  expect(healthy.match(/class="overload"/g)).toHaveLength(3);
+  expect(healthy).toContain("Three-phase thermal overload heater poles, healthy");
+  expect(healthy).toContain("l -6 4 l 12 6");
+  expect(healthy).toContain("contact-blade closed");
+  expect(tripped).toContain('data-state="tripped"');
+  expect(tripped.match(/class="wire fault overload-output"/g)).toHaveLength(3);
+  for (const x of [165, 255, 345]) expect(tripped).toContain(`d="M ${x} 415 L ${x + 9} 437"`);
+});
+
+it("renders STOP and START terminal IDs at their connected reference anchors", () => {
+  const document = createDolMotorStarter();
+  const anchors = terminalAnchors(document);
+  for (const [componentId, terminalId, x] of [["stop", "21", 170], ["stop", "22", 280], ["start", "13", 440], ["start", "14", 548]] as const) {
+    expect(anchors.find((item) => item.endpoint.componentId === componentId && item.endpoint.terminalId === terminalId)).toMatchObject({ x, y: 730 });
+  }
+  const svg = renderToStaticMarkup(createElement(Schematic, { document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined }));
+  for (const [terminal, value] of [["stop.21", "21"], ["stop.22", "22"], ["start.13", "13"], ["start.14", "14"]]) expect(svg).toContain(`data-terminal="${terminal}">${value}</text>`);
+});
+
+it("renders source, intermediate, and destination continuation references with sheet/grid traceability", () => {
+  const project = addFreeSchematicSheet(addFreeSchematicSheet(createStarterProject()));
+  const [source, middle, destination] = project.sheets;
+  const supply = source.document.components[0];
+  if (!supply) throw new Error("Fixture requires a catalog source component");
+  const middleSupply = { ...supply, id: "continuation-middle-source", reference: "X2", x: 400, y: 300 };
+  const destinationSupply = { ...supply, id: "continuation-destination-source", reference: "X3", x: 400, y: 300 };
+  middle.document.components.push(middleSupply);
+  destination.document.components.push(destinationSupply);
+  const continuation: ProjectContinuation = { id: "net-l1-main", label: "L1", conductorColor: "#c42626", points: [
+    { sheetId: source.id, gridReference: "1.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1-out" } },
+    { sheetId: middle.id, gridReference: "2.1", role: "continuation", endpoint: { componentId: middleSupply.id, terminalId: "l1-out" } },
+    { sheetId: destination.id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationSupply.id, terminalId: "l1-out" } },
+  ] };
+  const render = (sheetId: string) => {
+    const sheet = project.sheets.find((item) => item.id === sheetId)!;
+    return renderToStaticMarkup(createElement(Schematic, { document: sheet.document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, continuations: [continuation], projectSheets: project.sheets, activeSheetId: sheet.id, selectedContinuationId: continuation.id, onContinuationNavigate: () => {}, onContinuationSelect: () => {}, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {} }));
+  };
+  expect(render(source.id)).toContain("L1 → S2 · 2.1");
+  expect(render(source.id)).toContain("project-continuation-marker selected");
+  expect(render(middle.id)).toContain("L1 ↔ S1 · 1.1 / S3 · 3.1");
+  expect(render(destination.id)).toContain("L1 ← S1 · 1.1");
+});
+
+it("shows real pins and labels on free-sheet three-phase source and motor symbols", () => {
+  const document = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
+  document.components.push(
+    { id: "incoming", definitionId: "supply.three-phase", reference: "X1", x: 250, y: 180, rotation: 0, properties: {} },
+    { id: "mtr1", definitionId: "motor.three-phase", reference: "M1", x: 620, y: 430, rotation: 0, properties: {} },
+  );
+  const anchors = terminalAnchors(document);
+  const relative = (componentId: string, terminalId: string) => {
+    const item = anchors.find((anchor) => anchor.endpoint.componentId === componentId && anchor.endpoint.terminalId === terminalId)!;
+    const component = document.components.find((entry) => entry.id === componentId)!;
+    return [item.x - component.x, item.y - component.y];
+  };
+  expect(relative("incoming", "l1")).toEqual([-24, -35]);
+  expect(relative("incoming", "l2")).toEqual([0, -35]);
+  expect(relative("incoming", "l3")).toEqual([24, -35]);
+  expect(relative("incoming", "pe")).toEqual([47, 0]);
+  expect(relative("mtr1", "u1")).toEqual([-24, -35]);
+  expect(relative("mtr1", "v1")).toEqual([0, -35]);
+  expect(relative("mtr1", "w1")).toEqual([24, -35]);
+  expect(relative("mtr1", "pe")).toEqual([47, 0]);
+  const svg = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined,
+  }));
+  expect(svg).toContain('class="terminal-pin"');
+  expect(svg).toContain('class="free-terminal-label">L1</text>');
+  expect(svg).toContain('class="free-terminal-label">U1</text>');
+  expect(svg).toContain(">M</text>");
+  expect(svg).toContain(">3~</text>");
+});
+
+it("positions four-pole breaker neutral and catalog motor-starter auxiliary terminals", () => {
+  const document = { id: "free", name: "Free", description: "", revision: 0, wires: [], components: [
+    { id: "q4", definitionId: "iec.circuit-breaker.04", reference: "Q4", x: 300, y: 220, rotation: 0 as const, properties: { poles: 4 } },
+    { id: "km4", definitionId: "iec.motor-starter.01", reference: "KM1", x: 650, y: 420, rotation: 0 as const, properties: { auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (componentId: string, terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.componentId === componentId && item.endpoint.terminalId === terminalId)!;
+    const component = document.components.find((item) => item.id === componentId)!;
+    return [anchor.x - component.x, anchor.y - component.y];
+  };
+  expect(relative("q4", "l1-in")).toEqual([-36, -27]);
+  expect(relative("q4", "l3-out")).toEqual([12, 27]);
+  expect(relative("q4", "n-in")).toEqual([36, -27]);
+  expect(relative("q4", "n-out")).toEqual([36, 27]);
+  expect(relative("km4", "l1-in")).toEqual([-24, -27]);
+  expect(relative("km4", "l2-in")).toEqual([0, -27]);
+  expect(relative("km4", "l3-in")).toEqual([24, -27]);
+  expect(relative("km4", "l1-out")).toEqual([-24, 27]);
+  expect(relative("km4", "l2-out")).toEqual([0, 27]);
+  expect(relative("km4", "l3-out")).toEqual([24, 27]);
+  expect(relative("km4", "a1")).toEqual([-16, -47]);
+  expect(relative("km4", "a2")).toEqual([16, -47]);
+  expect(relative("km4", "aux-13")).toEqual([-47, -12]);
+  expect(relative("km4", "aux-14")).toEqual([-47, 12]);
+  expect(relative("km4", "aux-21")).toEqual([47, -12]);
+  expect(relative("km4", "aux-22")).toEqual([47, 12]);
+});
+
+it("draws a scaled panel meter with separate supply, measurement, and common pins", () => {
+  const definition = catalogById.get("iec.panel-meter.01")!;
+  const document = { id: "meter-sheet", name: "Meter", description: "", revision: 0, wires: [], components: [
+    { id: "p1", definitionId: definition.id, reference: "P1", x: 420, y: 300, rotation: 0 as const, properties: { measurementKind: "Voltage", measuredValue: 48, scaleMaximum: 100 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 420, anchor.y - 300];
+  };
+  expect(relative("supply")).toEqual([-47, -14]);
+  expect(relative("common")).toEqual([-47, 14]);
+  expect(relative("signal")).toEqual([47, 0]);
+  expect(definition.terminals.find((terminal) => terminal.id === "signal")?.direction).toBe("input");
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { measurementKind: "Voltage", measuredValue: 48, scaleMaximum: 100 } }));
+  expect(svg).toContain('aria-label="Digital panel meter, Voltage, 48.0 V"');
+});
+
+it("draws the solenoid actuator and positions its coil terminals", () => {
+  const definition = catalogById.get("iec.solenoid-actuator.01")!;
+  const document = { id: "actuator-sheet", name: "Actuator", description: "", revision: 0, wires: [], components: [
+    { id: "y1", definitionId: definition.id, reference: "Y1", x: 340, y: 250, rotation: 0 as const, properties: { energized: true, returnSpring: true } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 340, anchor.y - 250];
+  };
+  expect(relative("a1")).toEqual([-47, -12]);
+  expect(relative("a2")).toEqual([-47, 12]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 340, y: 250, properties: { energized: true, returnSpring: true } }));
+  expect(svg).toContain('aria-label="Solenoid actuator, energized"');
+  expect(svg).toContain('data-state="energized"');
+});
+
+it("draws a feed-through terminal block and positions both wire terminals", () => {
+  const definition = catalogById.get("iec.feed-through-terminal.01")!;
+  const document = { id: "terminal-sheet", name: "Terminal", description: "", revision: 0, wires: [], components: [
+    { id: "x1", definitionId: definition.id, reference: "X1", x: 360, y: 280, rotation: 0 as const, properties: { continuityClosed: false } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 360, anchor.y - 280];
+  };
+  expect(relative("1")).toEqual([-47, 0]);
+  expect(relative("2")).toEqual([47, 0]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 360, y: 280, properties: { continuityClosed: false } }));
+  expect(svg).toContain('aria-label="Feed-through terminal block, open"');
+  expect(svg).toContain('data-state="open"');
+});
+
+it("places and draws selector switch NO/NC contacts", () => {
+  const definition = catalogById.get("iec.selector-switch.02")!;
+  const document = { id: "selector-sheet", name: "Selector", description: "", revision: 0, wires: [], components: [
+    { id: "s2", definitionId: definition.id, reference: "S2", x: 380, y: 260, rotation: 0 as const, properties: { contactForm: "NC", closed: true, positions: 3 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 380, anchor.y - 260];
+  };
+  expect(relative("21")).toEqual([-47, 0]);
+  expect(relative("22")).toEqual([47, 0]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 380, y: 260, properties: { contactForm: "NC", closed: true, positions: 3 } }));
+  expect(svg).toContain('aria-label="Maintained selector switch, normally closed, 3 positions, closed"');
+});
+
+it("draws and anchors the on-delay relay coil and 15/16/18 changeover contact", () => {
+  const definition = catalogById.get("iec.on-delay-timer.01")!;
+  const document = { id: "timer-sheet", name: "Timer", description: "", revision: 0, wires: [], components: [
+    { id: "kt1", definitionId: definition.id, reference: "KT1", x: 420, y: 300, rotation: 0 as const, properties: { energized: true, elapsedSeconds: 2, delaySeconds: 2 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 420, anchor.y - 300];
+  };
+  expect(relative("a1")).toEqual([-47, -12]);
+  expect(relative("a2")).toEqual([-47, 12]);
+  expect(relative("15")).toEqual([0, 27]);
+  expect(relative("16")).toEqual([47, -12]);
+  expect(relative("18")).toEqual([47, 12]);
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { energized: true, elapsedSeconds: 2, delaySeconds: 2 } }));
   expect(svg).toContain('aria-label="On-delay timer, timed contact made"');
