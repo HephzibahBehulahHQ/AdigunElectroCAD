@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
 import { parseProjectJson } from "../src/projects/projectSerialization";
+import { validateProjectContinuations } from "../src/projects/projectContinuations";
 import { MAX_PROJECT_SHEETS } from "../src/projects/projectLimits";
 
 describe("multi-sheet starter project", () => {
@@ -28,7 +29,14 @@ it("starts with a ten-sheet motor-feeder project linked by source and destinatio
   expect(project.sheets).toHaveLength(10);
   expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply · 9 feeders", ...Array.from({ length: 9 }, (_, index) => `M${index + 1} · DOL feeder`)]);
   expect(project.continuations).toHaveLength(36);
+  expect(validateProjectContinuations(project)).toEqual([]);
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
+    for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G15", "M8"], ["L2", "K15", "O8"], ["L3", "G15", "Q8"]] as const) {
+      const continuation = project.continuations!.find((item) => item.id === `feed-m${ordinal}-${conductor.toLowerCase()}`)!;
+      expect(continuation.points.map((point) => point.gridReference)).toEqual([sourceGrid, breakerGrid]);
+    }
+    const pe = project.continuations!.find((item) => item.id === `feed-m${ordinal}-pe`)!;
+    expect(pe.points.map((point) => point.gridReference)).toEqual(["K15", "AS27"]);
     const sheet = project.sheets[ordinal];
     expect(sheet.document.components.map((component) => component.reference)).toEqual(expect.arrayContaining([`Q${ordinal}`, `KM${ordinal}`, `F${ordinal}`, `M${ordinal}`]));
     expect(sheet.document.wires.length).toBeGreaterThanOrEqual(16);

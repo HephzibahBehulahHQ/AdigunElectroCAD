@@ -2,6 +2,8 @@ import { createDolMotorStarter } from "./dolMotorStarter";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, ProjectContinuation, Wire } from "../types/electrical";
 
 const conductorColors = { L1: "#c42626", L2: "#c42626", L3: "#c42626", PE: "#1d8f53" };
+const sourceGridReferences = { L1: "G15", L2: "K15", L3: "G15" };
+const breakerGridReferences = { L1: "M8", L2: "O8", L3: "Q8" };
 
 /** Ten purposeful sheets: a three-phase source and nine individually wired motor feeders. */
 export function createMotorFeederWorkbook(): ElectricalProject {
@@ -59,8 +61,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
         label: `${conductor} / M${ordinal}`,
         conductorColor: conductorColors[conductor],
         points: [
-          { sheetId: "sheet-source", gridReference: `A.${ordinal}`, role: "source", endpoint: { componentId: "distribution-source", terminalId: conductor.toLowerCase() } },
-          { sheetId, gridReference: "A.1", role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
+          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: conductor.toLowerCase() } },
+          { sheetId, gridReference: breakerGridReferences[conductor], role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
         ],
       });
     }
@@ -69,8 +71,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
       label: `PE / M${ordinal}`,
       conductorColor: conductorColors.PE,
       points: [
-        { sheetId: "sheet-source", gridReference: `PE.${ordinal}`, role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
-        { sheetId, gridReference: "PE.1", role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
+        { sheetId: "sheet-source", gridReference: "K15", role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
+        { sheetId, gridReference: "AS27", role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
       ],
     });
   }
