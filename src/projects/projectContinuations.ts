@@ -1,5 +1,5 @@
 import { catalogById } from "../catalog/dolCatalog";
-import type { ElectricalProject, ProjectContinuation } from "../types/electrical";
+import type { ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
 
 /** Validate page order, real local terminals, and the retained source of every cross-sheet net. */
 export function validateProjectContinuations(project: ElectricalProject): string[] {
@@ -36,4 +36,66 @@ export function validateProjectContinuations(project: ElectricalProject): string
     });
   }
   return issues;
+}
+
+
+export interface ProjectTerminalReference {
+  sheetId: string;
+  endpoint: TerminalEndpoint;
+}
+
+/**
+ * Resolve the project-wide wire net containing a terminal. Local document wires
+ * and project continuation points are treated as conductor edges; device
+ * internals are not, so this does not claim current flow or simulation.
+ */
+export function resolveProjectNet(project: ElectricalProject, start: ProjectTerminalReference): ProjectTerminalReference[] {
+  const endpoints = new Map<string, ProjectTerminalReference>();
+  const adjacency = new Map<string, Set<string>>();
+  const key = ({ sheetId, endpoint }: ProjectTerminalReference) => `${sheetId}\u0000${endpoint.componentId}\u0000${endpoint.terminalId}`;
+  const addEndpoint = (reference: ProjectTerminalReference) => {
+    const id = key(reference);
+    endpoints.set(id, reference);
+    if (!adjacency.has(id)) adjacency.set(id, new Set());
+    return id;
+  };
+  const connect = (left: ProjectTerminalReference, right: ProjectTerminalReference) => {
+    const leftId = addEndpoint(left);
+    const rightId = addEndpoint(right);
+    adjacency.get(leftId)!.add(rightId);
+    adjacency.get(rightId)!.add(leftId);
+  };
+
+  for (const sheet of project.sheets) {
+    for (const component of sheet.document.components) {
+      const definition = catalogById.get(component.definitionId);
+      for (const terminal of component.customTerminals ?? definition?.terminals ?? []) {
+        addEndpoint({ sheetId: sheet.id, endpoint: { componentId: component.id, terminalId: terminal.id } });
+      }
+    }
+    for (const wire of sheet.document.wires) {
+      connect({ sheetId: sheet.id, endpoint: wire.from }, { sheetId: sheet.id, endpoint: wire.to });
+    }
+  }
+  for (const continuation of project.continuations ?? []) {
+    const [first, ...remaining] = continuation.points;
+    if (!first) continue;
+    for (const point of remaining) {
+      connect({ sheetId: first.sheetId, endpoint: first.endpoint }, { sheetId: point.sheetId, endpoint: point.endpoint });
+    }
+  }
+
+  const startId = key(start);
+  if (!endpoints.has(startId)) return [];
+  const visited = new Set<string>([startId]);
+  const queue = [startId];
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const neighbor of adjacency.get(current) ?? []) {
+      if (visited.has(neighbor)) continue;
+      visited.add(neighbor);
+      queue.push(neighbor);
+    }
+  }
+  return [...visited].map((id) => endpoints.get(id)!);
 }
