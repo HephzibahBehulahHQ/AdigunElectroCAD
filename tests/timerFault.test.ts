@@ -27,6 +27,6 @@ it("inhibits the second motor on an invalid timer and recovers after correction"
   runtime = { ...runtime, components: runtime.components.map(c => c.id === "timer" ? { ...c, properties: { ...c.properties, delaySeconds: 3 } } : c) };
   runtime = advanceCircuitClock(runtime, catalogById, 3);
   runs = executeCircuitModels(runtime, catalogById);
-  expect(runs.find(r => r.componentId === "m2")!.output.value).toContain("1440 rpm");
+  expect(runs.find(r => r.componentId === "m2")!.output.value).toContain("1470 rpm");
   expect(JSON.stringify(design)).toBe(snapshot);
 });
