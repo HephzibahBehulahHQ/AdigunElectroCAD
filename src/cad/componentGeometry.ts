@@ -63,9 +63,13 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "15") return { x: 0, y: 27 };
   }
   if (modelId === "catalog-plc-digital-io") {
-    if (terminalId === "in-0" || terminalId === "in-1" || terminalId === "ai-0") return { x: -47, y: terminalId === "in-0" ? -18 : terminalId === "in-1" ? 0 : 18 };
-    if (terminalId === "out-0") return { x: 47, y: 0 };
-    if (terminalId === "a1" || terminalId === "a2") return { x: terminalId === "a1" ? -16 : 16, y: -27 };
+    if (terminalId === "in-0") return { x: -47, y: -22 };
+    if (terminalId === "in-1") return { x: -47, y: -7 };
+    if (terminalId === "ai-0") return { x: -47, y: 8 };
+    if (terminalId === "ai-1") return { x: -47, y: 23 };
+    if (terminalId === "out-0") return { x: 47, y: -12 };
+    if (terminalId === "out-1") return { x: 47, y: 7 };
+    if (terminalId === "common") return { x: 47, y: 25 };
   }
   const logic = modelId.startsWith("logic-");
   const cylinder = modelId === "pneumatic-cylinder-single" || modelId === "pneumatic-cylinder-double";
