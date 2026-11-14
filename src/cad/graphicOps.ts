@@ -40,8 +40,8 @@ export function canReorderSchematicGraphics(graphics: SchematicGraphic[], ids: s
   const flags = graphics.map((graphic) => selected.has(graphic.id));
   const hasSelection = flags.some(Boolean);
   return {
-    back: hasSelection && flags.findIndex(Boolean) > 0,
-    front: hasSelection && flags.lastIndexOf(true) < flags.length - 1,
+    back: hasSelection && flags.some((flag, index) => flag && flags.slice(0, index).some((previous) => !previous)),
+    front: hasSelection && flags.some((flag, index) => flag && flags.slice(index + 1).some((following) => !following)),
     backward: flags.some((flag, index) => index > 0 && flag && !flags[index - 1]),
     forward: flags.some((flag, index) => index < flags.length - 1 && flag && !flags[index + 1]),
   };
