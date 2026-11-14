@@ -213,6 +213,26 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("positions transformer primary and secondary pins around a dedicated winding symbol", () => {
+  const definition = catalogById.get("iec.control-transformer.01")!;
+  const document = { id: "transformer-sheet", name: "Transformer", description: "", revision: 0, wires: [], components: [
+    { id: "t1", definitionId: definition.id, reference: "T1", x: 400, y: 300, rotation: 0 as const, properties: {} },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 400, anchor.y - 300];
+  };
+  expect(relative("p1")).toEqual([-47, -12]);
+  expect(relative("p2")).toEqual([-47, 12]);
+  expect(relative("s1")).toEqual([47, -12]);
+  expect(relative("s2")).toEqual([47, 12]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 400, y: 300 }));
+  expect(svg).toContain('aria-label="Transformer with primary and secondary windings"');
+  expect(svg).toContain("C 378 276");
+});
+
 it("renders a connectable three-pole fuse switch with its three real pole anchors", () => {
   const definition = catalogById.get("iec.fuse-switch.01")!;
   const document = { id: "fuse-sheet", name: "Fuse", description: "", revision: 0, wires: [], components: [
