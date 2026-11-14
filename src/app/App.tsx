@@ -74,8 +74,6 @@ export function App() {
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
   const [componentPanelOpen, setComponentPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const componentPanelCloseTimer = useRef<number | undefined>(undefined);
-  const rightPanelCloseTimer = useRef<number | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<Theme>("dark");
   const [locale, setLocale] = useState<Locale>("en");
@@ -130,8 +128,6 @@ export function App() {
     return () => {
       window.document.removeEventListener("pointerdown", onOutsidePress);
       window.document.removeEventListener("keydown", onEscape);
-      window.clearTimeout(componentPanelCloseTimer.current);
-      window.clearTimeout(rightPanelCloseTimer.current);
     };
   }, []);
   const [levelPercent, setLevelPercent] = useState(50);
@@ -279,6 +275,7 @@ export function App() {
 
   const selectComponent = (componentId: string, additive = false) => {
     setRightDockView("properties");
+    setRightPanelOpen(true);
     if (additive && !isReferenceSheet) {
       const next = toggleComponentSelection(selectedComponentIds, componentId);
       setSelectedComponentIds(next);
@@ -293,6 +290,7 @@ export function App() {
 
   const selectComponents = (componentIds: string[], additive: boolean) => {
     setRightDockView("properties");
+    setRightPanelOpen(true);
     const next = additive ? [...new Set([...selectedComponentIds, ...componentIds])] : componentIds;
     setSelectedComponentIds(next);
     setSelectedComponentId(next.at(-1) ?? "");
@@ -305,6 +303,7 @@ export function App() {
 
   const selectWire = (wireId: string) => {
     setRightDockView("properties");
+    setRightPanelOpen(true);
     setSelectedWireId(wireId);
     setWireRouteEditId("");
     setComponentSelection("");
@@ -318,6 +317,8 @@ export function App() {
   };
 
   const selectAnnotation = (id: string) => {
+    setRightDockView("properties");
+    setRightPanelOpen(true);
     setSelectedAnnotationId(id);
     setComponentSelection("");
     setSelectedWireId("");
@@ -327,6 +328,8 @@ export function App() {
   };
 
   const selectGraphic = (id: string, additive = false) => {
+    setRightDockView("properties");
+    setRightPanelOpen(true);
     const nextIds = additive
       ? selectedGraphicIds.includes(id) ? selectedGraphicIds.filter((item) => item !== id) : [...selectedGraphicIds, id]
       : [id];
@@ -1331,12 +1334,12 @@ export function App() {
         </div></div>
       </section>
 
-      <section className="workspace">
-        <aside className="panel component-panel" onMouseEnter={() => window.clearTimeout(componentPanelCloseTimer.current)} onMouseLeave={() => { componentPanelCloseTimer.current = window.setTimeout(() => setComponentPanelOpen(false), 140); }}>
-          <div className="panel-title" role="button" tabIndex={0} aria-expanded={componentPanelOpen} title="Click to open or close the component library" onClick={() => setComponentPanelOpen((open) => !open)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setComponentPanelOpen((open) => !open); } }}><strong>Component Library</strong><span>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span></div>
+      <section className={`workspace${componentPanelOpen ? "" : " component-panel-collapsed"}${rightPanelOpen ? "" : " properties-panel-collapsed"}`}>
+        <aside className="panel component-panel">
+          <div className="panel-title"><strong hidden={!componentPanelOpen}>Component Library</strong><span hidden={!componentPanelOpen}>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span><button type="button" className="panel-toggle" aria-expanded={componentPanelOpen} aria-label={componentPanelOpen ? "Close component library" : "Open component library"} title={componentPanelOpen ? "Close component library" : "Open component library"} onClick={() => setComponentPanelOpen((open) => !open)}>{componentPanelOpen ? "‹" : "›"}</button></div>
           <div className="component-panel-content" hidden={!componentPanelOpen}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
-          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { window.clearTimeout(rightPanelCloseTimer.current); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); }} />
+          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); }} />
           <section className="component-card">
             <div className="card-heading"><strong>{selectedDefinition.name}</strong><button className={favorites.includes(selectedDefinition.id) ? "favorite active" : "favorite"} onClick={() => setFavorites((items) => items.includes(selectedDefinition.id) ? items.filter((id) => id !== selectedDefinition.id) : [...items, selectedDefinition.id])} aria-label="Toggle component favorite">★</button></div>
             <p>{selectedDefinition.description}</p>
@@ -1352,10 +1355,11 @@ export function App() {
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
-        <aside className="panel workspace-dock" aria-label="Properties and project library" onMouseEnter={() => window.clearTimeout(rightPanelCloseTimer.current)} onMouseLeave={() => { rightPanelCloseTimer.current = window.setTimeout(() => setRightPanelOpen(false), 140); }}>
+        <aside className="panel workspace-dock" aria-label="Properties and project library">
           <nav className="workspace-dock-tabs" aria-label="Right panel">
-            <button type="button" aria-pressed={rightPanelOpen && rightDockView === "properties"} aria-expanded={rightPanelOpen && rightDockView === "properties"} onClick={() => { if (rightDockView === "properties" && rightPanelOpen) setRightPanelOpen(false); else { setRightDockView("properties"); setRightPanelOpen(true); } }}>Properties</button>
-            <button type="button" aria-pressed={rightPanelOpen && rightDockView === "projects"} aria-expanded={rightPanelOpen && rightDockView === "projects"} onClick={() => { if (rightDockView === "projects" && rightPanelOpen) setRightPanelOpen(false); else { setRightDockView("projects"); setRightPanelOpen(true); } }}>Projects</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "projects"} onClick={() => setRightDockView("projects")}>Projects</button>
+            <button type="button" className="panel-toggle" aria-expanded={rightPanelOpen} aria-label={rightPanelOpen ? "Close right panel" : "Open properties panel"} title={rightPanelOpen ? "Close right panel" : "Open properties panel"} onClick={() => setRightPanelOpen((open) => !open)}>{rightPanelOpen ? "›" : "‹"}</button>
           </nav>
           <div className="dock-content properties-panel" hidden={!rightPanelOpen || rightDockView !== "properties"}>
 

@@ -168,6 +168,17 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .custom-terminal-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; align-items: end; padding: 7px 0; border-bottom: 1px solid var(--border); }.custom-terminal-row > span, .custom-terminal-row > button { grid-column: 1 / -1; }.custom-terminal-row select { min-width: 0; width: 100%; }.custom-terminal-row label { min-width: 0; font-size: .58rem; }
 
 .workspace-dock { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: 0; }
+.workspace-dock-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: center; }
+.workspace-dock-tabs button[hidden], .component-panel-content[hidden] { display: none !important; }
+.panel-toggle { flex: 0 0 28px; width: 28px; min-height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font-size: 1rem; font-weight: 800; }
+.panel-toggle:hover { border-color: #22d3ee; color: #22d3ee; }
+.panel-title > strong, .panel-title > span, .catalog-item strong, .catalog-item small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.workspace > .panel { min-width: 0; }
+.panel-title > span { min-width: 0; }
+.catalog-item > span:last-child { min-width: 0; overflow: hidden; }
+.catalog-item strong { max-width: 100%; }
+.catalog-item small { max-width: 100%; }
+.workspace-dock .panel-title span, .properties-form label, .properties-form label span { white-space: nowrap; }
 .component-panel .panel-title[role="button"] { cursor: pointer; }
 .component-panel-content > input { width: calc(100% - 16px); margin: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font-size: .75rem; }
 .catalog-properties-preview p { color: var(--muted); font-size: .69rem; line-height: 1.45; }
@@ -201,6 +212,13 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .menu-row details > summary::after { content: "▾"; color: var(--muted); font-size: .62rem; }
 .menu-row details[open] > summary::after { content: "▴"; }
 .tool-row { align-items: stretch; min-height: 76px; gap: 0; padding: 5px 12px; }
+.tool-row { min-height: 46px; padding-block: 2px; }
+.tool-group-label { display: none; }
+.tool-group { padding-inline: 5px; }
+.tool-group-actions { gap: 3px; }
+.tool-group-actions > button:not(.tool-button) { min-height: 30px; padding: 3px 6px; }
+.tool-group .tool-button { min-width: 42px; min-height: 40px; padding: 1px 4px; }
+.tool-group .tool-button span { font-size: .54rem; line-height: 1; white-space: nowrap; }
 .tool-group { display: flex; flex: 0 0 auto; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 0 9px; border-right: 1px solid var(--border); }
 .tool-group-label { color: var(--muted); font-size: .54rem; font-weight: 800; letter-spacing: .12em; line-height: 1; text-transform: uppercase; }
 .tool-group-actions { display: flex; align-items: center; gap: 4px; }
@@ -214,6 +232,16 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .tool-group-simulation .danger { border-color: #cf4759 !important; background: #8b2938 !important; }
 
 @media (min-width: 1101px) {
+  .workspace { grid-template-columns: 230px minmax(0, 1fr) 240px; }
+  .workspace.component-panel-collapsed { grid-template-columns: 40px minmax(0, 1fr) 240px; }
+  .workspace.properties-panel-collapsed { grid-template-columns: 230px minmax(0, 1fr) 40px; }
+  .workspace.component-panel-collapsed.properties-panel-collapsed { grid-template-columns: 40px minmax(0, 1fr) 40px; }
+  .component-panel { overflow: hidden; }
+  .component-panel .panel-title { gap: 5px; padding: 7px; }
+  .component-panel .panel-title > span { font-size: .57rem; }
+  .component-panel-collapsed .component-panel .panel-title { justify-content: center; padding: 6px 3px; }
+  .workspace.properties-panel-collapsed .workspace-dock-tabs { grid-template-columns: 1fr; justify-items: center; padding: 5px; }
+  .tool-row .tool-group { gap: 0; }
   .app-shell { height: 100dvh; min-height: 600px; }
   .app-shell > .workspace { flex: 1 1 0; min-height: 0; }
   .workspace { align-items: stretch; }

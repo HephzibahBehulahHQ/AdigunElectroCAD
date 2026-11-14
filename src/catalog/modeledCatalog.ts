@@ -39,7 +39,7 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
   if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,
-    name: `${family.name} ${family.series} · ${propertiesSchema.nominalVoltageV} V / ${propertiesSchema.ratedCurrentA} A`,
+    name: `${family.name} · ${propertiesSchema.nominalVoltageV}V/${Math.round(Number(propertiesSchema.ratedCurrentA))}A`,
     category: family.category,
     referencePrefix: family.referencePrefix,
     description: `${family.abstraction}; engineering assumptions are editable and variant ${variant} has distinct nominal ratings.`,
@@ -52,4 +52,5 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
     standardsReferences: [family.standardsReference],
   };
 }));
+
 
