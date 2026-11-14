@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addFreeSchematicSheet, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
+import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { MAX_PROJECT_SHEETS } from "../src/projects/projectLimits";
 
@@ -21,6 +21,14 @@ describe("multi-sheet starter project", () => {
     expect(next.sheets[1].document.name).toBe("Control extension");
     expect(next.sheets[0].document.name).toBe("DOL Motor Starter — 7.5 kW");
   });
+});
+
+it("starts with two usable motor schematics, including a wired two-motor sequence", () => {
+  const project = createMotorStarterWorkbook();
+  expect(project.sheets.map((sheet) => sheet.name)).toEqual(["DOL reference", "Two-motor sequence"]);
+  expect(project.sheets[1].document.components.map((component) => component.reference)).toEqual(expect.arrayContaining(["Q1", "KM1", "KM2", "F1", "F2", "M1", "M2", "PLC1", "T1"]));
+  expect(project.sheets[1].document.wires.length).toBeGreaterThan(20);
+  expect(new Set(project.sheets[1].document.wires.map((wire) => wire.id)).size).toBe(project.sheets[1].document.wires.length);
 });
 
 it("allocates a unique id after imported sheet numbering has gaps", () => {
@@ -50,3 +58,4 @@ it("can save and reload the maximum sheet count and rejects another addition wit
   expect(() => addFreeSchematicSheet(project)).toThrow("at most");
   expect(JSON.stringify(project)).toBe(before);
 });
+

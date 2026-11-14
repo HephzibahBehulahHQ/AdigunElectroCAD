@@ -13,7 +13,7 @@ import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, mo
 import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
-import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
+import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { templateLibrary } from "../projects/templateLibrary";
 import { verifyProjectTemplate } from "../projects/templateVerification";
 import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn, signOut, signUp, startAnonymousPreview } from "../services/auth";
@@ -62,10 +62,10 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 const isUserSymbolDefinition = (definitionId: string) => definitionId === "user.indicator-lamp" || definitionId === "user.drawn-symbol";
 
 export function App() {
-  const [project, setProject] = useState<ElectricalProject>(() => createStarterProject());
+  const [project, setProject] = useState<ElectricalProject>(() => createMotorStarterWorkbook());
   const latestProject = useRef(project);
   latestProject.current = project;
-  const [activeSheetId, setActiveSheetId] = useState("sheet-dol");
+  const [activeSheetId, setActiveSheetId] = useState("sheet-two-motor");
   const [schematicZoom, setSchematicZoom] = useState(.85);
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
@@ -101,6 +101,7 @@ export function App() {
   const [rightDockView, setRightDockView] = useState<"properties" | "projects">("properties");
   const [reportsOpen, setReportsOpen] = useState(false);
   const [consoleView, setConsoleView] = useState<"runtime" | "diagnostics" | "labs">("runtime");
+  const [consoleCollapsed, setConsoleCollapsed] = useState(false);
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
   const [plcPreviousInputA, setPlcPreviousInputA] = useState(false);
@@ -1334,20 +1335,21 @@ export function App() {
         </aside>
       </section>
 
-      <section className="engineering-console">
+      <section className={consoleCollapsed ? "engineering-console collapsed" : "engineering-console"}>
         <nav className="console-tabs" aria-label="Engineering console">
           <button type="button" aria-pressed={consoleView === "runtime"} onClick={() => setConsoleView("runtime")}>Runtime</button>
           <button type="button" aria-pressed={consoleView === "diagnostics"} onClick={() => setConsoleView("diagnostics")}>Diagnostics</button>
           <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
+          <button type="button" className="console-collapse" aria-expanded={!consoleCollapsed} onClick={() => setConsoleCollapsed((collapsed) => !collapsed)}>{consoleCollapsed ? "Show console" : "Hide console"}</button>
         </nav>
-        <div className="console-view" hidden={consoleView !== "runtime"}>
+        <div className="console-view" hidden={consoleCollapsed || consoleView !== "runtime"}>
         <div className="console-section"><strong>Simulation</strong><span className={simulation.motorState === "running" ? "badge running" : "badge"}>{simulation.motorState.toUpperCase()}</span><dl><dt>Voltage</dt><dd>{simulation.lineVoltageV.toFixed(0)} V</dd><dt>Current</dt><dd>{simulation.lineCurrentA.toFixed(1)} A</dd><dt>Speed</dt><dd>{simulation.motorSpeedRpm.toFixed(0)} rpm</dd><dt>Time</dt><dd>{(simulation.elapsedMs / 1000).toFixed(1)} s</dd></dl></div>
         </div>
-        <div className="console-view" hidden={consoleView !== "diagnostics"}>
+        <div className="console-view" hidden={consoleCollapsed || consoleView !== "diagnostics"}>
         <div className="console-section"><strong>{t.validation}</strong>{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={circuitModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
         <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
         </div>
-        <div className="console-view" hidden={consoleView !== "labs"}>
+        <div className="console-view" hidden={consoleCollapsed || consoleView !== "labs"}>
         <StarDeltaLab onLoadCircuit={(circuit) => {
           const extended = tryAddFreeSheet(project);
           if (!extended) return;
@@ -1511,4 +1513,5 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, on
 function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>No entries on this sheet.</td></tr>}</tbody></table></div></section>;
 }
+
 
