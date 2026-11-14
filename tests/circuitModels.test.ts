@@ -61,6 +61,18 @@ describe("placed functional component execution", () => {
     expect(runs.find((run) => run.reference === "PLC1")?.output.value).toContain("I0 OFF");
     expect(runs.find((run) => run.reference === "Y1")?.output.value).toBe("RETRACTED");
   });
+  it("passes a wired numeric sensor signal into a panel meter reading", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "load-cell", definitionId: "sensor.load-cell", reference: "B1", x: 100, y: 100, rotation: 0, properties: { forceN: 1000, capacityN: 1000 } },
+      { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 300, y: 100, rotation: 0, properties: { measurementKind: "Voltage", measuredValue: 0, scaleMaximum: 10 } },
+    ];
+    document.wires = [{ id: "measurement", from: { componentId: "load-cell", terminalId: "signal" }, to: { componentId: "meter", terminalId: "signal" }, points: [], netName: "MEAS" }];
+    const meter = executeCircuitModels(document, catalogById).find((run) => run.reference === "P1")!;
+    expect(meter.output.label).toBe("Voltage reading");
+    expect(Number(meter.evaluatedProperties.measuredValue)).toBeGreaterThan(0);
+  });
+
   it("scales motor speed with drive frequency and stops at zero command", () => {
     const document = structuredClone(templateLibrary[1].document);
     document.components[3].properties.nominalSpeedRpm = 1500;
