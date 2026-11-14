@@ -723,9 +723,9 @@ export function App() {
   };
 
   const restoreDol = () => {
-    recordEdit(createStarterProject());
-    setActiveSheetId("sheet-dol");
-    setComponentSelection("contactor");
+    recordEdit(createMotorStarterWorkbook());
+    setActiveSheetId("sheet-two-motor");
+    setComponentSelection("km1");
     setSelectedWireId("");
     setDirty(true);
     setSimulation(initialDolState());
