@@ -1,4 +1,4 @@
-import { createDolMotorStarter } from "./dolMotorStarter";
+import { createSourcedDolMotorStarter } from "./sourcedDolMotorStarter";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, ProjectContinuation, Wire } from "../types/electrical";
 
 const conductorColors = { L1: "#c42626", L2: "#c42626", L3: "#c42626", PE: "#1d8f53" };
@@ -17,7 +17,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
   };
   const sheets = [{ id: "sheet-source", name: "Supply · 9 feeders", kind: "free-schematic" as const, document: sourceDocument }];
   const continuations: ProjectContinuation[] = [];
-  const base = createDolMotorStarter();
+  const base = createSourcedDolMotorStarter();
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheetId = `sheet-motor-${ordinal}`;
