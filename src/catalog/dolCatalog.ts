@@ -57,6 +57,38 @@ export const interlockedContactor: ElectricalComponentDefinition = {
   propertiesSchema: { ...holdingContactor.propertiesSchema, auxiliaryContacts: "1 NO + 1 NC" },
   documentation: "Wire the opposite contactor's NC 21–22 in series with A1 to create an electrical interlock. Ideal contacts; no mechanical interlock, contact timing, pickup curve or safety certification.",
 };
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor];
+const sourceBackedCatalogIds = new Set([
+  "iec.industrial-miniature-breaker.01", "iec.dc-control-supply.01", "iec.motor-starter.01",
+  "iec.induction-motor.01", "iec.induction-motor.41", "iec.safety-relay.01",
+]);
+const familyProfileIds = new Map<string, ElectricalComponentDefinition>();
+for (const definition of modeledCatalog) {
+  const familyId = /^iec\.(.+)\.\d{2}$/.exec(definition.id)?.[1];
+  if (!familyId || sourceBackedCatalogIds.has(definition.id) || familyProfileIds.has(familyId)) continue;
+  familyProfileIds.set(familyId, definition);
+}
+const ratingFields = new Set(["nominalVoltageV", "ratedVoltageV", "ratedCurrentA", "ratedPowerKw", "nominalSpeedRpm", "coilVoltageV", "breakingCapacityKa"]);
+export const genericComponentProfiles: ElectricalComponentDefinition[] = [...familyProfileIds].map(([familyId, source]) => ({
+  ...source,
+  id: `generic.iec.${familyId}`,
+  name: `Generic ${source.name.split(" · ")[0]}`,
+  description: `Editable ${source.category.toLowerCase()} model. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design.`,
+  propertiesSchema: Object.fromEntries(Object.entries(source.propertiesSchema).map(([key, value]) => [key, ratingFields.has(key) ? 0 : value])),
+  documentation: `Generic IEC-oriented ${source.category.toLowerCase()} simulation abstraction. It is not a named manufacturer's device. Values are editable model assumptions; verify all required electrical ratings and behavior for the intended application.`,
+  standardsReferences: source.standardsReferences.filter((reference) => reference.startsWith("IEC ")),
+}));
+
+export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
+  ...dolCatalog,
+  ...functionalCatalog,
+  ...genericComponentProfiles,
+  ...modeledCatalog.filter((definition) => sourceBackedCatalogIds.has(definition.id)),
+  ...windingCatalog,
+  ...userSymbolCatalog,
+  interlockedContactor,
+];
+export const componentLibraryById = new Map(componentLibraryCatalog.map((definition) => [definition.id, definition]));
+/** All current and legacy definitions remain resolvable when loading existing projects. */
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor, ...genericComponentProfiles];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
 
