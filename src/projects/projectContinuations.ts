@@ -1,5 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
-import type { ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
+import { canConnectTerminals } from "../electrical/topology";
 
 /** Validate page order, real local terminals, and the retained source of every cross-sheet net. */
 export function validateProjectContinuations(project: ElectricalProject): string[] {
@@ -98,4 +99,76 @@ export function resolveProjectNet(project: ElectricalProject, start: ProjectTerm
     }
   }
   return [...visited].map((id) => endpoints.get(id)!);
+}
+export type CreateProjectContinuationResult =
+  | { ok: true; project: ElectricalProject; continuation: ProjectContinuation }
+  | { ok: false; reason: string };
+
+const defaultContinuationColor = (kind: string) => kind === "protective-earth" ? "#1d8f53" : kind === "control" ? "#7c3aed" : "#c42626";
+
+/** Create a labelled project net between two real terminals on different sheets. */
+export function createProjectContinuation(
+  project: ElectricalProject,
+  first: ProjectTerminalReference,
+  second: ProjectTerminalReference,
+  firstGridReference = "A.1",
+  secondGridReference = "A.1",
+): CreateProjectContinuationResult {
+  if (first.sheetId === second.sheetId) return { ok: false, reason: "A sheet continuation must connect two different sheets." };
+  const sheetOrder = new Map(project.sheets.map((sheet, index) => [sheet.id, index]));
+  const firstOrder = sheetOrder.get(first.sheetId);
+  const secondOrder = sheetOrder.get(second.sheetId);
+  if (firstOrder === undefined || secondOrder === undefined) return { ok: false, reason: "Both continuation sheets must belong to the current project." };
+  const resolve = (reference: ProjectTerminalReference) => {
+    const sheet = project.sheets[sheetOrder.get(reference.sheetId)!];
+    const component = sheet.document.components.find((item) => item.id === reference.endpoint.componentId);
+    const definition = component && catalogById.get(component.definitionId);
+    const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === reference.endpoint.terminalId);
+    return terminal && component ? { component, terminal, label: terminal.label } : undefined;
+  };
+  const firstTerminal = resolve(first);
+  const secondTerminal = resolve(second);
+  if (!firstTerminal || !secondTerminal) return { ok: false, reason: "Choose real terminals from the component catalog." };
+  const checkDocument: CircuitDocument = {
+    id: "project-continuation-check",
+    name: "Project continuation compatibility check",
+    description: "",
+    components: [
+      { ...firstTerminal.component, id: "continuation-first", properties: { ...firstTerminal.component.properties } },
+      { ...secondTerminal.component, id: "continuation-second", properties: { ...secondTerminal.component.properties } },
+    ],
+    wires: [],
+    revision: 1,
+  };
+  const connectionCheck = canConnectTerminals(checkDocument, catalogById,
+    { componentId: "continuation-first", terminalId: first.endpoint.terminalId },
+    { componentId: "continuation-second", terminalId: second.endpoint.terminalId });
+  if (!connectionCheck.ok) return { ok: false, reason: connectionCheck.reason ?? "Those terminals cannot be connected." };
+  const [source, destination, sourceGrid, destinationGrid] = firstOrder < secondOrder
+    ? [first, second, firstGridReference, secondGridReference] as const
+    : [second, first, secondGridReference, firstGridReference] as const;
+  const sourceTerminal = resolve(source)!;
+  const endpointId = (reference: ProjectTerminalReference) => `${reference.sheetId}:${reference.endpoint.componentId}:${reference.endpoint.terminalId}`;
+  const pair = new Set([endpointId(source), endpointId(destination)]);
+  if ((project.continuations ?? []).some((existing) => {
+    const endpoints = existing.points.map((point) => endpointId({ sheetId: point.sheetId, endpoint: point.endpoint }));
+    return endpoints.length === 2 && pair.has(endpoints[0]) && pair.has(endpoints[1]);
+  })) return { ok: false, reason: "Those terminals already have a project continuation." };
+
+  const ids = new Set((project.continuations ?? []).map((item) => item.id));
+  let suffix = project.revision + 1;
+  while (ids.has(`continuation-${suffix}`)) suffix++;
+  const continuation: ProjectContinuation = {
+    id: `continuation-${suffix}`,
+    label: sourceTerminal.label,
+    conductorColor: defaultContinuationColor(sourceTerminal.terminal.kind),
+    points: [
+      { sheetId: source.sheetId, gridReference: sourceGrid, role: "source", endpoint: source.endpoint },
+      { sheetId: destination.sheetId, gridReference: destinationGrid, role: "destination", endpoint: destination.endpoint },
+    ],
+  };
+  const next = { ...project, revision: project.revision + 1, continuations: [...(project.continuations ?? []), continuation] };
+  const issues = validateProjectContinuations(next);
+  if (issues.length) return { ok: false, reason: issues[0] };
+  return { ok: true, project: next, continuation };
 }

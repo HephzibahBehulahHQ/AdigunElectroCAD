@@ -20,6 +20,7 @@ import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn,
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
+import { createProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, createProjectWideReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
@@ -61,6 +62,18 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 
 const isUserSymbolDefinition = (definitionId: string) => definitionId === "user.indicator-lamp" || definitionId === "user.drawn-symbol";
 
+function terminalGridReference(document: CircuitDocument, endpoint: TerminalEndpoint): string {
+  const anchor = terminalAnchors(document).find((item) => item.endpoint.componentId === endpoint.componentId && item.endpoint.terminalId === endpoint.terminalId);
+  if (!anchor) return "A1";
+  let columnIndex = Math.max(0, Math.round(anchor.x / 20));
+  let column = "";
+  while (columnIndex >= 0) {
+    column = String.fromCharCode(65 + columnIndex % 26) + column;
+    columnIndex = Math.floor(columnIndex / 26) - 1;
+  }
+  return `${column}${Math.floor(anchor.y / 20) + 1}`;
+}
+
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createMotorStarterWorkbook());
   const latestProject = useRef(project);
@@ -90,6 +103,8 @@ export function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
+  const [crossSheetContinuationMode, setCrossSheetContinuationMode] = useState(false);
+  const [crossSheetContinuationStart, setCrossSheetContinuationStart] = useState<ProjectTerminalReference | null>(null);
   const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
   const [wireRouteEditId, setWireRouteEditId] = useState("");
@@ -290,7 +305,24 @@ export function App() {
   };
 
   const updateDocument = (next: CircuitDocument, saveHistory = true) => {
-    const nextProject = replaceSheetDocument(project, activeSheet.id, next);
+    const replaced = replaceSheetDocument(project, activeSheet.id, next);
+    const anchors = terminalAnchors(next);
+    const nextProject = replaced.continuations ? {
+      ...replaced,
+      continuations: replaced.continuations.flatMap((continuation) => {
+        const points = continuation.points.flatMap((point) => {
+          if (point.sheetId !== activeSheet.id) return [point];
+          const component = next.components.find((item) => item.id === point.endpoint.componentId);
+          const definition = component && catalogById.get(component.definitionId);
+          const terminalExists = (component?.customTerminals ?? definition?.terminals)?.some((terminal) => terminal.id === point.endpoint.terminalId);
+          if (!terminalExists) return [];
+          const anchor = anchors.find((item) => item.endpoint.componentId === point.endpoint.componentId && item.endpoint.terminalId === point.endpoint.terminalId);
+          return [{ ...point, gridReference: anchor ? terminalGridReference(next, point.endpoint) : point.gridReference }];
+        });
+        if (points.length < 2) return [];
+        return [{ ...continuation, points: points.map((point, index) => ({ ...point, role: index === 0 ? "source" as const : index === points.length - 1 ? "destination" as const : "continuation" as const })) }];
+      }),
+    } : replaced;
     if (saveHistory) recordEdit(nextProject);
     else setProject(nextProject);
   };
@@ -332,6 +364,8 @@ export function App() {
     setWireMode(false);
     setWireStart(null);
     setWireBranchStart(null);
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
     setReconnectingWireId("");
     setSelectedAnnotationId("");
     setSelectedGraphicId(""); setSelectedGraphicIds([]);
@@ -860,9 +894,9 @@ export function App() {
     setSelectedWireId("");
     setWireRouteEditId("");
     setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setAnnotationMode(false); setGraphicMode(null);
-    setWireMode(false);
+    setWireMode(crossSheetContinuationMode);
     setWireStart(null);
-    setNotice(`${sheet.name} selected.`);
+    setNotice(crossSheetContinuationMode && crossSheetContinuationStart ? `${sheet.name} selected. Choose a compatible destination terminal.` : `${sheet.name} selected.`);
   };
 
   const loadTemplate = () => {
@@ -905,13 +939,53 @@ export function App() {
     setWireRouteEditId("");
     setWireStart(null);
     setWireBranchStart(null);
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId(""); setSelectedGraphicIds([]);
     if (!next) setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
   };
 
+  const beginCrossSheetContinuation = () => {
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationMode(true);
+    setWireMode(true);
+    setWireStart(null);
+    setWireBranchStart(null);
+    setReconnectingWireId("");
+    setAnnotationMode(false);
+    setGraphicMode(null);
+    setNotice("Choose the source terminal, select a different sheet, then choose its compatible destination terminal.");
+  };
+
   const selectWireTerminal = (endpoint: TerminalEndpoint, continueBranch = false) => {
     if (!wireMode) return;
+    if (crossSheetContinuationMode) {
+      const selected: ProjectTerminalReference = { sheetId: activeSheet.id, endpoint };
+      if (!crossSheetContinuationStart) {
+        setCrossSheetContinuationStart(selected);
+        setNotice("Source terminal selected. Switch to a different sheet and choose the destination terminal.");
+        return;
+      }
+      const sourceSheet = project.sheets.find((sheet) => sheet.id === crossSheetContinuationStart.sheetId);
+      const destinationSheet = project.sheets.find((sheet) => sheet.id === selected.sheetId);
+      if (!sourceSheet || !destinationSheet) { setNotice("The selected project sheet is no longer available."); return; }
+      const result = createProjectContinuation(
+        project,
+        crossSheetContinuationStart,
+        selected,
+        terminalGridReference(sourceSheet.document, crossSheetContinuationStart.endpoint),
+        terminalGridReference(destinationSheet.document, endpoint),
+      );
+      if (!result.ok) { setNotice(result.reason); return; }
+      recordEdit(result.project);
+      setCrossSheetContinuationStart(null);
+      setCrossSheetContinuationMode(false);
+      setWireMode(false);
+      setWireStart(null);
+      setNotice(`Project continuation ${result.continuation.label} created between ${sourceSheet.name} and ${destinationSheet.name}.`);
+      return;
+    }
     if (!wireStart) {
       setWireStart(endpoint);
       setWireBranchStart(null);
@@ -1370,7 +1444,7 @@ export function App() {
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Component</button></div></details>
-        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button></div></details>
+        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
