@@ -213,6 +213,23 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("places and draws selector switch NO/NC contacts", () => {
+  const definition = catalogById.get("iec.selector-switch.02")!;
+  const document = { id: "selector-sheet", name: "Selector", description: "", revision: 0, wires: [], components: [
+    { id: "s2", definitionId: definition.id, reference: "S2", x: 380, y: 260, rotation: 0 as const, properties: { contactForm: "NC", closed: true, positions: 3 } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 380, anchor.y - 260];
+  };
+  expect(relative("21")).toEqual([-47, 0]);
+  expect(relative("22")).toEqual([47, 0]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 380, y: 260, properties: { contactForm: "NC", closed: true, positions: 3 } }));
+  expect(svg).toContain('aria-label="Maintained selector switch, normally closed, 3 positions, closed"');
+});
+
 it("draws and anchors the on-delay relay coil and 15/16/18 changeover contact", () => {
   const definition = catalogById.get("iec.on-delay-timer.01")!;
   const document = { id: "timer-sheet", name: "Timer", description: "", revision: 0, wires: [], components: [
