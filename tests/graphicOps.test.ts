@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicateSchematicGraphic, setSchematicGraphicBounds } from "../src/cad/graphicOps";
+import { duplicateSchematicGraphic, reorderSchematicGraphic, setSchematicGraphicBounds } from "../src/cad/graphicOps";
 import type { SchematicGraphic } from "../src/types/electrical";
 
 const pathGraphic: SchematicGraphic = {
