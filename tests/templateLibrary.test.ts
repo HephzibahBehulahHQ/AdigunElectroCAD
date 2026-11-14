@@ -67,6 +67,15 @@ describe("project template library", () => {
     expect(new Set(templateLibrary.map((template) => template.level)).size).toBe(5);
   });
 
+  it("builds a wireable variable-speed drive feeder through U/V/W and PE", () => {
+    const template = templateLibrary.find((item) => item.name.startsWith("Variable-speed drive feeder"))!;
+    const drive = template.document.components.find((component) => component.reference === "U1")!;
+    expect(drive.definitionId).toBe("iec.variable-frequency-drive.02");
+    expect(validateCircuit(template.document, catalogById)).toEqual([]);
+    const driveEndpoints = template.document.wires.flatMap((wire) => [wire.from, wire.to]).filter((endpoint) => endpoint.componentId === drive.id);
+    expect(driveEndpoints.map((endpoint) => endpoint.terminalId)).toEqual(expect.arrayContaining(["l1-in", "l2-in", "l3-in", "u1", "v1", "w1", "pe"]));
+  });
+
   it.each(templateLibrary)("validates topology and model outcomes for $id", (template) => {
       expect(template.document.components.length).toBeGreaterThanOrEqual(3);
       expect(validateCircuit(template.document, catalogById)).toEqual([]);

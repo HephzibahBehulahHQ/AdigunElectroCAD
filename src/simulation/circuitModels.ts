@@ -139,14 +139,16 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (model === "catalog-ac-supply" && p.outputEnabled === true) {
       for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
     }
-    if (model === "catalog-variable-frequency-drive") for (const phase of ["l1", "l2", "l3"]) {
-      driveOutputs.set(endpointKey(component.id, `${phase}-out`), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
+    if (model === "catalog-variable-frequency-drive") for (const [index] of ["l1", "l2", "l3"].entries()) {
+      const output = ["u1", "v1", "w1"][index];
+      driveOutputs.set(endpointKey(component.id, output), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
     }
     const conducting = model === "catalog-circuit-breaker" ? p.closed === true
-      : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
-      : model === "catalog-variable-frequency-drive" ? p.enabled === true : false;
-    if (conducting) for (const phase of ["l1", "l2", "l3"]) {
-      link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
+      : (model === "catalog-motor-starter" || model === "contactor-dol-v1" || model === "catalog-variable-frequency-drive") ? (model === "catalog-variable-frequency-drive" ? p.enabled === true : p.energized === true)
+      : false;
+    if (conducting) for (const [index, phase] of ["l1", "l2", "l3"].entries()) {
+      const output = model === "catalog-variable-frequency-drive" ? ["u1", "v1", "w1"][index] : `${phase}-out`;
+      link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, output));
     }
     if (model === "thermal-overload-dol-v1") for (let phase = 1; phase <= 3; phase++) link(endpointKey(component.id, `l${phase}-in`), endpointKey(component.id, `t${phase}`));
   }
