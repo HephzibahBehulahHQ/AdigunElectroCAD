@@ -35,8 +35,8 @@ function chooseOffset(minimum: number, maximum: number, limit: number, offset: n
 export type GraphicStackOrder = "backward" | "forward" | "back" | "front";
 export type GraphicStackCapabilities = Record<GraphicStackOrder, boolean>;
 
-export function canReorderSchematicGraphics(graphics: SchematicGraphic[], ids: string[]): GraphicStackCapabilities {
-  const selected = new Set(ids);
+export function canReorderSchematicGraphics(graphics: SchematicGraphic[], ids: string | string[]): GraphicStackCapabilities {
+  const selected = new Set(typeof ids === "string" ? [ids] : ids);
   const flags = graphics.map((graphic) => selected.has(graphic.id));
   const hasSelection = flags.some(Boolean);
   return {
@@ -47,8 +47,8 @@ export function canReorderSchematicGraphics(graphics: SchematicGraphic[], ids: s
   };
 }
 
-export function reorderSchematicGraphic(graphics: SchematicGraphic[], ids: string[], order: GraphicStackOrder): SchematicGraphic[] {
-  const selected = new Set(ids);
+export function reorderSchematicGraphic(graphics: SchematicGraphic[], ids: string | string[], order: GraphicStackOrder): SchematicGraphic[] {
+  const selected = new Set(typeof ids === "string" ? [ids] : ids);
   const flags = graphics.map((graphic) => selected.has(graphic.id));
   const capabilities = canReorderSchematicGraphics(graphics, ids);
   if (!capabilities[order]) return graphics;
