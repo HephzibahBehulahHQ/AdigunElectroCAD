@@ -1,5 +1,5 @@
 import { createDolMotorStarter } from "./dolMotorStarter";
-import { createTwoMotorSequence } from "./twoMotorSequence";
+import { createMotorFeederWorkbook } from "./motorFeederWorkbook";
 import type { ProjectTemplate } from "./templateLibrary";
 import type { CircuitDocument, CircuitSheet, ElectricalProject } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
@@ -12,16 +12,7 @@ export const createStarterProject = (): ElectricalProject => ({
   sheets: [{ id: "sheet-dol", name: "Power & Control Circuit", kind: "reference-dol", document: createDolMotorStarter() }],
 });
 
-export const createMotorStarterWorkbook = (): ElectricalProject => ({
-  id: "motor-starter-workbook",
-  name: "Motor starter workbook",
-  description: "A connected two-motor sequence project alongside the DOL reference circuit. The two sheets are separate schematics; cross-sheet electrical nets are not modeled.",
-  revision: 1,
-  sheets: [
-    { id: "sheet-dol", name: "DOL reference", kind: "reference-dol", document: createDolMotorStarter() },
-    { id: "sheet-two-motor", name: "Two-motor sequence", kind: "free-schematic", document: createTwoMotorSequence() },
-  ],
-});
+export const createMotorStarterWorkbook = createMotorFeederWorkbook;
 
 export function addFreeSchematicSheet(project: ElectricalProject): ElectricalProject {
   if (project.sheets.length >= MAX_PROJECT_SHEETS) throw new Error(`A project supports at most ${MAX_PROJECT_SHEETS} sheets.`);

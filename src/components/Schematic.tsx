@@ -497,11 +497,12 @@ function FreeSchematic({ document, selectedComponentId, selectedComponentIds = [
 function ProjectContinuationMarkers({ continuations = [], projectSheets = [], activeSheetId = "", anchors, onNavigate }: { continuations?: ProjectContinuation[]; projectSheets?: CircuitSheet[]; activeSheetId?: string; anchors: TerminalAnchor[]; onNavigate?: (sheetId: string) => void }) {
   const sheetNumbers = new Map(projectSheets.map((sheet, index) => [sheet.id, index + 1]));
   const anchorByEndpoint = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
-  return <g className="project-continuation-markers" aria-label="Project sheet continuation references">{continuations.flatMap((continuation) => {
+  return <g className="project-continuation-markers" aria-label="Project sheet continuation references">{continuations.flatMap((continuation, continuationIndex) => {
     const pointIndex = continuation.points.findIndex((item) => item.sheetId === activeSheetId);
     const point = continuation.points[pointIndex];
     const anchor = point && anchorByEndpoint.get(endpointKey(point.endpoint));
     if (!point || !anchor) return [];
+    const stackIndex = continuations.slice(0, continuationIndex).filter((prior) => { const priorPoint = prior.points.find((item) => item.sheetId === activeSheetId); return priorPoint && endpointKey(priorPoint.endpoint) === endpointKey(point.endpoint); }).length;
     const previous = continuation.points[pointIndex - 1];
     const next = continuation.points[pointIndex + 1];
     const source = continuation.points[0];
@@ -511,7 +512,7 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
     const targetRef = target ? `S${sheetNumbers.get(target.sheetId) ?? "?"} · ${target.gridReference}` : sourceRef;
     const label = point.role === "source" ? `${continuation.label} ${direction} ${targetRef}` : point.role === "destination" ? `${continuation.label} ${direction} ${sourceRef}` : `${continuation.label} ${direction} ${sourceRef} / ${targetRef}`;
     const navigateTo = target?.sheetId;
-    return [<g key={continuation.id + ":" + activeSheetId} className="project-continuation-marker" transform={`translate(${anchor.x + 12} ${anchor.y - 12})`} role={navigateTo && onNavigate ? "button" : undefined} tabIndex={navigateTo && onNavigate ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); if (navigateTo) onNavigate?.(navigateTo); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && navigateTo) { event.preventDefault(); event.stopPropagation(); onNavigate?.(navigateTo); } }}><rect x="-3" y="-15" width={Math.max(82, label.length * 5.6)} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}`}</title></g>];
+    return [<g key={continuation.id + ":" + activeSheetId} className="project-continuation-marker" transform={`translate(${anchor.x + 12} ${anchor.y - 12 - stackIndex * 20})`} role={navigateTo && onNavigate ? "button" : undefined} tabIndex={navigateTo && onNavigate ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); if (navigateTo) onNavigate?.(navigateTo); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && navigateTo) { event.preventDefault(); event.stopPropagation(); onNavigate?.(navigateTo); } }}><rect x="-3" y="-15" width={Math.max(82, label.length * 5.6)} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}`}</title></g>];
   })}</g>;
 }
 
