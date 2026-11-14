@@ -50,6 +50,12 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
       return { x: column + (terminal === "2" ? -8 : terminal === "4" ? 8 : 0), y: terminal === "1" ? -27 : 27 };
     }
   }
+  if (modelId === "catalog-control-transformer") {
+    if (terminalId === "p1") return { x: -47, y: -12 };
+    if (terminalId === "p2") return { x: -47, y: 12 };
+    if (terminalId === "s1") return { x: 47, y: -12 };
+    if (terminalId === "s2") return { x: 47, y: 12 };
+  }
   if (modelId === "catalog-on-delay-timer") {
     if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
     if (terminalId === "16") return { x: 47, y: -12 };
