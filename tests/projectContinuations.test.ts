@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { createProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation } from "../src/projects/projectContinuations";
+import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation } from "../src/projects/projectContinuations";
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
@@ -96,4 +96,34 @@ it("removes a continuation without deleting local devices or wires", () => {
   expect(resolveProjectNet(removed, { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } })).not.toContainEqual(
     expect.objectContaining({ sheetId: "sheet-free-1" }),
   );
+});
+
+
+it("extends a continuation to later sheets while preserving the original source reference", () => {
+  const { project, source, supply, breaker, continuation } = linkedProject();
+  const extended = addFreeSchematicSheet(project);
+  const thirdSheet = extended.sheets.at(-1)!;
+  const thirdBreaker = { ...breaker, id: "third-breaker", reference: "Q3", properties: { ...breaker.properties } };
+  thirdSheet.document.components.push(thirdBreaker);
+  const result = extendProjectContinuation(extended, continuation.id,
+    { sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } }, "D.7");
+
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(result.continuation.points).toEqual([
+    { sheetId: source.id, gridReference: "A.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: project.sheets[1].id, gridReference: "A.1", role: "continuation", endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
+    { sheetId: thirdSheet.id, gridReference: "D.7", role: "destination", endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } },
+  ]);
+  const net = resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } });
+  expect(net).toContainEqual({ sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } });
+  expect(net).toContainEqual({ sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } });
+});
+
+it("rejects extending a continuation to an earlier or already-used sheet", () => {
+  const { project, source, breaker, continuation } = linkedProject();
+  expect(extendProjectContinuation(project, continuation.id,
+    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } }).ok).toBe(false);
+  expect(extendProjectContinuation(project, continuation.id,
+    { sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } }).ok).toBe(false);
 });
