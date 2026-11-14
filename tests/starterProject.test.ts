@@ -23,12 +23,17 @@ describe("multi-sheet starter project", () => {
   });
 });
 
-it("starts with two usable motor schematics, including a wired two-motor sequence", () => {
+it("starts with a ten-sheet motor-feeder project linked by source and destination terminals", () => {
   const project = createMotorStarterWorkbook();
-  expect(project.sheets.map((sheet) => sheet.name)).toEqual(["DOL reference", "Two-motor sequence"]);
-  expect(project.sheets[1].document.components.map((component) => component.reference)).toEqual(expect.arrayContaining(["Q1", "KM1", "KM2", "F1", "F2", "M1", "M2", "PLC1", "T1"]));
-  expect(project.sheets[1].document.wires.length).toBeGreaterThan(20);
-  expect(new Set(project.sheets[1].document.wires.map((wire) => wire.id)).size).toBe(project.sheets[1].document.wires.length);
+  expect(project.sheets).toHaveLength(10);
+  expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply · 9 feeders", ...Array.from({ length: 9 }, (_, index) => `M${index + 1} · DOL feeder`)]);
+  expect(project.continuations).toHaveLength(36);
+  for (let ordinal = 1; ordinal <= 9; ordinal++) {
+    const sheet = project.sheets[ordinal];
+    expect(sheet.document.components.map((component) => component.reference)).toEqual(expect.arrayContaining([`Q${ordinal}`, `KM${ordinal}`, `F${ordinal}`, `M${ordinal}`]));
+    expect(sheet.document.wires.length).toBeGreaterThanOrEqual(16);
+    expect(new Set(sheet.document.wires.map((wire) => wire.id)).size).toBe(sheet.document.wires.length);
+  }
 });
 
 it("allocates a unique id after imported sheet numbering has gaps", () => {
