@@ -67,4 +67,3 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
     </section>
   </section>;
 }
-
