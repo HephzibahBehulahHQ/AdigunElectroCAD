@@ -31,7 +31,7 @@ it("keeps every DOL reference component on a valid catalog terminal and removes 
   const document = createStarterProject().sheets[0].document;
   expect(validateCircuit(document, catalogById).filter((issue) => issue.severity === "error")).toEqual([]);
   expect(document.components.map((component) => component.reference)).toEqual(["X1", "Q1", "KM1", "F1", "M1", "X2", "T1", "S0", "S1"]);
-  expect(document.components.find((component) => component.reference === "Q1")?.definitionId).toBe("iec.motor-protective-breaker.01");
+  expect(document.components.find((component) => component.reference === "Q1")?.definitionId).toBe("iec.industrial-miniature-breaker.01");
   expect(document.components.find((component) => component.reference === "KM1")?.definitionId).toBe("iec.motor-starter.01");
   expect(document.components.find((component) => component.reference === "M1")?.definitionId).toBe("iec.induction-motor.01");
   expect(document.components.find((component) => component.reference === "T1")?.definitionId).toBe("iec.dc-control-supply.01");
