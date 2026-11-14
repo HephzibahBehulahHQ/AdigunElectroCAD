@@ -213,6 +213,24 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("renders a connectable three-pole fuse switch with its three real pole anchors", () => {
+  const definition = catalogById.get("iec.fuse-switch.01")!;
+  const document = { id: "fuse-sheet", name: "Fuse", description: "", revision: 0, wires: [], components: [
+    { id: "f1", definitionId: definition.id, reference: "F1", x: 320, y: 260, rotation: 0 as const, properties: { fuseHealthy: false } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 320, anchor.y - 260];
+  };
+  expect(relative("l1-in")).toEqual([-32, -27]);
+  expect(relative("l3-out")).toEqual([32, 27]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 320, y: 260, properties: { fuseHealthy: false } }));
+  expect(svg).toContain('aria-label="Three-pole fuse switch, fuse open"');
+  expect(svg).toContain('data-state="open"');
+});
+
 it("positions and draws interface relay coil and changeover contacts", () => {
   const definition = catalogById.get("iec.interface-relay.03")!;
   const document = { id: "relay-sheet", name: "Relay", description: "", revision: 0, wires: [], components: [
