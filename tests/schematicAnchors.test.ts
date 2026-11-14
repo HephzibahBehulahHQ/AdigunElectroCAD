@@ -213,6 +213,28 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("positions and draws interface relay coil and changeover contacts", () => {
+  const definition = catalogById.get("iec.interface-relay.03")!;
+  const document = { id: "relay-sheet", name: "Relay", description: "", revision: 0, wires: [], components: [
+    { id: "relay3", definitionId: definition.id, reference: "K3", x: 300, y: 220, rotation: 0 as const, properties: { changeoverContacts: 3, energized: true } },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 300, anchor.y - 220];
+  };
+  expect(relative("a1")).toEqual([-47, -12]);
+  expect(relative("11")).toEqual([-30, -27]);
+  expect(relative("12")).toEqual([-38, 27]);
+  expect(relative("14")).toEqual([-22, 27]);
+  expect(relative("31")).toEqual([30, -27]);
+  expect(relative("32")).toEqual([22, 27]);
+  expect(relative("34")).toEqual([38, 27]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 300, y: 220, properties: { changeoverContacts: 3, energized: true } }));
+  expect(svg).toContain('aria-label="Interface relay with 3 changeover contacts, energized"');
+});
+
 it("renders dedicated three-phase source and motor symbols for editable catalog devices", () => {
   expect(hasDedicatedFunctionalSymbol("supply-ac-01")).toBe(true);
   expect(hasDedicatedFunctionalSymbol("motor-01")).toBe(true);
