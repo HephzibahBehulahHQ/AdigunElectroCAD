@@ -86,7 +86,7 @@ it("renders anchors for every free-sheet wire even when component IDs match the 
 
 it("places all six motor winding terminals outside the IEC motor symbol body", () => {
   const document = createStarDeltaCircuit();
-  const motor = document.components.find((component) => component.definitionId === "motor.six-terminal")!;
+  const motor = document.components.find((component) => catalogById.get(component.definitionId)?.simulationModelId === "six-terminal-windings")!;
   const anchors = terminalAnchors(document).filter((anchor) => anchor.endpoint.componentId === motor.id);
   expect(anchors.filter((anchor) => ["u1", "v1", "w1"].includes(anchor.endpoint.terminalId)).map(({ x, y }) => [x - motor.x, y - motor.y])).toEqual([[-30, -42], [0, -42], [30, -42]]);
   expect(anchors.filter((anchor) => ["u2", "v2", "w2"].includes(anchor.endpoint.terminalId)).map(({ x, y }) => [x - motor.x, y - motor.y])).toEqual([[-30, 42], [0, 42], [30, 42]]);
@@ -509,4 +509,19 @@ it("renders the sourced Siemens DOL motor with all four connectable power termin
   expect(svg).toContain("Siemens SIMOTICS GP 1LE1003-1CB23-4AA4");
   expect(svg).toContain("400 V delta");
 });
+
+it("renders the Siemens star/delta motor with seven real winding and earth terminals", () => {
+  const document = createStarDeltaCircuit();
+  const motor = document.components.find((item) => item.id === "motor")!;
+  const terminalIds = terminalAnchors(document).filter((item) => item.endpoint.componentId === motor.id).map((item) => item.endpoint.terminalId);
+  expect(terminalIds).toEqual(["u1", "v1", "w1", "u2", "v2", "w2", "pe"]);
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: motor.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toContain('aria-label="Siemens SIMOTICS GP · 6 terminal, six winding terminals U1 V1 W1 U2 V2 W2 and PE"');
+  expect(markup).toContain("motor.u2");
+  expect(markup).toContain("motor.w2");
+});
+
 

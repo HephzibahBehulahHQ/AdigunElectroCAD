@@ -6,6 +6,9 @@ import { initialStarDeltaState, transitionStarDelta } from "../src/simulation/st
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 it("derives star/delta current and invalid overlap from actual power wiring", () => {
   const document = createStarDeltaCircuit();
+  const motor = document.components.find((component) => component.id === "motor")!;
+  expect(motor.definitionId).toBe("iec.induction-motor.41");
+  expect(motor.properties).toMatchObject({ nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, windingConnection: "Star/Delta" });
   expect(validateCircuit(document, catalogById)).toEqual([]);
   let state = transitionStarDelta(transitionStarDelta(initialStarDeltaState(), "close-breaker"), "start");
   const output = (circuit = applyStarDeltaState(document, state)) => executeCircuitModels(circuit, catalogById).find((run) => run.reference === "M1")!.output.value;
