@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { Schematic, terminalAnchors } from "../src/components/Schematic";
+import type { ProjectContinuation } from "../src/types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { createReversingCircuit } from "../src/projects/reversingCircuit";
@@ -134,4 +135,27 @@ it("renders STOP and START terminal IDs at their connected reference anchors", (
   }
   const svg = renderToStaticMarkup(createElement(Schematic, { document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined }));
   for (const [terminal, value] of [["stop.21", "21"], ["stop.22", "22"], ["start.13", "13"], ["start.14", "14"]]) expect(svg).toContain(`data-terminal="${terminal}">${value}</text>`);
+});
+
+it("renders source, intermediate, and destination continuation references with sheet/grid traceability", () => {
+  const project = addFreeSchematicSheet(addFreeSchematicSheet(createStarterProject()));
+  const [source, middle, destination] = project.sheets;
+  const supply = source.document.components[0];
+  if (!supply) throw new Error("Fixture requires a catalog source component");
+  const middleSupply = { ...supply, id: "continuation-middle-source", reference: "X2", x: 400, y: 300 };
+  const destinationSupply = { ...supply, id: "continuation-destination-source", reference: "X3", x: 400, y: 300 };
+  middle.document.components.push(middleSupply);
+  destination.document.components.push(destinationSupply);
+  const continuation: ProjectContinuation = { id: "net-l1-main", label: "L1", conductorColor: "#c42626", points: [
+    { sheetId: source.id, gridReference: "1.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: middle.id, gridReference: "2.1", role: "continuation", endpoint: { componentId: middleSupply.id, terminalId: "l1" } },
+    { sheetId: destination.id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationSupply.id, terminalId: "l1" } },
+  ] };
+  const render = (sheetId: string) => {
+    const sheet = project.sheets.find((item) => item.id === sheetId)!;
+    return renderToStaticMarkup(createElement(Schematic, { document: sheet.document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, continuations: [continuation], projectSheets: project.sheets, activeSheetId: sheet.id, onContinuationNavigate: () => {}, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {} }));
+  };
+  expect(render(source.id)).toContain("L1 → S2 · 2.1");
+  expect(render(middle.id)).toContain("L1 ↔ S1 · 1.1 / S3 · 3.1");
+  expect(render(destination.id)).toContain("L1 ← S1 · 1.1");
 });
