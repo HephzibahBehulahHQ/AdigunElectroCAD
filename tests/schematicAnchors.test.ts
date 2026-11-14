@@ -46,7 +46,7 @@ it("renders modeled proximity sensors with reachable power, signal and common pi
     const pin = anchors.find((item) => item.endpoint.componentId === component.id && item.endpoint.terminalId === terminalId)!;
     return [pin.x - component.x, pin.y - component.y];
   };
-  expect(definition.symbolId).toMatch(/^sensor-\\d+$/);
+  expect(definition.symbolId).toMatch(/^sensor-\d+$/);
   expect(relative("supply")).toEqual([-47, -14]);
   expect(relative("signal")).toEqual([47, 0]);
   expect(relative("common")).toEqual([-47, 14]);
