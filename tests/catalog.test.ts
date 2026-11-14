@@ -129,3 +129,13 @@ describe("source-backed Siemens overload relay", () => {
     expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: true }, "aux-98")?.value).toBe(true);
   });
 });
+
+describe("source-backed Siemens SIMOTICS motor", () => {
+  it("uses the identified 400 V delta nameplate data and wireable U1/V1/W1 plus PE", () => {
+    const motor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.01")!;
+    expect(motor.name).toBe("Siemens SIMOTICS GP · 7.5kW/14.3A");
+    expect(motor.terminals.map((terminal) => terminal.id)).toEqual(["u1", "v1", "w1", "pe"]);
+    expect(motor.propertiesSchema).toMatchObject({ nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, windingConnection: "Delta" });
+    expect(motor.standardsReferences.some((source) => source.includes("1LE1003-1CB23-4AA4"))).toBe(true);
+  });
+});
