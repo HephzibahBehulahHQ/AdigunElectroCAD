@@ -299,3 +299,28 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .lab-route-console .console-tabs { display:none; }
 .lab-route-console .console-view.laboratory-view { display:grid; min-height:0; max-height:none; grid-column:1; overflow:auto; overscroll-behavior:contain; }
 @media (max-width:760px) { .lab-route-active .app-header { display:none; } .lab-route-nav { min-height:42px; } .project-menu-popover { right:auto; left:0; } }
+
+/* Compact, anchored Projects dropdown: interaction stays in the top menu. */
+.project-menu-popover { top:100%; right:0; left:auto; width:min(350px,calc(100vw - 24px)); max-height:min(72vh,620px); overflow-y:auto; overflow-x:hidden; z-index:30; }
+.project-menu-popover .project-library-panel { display:block; width:100%; max-height:none; overflow:visible; }
+.project-menu-heading { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid var(--border); background:var(--surface); font-size:.75rem; }
+.project-menu-close { width:25px; height:25px; border:1px solid var(--border); border-radius:4px; font-size:1rem; line-height:1; }
+.project-menu-popover .project-browser-controls { gap:5px; padding:6px; }
+.project-menu-popover .project-filters { gap:5px; }
+.project-menu-popover .project-card-list { grid-template-columns:minmax(0,1fr); gap:5px; padding:0 6px; }
+.project-menu-popover .project-card { grid-template-columns:42px minmax(0,1fr); gap:6px; padding:6px; }
+.project-menu-popover .project-preview { width:42px; height:36px; }
+.project-menu-popover .project-card strong, .project-menu-popover .project-card small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; }
+.project-menu-popover .project-card strong { font-size:.68rem; }
+.project-menu-popover .project-card small { margin-top:2px; font-size:.59rem; }
+.project-menu-popover .template-library { padding:0 7px 7px; font-size:.63rem; line-height:1.35; }
+.project-menu-popover .primary.wide { padding:7px; font-size:.68rem; white-space:nowrap; }
+.lab-introduction { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr); gap:12px; padding:16px; border:1px solid var(--border); border-radius:7px; background:var(--surface); }
+.lab-intro-copy, .lab-how-to { min-width:0; }
+.lab-kicker { color:var(--muted); font-size:.62rem; font-weight:800; letter-spacing:.12em; }
+.lab-introduction h1 { margin:5px 0 8px; font-size:1.3rem; }
+.lab-introduction p { margin:5px 0; color:var(--muted); font-size:.74rem; line-height:1.5; }
+.lab-how-to { padding:10px; border:1px solid var(--border); border-radius:5px; background:var(--surface-2); font-size:.72rem; }
+.lab-how-to ol { margin:6px 0 0; padding-left:20px; color:var(--muted); line-height:1.55; }
+.lab-bench-description { margin:5px 0 10px; color:var(--muted); font-size:.68rem; line-height:1.45; }
+@media(max-width:800px) { .lab-introduction { grid-template-columns:minmax(0,1fr); } }
