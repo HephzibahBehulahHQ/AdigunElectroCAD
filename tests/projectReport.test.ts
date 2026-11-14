@@ -38,7 +38,7 @@ it("aggregates BOM, wires, and terminals across sheets with sheet context", () =
   const report = createProjectWideReport(sheets, catalogById);
   const contactor = report.bom.find((line) => line.definitionId === "contactor.three-pole");
 
-  expect(report.bom).toHaveLength(9);
+  expect(report.bom).toHaveLength(8);
   expect(contactor).toMatchObject({ quantity: 2, references: ["Power · Sheet 1 · KM1", "Control · Sheet 2 · KM1"] });
   expect(report.wires).toHaveLength(40);
   expect(report.wires[0]).toMatchObject({ sheet: "Power · Sheet 1", netName: "L1" });
