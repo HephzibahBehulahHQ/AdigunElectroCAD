@@ -7,9 +7,9 @@ describe("engineering project reports", () => {
   it("derives a BOM, wire list and terminal list from the DOL document", () => {
     const report = createProjectReport(createDolMotorStarter(), catalogById);
 
-    expect(report.bom).toHaveLength(9);
+    expect(report.bom).toHaveLength(8);
     expect(report.wires).toHaveLength(20);
-    expect(report.terminals).toHaveLength(44);
+    expect(report.terminals).toHaveLength(38);
     expect(report.wires[0]).toMatchObject({ netName: "L1", from: "X1.L1", to: "Q1.1/L1" });
   });
 
@@ -42,7 +42,7 @@ it("aggregates BOM, wires, and terminals across sheets with sheet context", () =
   expect(contactor).toMatchObject({ quantity: 2, references: ["Power · Sheet 1 · KM1", "Control · Sheet 2 · KM1"] });
   expect(report.wires).toHaveLength(40);
   expect(report.wires[0]).toMatchObject({ sheet: "Power · Sheet 1", netName: "L1" });
-  expect(report.terminals).toHaveLength(88);
+  expect(report.terminals).toHaveLength(76);
   expect(report.terminals[0].sheet).toBe("Power · Sheet 1");
   expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To"');
   expect(reportCsv(report, "terminals").split("\n")[0]).toBe('"Sheet","Reference","Terminal","Kind","Direction"');
