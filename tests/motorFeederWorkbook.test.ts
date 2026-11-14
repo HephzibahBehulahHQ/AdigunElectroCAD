@@ -8,7 +8,7 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
   expect(project.sheets).toHaveLength(10);
   expect(project.continuations).toHaveLength(36);
   expect(validateProjectContinuations(project)).toEqual([]);
-  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["supply.three-phase"]);
+  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["iec.ac-supply.01"]);
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheet = project.sheets[ordinal];
@@ -32,11 +32,11 @@ it("uses the real ten-sheet feeder workbook as the motor starter project", () =>
 
 it("resolves a source phase to all nine real feeder breaker terminals without mixing phases", () => {
   const project = createMotorFeederWorkbook();
-  const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l1" } });
+  const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l1-out" } });
   expect(net).toHaveLength(10);
   expect(net.every((item) => item.endpoint.terminalId === "l1" || item.endpoint.terminalId === "l1-in")).toBe(true);
   expect(net.filter((item) => item.endpoint.terminalId === "l1-in")).toHaveLength(9);
-  const otherPhase = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l2" } });
+  const otherPhase = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l2-out" } });
   expect(otherPhase).toHaveLength(10);
   expect(otherPhase.some((item) => item.endpoint.terminalId === "l1-in")).toBe(false);
 });
