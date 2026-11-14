@@ -26,6 +26,12 @@ describe("IEC-oriented component catalog", () => {
     }
   });
 
+  it("models the three-phase source with output-only phase terminals and protective earth", () => {
+    const supply = modeledCatalog.find((definition) => definition.id === "iec.ac-supply.01")!;
+    expect(supply.terminals.map((terminal) => terminal.id)).toEqual(["l1-out", "l2-out", "l3-out", "pe"]);
+    expect(supply.terminals.slice(0, 3).every((terminal) => terminal.direction === "output")).toBe(true);
+  });
+
   it("matches breaker pole count and contactor auxiliary count with real terminals", () => {
     const breaker3 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.01")!;
     const breaker4 = modeledCatalog.find((definition) => definition.id === "iec.circuit-breaker.04")!;
