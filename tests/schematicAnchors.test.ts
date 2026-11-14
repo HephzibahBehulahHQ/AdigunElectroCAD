@@ -468,7 +468,7 @@ it("renders dedicated three-phase source and motor symbols for editable catalog 
   const motor = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "motor-01", x: 100, y: 100 }));
   expect(source).toContain('aria-label="Three-phase AC supply"');
   expect(source).toContain(">3~</text>");
-  expect(motor).toContain('aria-label="Three-phase induction motor"');
+  expect(motor).toContain('aria-label="Siemens SIMOTICS GP 1LE1003-1CB23-4AA4, 7.5 kW, 400 V delta, 14.3 A, 4-pole induction motor"');
   expect(motor).toContain(">M</text>");
   expect(motor).toContain(">3~</text>");
 });
