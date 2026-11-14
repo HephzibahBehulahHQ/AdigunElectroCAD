@@ -190,7 +190,7 @@ export function extendProjectContinuation(
   const nextOrder = sheetOrder.get(nextPoint.sheetId);
   const lastPoint = existing.points.at(-1);
   const lastOrder = lastPoint ? sheetOrder.get(lastPoint.sheetId) : undefined;
-  if (nextOrder === undefined || lastOrder === undefined) return { ok: false, reason: "The continuation and selected terminal must belong to the current project." };
+  if (!lastPoint || nextOrder === undefined || lastOrder === undefined) return { ok: false, reason: "The continuation and selected terminal must belong to the current project." };
   if (existing.points.some((point) => point.sheetId === nextPoint.sheetId)) return { ok: false, reason: "This continuation already has a point on that sheet." };
   if (nextOrder <= lastOrder) return { ok: false, reason: "Continue the net on a sheet after its current last point." };
   const source = existing.points[0];
