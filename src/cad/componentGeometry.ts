@@ -69,6 +69,10 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "18") return { x: 47, y: 12 };
     if (terminalId === "15") return { x: 0, y: 27 };
   }
+  if (modelId === "catalog-selector-switch") {
+    if (terminalId === "13" || terminalId === "21") return { x: -47, y: 0 };
+    if (terminalId === "14" || terminalId === "22") return { x: 47, y: 0 };
+  }
   if (modelId === "catalog-plc-digital-io") {
     if (terminalId === "in-0") return { x: -47, y: -22 };
     if (terminalId === "in-1") return { x: -47, y: -7 };
