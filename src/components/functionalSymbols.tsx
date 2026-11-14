@@ -34,7 +34,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <text x={x} y={y + 19} textAnchor="middle" className={text}>{unit}</text>
     </g>;
   }
-  if (/^sensor-\\d+$/.test(symbolId)) return <g className={mark} aria-label="Inductive proximity sensor with +24V, SIG and 0V terminals">
+  if (/^sensor-\d+$/.test(symbolId)) return <g className={mark} aria-label="Inductive proximity sensor with +24V, SIG and 0V terminals">
     <rect x={x - 24} y={cy - 14} width="38" height="28" rx="3" />
     <path d={`M ${x + 14} ${cy - 9} Q ${x + 24} ${cy} ${x + 14} ${cy + 9} M ${x + 19} ${cy - 14} Q ${x + 34} ${cy} ${x + 19} ${cy + 14}`} />
     <circle cx={x - 13} cy={cy} r="3" />
