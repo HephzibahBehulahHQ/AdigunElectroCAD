@@ -135,11 +135,34 @@ export interface CircuitSheet {
   document: CircuitDocument;
 }
 
+export type ProjectContinuationRole = "source" | "continuation" | "destination";
+
+/** A real local terminal carried across sheets by a project-level labelled continuation. */
+export interface ProjectContinuationPoint {
+  sheetId: string;
+  gridReference: string;
+  role: ProjectContinuationRole;
+  endpoint: TerminalEndpoint;
+}
+
+/**
+ * An ordered project net. The first point is its original source and remains
+ * recorded on every later sheet so page-N references can trace back to origin.
+ */
+export interface ProjectContinuation {
+  id: string;
+  label: string;
+  conductorColor: string;
+  points: ProjectContinuationPoint[];
+}
+
 export interface ElectricalProject {
   id: string;
   name: string;
   description: string;
   sheets: CircuitSheet[];
+  /** Optional for older project files; records nets that continue between sheets. */
+  continuations?: ProjectContinuation[];
   revision: number;
 }
 

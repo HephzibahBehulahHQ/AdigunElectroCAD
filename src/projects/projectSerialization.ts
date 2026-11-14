@@ -1,6 +1,7 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, UserSymbolGraphic, Wire } from "../types/electrical";
+import { validateProjectContinuations } from "./projectContinuations";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -19,9 +20,42 @@ export function parseProjectJson(text: string): ElectricalProject {
     description: textValue(root.description, "project description", 400),
     revision: integer(root.revision, "project revision"),
     sheets: sheetsValue.map(parseSheet),
+    ...(root.continuations === undefined ? {} : { continuations: array(root.continuations, "Project continuations must be an array.").map(parseProjectContinuation) }),
   };
+  if (project.continuations && project.continuations.length > 5000) throw new Error("A project cannot contain more than 5000 cross-sheet continuations.");
   if (new Set(project.sheets.map((sheet) => sheet.id)).size !== project.sheets.length) throw new Error("Every sheet must have a unique sheet id.");
+  const continuationIssues = validateProjectContinuations(project);
+  if (continuationIssues.length) throw new Error(continuationIssues[0]);
   return project;
+}
+
+
+function parseProjectContinuation(value: unknown): ProjectContinuation {
+  const continuation = object(value, "Project continuation is invalid.");
+  const points = array(continuation.points, "Project continuation points are invalid.");
+  if (points.length < 2 || points.length > MAX_PROJECT_SHEETS) throw new Error("A project continuation must reference between 2 and 100 sheet points.");
+  const conductorColor = textValue(continuation.conductorColor, "continuation conductor color", 7);
+  if (!/^#[0-9a-f]{6}$/i.test(conductorColor)) throw new Error("Continuation conductor color must be a six-digit hex color.");
+  return {
+    id: textValue(continuation.id, "continuation id", 120),
+    label: textValue(continuation.label, "continuation label", 40),
+    conductorColor,
+    points: points.map((value, index) => {
+      const point = object(value, `Continuation point ${index + 1} is invalid.`);
+      const role = point.role;
+      if (role !== "source" && role !== "continuation" && role !== "destination") throw new Error(`Continuation point ${index + 1} has an unsupported role.`);
+      const endpoint = object(point.endpoint, `Continuation point ${index + 1} terminal is invalid.`);
+      return {
+        sheetId: textValue(point.sheetId, `continuation point ${index + 1} sheet id`, 96),
+        gridReference: textValue(point.gridReference, `continuation point ${index + 1} grid reference`, 16),
+        role: role as ProjectContinuationRole,
+        endpoint: {
+          componentId: textValue(endpoint.componentId, `continuation point ${index + 1} component id`, 96),
+          terminalId: textValue(endpoint.terminalId, `continuation point ${index + 1} terminal id`, 96),
+        },
+      };
+    }),
+  };
 }
 
 function parseSheet(value: unknown, index: number): CircuitSheet {
