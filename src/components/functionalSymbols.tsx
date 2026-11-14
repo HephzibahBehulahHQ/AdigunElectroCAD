@@ -2,7 +2,7 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
@@ -18,6 +18,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   }
   if (symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${cy} Q ${x - 6} ${cy - 9} ${x} ${cy} T ${x + 11} ${cy}`} /><text x={x} y={y + 20} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) return <g className={mark} aria-label="Three-phase induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
+  if (symbolId.startsWith("plc-io-")) return <g className={mark} aria-label="PLC digital and analog I/O module">
+    <rect x={x - 25} y={y - 24} width="50" height="48" rx="2" />
+    <path d={`M ${x} ${y - 24} V ${y + 24}`} />
+    <text x={x - 12} y={y + 4} textAnchor="middle" className={text}>I</text>
+    <text x={x + 12} y={y + 4} textAnchor="middle" className={text}>Q</text>
+  </g>;
   if (symbolId.startsWith("transformer-")) return <g className={mark} aria-label="Transformer with primary and secondary windings">
     <path d={`M ${x - 8} ${y - 24} C ${x - 22} ${y - 24} ${x - 22} ${y - 16} ${x - 8} ${y - 16} C ${x - 22} ${y - 16} ${x - 22} ${y - 8} ${x - 8} ${y - 8} C ${x - 22} ${y - 8} ${x - 22} ${y} ${x - 8} ${y} C ${x - 22} ${y} ${x - 22} ${y + 8} ${x - 8} ${y + 8} C ${x - 22} ${y + 8} ${x - 22} ${y + 16} ${x - 8} ${y + 16} C ${x - 22} ${y + 16} ${x - 22} ${y + 24} ${x - 8} ${y + 24}`} />
     <path d={`M ${x + 8} ${y - 24} C ${x + 22} ${y - 24} ${x + 22} ${y - 16} ${x + 8} ${y - 16} C ${x + 22} ${y - 16} ${x + 22} ${y - 8} ${x + 8} ${y - 8} C ${x + 22} ${y - 8} ${x + 22} ${y} ${x + 8} ${y} C ${x + 22} ${y} ${x + 22} ${y + 8} ${x + 8} ${y + 8} C ${x + 22} ${y + 8} ${x + 22} ${y + 16} ${x + 8} ${y + 16} C ${x + 22} ${y + 16} ${x + 22} ${y + 24} ${x + 8} ${y + 24}`} />
