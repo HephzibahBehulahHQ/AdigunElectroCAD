@@ -2,7 +2,7 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
@@ -18,6 +18,19 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   }
   if (symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${cy} Q ${x - 6} ${cy - 9} ${x} ${cy} T ${x + 11} ${cy}`} /><text x={x} y={y + 20} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) return <g className={mark} aria-label="Three-phase induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
+  if (symbolId.startsWith("relay-")) {
+    const contacts = Math.max(1, Math.min(3, Number(properties.changeoverContacts) || 1));
+    const energized = properties.energized === true;
+    const columns = [-30, 0, 30].slice(0, contacts);
+    return <g className={mark} aria-label={`Interface relay with ${contacts} changeover contact${contacts === 1 ? "" : "s"}, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "de-energized"}>
+      <rect x={x - 43} y={y - 15} width="16" height="30" rx="2" />
+      <path d={`M ${x - 39} ${y - 8} q 8 4 0 8 q -8 4 0 8`} />
+      {columns.map((column, index) => <g key={index}>
+        <path d={`M ${x + column} ${y - 27} V ${y - 2} M ${x + column - 8} ${y + 27} V ${y + 9} M ${x + column + 8} ${y + 27} V ${y + 9} M ${x + column} ${y - 2} L ${x + column + (energized ? 5 : -5)} ${y + 8}`} />
+        <path d={`M ${x + column - 8} ${y + 8} H ${x + column - 2} M ${x + column + 2} ${y + 8} H ${x + column + 8}`} />
+      </g>)}
+    </g>;
+  }
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
     const closed = properties.closed === true;
     const poles = Number(properties.poles) === 4 ? 4 : 3;
