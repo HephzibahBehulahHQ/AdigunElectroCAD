@@ -61,7 +61,7 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
     document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
   }));
-  expect(render(false)).toContain('r="5" class="terminal-pin"');
+  expect(render(false)).toContain('r="7" class="terminal-pin"');
   expect(render(true)).toContain('r="7" class="terminal-anchor"');
 });
 
@@ -142,6 +142,26 @@ it("renders breaker and overload symbols with their real open/closed and trip st
 });
 
 
+
+it("renders the source-backed Siemens starter as three power poles, a coil and two auxiliary contacts", () => {
+  expect(hasDedicatedFunctionalSymbol("starter-01")).toBe(true);
+  const open = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "starter-01", x: 100, y: 100, properties: { energized: false } }));
+  const closed = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "starter-01", x: 100, y: 100, properties: { energized: true } }));
+  expect(open).toContain("Siemens SIRIUS 3RT2025-1BB40 contactor, three main poles, one NO auxiliary and one NC auxiliary, de-energized");
+  expect(open).toContain('data-state="de-energized"');
+  expect(closed).toContain('data-state="energized"');
+  expect(open).not.toContain("<rect");
+  expect(open.match(/<path/g)?.length).toBeGreaterThanOrEqual(5);
+  expect(open).not.toEqual(closed);
+
+  const document = createSourcedDolMotorStarter();
+  const anchors = terminalAnchors(document).filter((item) => item.endpoint.componentId === "contactor");
+  expect(anchors).toHaveLength(12);
+  expect(anchors.find((item) => item.endpoint.terminalId === "l1-in")).toMatchObject({ x: 366, y: 313 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "a1")).toMatchObject({ x: 374, y: 293 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "aux-13")).toMatchObject({ x: 343, y: 328 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "aux-22")).toMatchObject({ x: 437, y: 352 });
+});
 
 it("renders three connected zigzag heater poles and shows the tripped interruption", () => {
   const document = createDolMotorStarter();
@@ -484,7 +504,7 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
   expect(breakerSvg).toContain('aria-label="4-pole circuit breaker, open"');
   expect(breakerSvg.match(/<path /g)).toHaveLength(4);
   expect(starterSvg).toContain("three main poles, one NO auxiliary and one NC auxiliary");
-  expect(starterSvg).toContain('data-state="idle"');
+  expect(starterSvg).toContain('data-state="de-energized"');
 });
 
 it("draws and exposes the four terminals of the sourced 24 V control power supply", () => {
