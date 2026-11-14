@@ -139,7 +139,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (model === "catalog-ac-supply" && p.outputEnabled === true) {
       for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
     }
-    if (model === "catalog-variable-frequency-drive") for (const [index, phase] of ["l1", "l2", "l3"].entries()) {
+    if (model === "catalog-variable-frequency-drive") for (const [index] of ["l1", "l2", "l3"].entries()) {
       const output = ["u1", "v1", "w1"][index];
       driveOutputs.set(endpointKey(component.id, output), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
     }
