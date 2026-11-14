@@ -2,11 +2,17 @@ import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
 export function powerTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
-  if (!["catalog-ac-supply", "catalog-circuit-breaker", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
+  if (modelId === "three-phase-source-v1") {
+    const sourcePhase = /^l([123])$/.exec(terminalId);
+    if (sourcePhase) return { x: [-24, 0, 24][Number(sourcePhase[1]) - 1], y: -35 };
+    if (terminalId === "pe") return { x: 47, y: 0 };
+  }
   const phase = /^l([123])-(in|out)$/.exec(terminalId);
   if (phase) return { x: [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
   const motor = ["u1", "v1", "w1"].indexOf(terminalId);
-  if (motor >= 0) return { x: [-32, 0, 32][motor], y: -27 };
+  if (motor >= 0) return { x: [-24, 0, 24][motor], y: modelId === "induction-motor-educational-v1" ? -35 : -27 };
+  if (modelId === "induction-motor-educational-v1" && terminalId === "pe") return { x: 47, y: 0 };
   const overload = /^t([123])$/.exec(terminalId);
   if (overload) return { x: [-32, 0, 32][Number(overload[1]) - 1], y: 27 };
   if (terminalId === "a1" || terminalId === "a2") return { x: -47, y: terminalId === "a1" ? -12 : 12 };
@@ -74,6 +80,5 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   const bounds = componentFootprint(x, y, rotation, definitionId, size);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
-
 
 

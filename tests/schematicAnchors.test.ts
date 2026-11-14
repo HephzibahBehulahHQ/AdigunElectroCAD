@@ -33,7 +33,7 @@ it("shows a user terminal label while preserving the real endpoint identity", ()
     document, selectedComponentId: component.id, selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
   }));
-  expect(markup).toContain('class="terminal-label custom-terminal-label">LINE+</text>');
+  expect(markup).toContain('class="free-terminal-label">LINE+</text>');
   expect(terminalAnchors(document).some((anchor) => anchor.endpoint.componentId === component.id && anchor.endpoint.terminalId === terminalId)).toBe(true);
 });
 
@@ -159,4 +159,35 @@ it("renders source, intermediate, and destination continuation references with s
   expect(render(source.id)).toContain("project-continuation-marker selected");
   expect(render(middle.id)).toContain("L1 ↔ S1 · 1.1 / S3 · 3.1");
   expect(render(destination.id)).toContain("L1 ← S1 · 1.1");
+});
+
+it("shows real pins and labels on free-sheet three-phase source and motor symbols", () => {
+  const document = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
+  document.components.push(
+    { id: "incoming", definitionId: "supply.three-phase", reference: "X1", x: 250, y: 180, rotation: 0, properties: {} },
+    { id: "mtr1", definitionId: "motor.three-phase", reference: "M1", x: 620, y: 430, rotation: 0, properties: {} },
+  );
+  const anchors = terminalAnchors(document);
+  const relative = (componentId: string, terminalId: string) => {
+    const item = anchors.find((anchor) => anchor.endpoint.componentId === componentId && anchor.endpoint.terminalId === terminalId)!;
+    const component = document.components.find((entry) => entry.id === componentId)!;
+    return [item.x - component.x, item.y - component.y];
+  };
+  expect(relative("incoming", "l1")).toEqual([-24, -35]);
+  expect(relative("incoming", "l2")).toEqual([0, -35]);
+  expect(relative("incoming", "l3")).toEqual([24, -35]);
+  expect(relative("incoming", "pe")).toEqual([47, 0]);
+  expect(relative("mtr1", "u1")).toEqual([-24, -35]);
+  expect(relative("mtr1", "v1")).toEqual([0, -35]);
+  expect(relative("mtr1", "w1")).toEqual([24, -35]);
+  expect(relative("mtr1", "pe")).toEqual([47, 0]);
+  const svg = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined,
+  }));
+  expect(svg).toContain('class="terminal-pin"');
+  expect(svg).toContain('class="free-terminal-label">L1</text>');
+  expect(svg).toContain('class="free-terminal-label">U1</text>');
+  expect(svg).toContain(">M</text>");
+  expect(svg).toContain(">3~</text>");
 });
