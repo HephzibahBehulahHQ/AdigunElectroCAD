@@ -153,9 +153,10 @@ it("renders source, intermediate, and destination continuation references with s
   ] };
   const render = (sheetId: string) => {
     const sheet = project.sheets.find((item) => item.id === sheetId)!;
-    return renderToStaticMarkup(createElement(Schematic, { document: sheet.document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, continuations: [continuation], projectSheets: project.sheets, activeSheetId: sheet.id, onContinuationNavigate: () => {}, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {} }));
+    return renderToStaticMarkup(createElement(Schematic, { document: sheet.document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, continuations: [continuation], projectSheets: project.sheets, activeSheetId: sheet.id, selectedContinuationId: continuation.id, onContinuationNavigate: () => {}, onContinuationSelect: () => {}, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {} }));
   };
   expect(render(source.id)).toContain("L1 → S2 · 2.1");
+  expect(render(source.id)).toContain("project-continuation-marker selected");
   expect(render(middle.id)).toContain("L1 ↔ S1 · 1.1 / S3 · 3.1");
   expect(render(destination.id)).toContain("L1 ← S1 · 1.1");
 });

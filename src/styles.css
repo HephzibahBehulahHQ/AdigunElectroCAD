@@ -328,4 +328,9 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .project-continuation-marker { cursor: pointer; outline: none; }
 .project-continuation-marker rect { fill: #f8fbff; stroke-width: 1.5; }
 .project-continuation-marker text { font: 700 10px Inter, ui-sans-serif, sans-serif; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
-.project-continuation-marker:focus rect, .project-continuation-marker:hover rect { stroke-width: 2.5; filter: drop-shadow(0 1px 2px #14263c); }
+.project-continuation-marker:focus rect, .project-continuation-marker:hover rect, .project-continuation-marker.selected rect { stroke-width: 2.5; filter: drop-shadow(0 1px 2px #14263c); }
+.continuation-properties { gap: 10px; }
+.continuation-properties .continuation-points { display: grid; gap: 5px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft); }
+.continuation-points ol { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.5; }
+.continuation-properties input[type="color"] { min-height: 38px; padding: 3px; }
+
