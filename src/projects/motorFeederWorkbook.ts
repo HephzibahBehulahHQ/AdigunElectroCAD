@@ -19,12 +19,12 @@ export function createMotorFeederWorkbook(): ElectricalProject {
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheetId = `sheet-motor-${ordinal}`;
-    const sourceById = new Map(base.components.filter((item) => item.id !== "supply").map((item) => [item.id, item]));
+    const sourceById = new Map(base.components.filter((item) => item.id !== "supply" && !item.id.startsWith("lamp-")).map((item) => [item.id, item]));
     const ids = new Map([...sourceById.keys()].map((id) => [id, `m${ordinal}-${id}`]));
     const references: Record<string, string> = {
       breaker: `Q${ordinal}`, contactor: `KM${ordinal}`, overload: `F${ordinal}`,
       motor: `M${ordinal}`, control: `X${ordinal + 1}`, stop: `S${ordinal}0`,
-      start: `S${ordinal}1`, "lamp-h1": `H${ordinal}1`, "lamp-h2": `H${ordinal}2`, "lamp-h3": `H${ordinal}3`,
+      start: `S${ordinal}1`,
     };
     const components: ComponentInstance[] = [...sourceById.entries()].map(([oldId, component]) => ({
       ...component,
@@ -44,7 +44,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
     const document: CircuitDocument = {
       id: `motor-feeder-${ordinal}`,
       name: `Motor feeder M${ordinal}`,
-      description: `Three-phase DOL motor branch M${ordinal}: breaker, contactor, thermal overload, stop/start controls, motor and indicator lamps. The source is on sheet 1.`,
+      description: `Three-phase DOL motor branch M${ordinal}: breaker, contactor, thermal overload, stop/start controls, and motor. The source is on sheet 1.`,
       components,
       wires: localWires,
       revision: 1,
