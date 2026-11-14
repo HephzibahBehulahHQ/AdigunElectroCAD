@@ -11,7 +11,7 @@ export const createSourcedDolMotorStarter = (): CircuitDocument => ({
     { id: "breaker", definitionId: "iec.industrial-miniature-breaker.01", reference: "Q1", x: 390, y: 220, rotation: 0, properties: { nominalVoltageV: 400, ratedCurrentA: 32, poles: 3, curve: "C", breakingCapacityKa: 6, closed: true } },
     { id: "contactor", definitionId: "iec.motor-starter.01", reference: "KM1", x: 390, y: 340, rotation: 0, properties: { nominalVoltageV: 400, ratedCurrentA: 17, ratedPowerKw: 7.5, coilVoltageV: 24, coilDc: true, energized: false, auxiliaryNoContacts: 1, auxiliaryNcContacts: 1 } },
     { id: "overload", definitionId: "overload.thermal", reference: "F1", x: 390, y: 460, rotation: 0, properties: { settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10, tripped: false, thermalEnabled: false } },
-    { id: "motor", definitionId: "iec.induction-motor.01", reference: "M1", x: 390, y: 600, rotation: 0, properties: { nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Delta", energized: false } },
+    { id: "motor", definitionId: "iec.induction-motor.01", reference: "M1", x: 390, y: 600, rotation: 0, properties: { nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Delta", energized: true } },
     { id: "control", definitionId: "supply.control", reference: "X2", x: 800, y: 120, rotation: 0, properties: { voltageV: 230, frequencyHz: 50 } },
     { id: "control-psu", definitionId: "iec.dc-control-supply.01", reference: "T1", x: 1010, y: 220, rotation: 0, properties: { inputVoltageV: 230, nominalVoltageV: 24, ratedCurrentA: 4, outputEnabled: true } },
     { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S0", x: 760, y: 480, rotation: 0, properties: { pressed: false } },
@@ -46,3 +46,4 @@ export const createSourcedDolMotorStarter = (): CircuitDocument => ({
 function wire(id: string, fromComponentId: string, fromTerminalId: string, toComponentId: string, toTerminalId: string, netName: string) {
   return { id, from: { componentId: fromComponentId, terminalId: fromTerminalId }, to: { componentId: toComponentId, terminalId: toTerminalId }, points: [], netName };
 }
+
