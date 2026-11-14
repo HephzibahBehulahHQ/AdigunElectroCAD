@@ -16,7 +16,7 @@ it.each(["iec.safety-relay.01", "safety.dual-relay"])("runs wired reset and chan
     ],
     wires: [
       { id: "w1", from: { componentId: "channel", terminalId: "out" }, to: { componentId: "relay", terminalId: catalogModel ? "s11" : "in-a" }, points: [] },
-      { id: "w2", from: { componentId: "reset", terminalId: "out" }, to: { componentId: "relay", terminalId: "reset" }, points: [] },
+      { id: "w2", from: { componentId: "reset", terminalId: "out" }, to: { componentId: "relay", terminalId: catalogModel ? "s34" : "reset" }, points: [] },
       { id: "w3", from: { componentId: "relay", terminalId: catalogModel ? "14" : "out" }, to: { componentId: "output", terminalId: "in" }, points: [] },
     ],
   };
