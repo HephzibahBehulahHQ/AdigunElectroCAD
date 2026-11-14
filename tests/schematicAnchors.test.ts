@@ -9,6 +9,7 @@ import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { createReversingCircuit } from "../src/projects/reversingCircuit";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { createSourcedDolMotorStarter } from "../src/projects/sourcedDolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
 it("renders a user-selected component name beside its editable indication", () => {
@@ -488,7 +489,7 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
 
 it("draws and exposes the four terminals of the sourced 24 V control power supply", () => {
   const definition = catalogById.get("iec.dc-control-supply.01")!;
-  const document = createDolMotorStarter();
+  const document = createSourcedDolMotorStarter();
   const anchors = terminalAnchors(document).filter((item) => item.endpoint.componentId === "control-psu");
   expect(anchors.map((item) => item.endpoint.terminalId)).toEqual(["line-in", "neutral-in", "plus-out", "zero-out"]);
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
