@@ -12,7 +12,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
     name: "Incoming three-phase source",
     description: "400 V / 50 Hz educational source. Source capacity and site-specific upstream protection are not specified.",
     revision: 1,
-    components: [{ id: "distribution-source", definitionId: "supply.three-phase", reference: "X1", x: 160, y: 300, rotation: 0, properties: {} }],
+    components: [{ id: "distribution-source", definitionId: "iec.ac-supply.01", reference: "X1", x: 160, y: 300, rotation: 0, properties: { nominalVoltageV: 400, frequencyHz: 50, outputEnabled: true } }],
     wires: [],
   };
   const sheets = [{ id: "sheet-source", name: "Supply · 9 feeders", kind: "free-schematic" as const, document: sourceDocument }];
@@ -61,7 +61,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
         label: `${conductor} / M${ordinal}`,
         conductorColor: conductorColors[conductor],
         points: [
-          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: conductor.toLowerCase() } },
+          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: `${conductor.toLowerCase()}-out` } },
           { sheetId, gridReference: breakerGridReferences[conductor], role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
         ],
       });
