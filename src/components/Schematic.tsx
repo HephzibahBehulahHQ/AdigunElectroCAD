@@ -49,6 +49,8 @@ interface Props {
   projectSheets?: CircuitSheet[];
   activeSheetId?: string;
   onContinuationNavigate?: (sheetId: string) => void;
+  selectedContinuationId?: string;
+  onContinuationSelect?: (continuationId: string) => void;
 }
 
 interface TerminalAnchor {
