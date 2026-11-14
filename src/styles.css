@@ -168,7 +168,7 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .custom-terminal-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; align-items: end; padding: 7px 0; border-bottom: 1px solid var(--border); }.custom-terminal-row > span, .custom-terminal-row > button { grid-column: 1 / -1; }.custom-terminal-row select { min-width: 0; width: 100%; }.custom-terminal-row label { min-width: 0; font-size: .58rem; }
 
 .workspace-dock { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: 0; }
-.workspace-dock-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: center; }
+.workspace-dock-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: center; }
 .workspace-dock-tabs button[hidden], .component-panel-content[hidden] { display: none !important; }
 .panel-toggle { flex: 0 0 28px; width: 28px; min-height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font-size: 1rem; font-weight: 800; }
 .panel-toggle:hover { border-color: #22d3ee; color: #22d3ee; }
@@ -182,10 +182,14 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .component-panel .panel-title[role="button"] { cursor: pointer; }
 .component-panel-content > input { width: calc(100% - 16px); margin: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font-size: .75rem; }
 .catalog-properties-preview p { color: var(--muted); font-size: .69rem; line-height: 1.45; }
-.workspace-dock-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 6px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.workspace-dock-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 4px; padding: 6px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
 .workspace-dock-tabs button { padding: 8px; border: 1px solid transparent; border-radius: 5px; color: var(--muted); font-size: .72rem; font-weight: 800; }
 .workspace-dock-tabs button[aria-pressed="true"] { border-color: #2d719b; color: #22d3ee; background: color-mix(in srgb, #1b8dc2, var(--surface) 80%); }
 .dock-content { min-height: 0; overflow: auto; }
+.right-runtime, .right-diagnostics { padding: 8px; }
+.right-runtime .console-section, .right-diagnostics .console-section { min-width: 0; min-height: 0; padding: 8px; overflow-wrap: anywhere; }
+.right-runtime .console-section dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.right-diagnostics .event-log { margin-top: 6px; }
 .dock-content[hidden] { display: none !important; }
 .dock-content.properties-panel { padding-bottom: 10px; }
 .dock-content.project-library-panel { grid-column: auto; min-width: 0; border: 0; border-radius: 0; background: transparent; }
@@ -199,6 +203,13 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .console-tabs .console-collapse:hover { border-color: #22d3ee; }
 .console-view { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--border); }
 .console-view[hidden] { display: none !important; }
+.laboratory-view { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 6px; padding: 6px; overflow: auto; overscroll-behavior: contain; }
+.laboratory-view > * { min-width: 0; max-width: 100%; }
+.laboratory-view .console-section { min-height: 0; padding: 9px; }
+.laboratory-view .plc-controls { grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); }
+.laboratory-view .industrial-controls { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.laboratory-view .auth-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+.laboratory-view button, .laboratory-view select, .laboratory-view input { max-width: 100%; }
 @media (max-width: 1100px) { .console-view { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .console-view { grid-template-columns: minmax(0, 1fr); } }
 

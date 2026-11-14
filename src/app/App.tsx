@@ -100,9 +100,9 @@ export function App() {
   const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | "freehand" | null>(null);
   const [reconnectingWireId, setReconnectingWireId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
-  const [rightDockView, setRightDockView] = useState<"properties" | "projects">("properties");
+  const [rightDockView, setRightDockView] = useState<"properties" | "runtime" | "diagnostics" | "projects">("properties");
   const [reportsOpen, setReportsOpen] = useState(false);
-  const [consoleView, setConsoleView] = useState<"runtime" | "diagnostics" | "labs">("runtime");
+  const [consoleView, setConsoleView] = useState<"labs">("labs");
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
@@ -1338,6 +1338,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
+        <button type="button" aria-expanded={rightPanelOpen && rightDockView === "projects"} onClick={() => { setRightDockView("projects"); setRightPanelOpen(true); }}>Projects</button>
       </nav>
 
       <section className="tool-row" aria-label="CAD and simulation tools">
@@ -1400,9 +1401,9 @@ export function App() {
 
         <aside className="panel workspace-dock" aria-label="Properties and project library">
           <nav className="workspace-dock-tabs" aria-label="Right panel">
-            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>
-            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "projects"} onClick={() => setRightDockView("projects")}>Projects</button>
-            <button type="button" className="panel-toggle" aria-expanded={rightPanelOpen} aria-label={rightPanelOpen ? "Close right panel" : "Open properties panel"} title={rightPanelOpen ? "Close right panel" : "Open properties panel"} onClick={() => setRightPanelOpen((open) => !open)}>{rightPanelOpen ? "›" : "‹"}</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "runtime"} onClick={() => setRightDockView("runtime")}>Runtime</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "diagnostics"} onClick={() => setRightDockView("diagnostics")}>Diagnostics</button>
+            <button type="button" className="panel-toggle" aria-expanded={rightPanelOpen} aria-label={rightPanelOpen ? "Close right panel" : "Open right panel"} title={rightPanelOpen ? "Close right panel" : "Open right panel"} onClick={() => setRightPanelOpen((open) => !open)}>{rightPanelOpen ? "›" : "‹"}</button>
           </nav>
           <div className="dock-content properties-panel" hidden={!rightPanelOpen || rightDockView !== "properties"}>
 
@@ -1414,25 +1415,24 @@ export function App() {
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
             <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
           </div>
+          <div className="dock-content right-runtime" hidden={!rightPanelOpen || rightDockView !== "runtime"}>
+            <div className="panel-title"><strong>Runtime</strong><span className={simulation.motorState === "running" ? "badge running" : "badge"}>{simulation.motorState.toUpperCase()}</span></div>
+            <div className="console-section"><dl><dt>Voltage</dt><dd>{simulation.lineVoltageV.toFixed(0)} V</dd><dt>Current</dt><dd>{simulation.lineCurrentA.toFixed(1)} A</dd><dt>Speed</dt><dd>{simulation.motorSpeedRpm.toFixed(0)} rpm</dd><dt>Time</dt><dd>{(simulation.elapsedMs / 1000).toFixed(1)} s</dd></dl></div>
+          </div>
+          <div className="dock-content right-diagnostics" hidden={!rightPanelOpen || rightDockView !== "diagnostics"}>
+            <div className="panel-title"><strong>{t.validation}</strong></div>
+            <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={circuitModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
+            <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
+          </div>
           <ProjectLibraryPanel active={rightPanelOpen && rightDockView === "projects"} templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} />
         </aside>
       </section>
 
       <section className={consoleCollapsed ? "engineering-console collapsed" : "engineering-console"}>
-        <nav className="console-tabs" aria-label="Engineering console">
-          <button type="button" aria-pressed={consoleView === "runtime"} onClick={() => setConsoleView("runtime")}>Runtime</button>
-          <button type="button" aria-pressed={consoleView === "diagnostics"} onClick={() => setConsoleView("diagnostics")}>Diagnostics</button>
-          <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
+        <nav className="console-tabs" aria-label="Engineering console">          <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
           <button type="button" className="console-collapse" aria-expanded={!consoleCollapsed} onClick={() => setConsoleCollapsed((collapsed) => !collapsed)}>{consoleCollapsed ? "Show console" : "Hide console"}</button>
         </nav>
-        <div className="console-view" hidden={consoleCollapsed || consoleView !== "runtime"}>
-        <div className="console-section"><strong>Simulation</strong><span className={simulation.motorState === "running" ? "badge running" : "badge"}>{simulation.motorState.toUpperCase()}</span><dl><dt>Voltage</dt><dd>{simulation.lineVoltageV.toFixed(0)} V</dd><dt>Current</dt><dd>{simulation.lineCurrentA.toFixed(1)} A</dd><dt>Speed</dt><dd>{simulation.motorSpeedRpm.toFixed(0)} rpm</dd><dt>Time</dt><dd>{(simulation.elapsedMs / 1000).toFixed(1)} s</dd></dl></div>
-        </div>
-        <div className="console-view" hidden={consoleCollapsed || consoleView !== "diagnostics"}>
-        <div className="console-section"><strong>{t.validation}</strong>{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={circuitModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
-        <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
-        </div>
-        <div className="console-view" hidden={consoleCollapsed || consoleView !== "labs"}>
+        <div className="console-view laboratory-view" aria-label="Laboratory controls and results" hidden={consoleCollapsed || consoleView !== "labs"}>
         <StarDeltaLab onLoadCircuit={(circuit) => {
           const extended = tryAddFreeSheet(project);
           if (!extended) return;
