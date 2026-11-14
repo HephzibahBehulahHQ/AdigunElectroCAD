@@ -72,6 +72,10 @@ export function App() {
   const [selectedComponentId, setSelectedComponentId] = useState("contactor");
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(["contactor"]);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("contactor.three-pole");
+  const [componentPanelOpen, setComponentPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const componentPanelCloseTimer = useRef<number | undefined>(undefined);
+  const rightPanelCloseTimer = useRef<number | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<Theme>("dark");
   const [locale, setLocale] = useState<Locale>("en");
@@ -111,6 +115,25 @@ export function App() {
   const [plcMath, setPlcMath] = useState<MathOperation>("add");
   const [plcLeft, setPlcLeft] = useState(50);
   const [plcRight, setPlcRight] = useState(40);
+
+  useEffect(() => {
+    const closeMenus = () => window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; });
+    const onOutsidePress = (event: MouseEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest(".menu-row")) closeMenus();
+    };
+    const onEscape = (event: KeyboardEvent) => { if (event.key === "Escape") closeMenus(); };
+    window.document.addEventListener("pointerdown", onOutsidePress);
+    window.document.addEventListener("keydown", onEscape);
+    window.document.querySelectorAll<HTMLElement>(".menu-row summary, .tool-row button").forEach((control) => {
+      if (!control.title) control.title = control.getAttribute("aria-label") ?? (control.innerText || control.textContent || "").trim();
+    });
+    return () => {
+      window.document.removeEventListener("pointerdown", onOutsidePress);
+      window.document.removeEventListener("keydown", onEscape);
+      window.clearTimeout(componentPanelCloseTimer.current);
+      window.clearTimeout(rightPanelCloseTimer.current);
+    };
+  }, []);
   const [levelPercent, setLevelPercent] = useState(50);
   const [industrialDirection, setIndustrialDirection] = useState<Direction>("hold");
   const [industrialPressureBar, setIndustrialPressureBar] = useState(100);
@@ -1248,7 +1271,18 @@ export function App() {
         {authMessage && <p className="auth-message">{authMessage}</p>}
       </section>}
 
-      <nav className="menu-row" aria-label="Project actions">
+      <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
+        const current = (event.target as Element).closest("details");
+        event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (menu !== current) menu.open = false; });
+      }} onMouseLeave={(event) => {
+        const nav = event.currentTarget;
+        window.setTimeout(() => { if (!nav.matches(":hover")) nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; }); }, 140);
+      }} onClickCapture={(event) => {
+        if ((event.target as Element).closest(".menu-popover button, .menu-popover input")) {
+          const nav = event.currentTarget;
+          window.setTimeout(() => nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; }), 0);
+        }
+      }}>
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
@@ -1298,16 +1332,18 @@ export function App() {
       </section>
 
       <section className="workspace">
-        <aside className="panel component-panel">
-          <div className="panel-title"><strong>Component Library</strong><span>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span></div>
+        <aside className="panel component-panel" onMouseEnter={() => window.clearTimeout(componentPanelCloseTimer.current)} onMouseLeave={() => { componentPanelCloseTimer.current = window.setTimeout(() => setComponentPanelOpen(false), 140); }}>
+          <div className="panel-title" role="button" tabIndex={0} aria-expanded={componentPanelOpen} title="Click to open or close the component library" onClick={() => setComponentPanelOpen((open) => !open)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setComponentPanelOpen((open) => !open); } }}><strong>Component Library</strong><span>{componentCatalog.length} catalog variants · {dolCatalog.length} DOL components</span></div>
+          <div className="component-panel-content" hidden={!componentPanelOpen}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
-          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={setSelectedDefinitionId} />
+          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { window.clearTimeout(rightPanelCloseTimer.current); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); }} />
           <section className="component-card">
             <div className="card-heading"><strong>{selectedDefinition.name}</strong><button className={favorites.includes(selectedDefinition.id) ? "favorite active" : "favorite"} onClick={() => setFavorites((items) => items.includes(selectedDefinition.id) ? items.filter((id) => id !== selectedDefinition.id) : [...items, selectedDefinition.id])} aria-label="Toggle component favorite">★</button></div>
             <p>{selectedDefinition.description}</p>
             <dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Support</dt><dd>{selectedDefinition.simulationSupport}</dd></dl>
             <button className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button>
           </section>
+          </div>
         </aside>
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
@@ -1316,22 +1352,22 @@ export function App() {
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 
-        <aside className="panel workspace-dock" aria-label="Properties and project library">
+        <aside className="panel workspace-dock" aria-label="Properties and project library" onMouseEnter={() => window.clearTimeout(rightPanelCloseTimer.current)} onMouseLeave={() => { rightPanelCloseTimer.current = window.setTimeout(() => setRightPanelOpen(false), 140); }}>
           <nav className="workspace-dock-tabs" aria-label="Right panel">
-            <button type="button" aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>
-            <button type="button" aria-pressed={rightDockView === "projects"} onClick={() => setRightDockView("projects")}>Projects</button>
+            <button type="button" aria-pressed={rightPanelOpen && rightDockView === "properties"} aria-expanded={rightPanelOpen && rightDockView === "properties"} onClick={() => { if (rightDockView === "properties" && rightPanelOpen) setRightPanelOpen(false); else { setRightDockView("properties"); setRightPanelOpen(true); } }}>Properties</button>
+            <button type="button" aria-pressed={rightPanelOpen && rightDockView === "projects"} aria-expanded={rightPanelOpen && rightDockView === "projects"} onClick={() => { if (rightDockView === "projects" && rightPanelOpen) setRightPanelOpen(false); else { setRightDockView("projects"); setRightPanelOpen(true); } }}>Projects</button>
           </nav>
-          <div className="dock-content properties-panel" hidden={rightDockView !== "properties"}>
+          <div className="dock-content properties-panel" hidden={!rightPanelOpen || rightDockView !== "properties"}>
 
             <div className="panel-title"><strong>Properties</strong><span>{selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
-          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} selectionCount={selectedGraphicIds.length} stackCapabilities={canReorderSchematicGraphics(document.graphics ?? [], selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id])} onStackChange={(order) => updateGraphicStackOrder(selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id], order)} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <p className="empty">Select a component, wire, annotation, or drawing graphic to inspect and edit it.</p>}
+          {selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : circuitModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} selectionCount={selectedGraphicIds.length} stackCapabilities={canReorderSchematicGraphics(document.graphics ?? [], selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id])} onStackChange={(order) => updateGraphicStackOrder(selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id], order)} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <section className="catalog-properties-preview"><strong>{selectedDefinition.name}</strong><p>{selectedDefinition.description}</p><dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Simulation</dt><dd>{selectedDefinition.simulationSupport}</dd></dl><button type="button" className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button></section>}
             {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
             <p className="cloud-note">☁ {authUser ? anonymousSession ? "Guest preview: cloud inserts require a confirmed account." : "Cloud account connected. Save and load projects from File." : "Sign in to save and load cloud projects."}</p>
           </div>
-          <ProjectLibraryPanel active={rightDockView === "projects"} templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} />
+          <ProjectLibraryPanel active={rightPanelOpen && rightDockView === "projects"} templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} />
         </aside>
       </section>
 
