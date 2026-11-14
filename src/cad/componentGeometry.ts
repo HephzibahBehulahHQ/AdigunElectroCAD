@@ -146,7 +146,7 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
 
 export function componentLabelOffsets(rotation: ComponentInstance["rotation"], definitionId?: string) {
   const reference = rotation === 90 || rotation === 270 ? 75 : 50;
-  if (definitionId === "motor.six-terminal") return { reference: reference + 28, kind: reference + 45 };
+  if (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41") return { reference: reference + 28, kind: reference + 45 };
   return { reference, kind: reference + 17 };
 }
 
@@ -154,7 +154,7 @@ export function componentLabelOffsets(rotation: ComponentInstance["rotation"], d
 export function componentFootprint(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string, size = 1) {
   const sideways = rotation === 90 || rotation === 270;
   const halfWidth = (Math.max(sideways ? 35 : 55, 55) + 6) * size;
-  const terminalExtension = (definitionId === "motor.six-terminal" ? 16 : 0) * size;
+  const terminalExtension = (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41" ? 16 : 0) * size;
   return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 55 : 35) * size - 6 - terminalExtension, bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
 }
 
@@ -163,5 +163,6 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   const bounds = componentFootprint(x, y, rotation, definitionId, size);
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
+
 
 

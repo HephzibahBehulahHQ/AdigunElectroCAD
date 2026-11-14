@@ -6,13 +6,17 @@ import { functionalOutputTerminals } from "../src/electrical/signalContracts";
 
 describe("IEC-oriented component catalog", () => {
   it("contains the required distribution of unique modeled entries", () => {
-    expect(modeledCatalog).toHaveLength(490);
+    expect(modeledCatalog).toHaveLength(491);
     expect(componentCatalog.length).toBeGreaterThanOrEqual(563);
     expect(new Set(componentCatalog.map((definition) => definition.id)).size).toBe(componentCatalog.length);
     expect(new Set(modeledCatalog.map((definition) => definition.name)).size).toBe(modeledCatalog.length);
     expect(modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")?.name).toBe("Induction motor · 110V/9A");
+    const starDeltaMotor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.41")!;
+    expect(starDeltaMotor.terminals.map(({ id }) => id)).toEqual(["u1", "v1", "w1", "u2", "v2", "w2", "pe"]);
+    expect(starDeltaMotor.description).toContain("not Siemens equivalent-circuit data");
+    expect(starDeltaMotor.standardsReferences).toContain("https://cache.industry.siemens.com/dl/files/362/32182362/att_1163295/v1/EN_1LE1_1FP1_1FP3_1PC1_1PC3_op_Instr_1123.pdf");
     expect(Object.fromEntries(Array.from(new Set(modeledCatalog.map((definition) => definition.category))).map((category) => [category, modeledCatalog.filter((definition) => definition.category === category).length]))).toMatchObject({
-      "Power Supply": 33, "Circuit Breakers": 41, "Protection Devices": 35, "Contactors & Starters": 1, Relays: 45, "Switches & Pushbuttons": 35, Motors: 40, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
+      "Power Supply": 33, "Circuit Breakers": 41, "Protection Devices": 35, "Contactors & Starters": 1, Relays: 45, "Switches & Pushbuttons": 35, Motors: 41, Transformers: 30, Sensors: 35, "PLC & I/O": 35, "Timers & Counters": 32, "Terminal Blocks": 35, "Measuring & Indication": 25, "Industrial Loads & Actuators": 35, "Drives & Power Electronics": 32, "Safety & Signalling": 1,
     });
   });
 
@@ -139,3 +143,4 @@ describe("source-backed Siemens SIMOTICS motor", () => {
     expect(motor.standardsReferences.some((source) => source.includes("1LE1003-1CB23-4AA4"))).toBe(true);
   });
 });
+

@@ -9,8 +9,8 @@ export function createStarDeltaCircuit(): CircuitDocument {
   const main = components.find((component) => component.id === "forward")!;
   main.reference = "KM1"; main.x = 340; main.y = 200;
   const motor = components.find((component) => component.id === "motor")!;
-  motor.definitionId = "motor.six-terminal"; motor.x = 620; motor.y = 200;
-  motor.properties = { resistanceOhm: 10, reactanceOhm: 10 };
+  motor.definitionId = "iec.induction-motor.41"; motor.x = 620; motor.y = 200;
+  motor.properties = { nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470, frequencyHz: 50, ratedFrequencyHz: 50, powerFactor: 0.84, efficiencyPercent: 90.4, windingConnection: "Star/Delta", resistanceOhm: 10, reactanceOhm: 10, lineVoltageV: 400, connection: "open", equivalentCircuitEnabled: false, polePairs: 2, energized: false };
   components.find((component) => component.id === "supply")!.properties.nominalVoltageV = 400;
   components.push({ ...main, id: "star", reference: "KM2", x: 340, y: 420, properties: { energized: false } }, { ...main, id: "delta", reference: "KM3", x: 620, y: 420, properties: { energized: false } });
   const wires = base.wires.filter((wire) => powerIds.has(wire.from.componentId) && powerIds.has(wire.to.componentId));
@@ -37,3 +37,4 @@ export function applyStarDeltaState(document: CircuitDocument, state: StarDeltaS
     return { ...component, properties };
   }) };
 }
+
