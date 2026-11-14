@@ -2,7 +2,7 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || symbolId.startsWith("switch-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
@@ -18,6 +18,21 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
   }
   if (symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${cy} Q ${x - 6} ${cy - 9} ${x} ${cy} T ${x + 11} ${cy}`} /><text x={x} y={y + 20} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) return <g className={mark} aria-label="Three-phase induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
+  if (symbolId.startsWith("switch-")) {
+    const closed = properties.closed === true;
+    const form = properties.contactForm === "NC" ? "normally closed" : "normally open";
+    const positions = Math.max(2, Math.min(4, Number(properties.positions) || 2));
+    return <g className={mark} aria-label={`Maintained selector switch, ${form}, ${positions} positions, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+      <path d={`M ${x - 47} ${y} H ${x - 12} M ${x + 12} ${y} H ${x + 47} M ${closed ? `M ${x - 12} ${y} H ${x + 12}` : `M ${x - 12} ${y} L ${x + 4} ${y - 11}`} M ${x} ${y - 16} V ${y - 27}`} />
+      <circle cx={x} cy={y - 16} r="4" />
+      {Array.from({ length: positions }, (_, index) => {
+        const angle = (-45 + index * (90 / (positions - 1))) * Math.PI / 180;
+        const x1 = x + Math.sin(angle) * 12, y1 = y - 16 - Math.cos(angle) * 12;
+        const x2 = x + Math.sin(angle) * 16, y2 = y - 16 - Math.cos(angle) * 16;
+        return <path key={index} d={`M ${x1} ${y1} L ${x2} ${y2}`} />;
+      })}
+    </g>;
+  }
   if (symbolId.startsWith("timer-")) {
     const energized = properties.energized === true;
     const timingComplete = energized && Number(properties.elapsedSeconds ?? 0) >= Number(properties.delaySeconds ?? Infinity);
