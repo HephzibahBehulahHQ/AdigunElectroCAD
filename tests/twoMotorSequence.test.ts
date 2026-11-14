@@ -14,10 +14,10 @@ it("starts two real three-phase branches in order and stops both", () => {
   const tick = (seconds: number) => { runtime = advanceCircuitClock(runtime, catalogById, seconds); };
   expect(motors()).toEqual(["STANDBY", "STANDBY"]);
   input("start", "input", true); tick(.1);
-  expect(motors()[0]).toContain("1440 rpm"); expect(motors()[1]).toBe("STANDBY");
+  expect(motors()[0]).toContain("1470 rpm"); expect(motors()[1]).toBe("STANDBY");
   input("start", "input", false); tick(2.9);
   expect(motors()[1]).toBe("STANDBY");
-  tick(.1); expect(motors().every(v => v.includes("1440 rpm"))).toBe(true);
+  tick(.1); expect(motors().every(v => v.includes("1470 rpm"))).toBe(true);
   input("stop", "input", true); tick(.1);
   expect(motors()).toEqual(["STANDBY", "STANDBY"]);
   input("stop", "input", false); tick(5);
@@ -31,14 +31,14 @@ it.each([["breaker", "closed", false], ["f1", "tripped", true], ["f2", "tripped"
   const tick = (seconds: number) => { runtime = advanceCircuitClock(runtime, catalogById, seconds); };
   const motors = () => executeCircuitModels(runtime, catalogById).filter(r => ["m1", "m2"].includes(r.componentId)).map(r => r.output.value);
   input("start", "input", true); tick(.1); tick(3.1);
-  expect(motors().every(v => v.includes("1440 rpm"))).toBe(true);
+  expect(motors().every(v => v.includes("1470 rpm"))).toBe(true);
   input(device, property, fault); tick(.1);
   expect(motors()).toEqual(["STANDBY", "STANDBY"]);
   input(device, property, !fault); tick(5);
   expect(motors()).toEqual(["STANDBY", "STANDBY"]);
   input("start", "input", false); tick(.1);
   input("start", "input", true); tick(.1);
-  expect(motors()[0]).toContain("1440 rpm"); expect(motors()[1]).toBe("STANDBY");
+  expect(motors()[0]).toContain("1470 rpm"); expect(motors()[1]).toBe("STANDBY");
 });
 
 it("does not run M2 with a missing power phase despite its control command", () => {
@@ -47,6 +47,6 @@ it("does not run M2 with a missing power phase despite its control command", () 
   let runtime = setCircuitBooleanInput(resetCircuitClock(design, catalogById), catalogById, "start", "input", true);
   runtime = advanceCircuitClock(advanceCircuitClock(runtime, catalogById, .1), catalogById, 4);
   const runs = executeCircuitModels(runtime, catalogById);
-  expect(runs.find(r => r.componentId === "m1")!.output.value).toContain("1440 rpm");
+  expect(runs.find(r => r.componentId === "m1")!.output.value).toContain("1470 rpm");
   expect(runs.find(r => r.componentId === "m2")!.output.value).toBe("STANDBY");
 });
