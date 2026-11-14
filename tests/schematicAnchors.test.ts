@@ -213,6 +213,30 @@ it("positions four-pole breaker neutral and catalog motor-starter auxiliary term
   expect(relative("km4", "aux-44")).toEqual([47, 26]);
 });
 
+it("positions all PLC I/O terminals around a dedicated module symbol", () => {
+  const definition = catalogById.get("iec.plc-digital-io.01")!;
+  const document = { id: "plc-sheet", name: "PLC", description: "", revision: 0, wires: [], components: [
+    { id: "plc1", definitionId: definition.id, reference: "PLC1", x: 500, y: 340, rotation: 0 as const, properties: {} },
+  ] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const anchor = anchors.find((item) => item.endpoint.terminalId === terminalId)!;
+    return [anchor.x - 500, anchor.y - 340];
+  };
+  expect(relative("in-0")).toEqual([-47, -22]);
+  expect(relative("in-1")).toEqual([-47, -7]);
+  expect(relative("ai-0")).toEqual([-47, 8]);
+  expect(relative("ai-1")).toEqual([-47, 23]);
+  expect(relative("out-0")).toEqual([47, -12]);
+  expect(relative("out-1")).toEqual([47, 7]);
+  expect(relative("common")).toEqual([47, 25]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 500, y: 340 }));
+  expect(svg).toContain('aria-label="PLC digital and analog I/O module"');
+  expect(svg).toContain(">I</text>");
+  expect(svg).toContain(">Q</text>");
+});
+
 it("positions transformer primary and secondary pins around a dedicated winding symbol", () => {
   const definition = catalogById.get("iec.control-transformer.01")!;
   const document = { id: "transformer-sheet", name: "Transformer", description: "", revision: 0, wires: [], components: [
