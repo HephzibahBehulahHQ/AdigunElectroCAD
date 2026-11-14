@@ -153,7 +153,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       {[-24, 0, 24].map(offset => <g key={offset}>
         <path d={`M ${x + offset} ${y - 27} V ${y - 12}`} />
         <path d={`M ${x + offset - 6} ${y - 12} H ${x + offset - 2}`} />
-        <path d={energized ? `M ${x + offset - 2} ${y - 12} V ${y + 9}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 6} ${y - 2}`} />
+        <path d={energized ? `M ${x + offset - 2} ${y - 12} L ${x + offset + 2} ${y + 9}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 6} ${y - 2}`} />
         <path d={`M ${x + offset + 2} ${y + 9} H ${x + offset + 6} V ${y + 27}`} />
       </g>)}
       <path d={`M ${x - 16} ${y - 47} H ${x - 12} C ${x - 4} ${y - 59}, ${x - 4} ${y - 35}, ${x} ${y - 47} C ${x + 4} ${y - 59}, ${x + 4} ${y - 35}, ${x + 12} ${y - 47} H ${x + 16}`} />
