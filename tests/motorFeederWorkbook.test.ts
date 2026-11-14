@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
-import { validateProjectContinuations } from "../src/projects/projectContinuations";
+import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createMotorStarterWorkbook } from "../src/projects/starterProject";
 
 it("builds a ten-sheet motor-feeder project with real wired branches and terminal-level phase/PE continuations", () => {
@@ -27,4 +27,15 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
 
 it("uses the real ten-sheet feeder workbook as the motor starter project", () => {
   expect(createMotorStarterWorkbook().sheets).toHaveLength(10);
+});
+
+it("resolves a source phase to all nine real feeder breaker terminals without mixing phases", () => {
+  const project = createMotorFeederWorkbook();
+  const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l1" } });
+  expect(net).toHaveLength(10);
+  expect(net.every((item) => item.endpoint.terminalId === "l1" || item.endpoint.terminalId === "l1-in")).toBe(true);
+  expect(net.filter((item) => item.endpoint.terminalId === "l1-in")).toHaveLength(9);
+  const otherPhase = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l2" } });
+  expect(otherPhase).toHaveLength(10);
+  expect(otherPhase.some((item) => item.endpoint.terminalId === "l1-in")).toBe(false);
 });
