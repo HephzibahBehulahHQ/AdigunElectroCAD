@@ -100,10 +100,11 @@ export function App() {
   const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | "freehand" | null>(null);
   const [reconnectingWireId, setReconnectingWireId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
-  const [rightDockView, setRightDockView] = useState<"properties" | "runtime" | "diagnostics" | "projects">("properties");
+  const [rightDockView, setRightDockView] = useState<"properties" | "runtime" | "diagnostics">("properties");
   const [reportsOpen, setReportsOpen] = useState(false);
   const [consoleView, setConsoleView] = useState<"labs">("labs");
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
+  const [isLabPage, setIsLabPage] = useState(() => window.location.hash.toUpperCase() === "#LAB");
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
   const [plcPreviousInputA, setPlcPreviousInputA] = useState(false);
@@ -113,6 +114,12 @@ export function App() {
   const [plcMath, setPlcMath] = useState<MathOperation>("add");
   const [plcLeft, setPlcLeft] = useState(50);
   const [plcRight, setPlcRight] = useState(40);
+
+  useEffect(() => {
+    const syncLabRoute = () => setIsLabPage(window.location.hash.toUpperCase() === "#LAB");
+    window.addEventListener("hashchange", syncLabRoute);
+    return () => window.removeEventListener("hashchange", syncLabRoute);
+  }, []);
 
   useEffect(() => {
     const closeMenus = () => window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; });
@@ -1294,7 +1301,7 @@ export function App() {
   };
 
   return (
-    <main className="app-shell">
+    <main className={isLabPage ? "app-shell lab-route-active" : "app-shell"}>
       <header className="app-header">
         <div className="brand-lockup">
           <img src={`${import.meta.env.BASE_URL}assets/hephzibah-behulah-official.jpg`} alt="Hephzibah Behulah" />
@@ -1305,7 +1312,9 @@ export function App() {
         <HeaderUtilities saved={!dirty && !botEditsUnsaved} signedIn={Boolean(authUser && !anonymousSession)} accountOpen={authOpen} locale={locale} theme={theme} search={search} grid={showGrid} onAccount={() => setAuthOpen((open) => !open)} onDismissAccount={() => setAuthOpen(false)} onLocale={(value) => setLocale(value as Locale)} onTheme={(value) => setTheme(value as Theme)} onSearch={setSearch} onGrid={setShowGrid} onBot={() => setBotActivation((value) => value + 1)} />
       </header>
 
-      <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={circuitModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); setBotEditsUnsaved(true); updateDocument(next); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />
+      {isLabPage && <nav className="lab-route-nav" aria-label="Laboratory navigation"><a href="#CAD">← Back to CAD</a><strong>Laboratory</strong></nav>}
+
+      {!isLabPage &&       <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={circuitModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); setBotEditsUnsaved(true); updateDocument(next); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />}
 
       {authOpen && <section className="auth-panel" aria-label="Cloud account">
         <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
@@ -1318,7 +1327,8 @@ export function App() {
       </section>}
 
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
-        const current = (event.target as Element).closest("details");
+        const current = (event.target as Element).closest<HTMLDetailsElement>("details");
+        if (current && event.pointerType === "mouse") current.open = true;
         event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (menu !== current) menu.open = false; });
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
@@ -1338,7 +1348,8 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
-        <button type="button" aria-expanded={rightPanelOpen && rightDockView === "projects"} onClick={() => { setRightDockView("projects"); setRightPanelOpen(true); }}>Projects</button>
+        <details className="projects-menu"><summary>Projects</summary><div className="menu-popover project-menu-popover"><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} /></div></details>
+        <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
       <section className="tool-row" aria-label="CAD and simulation tools">
@@ -1424,15 +1435,14 @@ export function App() {
             <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={circuitModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
             <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
           </div>
-          <ProjectLibraryPanel active={rightPanelOpen && rightDockView === "projects"} templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} />
         </aside>
       </section>
 
-      <section className={consoleCollapsed ? "engineering-console collapsed" : "engineering-console"}>
+      <section className={isLabPage ? "engineering-console lab-route-console" : "engineering-console editor-console"}>
         <nav className="console-tabs" aria-label="Engineering console">          <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
           <button type="button" className="console-collapse" aria-expanded={!consoleCollapsed} onClick={() => setConsoleCollapsed((collapsed) => !collapsed)}>{consoleCollapsed ? "Show console" : "Hide console"}</button>
         </nav>
-        <div className="console-view laboratory-view" aria-label="Laboratory controls and results" hidden={consoleCollapsed || consoleView !== "labs"}>
+        <div className="console-view laboratory-view" aria-label="Laboratory controls and results" hidden={!isLabPage}>
         <div className="lab-content-section lab-status"><h3>Lab status</h3><div className="lab-status-grid"><span>Motor model: <strong>{simulation.motorState.toUpperCase()}</strong></span><span>Terminal wires: <strong>{document.wires.length}</strong></span><span>Topology: <strong>{topologyIssues.length ? `${topologyIssues.length} issue(s)` : "Valid"}</strong></span></div></div>
         <div className="lab-content-section lab-inputs"><h3>Inputs and conditions</h3>
         <section className="console-section plc-lab" aria-label="PLC logic and analog signal laboratory"><strong>PLC Control &amp; Analog Lab</strong><span className="badge running">FUNCTIONAL</span><div className="plc-controls"><label>Input A (NO / NC)<input type="checkbox" checked={plcInputA} onChange={(event) => { setPlcPreviousInputA(plcInputA); setPlcInputA(event.target.checked); }} /></label><label>Input B<input type="checkbox" checked={plcInputB} onChange={(event) => setPlcInputB(event.target.checked)} /></label><label>Logic gate<select value={plcGate} onChange={(event) => setPlcGate(event.target.value as LogicGate)}><option value="and">AND</option><option value="or">OR</option><option value="not">NOT</option><option value="nand">NAND</option><option value="nor">NOR</option><option value="xor">XOR</option></select></label><label>Comparator<select value={plcComparator} onChange={(event) => setPlcComparator(event.target.value as Comparator)}><option value="greater-than">Greater than</option><option value="greater-or-equal">Greater than or equal to</option><option value="less-than">Less than</option><option value="less-or-equal">Less than or equal to</option><option value="equal-to">Equal to</option><option value="not-equal">Not equal to</option></select></label><label>Math block<select value={plcMath} onChange={(event) => setPlcMath(event.target.value as MathOperation)}><option value="add">Add</option><option value="subtract">Subtract</option><option value="multiply">Multiply</option><option value="divide">Divide</option></select></label><label>Value A<input type="number" value={plcLeft} onChange={(event) => setPlcLeft(Number(event.target.value) || 0)} /></label><label>Value B<input type="number" value={plcRight} onChange={(event) => setPlcRight(Number(event.target.value) || 0)} /></label><label>Level sensor {levelPercent}%<input type="range" min="0" max="100" value={levelPercent} onChange={(event) => setLevelPercent(Number(event.target.value))} /></label></div></section>
