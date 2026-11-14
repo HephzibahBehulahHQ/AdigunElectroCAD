@@ -20,7 +20,7 @@ import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn,
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
-import { createProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
+import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, createProjectWideReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
@@ -105,6 +105,7 @@ export function App() {
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
   const [crossSheetContinuationMode, setCrossSheetContinuationMode] = useState(false);
   const [crossSheetContinuationStart, setCrossSheetContinuationStart] = useState<ProjectTerminalReference | null>(null);
+  const [crossSheetContinuationExtendId, setCrossSheetContinuationExtendId] = useState("");
   const [wireBranchStart, setWireBranchStart] = useState<{ wireId: string; source: WireBranchSource; position: number } | null>(null);
   const [selectedWireId, setSelectedWireId] = useState("");
   const [selectedContinuationId, setSelectedContinuationId] = useState("");
@@ -339,7 +340,7 @@ export function App() {
     setSelectedAnnotationId("");
     setSelectedGraphicId(""); setSelectedGraphicIds([]);
     setAnnotationMode(false); setGraphicMode(null); setWireMode(false); setWireStart(null);
-    setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId("");
   };
 
   const updateSelectedContinuation = (edit: Partial<Pick<ProjectContinuation, "label" | "conductorColor">>) => {
@@ -981,6 +982,7 @@ export function App() {
 
   const beginCrossSheetContinuation = () => {
     setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
     setCrossSheetContinuationMode(true);
     setWireMode(true);
     setWireStart(null);
@@ -991,10 +993,43 @@ export function App() {
     setNotice("Choose the source terminal, select a different sheet, then choose its compatible destination terminal.");
   };
 
+  const beginExtendSelectedContinuation = () => {
+    if (!selectedContinuation) return;
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId(selectedContinuation.id);
+    setCrossSheetContinuationMode(true);
+    setWireMode(true);
+    setWireStart(null);
+    setWireBranchStart(null);
+    setReconnectingWireId("");
+    setAnnotationMode(false);
+    setGraphicMode(null);
+    setNotice(`Choose a compatible terminal on a later sheet to extend ${selectedContinuation.label}; its original source reference will be kept.`);
+  };
+
   const selectWireTerminal = (endpoint: TerminalEndpoint, continueBranch = false) => {
     if (!wireMode) return;
     if (crossSheetContinuationMode) {
       const selected: ProjectTerminalReference = { sheetId: activeSheet.id, endpoint };
+      if (crossSheetContinuationExtendId) {
+        const destinationSheet = project.sheets.find((sheet) => sheet.id === selected.sheetId);
+        const result = extendProjectContinuation(project, crossSheetContinuationExtendId, selected, destinationSheet ? terminalGridReference(destinationSheet.document, endpoint) : "A.1");
+        if (!result.ok) { setNotice(result.reason); return; }
+        recordEdit(result.project);
+        setSelectedContinuationId(result.continuation.id);
+        setRightDockView("properties");
+        setRightPanelOpen(true);
+        setComponentSelection("");
+        setCrossSheetContinuationStart(null);
+        setCrossSheetContinuationExtendId("");
+        setCrossSheetContinuationMode(false);
+        setWireMode(false);
+        setWireStart(null);
+        const sourcePoint = result.continuation.points[0];
+        const sourceSheetNumber = project.sheets.findIndex((sheet) => sheet.id === sourcePoint.sheetId) + 1;
+        setNotice(`Continuation ${result.continuation.label} now reaches ${destinationSheet?.name ?? "the selected sheet"}; source remains S${sourceSheetNumber} · ${sourcePoint.gridReference}.`);
+        return;
+      }
       if (!crossSheetContinuationStart) {
         setCrossSheetContinuationStart(selected);
         setNotice("Source terminal selected. Switch to a different sheet and choose the destination terminal.");
@@ -1481,7 +1516,7 @@ export function App() {
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Component</button></div></details>
-        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button></div></details>
+        <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.findIndex((sheet) => sheet.id === selectedContinuation.points.at(-1)?.sheetId) >= project.sheets.length - 1}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
@@ -1543,7 +1578,7 @@ export function App() {
 
         <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs">{project.sheets.map((sheet, index) => <button key={sheet.id} className={sheet.id === activeSheet.id ? "active" : ""} onClick={() => selectSheet(sheet.id)}>{sheet.name} · Sheet {index + 1}</button>)}<button onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
+          <Schematic document={document} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and move placed symbols on the 20-unit grid.</>}</div>
         </section>
 

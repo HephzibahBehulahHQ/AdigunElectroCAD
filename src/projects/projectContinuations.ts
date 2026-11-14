@@ -1,5 +1,5 @@
 import { catalogById } from "../catalog/dolCatalog";
-import type { CircuitDocument, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
+import type { CircuitDocument, CircuitSheet, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
 import { canConnectTerminals } from "../electrical/topology";
 
 /** Validate page order, real local terminals, and the retained source of every cross-sheet net. */
@@ -175,6 +175,68 @@ export function createProjectContinuation(
   return { ok: true, project: next, continuation };
 }
 
+
+
+/** Add a later-sheet terminal to an existing net while retaining its original source point. */
+export function extendProjectContinuation(
+  project: ElectricalProject,
+  continuationId: string,
+  nextPoint: ProjectTerminalReference,
+  nextGridReference = "A.1",
+): CreateProjectContinuationResult {
+  const existing = project.continuations?.find((item) => item.id === continuationId);
+  if (!existing) return { ok: false, reason: "Select an existing project continuation first." };
+  const sheetOrder = new Map(project.sheets.map((sheet, index) => [sheet.id, index]));
+  const nextOrder = sheetOrder.get(nextPoint.sheetId);
+  const lastPoint = existing.points.at(-1);
+  const lastOrder = lastPoint ? sheetOrder.get(lastPoint.sheetId) : undefined;
+  if (nextOrder === undefined || lastOrder === undefined) return { ok: false, reason: "The continuation and selected terminal must belong to the current project." };
+  if (existing.points.some((point) => point.sheetId === nextPoint.sheetId)) return { ok: false, reason: "This continuation already has a point on that sheet." };
+  if (nextOrder <= lastOrder) return { ok: false, reason: "Continue the net on a sheet after its current last point." };
+  const source = existing.points[0];
+  if (!source) return { ok: false, reason: "The selected continuation has no source terminal." };
+  const sourceSheet = project.sheets[sheetOrder.get(source.sheetId)!];
+  const destinationSheet = project.sheets[nextOrder];
+  const resolve = (sheet: CircuitSheet, endpoint: TerminalEndpoint) => {
+    const component = sheet.document.components.find((item) => item.id === endpoint.componentId);
+    const definition = component && catalogById.get(component.definitionId);
+    const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === endpoint.terminalId);
+    return component && terminal ? { component, terminal } : undefined;
+  };
+  const sourceTerminal = resolve(sourceSheet, source.endpoint);
+  const destinationTerminal = resolve(destinationSheet, nextPoint.endpoint);
+  if (!sourceTerminal || !destinationTerminal) return { ok: false, reason: "Choose real terminals from the component catalog." };
+  const checkDocument: CircuitDocument = {
+    id: "project-continuation-extension-check",
+    name: "Project continuation extension compatibility check",
+    description: "",
+    components: [
+      { ...sourceTerminal.component, id: "continuation-source", properties: { ...sourceTerminal.component.properties } },
+      { ...destinationTerminal.component, id: "continuation-extension", properties: { ...destinationTerminal.component.properties } },
+    ],
+    wires: [],
+    revision: 1,
+  };
+  const connectionCheck = canConnectTerminals(checkDocument, catalogById,
+    { componentId: "continuation-source", terminalId: source.endpoint.terminalId },
+    { componentId: "continuation-extension", terminalId: nextPoint.endpoint.terminalId });
+  if (!connectionCheck.ok) return { ok: false, reason: connectionCheck.reason ?? "Those terminals cannot be connected." };
+
+  const points = [
+    ...existing.points.slice(0, -1).map((point) => ({ ...point })),
+    { ...lastPoint, role: "continuation" as const },
+    { ...nextPoint, gridReference: nextGridReference, role: "destination" as const },
+  ];
+  const continuation = { ...existing, points };
+  const next = {
+    ...project,
+    revision: project.revision + 1,
+    continuations: project.continuations!.map((item) => item.id === continuationId ? continuation : item),
+  };
+  const issues = validateProjectContinuations(next);
+  if (issues.length) return { ok: false, reason: issues[0] };
+  return { ok: true, project: next, continuation };
+}
 
 export type ProjectContinuationEdit = Pick<ProjectContinuation, "label" | "conductorColor">;
 
