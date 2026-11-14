@@ -17,6 +17,7 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
     expect(references).toContain(`KM${ordinal}`);
     expect(references).toContain(`F${ordinal}`);
     expect(references).toContain(`M${ordinal}`);
+    expect(references.some((reference) => reference.startsWith("H"))).toBe(false);
     expect(sheet.document.wires.length).toBeGreaterThanOrEqual(16);
     for (const phase of ["l1", "l2", "l3"]) {
       expect(project.continuations?.some((net) => net.points[1].sheetId === sheet.id && net.points[1].endpoint.terminalId === `${phase}-in`)).toBe(true);
