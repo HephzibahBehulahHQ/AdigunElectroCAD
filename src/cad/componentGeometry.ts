@@ -95,6 +95,11 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "out-1") return { x: 47, y: 7 };
     if (terminalId === "common") return { x: 47, y: 25 };
   }
+  if (modelId === "catalog-proximity-sensor") {
+    if (terminalId === "supply") return { x: -47, y: -14 };
+    if (terminalId === "signal") return { x: 47, y: 0 };
+    if (terminalId === "common") return { x: -47, y: 14 };
+  }
   const logic = modelId.startsWith("logic-");
   const cylinder = modelId === "pneumatic-cylinder-single" || modelId === "pneumatic-cylinder-double";
   const valve = modelId === "pneumatic-valve-5-2" || modelId === "pneumatic-valve-3-2";
