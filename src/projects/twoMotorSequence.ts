@@ -7,12 +7,12 @@ export function createTwoMotorSequence(): CircuitDocument {
   const components = [
     component("supply", "iec.ac-supply.01", "X1", 500, 140, { powerLayout: "vertical", outputEnabled: true, frequencyHz: 50, nominalVoltageV: 400 }),
     component("breaker", "iec.circuit-breaker.01", "Q1", 500, 260, { powerLayout: "vertical", closed: true, nominalVoltageV: 400, ratedCurrentA: 32, poles: 3 }),
-    component("km1", "iec.motor-starter.01", "KM1", 300, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 18, coilVoltageV: 24 }),
+    component("km1", "iec.motor-starter.01", "KM1", 300, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 17, coilVoltageV: 24 }),
     component("km2", "iec.motor-starter.01", "KM2", 700, 380, { powerLayout: "vertical", energized: false, nominalVoltageV: 400, ratedCurrentA: 18, coilVoltageV: 24 }),
-    component("f1", "overload.thermal", "F1", 300, 500, { powerLayout: "vertical", tripped: false, settingA: 15.2 }),
+    component("f1", "overload.thermal", "F1", 300, 500, { powerLayout: "vertical", tripped: false, settingA: 14.3 }),
     component("f2", "overload.thermal", "F2", 700, 500, { powerLayout: "vertical", tripped: false, settingA: 15.2 }),
-    component("m1", "iec.induction-motor.01", "M1", 300, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 15.2, ratedPowerKw: 7.5, nominalSpeedRpm: 1440 }),
-    component("m2", "iec.induction-motor.01", "M2", 700, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 15.2, ratedPowerKw: 7.5, nominalSpeedRpm: 1440 }),
+    component("m1", "iec.induction-motor.01", "M1", 300, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470 }),
+    component("m2", "iec.induction-motor.01", "M2", 700, 660, { powerLayout: "vertical", energized: true, nominalVoltageV: 400, ratedCurrentA: 14.3, ratedPowerKw: 7.5, nominalSpeedRpm: 1470 }),
     component("start", "logic.no-contact", "S1", 100, 140, { input: false }),
     component("stop", "logic.no-contact", "S0", 100, 300, { input: false }),
     component("plc", "iec.plc-digital-io.01", "PLC1", 100, 460, { program: "LDP I0; OR Q0; ANDN I1; OUT Q0" }),
@@ -57,8 +57,8 @@ export function createTwoMotorSequence(): CircuitDocument {
 
 export function createTwoMotorTemplate(): ProjectTemplate {
   const step = (name: string, durationSeconds: number, changes: CircuitSequenceStep["changes"], m1: boolean, m2: boolean): CircuitSequenceStep => ({ name, durationSeconds, changes, expectations: [
-    { reference: "M1", label: "Nominal motor point", exact: m1 ? "1440 rpm / 7.5 kW" : "STANDBY" },
-    { reference: "M2", label: "Nominal motor point", exact: m2 ? "1440 rpm / 7.5 kW" : "STANDBY" },
+    { reference: "M1", label: "Nominal motor point", exact: m1 ? "1470 rpm / 7.5 kW" : "STANDBY" },
+    { reference: "M2", label: "Nominal motor point", exact: m2 ? "1470 rpm / 7.5 kW" : "STANDBY" },
   ] });
   const operatingSequence = [
     step("Fresh START starts M1", .1, [{ reference: "S1", properties: { input: true } }], true, false),
