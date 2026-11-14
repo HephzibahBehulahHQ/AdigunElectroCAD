@@ -1237,6 +1237,49 @@ export function App() {
     setNotice(`${copy.reference} duplicated from ${selectedComponent.reference}. No wires were copied; connect the terminals you choose.`);
   };
 
+  const zoomSchematicAroundCenter = (nextZoom: number) => {
+    const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
+    if (!viewport) { setSchematicZoom(nextZoom); return; }
+    const centerX = (viewport.scrollLeft + viewport.clientWidth / 2) / schematicZoom;
+    const centerY = (viewport.scrollTop + viewport.clientHeight / 2) / schematicZoom;
+    setSchematicZoom(nextZoom);
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = centerX * nextZoom - viewport.clientWidth / 2;
+      viewport.scrollTop = centerY * nextZoom - viewport.clientHeight / 2;
+    });
+  };
+
+  const fitSchematicContent = () => {
+    const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
+    const svg = viewport?.querySelector<SVGSVGElement>("svg.schematic");
+    if (!viewport || !svg) return;
+    const items = Array.from(svg.querySelectorAll<SVGGraphicsElement>(".schematic-component, .wire, [data-graphic-id], [data-annotation-id]"));
+    const boxes = items.flatMap((item) => {
+      try {
+        const box = item.getBBox();
+        return box.width || box.height ? [box] : [];
+      } catch { return []; }
+    });
+    const bounds = boxes.length
+      ? boxes.reduce((result, box) => ({
+          left: Math.min(result.left, box.x),
+          top: Math.min(result.top, box.y),
+          right: Math.max(result.right, box.x + box.width),
+          bottom: Math.max(result.bottom, box.y + box.height),
+        }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity })
+      : { left: 0, top: 0, right: 1100, bottom: 780 };
+    const width = Math.max(1, bounds.right - bounds.left);
+    const height = Math.max(1, bounds.bottom - bounds.top);
+    const nextZoom = Math.max(.25, Math.min(2, (viewport.clientWidth - 48) / width, (viewport.clientHeight - 48) / height));
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    setSchematicZoom(nextZoom);
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = centerX * nextZoom - viewport.clientWidth / 2;
+      viewport.scrollTop = centerY * nextZoom - viewport.clientHeight / 2;
+    });
+  };
+
   const rotateSelectedComponent = () => {
     if (!selectedComponent || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
     const nextRotation: ComponentInstance["rotation"] = selectedComponent.rotation === 270 ? 0 : (selectedComponent.rotation + 90) as 90 | 180 | 270;
@@ -1317,10 +1360,10 @@ export function App() {
           </>}
         </div></div>
         <div className="tool-group" aria-label="Canvas view"><span className="tool-group-label">View</span><div className="tool-group-actions">
-          <button onClick={() => setSchematicZoom((value) => Math.max(.25, Math.round((value - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
+          <button onClick={() => zoomSchematicAroundCenter(Math.max(.25, Math.round((schematicZoom - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
           <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
-          <button onClick={() => setSchematicZoom((value) => Math.min(2, Math.round((value + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
-          <button onClick={() => { const viewport = window.document.querySelector(".drawing-area .schematic-wrap"); if (viewport) { setSchematicZoom(Math.max(.25, Math.min(2, (viewport.clientWidth - 16) / 1100, (viewport.clientHeight - 16) / 780))); viewport.scrollTo(0, 0); } }} aria-label="Fit schematic sheet">Fit</button>
+          <button onClick={() => zoomSchematicAroundCenter(Math.min(2, Math.round((schematicZoom + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
+          <button onClick={fitSchematicContent} aria-label="Fit drawing content in canvas">Fit</button>
           <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
         </div></div>
         <div className="tool-group tool-group-assistant" aria-label="Design assistant"><span className="tool-group-label">Assistant</span><div className="tool-group-actions">
