@@ -485,3 +485,16 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
   expect(starterSvg).toContain("three main poles, one NO auxiliary and one NC auxiliary");
   expect(starterSvg).toContain('data-state="idle"');
 });
+
+it("renders the sourced Siemens DOL motor with all four connectable power terminals", () => {
+  const definition = catalogById.get("iec.induction-motor.01")!;
+  const document = { id: "motor-sheet", name: "Motor", description: "", revision: 0, wires: [], components: [
+    { id: "m1", definitionId: definition.id, reference: "M1", x: 420, y: 300, rotation: 0 as const, properties: definition.propertiesSchema },
+  ] };
+  const anchors = terminalAnchors(document);
+  expect(anchors.filter((item) => item.endpoint.componentId === "m1").map((item) => item.endpoint.terminalId)).toEqual(["u1", "v1", "w1", "pe"]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: definition.propertiesSchema }));
+  expect(svg).toContain("Siemens SIMOTICS GP 1LE1003-1CB23-4AA4");
+  expect(svg).toContain("400 V delta");
+});
