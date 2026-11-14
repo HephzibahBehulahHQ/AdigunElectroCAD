@@ -102,7 +102,7 @@ function createTemplate(index: number): ProjectTemplate {
   const ordinal = index + 1;
   const variant = String((index % 32) + 1).padStart(2, "0");
   const componentProperties = scenario.properties(ordinal);
-  const components = scenario.definitions.map((definition, componentIndex) => instance(ordinal, componentIndex, `iec.${definition}.${variant}`, scenario.references[componentIndex], componentProperties[componentIndex]));
+  const components = scenario.definitions.map((definition, componentIndex) => instance(ordinal, componentIndex, `iec.${definition}.${definition === "safety-relay" ? "01" : variant}`, scenario.references[componentIndex], componentProperties[componentIndex]));
   const wires = scenario.wires.map(([fromIndex, fromTerminal, toIndex, toTerminal], wireIndex) => wire(ordinal, wireIndex, components[fromIndex].id, fromTerminal, components[toIndex].id, toTerminal));
   const name = `${scenario.name} ${String(ordinal).padStart(3, "0")}`;
   const testSequence = scenario.testSequence(ordinal);
