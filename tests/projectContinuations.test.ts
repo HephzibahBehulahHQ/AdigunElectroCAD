@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation } from "../src/projects/projectContinuations";
+import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
@@ -120,10 +120,30 @@ it("extends a continuation to later sheets while preserving the original source 
   expect(net).toContainEqual({ sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } });
 });
 
-it("rejects extending a continuation to an earlier or already-used sheet", () => {
+it("rejects extending a continuation onto a sheet already in its path", () => {
   const { project, source, breaker, continuation } = linkedProject();
   expect(extendProjectContinuation(project, continuation.id,
     { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } }).ok).toBe(false);
   expect(extendProjectContinuation(project, continuation.id,
     { sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } }).ok).toBe(false);
+});
+
+
+it("extends a continuation onto an unused sheet even when tabs were reordered before it", () => {
+  const { project, supply, breaker, continuation } = linkedProject();
+  const extended = addFreeSchematicSheet(project);
+  const newSheet = extended.sheets.at(-1)!;
+  const thirdBreaker = { ...breaker, id: "third-breaker", reference: "Q3", properties: { ...breaker.properties } };
+  newSheet.document.components.push(thirdBreaker);
+  const reordered = [...extended.sheets];
+  const [moved] = reordered.splice(2, 1);
+  reordered.splice(0, 0, moved);
+  const reorderedProject = { ...extended, sheets: reordered };
+  const result = extendProjectContinuation(reorderedProject, continuation.id,
+    { sheetId: newSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } }, "D.7");
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(result.continuation.points[0]).toMatchObject({ sheetId: project.sheets[0].id, endpoint: { componentId: supply.id, terminalId: "l1" } });
+  expect(result.continuation.points.at(-1)).toMatchObject({ sheetId: newSheet.id, role: "destination" });
+  expect(validateProjectContinuations(result.project)).toEqual([]);
 });

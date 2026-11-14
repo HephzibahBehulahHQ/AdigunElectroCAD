@@ -147,7 +147,7 @@ export interface ProjectContinuationPoint {
 
 /**
  * An ordered project net. The first point is its original source and remains
- * recorded on every later sheet so page-N references can trace back to origin.
+ * fixed when sheets are reordered, so page references can still trace to origin.
  */
 export interface ProjectContinuation {
   id: string;

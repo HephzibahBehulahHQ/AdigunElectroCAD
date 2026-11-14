@@ -2,10 +2,10 @@ import { catalogById } from "../catalog/dolCatalog";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
 import { canConnectTerminals } from "../electrical/topology";
 
-/** Validate page order, real local terminals, and the retained source of every cross-sheet net. */
+/** Validate sheet membership, real local terminals, and the retained source of every cross-sheet net. */
 export function validateProjectContinuations(project: ElectricalProject): string[] {
   const issues: string[] = [];
-  const sheetOrder = new Map(project.sheets.map((sheet, index) => [sheet.id, index]));
+  const sheetIds = new Set(project.sheets.map((sheet) => sheet.id));
   const seenIds = new Set<string>();
 
   for (const continuation of project.continuations ?? []) {
@@ -16,7 +16,6 @@ export function validateProjectContinuations(project: ElectricalProject): string
     const points = continuation.points;
     if (points.length < 2) { issues.push(`Continuation ${continuation.label} must reach at least two sheets.`); continue; }
     const seenSheets = new Set<string>();
-    let previousOrder = -1;
     let expectedKind: string | undefined;
 
     points.forEach((point, index) => {
@@ -25,11 +24,8 @@ export function validateProjectContinuations(project: ElectricalProject): string
       if (!/^[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*$/.test(point.gridReference)) issues.push(`Continuation ${continuation.label} has an invalid grid reference: ${point.gridReference}.`);
       if (seenSheets.has(point.sheetId)) issues.push(`Continuation ${continuation.label} has more than one point on sheet ${point.sheetId}.`);
       seenSheets.add(point.sheetId);
-      const order = sheetOrder.get(point.sheetId);
-      if (order === undefined) { issues.push(`Continuation ${continuation.label} references unknown sheet ${point.sheetId}.`); return; }
-      if (order <= previousOrder) issues.push(`Continuation ${continuation.label} points must follow project sheet order.`);
-      previousOrder = order;
-      const sheet = project.sheets[order];
+      if (!sheetIds.has(point.sheetId)) { issues.push(`Continuation ${continuation.label} references unknown sheet ${point.sheetId}.`); return; }
+      const sheet = project.sheets.find((item) => item.id === point.sheetId)!;
       const component = sheet.document.components.find((item) => item.id === point.endpoint.componentId);
       const definition = component && catalogById.get(component.definitionId);
       const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === point.endpoint.terminalId);
@@ -177,7 +173,7 @@ export function createProjectContinuation(
 
 
 
-/** Add a later-sheet terminal to an existing net while retaining its original source point. */
+/** Add a terminal on another sheet to an existing net while retaining its original source point. */
 export function extendProjectContinuation(
   project: ElectricalProject,
   continuationId: string,
@@ -186,17 +182,13 @@ export function extendProjectContinuation(
 ): CreateProjectContinuationResult {
   const existing = project.continuations?.find((item) => item.id === continuationId);
   if (!existing) return { ok: false, reason: "Select an existing project continuation first." };
-  const sheetOrder = new Map(project.sheets.map((sheet, index) => [sheet.id, index]));
-  const nextOrder = sheetOrder.get(nextPoint.sheetId);
   const lastPoint = existing.points.at(-1);
-  const lastOrder = lastPoint ? sheetOrder.get(lastPoint.sheetId) : undefined;
-  if (!lastPoint || nextOrder === undefined || lastOrder === undefined) return { ok: false, reason: "The continuation and selected terminal must belong to the current project." };
+  const destinationSheet = project.sheets.find((sheet) => sheet.id === nextPoint.sheetId);
+  if (!lastPoint || !destinationSheet) return { ok: false, reason: "The continuation and selected terminal must belong to the current project." };
   if (existing.points.some((point) => point.sheetId === nextPoint.sheetId)) return { ok: false, reason: "This continuation already has a point on that sheet." };
-  if (nextOrder <= lastOrder) return { ok: false, reason: "Continue the net on a sheet after its current last point." };
   const source = existing.points[0];
   if (!source) return { ok: false, reason: "The selected continuation has no source terminal." };
-  const sourceSheet = project.sheets[sheetOrder.get(source.sheetId)!];
-  const destinationSheet = project.sheets[nextOrder];
+  const sourceSheet = project.sheets.find((sheet) => sheet.id === source.sheetId)!;
   const resolve = (sheet: CircuitSheet, endpoint: TerminalEndpoint) => {
     const component = sheet.document.components.find((item) => item.id === endpoint.componentId);
     const definition = component && catalogById.get(component.definitionId);
