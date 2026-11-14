@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 5138)
+Total output lines: 312
+
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { parseProjectJson } from "../src/projects/projectSerialization";
@@ -44,7 +47,7 @@ describe("project JSON import validation", () => {
       label: "L1",
       conductorColor: "#dc2626",
       points: [
-        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1" } },
+        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1-out" } },
         { sheetId: input.sheets[1].id, gridReference: "2.1", role: "continuation", endpoint: { componentId: continuationBreaker.id, terminalId: "l1-in" } },
         { sheetId: input.sheets[2].id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationBreaker.id, terminalId: "l1-in" } },
       ],
@@ -60,7 +63,7 @@ describe("project JSON import validation", () => {
     const imported = parseProjectJson(JSON.stringify(original));
 
     expect(imported.name).toBe(original.name);
-    expect(imported.sheets[0].document.wires).toHaveLength(20);
+    expect(imported.sheets[0].document.wires).toHaveLength(22);
   });
 
   it("round-trips parent-linked branch metadata and rejects incomplete branch data", () => {
@@ -159,16 +162,7 @@ describe("project JSON import validation", () => {
 
   it("rejects malformed component drafting colors", () => {
     const input = freeSheetWithComponent();
-    input.sheets[1].document.components[0].draftingColor = "blue";
-    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("Component drafting color");
-  });
-
-  it("persists optional wire drafting colors and accepts older projects without them", () => {
-    const input = createStarterProject();
-    input.sheets[0].document.wires[0].draftingColor = "#7b3fa1";
-    expect(parseProjectJson(JSON.stringify(input)).sheets[0].document.wires[0].draftingColor).toBe("#7b3fa1");
-    delete input.sheets[0].document.wires[0].draftingColor;
-    expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
+    input.sheets[1].document.components[0].draftingColor…138 tokens truncated…).not.toThrow();
   });
 
   it("rejects malformed wire drafting colors", () => {
@@ -308,4 +302,5 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component reference");
   });
 });
+
 

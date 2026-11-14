@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 7518)
+Total output lines: 364
+
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
 import { validateProjectContinuations } from "./projectContinuations";
@@ -63,7 +66,8 @@ function parseSheet(value: unknown, index: number): CircuitSheet {
   const kind = sheet.kind;
   if (kind !== "reference-dol" && kind !== "free-schematic") throw new Error(`Sheet ${index + 1} has an unsupported type.`);
   const document = parseDocument(sheet.document, index);
-  if ((kind === "reference-dol") !== (document.id === "reference-dol-motor-starter")) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
+  const isDolReference = document.id === "reference-dol-motor-starter" || document.id === "siemens-dol-motor-starter";
+  if ((kind === "reference-dol") !== isDolReference) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
   if (kind === "reference-dol" && (document.graphics?.length ?? 0) > 0) throw new Error(`Sheet ${index + 1} user-drawn graphics are supported on free schematic sheets only.`);
   return { id: textValue(sheet.id, `sheet ${index + 1} id`, 96), name: textValue(sheet.name, `sheet ${index + 1} name`, 80), kind, document };
 }
@@ -122,105 +126,7 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number):
     if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
   }
   const color = textValue(graphic.color, "graphic color", 7);
-  if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Graphic color must be a six-digit hex color.");
-  if ((kind === "line" || kind === "polyline") && graphic.fillColor != null) throw new Error("Only rectangles, ellipses and polygons support a fill color.");
-  const fillColor = graphic.fillColor === undefined ? undefined : graphic.fillColor === null ? null : textValue(graphic.fillColor, "graphic fill color", 7);
-  if (typeof fillColor === "string" && !/^#[0-9a-f]{6}$/i.test(fillColor)) throw new Error("Graphic fill color must be a six-digit hex color.");
-  const strokeWidth = finiteNumber(graphic.strokeWidth, "graphic stroke width");
-  if (strokeWidth < 1 || strokeWidth > 12) throw new Error("Graphic stroke width must be between 1 and 12.");
-  return { id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind, x1, y1, x2, y2, ...(points ? { points } : {}), color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
-}
-
-function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: number): SchematicAnnotation {
-  const annotation = object(value, `Sheet ${sheetIndex + 1} annotation ${annotationIndex + 1} is invalid.`);
-  const x = finiteNumber(annotation.x, "annotation x");
-  const y = finiteNumber(annotation.y, "annotation y");
-  if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Annotation position must be inside the schematic sheet.");
-  const color = textValue(annotation.color, "annotation color", 7);
-  if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Annotation color must be a six-digit hex color.");
-  const fontSize = annotation.fontSize === undefined ? undefined : finiteNumber(annotation.fontSize, "annotation text size");
-  if (fontSize !== undefined && (fontSize < 8 || fontSize > 48)) throw new Error("Annotation text size must be between 8 and 48.");
-  const rotation = annotation.rotation === undefined ? undefined : finiteNumber(annotation.rotation, "annotation rotation");
-  if (rotation !== undefined && (rotation < 0 || rotation >= 360)) throw new Error("Annotation rotation must be between 0 and 359 degrees.");
-  const textAnchor = annotation.textAnchor === undefined ? undefined : textValue(annotation.textAnchor, "annotation text alignment", 6);
-  if (textAnchor !== undefined && !["start", "middle", "end"].includes(textAnchor)) throw new Error("Annotation text alignment must be left, center, or right.");
-  const fontWeight = annotation.fontWeight === undefined ? undefined : finiteNumber(annotation.fontWeight, "annotation text weight");
-  if (fontWeight !== undefined && ![400, 600, 700].includes(fontWeight)) throw new Error("Annotation text weight must be 400, 600, or 700.");
-  const lineSpacing = annotation.lineSpacing === undefined ? undefined : finiteNumber(annotation.lineSpacing, "annotation line spacing");
-  if (lineSpacing !== undefined && (lineSpacing < 1 || lineSpacing > 3)) throw new Error("Annotation line spacing must be between 1 and 3.");
-  const fontStyle = annotation.fontStyle === undefined ? undefined : textValue(annotation.fontStyle, "annotation font style", 6);
-  if (fontStyle !== undefined && fontStyle !== "normal" && fontStyle !== "italic") throw new Error("Annotation font style must be normal or italic.");
-  const backgroundColor = annotation.backgroundColor === undefined ? undefined : textValue(annotation.backgroundColor, "annotation background color", 7);
-  if (backgroundColor !== undefined && !/^#[0-9a-f]{6}$/i.test(backgroundColor)) throw new Error("Annotation background color must be a six-digit hex color.");
-  const text = textValue(annotation.text, "annotation text", 500);
-  const lines = text.split(/\r?\n/);
-  if (lines.length > 8 || lines.some((line) => line.length > 160)) throw new Error("Annotation text must have at most 8 lines, with no line longer than 160 characters.");
-  return { id: textValue(annotation.id, "annotation id", 120), text, x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }), ...(lineSpacing === undefined ? {} : { lineSpacing }), ...(fontStyle === undefined ? {} : { fontStyle: fontStyle as SchematicAnnotation["fontStyle"] }), ...(backgroundColor === undefined ? {} : { backgroundColor }) };
-}
-
-function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
-  const component = object(value, `Sheet ${sheetIndex + 1} component ${componentIndex + 1} is invalid.`);
-  const definitionId = textValue(component.definitionId, "component definition", 120);
-  if (!catalogById.has(definitionId)) throw new Error(`Component definition ${definitionId} is not in the installed catalog.`);
-  const rotation = component.rotation;
-  if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) throw new Error("Component rotation is invalid.");
-  const size = component.size === undefined ? undefined : finiteNumber(component.size, "component size");
-  if (size !== undefined && (size < .5 || size > 2)) throw new Error("Component size must be between 0.5 and 2.");
-  const draftingColor = component.draftingColor === undefined ? undefined : textValue(component.draftingColor, "component drafting color", 7);
-  if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
-  const customTerminals = component.customTerminals === undefined ? undefined : customTerminalDefinitions(component.customTerminals, definitionId);
-  const customTerminalOffsets = component.customTerminalOffsets === undefined ? undefined : customTerminalOffsetsValue(component.customTerminalOffsets, definitionId, customTerminals);
-  const customSymbolGraphics = component.customSymbolGraphics === undefined ? undefined : userSymbolGraphics(component.customSymbolGraphics, definitionId);
-  return {
-    id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
-    ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
-    x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
-    ...(customTerminals === undefined ? {} : { customTerminals }),
-    ...(customTerminalOffsets === undefined ? {} : { customTerminalOffsets }),
-    ...(customSymbolGraphics === undefined ? {} : { customSymbolGraphics }),
-    ...(component.terminalLabels === undefined ? {} : { terminalLabels: terminalLabelOverrides(component.terminalLabels, definitionId, customTerminals) }),
-    properties: properties(component.properties),
-      ...(component.customProperties === undefined ? {} : { customProperties: customProperties(component.customProperties) }),
-  };
-}
-
-function parseWire(value: unknown, sheetIndex: number, wireIndex: number): Wire {
-  const wire = object(value, `Sheet ${sheetIndex + 1} wire ${wireIndex + 1} is invalid.`);
-  const points = array(wire.points, "Wire routing points are invalid.").map((point) => {
-    const value = object(point, "Wire routing point is invalid.");
-    return { x: finiteNumber(value.x, "wire point x"), y: finiteNumber(value.y, "wire point y") };
-  });
-  const draftingColor = wire.draftingColor === undefined ? undefined : textValue(wire.draftingColor, "wire drafting color", 7);
-  if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Wire drafting color must be a six-digit hex color.");
-  const branchOfWireId = wire.branchOfWireId === undefined ? undefined : textValue(wire.branchOfWireId, "branch parent wire id", 120);
-  const branchSource = wire.branchSource === undefined ? undefined : wire.branchSource;
-  const branchPosition = wire.branchPosition === undefined ? undefined : finiteNumber(wire.branchPosition, "branch position");
-  const branchFields = [branchOfWireId, branchSource, branchPosition].filter((field) => field !== undefined).length;
-  if (branchFields !== 0 && branchFields !== 3) throw new Error("Wire branch reference is incomplete.");
-  if (branchSource !== undefined && branchSource !== "from" && branchSource !== "to") throw new Error("Wire branch source must be from or to.");
-  if (branchPosition !== undefined && (branchPosition <= 0 || branchPosition >= 1)) throw new Error("Wire branch position must be between 0 and 1.");
-  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), draftingColor, ...(branchOfWireId ? { branchOfWireId, branchSource: branchSource as "from" | "to", branchPosition } : {}) };
-}
-
-function endpoint(value: unknown, label: string): TerminalEndpoint {
-  const endpoint = object(value, `${label} is invalid.`);
-  return { componentId: textValue(endpoint.componentId, `${label} component`, 120), terminalId: textValue(endpoint.terminalId, `${label} terminal`, 80) };
-}
-
-function properties(value: unknown): Record<string, string | number | boolean> {
-  const input = object(value, "Component properties are invalid.");
-  const entries = Object.entries(input);
-  if (entries.length > 40) throw new Error("A component has too many properties.");
-  const result: Record<string, string | number | boolean> = {};
-  for (const [key, item] of entries) {
-    if (key.length > 64 || !["string", "number", "boolean"].includes(typeof item) || (typeof item === "number" && !Number.isFinite(item))) throw new Error("A component property is invalid.");
-    result[key] = item as string | number | boolean;
-  }
-  return result;
-}
-
-function customProperties(value: unknown): Record<string, string> {
-  const input = object(value, "Custom component data is invalid.");
+  if…2518 tokens truncated… input = object(value, "Custom component data is invalid.");
   const entries = Object.entries(input);
   if (entries.length > 20) throw new Error("A component may have at most 20 custom fields.");
   const result: Record<string, string> = {};
@@ -359,4 +265,5 @@ function integer(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) throw new Error(`The ${label} must be a non-negative integer.`);
   return value;
 }
+
 
