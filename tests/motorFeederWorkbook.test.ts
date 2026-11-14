@@ -34,7 +34,7 @@ it("resolves a source phase to all nine real feeder breaker terminals without mi
   const project = createMotorFeederWorkbook();
   const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l1-out" } });
   expect(net).toHaveLength(10);
-  expect(net.every((item) => item.endpoint.terminalId === "l1" || item.endpoint.terminalId === "l1-in")).toBe(true);
+  expect(net.every((item) => item.endpoint.terminalId === "l1-out" || item.endpoint.terminalId === "l1-in")).toBe(true);
   expect(net.filter((item) => item.endpoint.terminalId === "l1-in")).toHaveLength(9);
   const otherPhase = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l2-out" } });
   expect(otherPhase).toHaveLength(10);
