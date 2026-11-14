@@ -14,7 +14,7 @@ it("creates a real cross-sheet continuation and exposes both endpoints in the pr
 
   const result = createProjectContinuation(
     project,
-    { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } },
     { sheetId: destination.id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
     "G.12",
     "C.4",
@@ -30,7 +30,7 @@ it("creates a real cross-sheet continuation and exposes both endpoints in the pr
       { sheetId: destination.id, gridReference: "C.4", role: "destination" },
     ],
   });
-  expect(resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } })).toContainEqual({
+  expect(resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } })).toContainEqual({
     sheetId: destination.id,
     endpoint: { componentId: breaker.id, terminalId: "l1-in" },
   });
@@ -43,7 +43,7 @@ it("rejects same-sheet, missing-terminal, and incompatible-kind continuation att
   destination.document.components.push(control);
   const result = createProjectContinuation(
     project,
-    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } },
+    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1-out" } },
     { sheetId: source.id, endpoint: { componentId: "breaker", terminalId: "l1-in" } },
   );
   expect(result).toMatchObject({ ok: false, reason: "A sheet continuation must connect two different sheets." });
@@ -57,7 +57,7 @@ it("rejects same-sheet, missing-terminal, and incompatible-kind continuation att
 
   const incompatible = createProjectContinuation(
     project,
-    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } },
+    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1-out" } },
     { sheetId: destination.id, endpoint: { componentId: "destination-control", terminalId: "line" } },
   );
   expect(incompatible.ok).toBe(false);
@@ -70,7 +70,7 @@ function linkedProject() {
   const breaker = { ...createDolMotorStarter().components.find((component) => component.id === "breaker")!, id: "destination-breaker", reference: "Q2" };
   destination.document.components.push(breaker);
   const result = createProjectContinuation(project,
-    { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } },
     { sheetId: destination.id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } });
   if (!result.ok) throw new Error(result.reason);
   return { project: result.project, source, destination, supply, breaker, continuation: result.continuation };
@@ -80,7 +80,7 @@ it("edits the continuation label and color without changing its connected net", 
   const { project, source, destination, supply, breaker, continuation } = linkedProject();
   const changed = updateProjectContinuation(project, continuation.id, { label: "PUMP-L1", conductorColor: "#1155cc" });
   expect(changed.continuations?.[0]).toMatchObject({ label: "PUMP-L1", conductorColor: "#1155cc", points: continuation.points });
-  expect(resolveProjectNet(changed, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } })).toContainEqual({
+  expect(resolveProjectNet(changed, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } })).toContainEqual({
     sheetId: destination.id,
     endpoint: { componentId: breaker.id, terminalId: "l1-in" },
   });
@@ -93,7 +93,7 @@ it("removes a continuation without deleting local devices or wires", () => {
   const removed = removeProjectContinuation(project, continuation.id);
   expect(removed.continuations).toEqual([]);
   expect(removed.sheets).toEqual(project.sheets);
-  expect(resolveProjectNet(removed, { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } })).not.toContainEqual(
+  expect(resolveProjectNet(removed, { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1-out" } })).not.toContainEqual(
     expect.objectContaining({ sheetId: "sheet-free-1" }),
   );
 });
@@ -111,11 +111,11 @@ it("extends a continuation to later sheets while preserving the original source 
   expect(result.ok).toBe(true);
   if (!result.ok) return;
   expect(result.continuation.points).toEqual([
-    { sheetId: source.id, gridReference: "A.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1" } },
+    { sheetId: source.id, gridReference: "A.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1-out" } },
     { sheetId: project.sheets[1].id, gridReference: "A.1", role: "continuation", endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
     { sheetId: thirdSheet.id, gridReference: "D.7", role: "destination", endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } },
   ]);
-  const net = resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1" } });
+  const net = resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } });
   expect(net).toContainEqual({ sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } });
   expect(net).toContainEqual({ sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } });
 });
@@ -123,7 +123,7 @@ it("extends a continuation to later sheets while preserving the original source 
 it("rejects extending a continuation onto a sheet already in its path", () => {
   const { project, source, breaker, continuation } = linkedProject();
   expect(extendProjectContinuation(project, continuation.id,
-    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1" } }).ok).toBe(false);
+    { sheetId: source.id, endpoint: { componentId: "supply", terminalId: "l1-out" } }).ok).toBe(false);
   expect(extendProjectContinuation(project, continuation.id,
     { sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } }).ok).toBe(false);
 });
@@ -143,7 +143,8 @@ it("extends a continuation onto an unused sheet even when tabs were reordered be
     { sheetId: newSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } }, "D.7");
   expect(result.ok).toBe(true);
   if (!result.ok) return;
-  expect(result.continuation.points[0]).toMatchObject({ sheetId: project.sheets[0].id, endpoint: { componentId: supply.id, terminalId: "l1" } });
+  expect(result.continuation.points[0]).toMatchObject({ sheetId: project.sheets[0].id, endpoint: { componentId: supply.id, terminalId: "l1-out" } });
   expect(result.continuation.points.at(-1)).toMatchObject({ sheetId: newSheet.id, role: "destination" });
   expect(validateProjectContinuations(result.project)).toEqual([]);
 });
+

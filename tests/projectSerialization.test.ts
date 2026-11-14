@@ -44,7 +44,7 @@ describe("project JSON import validation", () => {
       label: "L1",
       conductorColor: "#dc2626",
       points: [
-        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1" } },
+        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1-out" } },
         { sheetId: input.sheets[1].id, gridReference: "2.1", role: "continuation", endpoint: { componentId: continuationBreaker.id, terminalId: "l1-in" } },
         { sheetId: input.sheets[2].id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationBreaker.id, terminalId: "l1-in" } },
       ],
@@ -60,7 +60,7 @@ describe("project JSON import validation", () => {
     const imported = parseProjectJson(JSON.stringify(original));
 
     expect(imported.name).toBe(original.name);
-    expect(imported.sheets[0].document.wires).toHaveLength(20);
+    expect(imported.sheets[0].document.wires).toHaveLength(22);
   });
 
   it("round-trips parent-linked branch metadata and rejects incomplete branch data", () => {
@@ -308,4 +308,5 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("component reference");
   });
 });
+
 

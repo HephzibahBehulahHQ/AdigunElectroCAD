@@ -1,4 +1,4 @@
-import { createDolMotorStarter } from "./dolMotorStarter";
+import { createSourcedDolMotorStarter } from "./sourcedDolMotorStarter";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, ProjectContinuation, Wire } from "../types/electrical";
 
 const conductorColors = { L1: "#c42626", L2: "#c42626", L3: "#c42626", PE: "#1d8f53" };
@@ -12,12 +12,12 @@ export function createMotorFeederWorkbook(): ElectricalProject {
     name: "Incoming three-phase source",
     description: "400 V / 50 Hz educational source. Source capacity and site-specific upstream protection are not specified.",
     revision: 1,
-    components: [{ id: "distribution-source", definitionId: "supply.three-phase", reference: "X1", x: 160, y: 300, rotation: 0, properties: {} }],
+    components: [{ id: "distribution-source", definitionId: "iec.ac-supply.01", reference: "X1", x: 160, y: 300, rotation: 0, properties: { nominalVoltageV: 400, frequencyHz: 50, outputEnabled: true } }],
     wires: [],
   };
   const sheets = [{ id: "sheet-source", name: "Supply · 9 feeders", kind: "free-schematic" as const, document: sourceDocument }];
   const continuations: ProjectContinuation[] = [];
-  const base = createDolMotorStarter();
+  const base = createSourcedDolMotorStarter();
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheetId = `sheet-motor-${ordinal}`;
@@ -61,7 +61,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
         label: `${conductor} / M${ordinal}`,
         conductorColor: conductorColors[conductor],
         points: [
-          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: conductor.toLowerCase() } },
+          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: `${conductor.toLowerCase()}-out` } },
           { sheetId, gridReference: breakerGridReferences[conductor], role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
         ],
       });

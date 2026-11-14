@@ -9,6 +9,7 @@ import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { createReversingCircuit } from "../src/projects/reversingCircuit";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { createSourcedDolMotorStarter } from "../src/projects/sourcedDolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
 it("renders a user-selected component name beside its editable indication", () => {
@@ -190,9 +191,9 @@ it("renders source, intermediate, and destination continuation references with s
   middle.document.components.push(middleSupply);
   destination.document.components.push(destinationSupply);
   const continuation: ProjectContinuation = { id: "net-l1-main", label: "L1", conductorColor: "#c42626", points: [
-    { sheetId: source.id, gridReference: "1.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1" } },
-    { sheetId: middle.id, gridReference: "2.1", role: "continuation", endpoint: { componentId: middleSupply.id, terminalId: "l1" } },
-    { sheetId: destination.id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationSupply.id, terminalId: "l1" } },
+    { sheetId: source.id, gridReference: "1.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1-out" } },
+    { sheetId: middle.id, gridReference: "2.1", role: "continuation", endpoint: { componentId: middleSupply.id, terminalId: "l1-out" } },
+    { sheetId: destination.id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationSupply.id, terminalId: "l1-out" } },
   ] };
   const render = (sheetId: string) => {
     const sheet = project.sheets.find((item) => item.id === sheetId)!;
@@ -486,6 +487,16 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
   expect(starterSvg).toContain('data-state="idle"');
 });
 
+it("draws and exposes the four terminals of the sourced 24 V control power supply", () => {
+  const definition = catalogById.get("iec.dc-control-supply.01")!;
+  const document = createSourcedDolMotorStarter();
+  const anchors = terminalAnchors(document).filter((item) => item.endpoint.componentId === "control-psu");
+  expect(anchors.map((item) => item.endpoint.terminalId)).toEqual(["line-in", "neutral-in", "plus-out", "zero-out"]);
+  expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 500, y: 300, properties: definition.propertiesSchema }));
+  expect(svg).toContain('aria-label="Siemens SITOP PSU100C 24 V DC power supply"');
+});
+
 it("renders the sourced Siemens DOL motor with all four connectable power terminals", () => {
   const definition = catalogById.get("iec.induction-motor.01")!;
   const document = { id: "motor-sheet", name: "Motor", description: "", revision: 0, wires: [], components: [
@@ -498,3 +509,4 @@ it("renders the sourced Siemens DOL motor with all four connectable power termin
   expect(svg).toContain("Siemens SIMOTICS GP 1LE1003-1CB23-4AA4");
   expect(svg).toContain("400 V delta");
 });
+

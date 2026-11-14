@@ -112,6 +112,7 @@ const models: Record<string, Model> = {
   "cable-armored": (p) => ({ label: "Cable result", value: `${threePhaseVoltageDropV(number(p, "currentA"), number(p, "lengthM"), number(p, "resistanceOhmPerKm")).toFixed(2)} V / ${threePhaseCableLossW(number(p, "currentA"), number(p, "lengthM"), number(p, "resistanceOhmPerKm")).toFixed(1)} W` }),
   "cable-shielded": (p) => ({ label: "Interference factor", value: shieldedCableInterferenceFactor(bool(p, "shieldBonded")).toFixed(2) }),
   "cable-tray": (p) => ({ label: "Tray fill", value: `${cableTrayFillPercent(number(p, "usedAreaMm2"), number(p, "availableAreaMm2")).toFixed(1)}%` }),
+  "catalog-dc-control-supply": (p) => ({ label: "Control DC supply", value: bool(p, "outputEnabled") ? `${number(p, "nominalVoltageV", 24)} V DC / ${number(p, "ratedCurrentA", 4)} A nominal` : "OFF" }),
   "catalog-ac-supply": (p) => ({ label: "Nominal supply", value: bool(p, "outputEnabled") ? `${number(p, "nominalVoltageV")} V / ${number(p, "frequencyHz", 50)} Hz` : "OFF" }),
   "catalog-circuit-breaker": (p) => ({ label: "Breaker path", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${number(p, "poles", 3)}P / ${number(p, "ratedCurrentA")} A` }),
   "catalog-fuse-switch": (p) => ({ label: "Fuse check", value: bool(p, "fuseHealthy") && number(p, "loadCurrentA") <= number(p, "ratedCurrentA") ? `${(number(p, "loadCurrentA") / number(p, "ratedCurrentA", 1) * 100).toFixed(1)}% load` : "TRIPPED / OVERRATING" }),

@@ -63,7 +63,8 @@ function parseSheet(value: unknown, index: number): CircuitSheet {
   const kind = sheet.kind;
   if (kind !== "reference-dol" && kind !== "free-schematic") throw new Error(`Sheet ${index + 1} has an unsupported type.`);
   const document = parseDocument(sheet.document, index);
-  if ((kind === "reference-dol") !== (document.id === "reference-dol-motor-starter")) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
+  const isDolReference = document.id === "reference-dol-motor-starter" || document.id === "siemens-dol-motor-starter";
+  if ((kind === "reference-dol") !== isDolReference) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
   if (kind === "reference-dol" && (document.graphics?.length ?? 0) > 0) throw new Error(`Sheet ${index + 1} user-drawn graphics are supported on free schematic sheets only.`);
   return { id: textValue(sheet.id, `sheet ${index + 1} id`, 96), name: textValue(sheet.name, `sheet ${index + 1} name`, 80), kind, document };
 }
@@ -359,4 +360,5 @@ function integer(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) throw new Error(`The ${label} must be a non-negative integer.`);
   return value;
 }
+
 

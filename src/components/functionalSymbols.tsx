@@ -2,13 +2,14 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || symbolId.startsWith("switch-") || symbolId.startsWith("terminal-") || symbolId.startsWith("actuator-") || symbolId.startsWith("meter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase", "power-supply-01"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || symbolId.startsWith("switch-") || symbolId.startsWith("terminal-") || symbolId.startsWith("actuator-") || symbolId.startsWith("meter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
   const cy = y - 13;
   if (!hasDedicatedFunctionalSymbol(symbolId)) return null;
 
+  if (symbolId === "power-supply-01") return <g className={mark} aria-label="Siemens SITOP PSU100C 24 V DC power supply"><rect x={x - 29} y={cy - 21} width="58" height="42" rx="4" /><path d={`M ${x - 16} ${cy} H ${x + 16} M ${x - 8} ${cy - 8} H ${x + 8} M ${x} ${cy - 14} V ${cy - 2}`} /><text x={x} y={cy + 15} textAnchor="middle" className={text}>DC</text></g>;
   if (symbolId === "control-supply") return <g className={mark} aria-label="Isolated AC control supply"><circle cx={x} cy={cy} r="13" /><path d={`M ${x - 9} ${cy} Q ${x - 4} ${cy - 12} ${x} ${cy} T ${x + 9} ${cy}`} /></g>;
   if (symbolId === "user-indicator-lamp") {
     const color = typeof properties.color === "string" && /^#[0-9a-f]{6}$/i.test(properties.color) ? properties.color : "#64748b";
