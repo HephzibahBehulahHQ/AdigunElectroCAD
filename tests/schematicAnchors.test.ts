@@ -164,6 +164,23 @@ it("renders the source-backed Siemens starter as three power poles, a coil and t
   expect(anchors.find((item) => item.endpoint.terminalId === "aux-22")).toMatchObject({ x: 437, y: 352 });
 });
 
+it("keeps the three-phase source mark inside its symbol and every DOL wire on a real terminal", () => {
+  const sourceSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "supply-ac-01", x: 100, y: 100 }));
+  expect(sourceSvg).toContain('aria-label="Three-phase AC supply"');
+  expect(sourceSvg).toContain('cy="100" r="19"');
+  expect(sourceSvg).toContain('y="114"');
+
+  const document = createSourcedDolMotorStarter();
+  const anchors = terminalAnchors(document);
+  const endpoints = new Set(anchors.map((item) => `${item.endpoint.componentId}.${item.endpoint.terminalId}`));
+  for (const wire of document.wires) for (const endpoint of [wire.from, wire.to]) {
+    expect(endpoints.has(`${endpoint.componentId}.${endpoint.terminalId}`)).toBe(true);
+  }
+  for (const [terminalId, expected] of [["l1-out", [358, 127]], ["l2-out", [390, 127]], ["l3-out", [422, 127]]] as const) {
+    const pin = anchors.find((item) => item.endpoint.componentId === "supply" && item.endpoint.terminalId === terminalId)!;
+    expect([pin.x, pin.y]).toEqual(expected);
+  }
+});
 it("renders three connected zigzag heater poles and shows the tripped interruption", () => {
   const document = createDolMotorStarter();
   expect(terminalAnchors(document).find((item) => item.endpoint.componentId === "overload" && item.endpoint.terminalId === "t1")).toMatchObject({ x: 165, y: 449 });
