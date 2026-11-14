@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicateSchematicGraphic, reorderSchematicGraphic, setSchematicGraphicBounds } from "../src/cad/graphicOps";
+import { canReorderSchematicGraphics, duplicateSchematicGraphic, reorderSchematicGraphic, setSchematicGraphicBounds } from "../src/cad/graphicOps";
 import type { SchematicGraphic } from "../src/types/electrical";
 
 const pathGraphic: SchematicGraphic = {
@@ -54,5 +54,23 @@ describe("drafting graphic stack order", () => {
     expect(reorderSchematicGraphic(graphics, "front", "back").map((graphic) => graphic.id)).toEqual(["front", "r1", "path-1"]);
     expect(reorderSchematicGraphic(graphics, "r1", "back")).toBe(graphics);
     expect(reorderSchematicGraphic(graphics, "missing", "front")).toBe(graphics);
+  });
+});
+
+
+describe("grouped drafting graphic stack order", () => {
+  it("moves a selected composition together while preserving its internal order", () => {
+    const graphics = [rectangle, pathGraphic, { ...rectangle, id: "ellipse" }, { ...rectangle, id: "front" }];
+    const ids = ["r1", "ellipse"];
+    expect(reorderSchematicGraphic(graphics, ids, "forward").map((graphic) => graphic.id)).toEqual(["path-1", "r1", "front", "ellipse"]);
+    expect(reorderSchematicGraphic(graphics, ids, "back").map((graphic) => graphic.id)).toEqual(["r1", "ellipse", "path-1", "front"]);
+    expect(graphics.map((graphic) => graphic.id)).toEqual(["r1", "path-1", "ellipse", "front"]);
+  });
+
+  it("reports available directions for grouped selections and keeps edge actions unchanged", () => {
+    const graphics = [rectangle, pathGraphic, { ...rectangle, id: "front" }];
+    expect(canReorderSchematicGraphics(graphics, ["r1", "path-1"])).toEqual({ back: false, front: true, backward: false, forward: true });
+    expect(canReorderSchematicGraphics(graphics, ["r1", "missing"]).front).toBe(true);
+    expect(reorderSchematicGraphic(graphics, ["r1", "path-1"], "back")).toBe(graphics);
   });
 });
