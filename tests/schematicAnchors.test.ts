@@ -37,6 +37,23 @@ it("shows a user terminal label while preserving the real endpoint identity", ()
   expect(terminalAnchors(document).some((anchor) => anchor.endpoint.componentId === component.id && anchor.endpoint.terminalId === terminalId)).toBe(true);
 });
 
+it("renders modeled proximity sensors with reachable power, signal and common pins", () => {
+  const definition = catalogById.get("iec.proximity-sensor.01")!;
+  const component = { id: "B1", definitionId: definition.id, reference: "B1", x: 300, y: 300, rotation: 0 as const, properties: {} };
+  const document = { id: "sensor-sheet", name: "Sensor wiring", description: "", revision: 1, components: [component], wires: [] };
+  const anchors = terminalAnchors(document);
+  const relative = (terminalId: string) => {
+    const pin = anchors.find((item) => item.endpoint.componentId === component.id && item.endpoint.terminalId === terminalId)!;
+    return [pin.x - component.x, pin.y - component.y];
+  };
+  expect(definition.symbolId).toMatch(/^sensor-\\d+$/);
+  expect(relative("supply")).toEqual([-47, -14]);
+  expect(relative("signal")).toEqual([47, 0]);
+  expect(relative("common")).toEqual([-47, 14]);
+  const symbol = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: component.x, y: component.y }));
+  expect(symbol).toContain("Inductive proximity sensor with +24V, SIG and 0V terminals");
+});
+
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));
