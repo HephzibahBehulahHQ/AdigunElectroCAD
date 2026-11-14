@@ -1,7 +1,7 @@
 import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
-export function powerTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
+export function powerTerminalOffset(modelId: string, terminalId: string, poles = 3): { x: number; y: number } | undefined {
   if (!["catalog-ac-supply", "catalog-circuit-breaker", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
   if (modelId === "three-phase-source-v1") {
     const sourcePhase = /^l([123])$/.exec(terminalId);
@@ -9,7 +9,11 @@ export function powerTerminalOffset(modelId: string, terminalId: string): { x: n
     if (terminalId === "pe") return { x: 47, y: 0 };
   }
   const phase = /^l([123])-(in|out)$/.exec(terminalId);
-  if (phase) return { x: [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
+  if (phase) return { x: modelId === "catalog-circuit-breaker" && poles === 4 ? [-36, -12, 12][Number(phase[1]) - 1] : [-32, 0, 32][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };
+  const neutral = modelId === "catalog-circuit-breaker" && /^n-(in|out)$/.exec(terminalId);
+  if (neutral) return { x: 36, y: terminalId === "n-in" ? -27 : 27 };
+  const auxiliary = modelId === "catalog-motor-starter" ? /^aux-([1-4])([34])$/.exec(terminalId) : null;
+  if (auxiliary) return { x: 47, y: -30 + ((Number(auxiliary[1]) - 1) * 2 + (auxiliary[2] === "4" ? 1 : 0)) * 8 };
   const motor = ["u1", "v1", "w1"].indexOf(terminalId);
   if (motor >= 0) return { x: [-24, 0, 24][motor], y: modelId === "induction-motor-educational-v1" ? -35 : -27 };
   if (modelId === "induction-motor-educational-v1" && terminalId === "pe") return { x: 47, y: 0 };
