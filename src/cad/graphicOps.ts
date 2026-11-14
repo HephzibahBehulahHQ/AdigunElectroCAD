@@ -33,14 +33,36 @@ function chooseOffset(minimum: number, maximum: number, limit: number, offset: n
 
 
 export type GraphicStackOrder = "backward" | "forward" | "back" | "front";
+export type GraphicStackCapabilities = Record<GraphicStackOrder, boolean>;
 
-export function reorderSchematicGraphic(graphics: SchematicGraphic[], id: string, order: GraphicStackOrder): SchematicGraphic[] {
-  const from = graphics.findIndex((graphic) => graphic.id === id);
-  if (from < 0) return graphics;
-  const to = order === "back" ? 0 : order === "front" ? graphics.length - 1 : from + (order === "forward" ? 1 : -1);
-  if (to < 0 || to >= graphics.length || to === from) return graphics;
+export function canReorderSchematicGraphics(graphics: SchematicGraphic[], ids: string | string[]): GraphicStackCapabilities {
+  const selected = new Set(typeof ids === "string" ? [ids] : ids);
+  const flags = graphics.map((graphic) => selected.has(graphic.id));
+  const hasSelection = flags.some(Boolean);
+  return {
+    back: hasSelection && flags.some((flag, index) => flag && flags.slice(0, index).some((previous) => !previous)),
+    front: hasSelection && flags.some((flag, index) => flag && flags.slice(index + 1).some((following) => !following)),
+    backward: flags.some((flag, index) => index > 0 && flag && !flags[index - 1]),
+    forward: flags.some((flag, index) => index < flags.length - 1 && flag && !flags[index + 1]),
+  };
+}
+
+export function reorderSchematicGraphic(graphics: SchematicGraphic[], ids: string | string[], order: GraphicStackOrder): SchematicGraphic[] {
+  const selected = new Set(typeof ids === "string" ? [ids] : ids);
+  const flags = graphics.map((graphic) => selected.has(graphic.id));
+  const capabilities = canReorderSchematicGraphics(graphics, ids);
+  if (!capabilities[order]) return graphics;
+  if (order === "back") return [...graphics.filter((_, index) => flags[index]), ...graphics.filter((_, index) => !flags[index])];
+  if (order === "front") return [...graphics.filter((_, index) => !flags[index]), ...graphics.filter((_, index) => flags[index])];
   const next = [...graphics];
-  const [graphic] = next.splice(from, 1);
-  next.splice(to, 0, graphic);
+  if (order === "forward") {
+    for (let index = next.length - 2; index >= 0; index--) {
+      if (selected.has(next[index].id) && !selected.has(next[index + 1].id)) [next[index], next[index + 1]] = [next[index + 1], next[index]];
+    }
+  } else {
+    for (let index = 1; index < next.length; index++) {
+      if (selected.has(next[index].id) && !selected.has(next[index - 1].id)) [next[index], next[index - 1]] = [next[index - 1], next[index]];
+    }
+  }
   return next;
 }
