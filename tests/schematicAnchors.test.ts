@@ -54,6 +54,16 @@ it("renders modeled proximity sensors with reachable power, signal and common pi
   expect(symbol).toContain("Inductive proximity sensor with +24V, SIG and 0V terminals");
 });
 
+it("keeps connection pins visible on the sheet and larger in wire mode", () => {
+  const document = createReversingCircuit();
+  const render = (wireMode: boolean) => renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(render(false)).toContain('r="5" class="terminal-pin"');
+  expect(render(true)).toContain('r="7" class="terminal-anchor"');
+});
+
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));
