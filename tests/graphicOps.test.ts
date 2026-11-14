@@ -37,3 +37,22 @@ it("keeps path vertex geometry on the vertex editor", () => {
   const path = { ...rectangle, kind: "polyline" as const, points: [{ x: 100, y: 120 }, { x: 300, y: 240 }] };
   expect(setSchematicGraphicBounds(path, { x1: 80, y1: 90, x2: 360, y2: 270 })).toBeNull();
 });
+
+
+describe("drafting graphic stack order", () => {
+  it("raises or lowers one graphic without mutating the project array", () => {
+    const graphics = [rectangle, pathGraphic, { ...rectangle, id: "front" }];
+    const raised = reorderSchematicGraphic(graphics, "r1", "forward");
+    expect(raised.map((graphic) => graphic.id)).toEqual(["path-1", "r1", "front"]);
+    expect(graphics.map((graphic) => graphic.id)).toEqual(["r1", "path-1", "front"]);
+    expect(reorderSchematicGraphic(raised, "r1", "backward").map((graphic) => graphic.id)).toEqual(["r1", "path-1", "front"]);
+  });
+
+  it("sends a graphic to either end and leaves boundary or missing selections unchanged", () => {
+    const graphics = [rectangle, pathGraphic, { ...rectangle, id: "front" }];
+    expect(reorderSchematicGraphic(graphics, "r1", "front").map((graphic) => graphic.id)).toEqual(["path-1", "front", "r1"]);
+    expect(reorderSchematicGraphic(graphics, "front", "back").map((graphic) => graphic.id)).toEqual(["front", "r1", "path-1"]);
+    expect(reorderSchematicGraphic(graphics, "r1", "back")).toBe(graphics);
+    expect(reorderSchematicGraphic(graphics, "missing", "front")).toBe(graphics);
+  });
+});
