@@ -20,8 +20,8 @@ export function createPlcSensorActuatorProject(): ProjectTemplate {
   };
   const operatingSequence = [
     { name: "Clear sensor", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: false } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 OFF · I1 OFF · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
-    { name: "Detect workpiece", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 ON" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 0 mm" }] },
-    { name: "Retain Q0 after sensor clears", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 0 mm" }] },
+    { name: "Detect workpiece", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 ON · I1 OFF · Q0 ON" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED · stroke unset" }] },
+    { name: "Retain Q0 after sensor clears", durationSeconds: 0.1, changes: [{ reference: "B1", properties: { detected: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED · stroke unset" }] },
     { name: "Activate stop input I1", durationSeconds: 0.1, changes: [{ reference: "PLC1", properties: { inputB: true } }], expectations: [{ reference: "PLC1", label: "I/O state", exact: "I0 OFF · I1 ON · Q0 OFF" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     { name: "Release stop without restart", durationSeconds: 0.1, changes: [{ reference: "PLC1", properties: { inputB: false } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
   ];
@@ -30,7 +30,7 @@ export function createPlcSensorActuatorProject(): ProjectTemplate {
     name: document.name,
     category: "PLC & Automation",
     level: "Intermediate",
-    description: "Three wired generic IEC-oriented devices: a 3-wire proximity sensor to PLC I0, PLC COM, then Q0 to a solenoid model. The scanned program seals in on I0 and stops on I1. Supply wiring and actuator stroke are not modeled; ratings are unset.",
+    description: "Three wired generic IEC-oriented devices: a 3-wire proximity sensor to PLC I0, PLC COM, then Q0 to a solenoid model. The scanned program seals in on I0 and stops on I1. Supply wiring is not modeled; ratings and actuator stroke are unset.",
     document,
     testSequence: operatingSequence.map(({ name }) => name),
     expectedOutputs: [

@@ -46,7 +46,7 @@ export function createThreeSheetPlcSensorWorkbook(): ElectricalProject {
   return {
     id: "three-sheet-plc-sensor-solenoid",
     name: "Three-sheet PLC sensor and solenoid control",
-    description: "The existing executable B1 → PLC1 → Y1 circuit is split across sensor, PLC scan and actuator sheets. SENSOR_I0, SENSOR_COM and Q0 retain their source and destination references. Device supply wiring and actuator stroke are not modeled; generic ratings remain unset.",
+    description: "The existing executable B1 → PLC1 → Y1 circuit is split across sensor, PLC scan and actuator sheets. SENSOR_I0, SENSOR_COM and Q0 retain their source and destination references. Device supply wiring is not modeled; generic ratings and actuator stroke remain unset.",
     revision: 1,
     sheets,
     continuations,

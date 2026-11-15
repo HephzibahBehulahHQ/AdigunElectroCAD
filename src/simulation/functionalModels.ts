@@ -128,7 +128,7 @@ const models: Record<string, Model> = {
   "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
   "catalog-variable-frequency-drive": (p) => ({ label: "VFD output", value: bool(p, "enabled") ? `${Math.min(number(p, "commandHz"), number(p, "maximumFrequencyHz")).toFixed(1)} Hz` : "DISABLED" }),
-  "catalog-solenoid-actuator": (p) => ({ label: "Actuator position", value: bool(p, "energized") ? `EXTENDED ${number(p, "strokeMm")} mm` : bool(p, "returnSpring") ? "RETRACTED" : "HOLD" }),
+  "catalog-solenoid-actuator": (p) => ({ label: "Actuator position", value: bool(p, "energized") ? number(p, "strokeMm") > 0 ? `EXTENDED ${number(p, "strokeMm")} mm` : "EXTENDED · stroke unset" : bool(p, "returnSpring") ? "RETRACTED" : "HOLD" }),
   "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyOutput(p) ? "ENABLED · educational reset model" : "INHIBITED" }),
 };
 

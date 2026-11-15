@@ -10,6 +10,7 @@ import { createThreeSheetPlcSensorWorkbook } from "../src/projects/threeSheetPlc
 import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyProjectTemplate } from "../src/projects/templateVerification";
+import { evaluateFunctionalModel } from "../src/simulation/functionalModels";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { createProjectRuntimeDocument, executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
 
@@ -22,6 +23,11 @@ it("adds a fully wired, tested generic IEC sensor/PLC/actuator project to the li
   expect(template.document.components.map((component) => component.definitionId)).toEqual([
     "generic.iec.proximity-sensor", "generic.iec.plc-digital-io", "generic.iec.solenoid-actuator",
   ]);
+});
+
+it("does not display an unset generic actuator stroke as a fabricated zero-mm stroke", () => {
+  expect(evaluateFunctionalModel("catalog-solenoid-actuator", { energized: true, strokeMm: 0 })?.value).toBe("EXTENDED · stroke unset");
+  expect(evaluateFunctionalModel("catalog-solenoid-actuator", { energized: true, strokeMm: 20 })?.value).toBe("EXTENDED 20 mm");
 });
 
 it("offers its three-sheet workbook from the selected project", () => {
@@ -66,10 +72,10 @@ it("runs the project-wide holding and stop sequence across the three sheets", ()
   runtime = setCircuitBooleanInput(runtime, catalogById, "plc-sensor-field::sensor", "detected", true);
   tick();
   expect(plc()).toBe("I0 ON · I1 OFF · Q0 ON");
-  expect(actuator()).toBe("EXTENDED 0 mm");
+  expect(actuator()).toBe("EXTENDED · stroke unset");
   runtime = setCircuitBooleanInput(runtime, catalogById, "plc-sensor-field::sensor", "detected", false);
   tick();
-  expect(actuator()).toBe("EXTENDED 0 mm");
+  expect(actuator()).toBe("EXTENDED · stroke unset");
   runtime = setCircuitBooleanInput(runtime, catalogById, "plc-sensor-scan::plc", "inputB", true);
   tick();
   expect(plc()).toBe("I0 OFF · I1 ON · Q0 OFF");
