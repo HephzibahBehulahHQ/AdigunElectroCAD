@@ -2,8 +2,8 @@ import { createSourcedDolMotorStarter } from "./sourcedDolMotorStarter";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, ProjectContinuation, Wire } from "../types/electrical";
 
 const conductorColors = { L1: "#c42626", L2: "#c42626", L3: "#c42626", PE: "#1d8f53" };
-const sourceGridReferences = { L1: "G15", L2: "K15", L3: "G15" };
-const breakerGridReferences = { L1: "M8", L2: "O8", L3: "Q8" };
+const sourceGridReferences = { L1: "G17", L2: "I17", L3: "K17" };
+const breakerGridReferences = { L1: "S10", L2: "U10", L3: "V10" };
 
 /** Ten purposeful sheets: a three-phase source and nine individually wired motor feeders. */
 export function createMotorFeederWorkbook(): ElectricalProject {
@@ -71,8 +71,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
       label: `PE / M${ordinal}`,
       conductorColor: conductorColors.PE,
       points: [
-        { sheetId: "sheet-source", gridReference: "K15", role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
-        { sheetId, gridReference: "AS27", role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
+        { sheetId: "sheet-source", gridReference: "K16", role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
+        { sheetId, gridReference: "W31", role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
       ],
     });
   }
