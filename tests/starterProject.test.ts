@@ -50,12 +50,12 @@ it("starts with a ten-sheet motor-feeder project linked by source and destinatio
   expect(validateProjectContinuations(project)).toEqual([]);
   for (const sheet of project.sheets) expect(validateCircuit(sheet.document, catalogById).filter((issue) => issue.severity === "error")).toEqual([]);
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
-    for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G15", "M8"], ["L2", "K15", "O8"], ["L3", "G15", "Q8"]] as const) {
+    for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G17", "S10"], ["L2", "I17", "U10"], ["L3", "K17", "V10"]] as const) {
       const continuation = project.continuations!.find((item) => item.id === `feed-m${ordinal}-${conductor.toLowerCase()}`)!;
       expect(continuation.points.map((point) => point.gridReference)).toEqual([sourceGrid, breakerGrid]);
     }
     const pe = project.continuations!.find((item) => item.id === `feed-m${ordinal}-pe`)!;
-    expect(pe.points.map((point) => point.gridReference)).toEqual(["K15", "AS27"]);
+    expect(pe.points.map((point) => point.gridReference)).toEqual(["K16", "W31"]);
     const sheet = project.sheets[ordinal];
     expect(sheet.document.components.map((component) => component.reference)).toEqual(expect.arrayContaining([`Q${ordinal}`, `KM${ordinal}`, `F${ordinal}`, `M${ordinal}`]));
     expect(sheet.document.wires.length).toBeGreaterThanOrEqual(16);
