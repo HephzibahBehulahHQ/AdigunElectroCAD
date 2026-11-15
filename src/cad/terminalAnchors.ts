@@ -1,6 +1,6 @@
 import type { CircuitDocument, TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
-import { componentLabelOffsets, controlTerminalOffset, powerTerminalOffset } from "./componentGeometry";
+import { controlTerminalOffset, powerTerminalOffset } from "./componentGeometry";
 
 export interface TerminalAnchor {
   endpoint: TerminalEndpoint;
