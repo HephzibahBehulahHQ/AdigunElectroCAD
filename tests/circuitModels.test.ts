@@ -58,7 +58,6 @@ describe("placed functional component execution", () => {
     expect(input("nc-load")).toBe(false);
     expect(input("no-load")).toBe(false);
   });
-
   it("routes the overload NC and NO trip contacts only when their common terminals are fed", () => {
     const document = createDolMotorStarter();
     document.components = [
