@@ -275,7 +275,37 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [isRunning, isReferenceSheet, document]);
 
-  useEffect(() => bindProjectExitPrompt(window, () => dirty || botEditsUnsaved), [dirty, botEditsUnsaved]);
+  useEffect(() => bindProjectExitPrompt(window, () => dirty || botEditsUnsaved, () => {
+    const blank = createBlankProject();
+    latestProject.current = blank;
+    setProject(blank);
+    setActiveSheetId(blank.sheets[0].id);
+    setHistory({ undo: [], redo: [] });
+    setSelectedComponentId("");
+    setSelectedComponentIds([]);
+    setSelectedWireId("");
+    setSelectedContinuationId("");
+    setSelectedAnnotationId("");
+    setSelectedGraphicId("");
+    setSelectedGraphicIds([]);
+    setComponentContextMenu(null);
+    setWireMode(false);
+    setWireStart(null);
+    setWireBranchStart(null);
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
+    setReconnectingWireId("");
+    setWireRouteEditId("");
+    setAnnotationMode(false);
+    setGraphicMode(null);
+    setRuntimeDocument(null);
+    setSimulation(initialDolState());
+    setIsRunning(false);
+    setDirty(false);
+    setBotEditsUnsaved(false);
+    setNotice("Blank canvas ready. Saved projects remain available in Projects.");
+  }), [dirty, botEditsUnsaved]);
 
   const recordEdit = (next: ElectricalProject) => {
     setHistory((state) => recordProjectEdit(state, project));
