@@ -14,6 +14,13 @@ function documentWithWires(componentId: string, terminalIds: string[]): CircuitD
   return { id: "test", name: "Test", description: "", components, wires, revision: 1 };
 }
 
+it("offers only the terminal topologies supported by generic profiles", () => {
+  expect(genericTopologyChoices("generic.iec.circuit-breaker", "poles")).toEqual([3, 4]);
+  expect(genericTopologyChoices("generic.iec.interface-relay", "changeoverContacts")).toEqual([1, 2, 3]);
+  expect(genericTopologyChoices("generic.iec.selector-switch", "contactForm")).toEqual(["NO", "NC"]);
+  expect(genericTopologyChoices("generic.iec.plc-digital-io", "channelCount")).toEqual([4]);
+});
+
 it("maps generic relay contact-count edits to matching connectable terminal sets", () => {
   const relay = genericComponentProfiles.find(({ id }) => id === "generic.iec.interface-relay")!;
   const threePole = genericTopologyTerminalsForChange(relay.id, "changeoverContacts", 3);
