@@ -47,3 +47,8 @@ it("continues closing hover-only and other menus after the pointer leaves", () =
   expect(shouldCloseMenuOnPointerLeave(false, true, false)).toBe(false);
 });
 
+
+it("keeps a hover-open menu alive while the pointer is inside its popover", () => {
+  expect(shouldCloseMenuOnPointerLeave(false, true, false)).toBe(false);
+  expect(shouldCloseMenuOnPointerLeave(true, true, false)).toBe(false);
+});
