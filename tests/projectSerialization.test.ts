@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+import { terminalGridReference } from "../src/cad/terminalAnchors";
 
 function freeSheetWithComponent() {
   const project = addFreeSchematicSheet(createStarterProject());
@@ -44,15 +45,36 @@ describe("project JSON import validation", () => {
       label: "L1",
       conductorColor: "#dc2626",
       points: [
-        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source", endpoint: { componentId: source.id, terminalId: "l1-out" } },
-        { sheetId: input.sheets[1].id, gridReference: "2.1", role: "continuation", endpoint: { componentId: continuationBreaker.id, terminalId: "l1-in" } },
-        { sheetId: input.sheets[2].id, gridReference: "3.1", role: "destination", endpoint: { componentId: destinationBreaker.id, terminalId: "l1-in" } },
+        { sheetId: input.sheets[0].id, gridReference: terminalGridReference(input.sheets[0].document, { componentId: source.id, terminalId: "l1-out" }), role: "source", endpoint: { componentId: source.id, terminalId: "l1-out" } },
+        { sheetId: input.sheets[1].id, gridReference: terminalGridReference(input.sheets[1].document, { componentId: continuationBreaker.id, terminalId: "l1-in" }), role: "continuation", endpoint: { componentId: continuationBreaker.id, terminalId: "l1-in" } },
+        { sheetId: input.sheets[2].id, gridReference: terminalGridReference(input.sheets[2].document, { componentId: destinationBreaker.id, terminalId: "l1-in" }), role: "destination", endpoint: { componentId: destinationBreaker.id, terminalId: "l1-in" } },
       ],
     }];
     expect(parseProjectJson(JSON.stringify(input)).continuations).toEqual(input.continuations);
     const malformed = JSON.parse(JSON.stringify(input));
     malformed.continuations[0].points[2].role = "continuation";
     expect(() => parseProjectJson(JSON.stringify(malformed))).toThrow("mark point 3 as destination");
+  });
+
+  it("repairs legacy continuation grid references from their actual terminal anchors", () => {
+    const input = addFreeSchematicSheet(addFreeSchematicSheet(createStarterProject()));
+    const source = input.sheets[0].document.components.find((component) => component.id === "supply")!;
+    const breaker = input.sheets[1].document.components.find((component) => component.id === "breaker")!;
+    const continuation = {
+      id: "legacy-l1",
+      label: "L1",
+      conductorColor: "#c42626",
+      points: [
+        { sheetId: input.sheets[0].id, gridReference: "1.1", role: "source" as const, endpoint: { componentId: source.id, terminalId: "l1-out" } },
+        { sheetId: input.sheets[1].id, gridReference: "2.1", role: "destination" as const, endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
+      ],
+    };
+    input.continuations = [continuation];
+    const loaded = parseProjectJson(JSON.stringify(input));
+    expect(loaded.continuations?.[0].points.map((point) => point.gridReference)).toEqual([
+      terminalGridReference(input.sheets[0].document, continuation.points[0].endpoint),
+      terminalGridReference(input.sheets[1].document, continuation.points[1].endpoint),
+    ]);
   });
 
   it("round-trips a valid starter project", () => {
