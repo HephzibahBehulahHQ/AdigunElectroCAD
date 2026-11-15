@@ -54,7 +54,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       {selected.id === "analog-level-plc-threshold" && onOpenAnalogWorkbook && <button className="wide workbook-open" onClick={onOpenAnalogWorkbook}>Open 4-sheet analog level project</button>}
       {selected.id === "pneumatic-double" && onOpenPneumaticWorkbook && <button className="wide workbook-open" onClick={onOpenPneumaticWorkbook}>Open 4-sheet cylinder control</button>}
       {selected.id === "plc-proximity-solenoid-hold" && onOpenPlcSensorWorkbook && <button className="wide workbook-open" onClick={onOpenPlcSensorWorkbook}>Open 3-sheet PLC sensor control</button>}
-      {selected.id === "vfd-motor-feeder" && onOpenVfdWorkbook && <button className="wide workbook-open" onClick={onOpenVfdWorkbook}>Open 4-sheet VFD feeder</button>
+      {selected.id === "vfd-motor-feeder" && onOpenVfdWorkbook && <button className="wide workbook-open" onClick={onOpenVfdWorkbook}>Open 4-sheet VFD feeder</button>}
     </div>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />
