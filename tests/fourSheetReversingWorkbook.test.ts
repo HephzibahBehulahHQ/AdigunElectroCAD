@@ -9,11 +9,11 @@ import { evaluateWiredControl } from "../src/simulation/wiredControl";
 
 it("builds four complete reversing-starter sheets with real terminal references", () => {
   const project = createFourSheetReversingWorkbook();
-  expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply", "Reversing power", "Control", "Indication"]);
+  expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply", "Reversing power", "Control supply", "Direction stations"]);
   expect(project.continuations.length).toBeGreaterThan(5);
   const componentIds = project.sheets.flatMap((sheet) => sheet.document.components.map((component) => component.id));
-  expect(new Set(componentIds).size).toBe(14);
-  expect(componentIds.sort()).toEqual(["breaker", "contactor", "control", "control-psu", "lamp-h1", "lamp-h2", "lamp-h3", "motor", "overload", "reverse", "reverse-start", "start", "stop", "supply"].sort());
+  expect(new Set(componentIds).size).toBe(11);
+  expect(componentIds.sort()).toEqual(["breaker", "contactor", "control", "control-psu", "motor", "overload", "reverse", "reverse-start", "start", "stop", "supply"].sort());
   const network = createProjectRuntimeDocument(project);
   expect(validateCircuit(network, catalogById)).toEqual([]);
   for (const continuation of project.continuations) {
@@ -36,23 +36,23 @@ it("holds forward/reverse interlocks and swaps motor rotation through cross-shee
   const motor = () => executeProjectCircuitModels(project, catalogById, undefined, runtime)
     .find((run) => run.sheetId === "reverse-power" && run.reference === "M1")?.output.value;
 
-  input("reverse-controls::start", "pressed", true);
-  input("reverse-controls::start", "pressed", false);
+  input("reverse-stations::start", "pressed", true);
+  input("reverse-stations::start", "pressed", false);
   expect(state().get("reverse-power::contactor")?.energized).toBe(true);
   expect(state().get("reverse-power::reverse")?.energized).toBe(false);
   expect(motor()).toBe("1470 rpm / 7.5 kW");
 
-  input("reverse-controls::reverse-start", "pressed", true);
+  input("reverse-stations::reverse-start", "pressed", true);
   expect(state().get("reverse-power::contactor")?.energized).toBe(true);
   expect(state().get("reverse-power::reverse")?.energized).toBe(false);
-  input("reverse-controls::reverse-start", "pressed", false);
+  input("reverse-stations::reverse-start", "pressed", false);
   input("reverse-controls::stop", "pressed", true);
   input("reverse-controls::stop", "pressed", false);
   expect(state().get("reverse-power::contactor")?.energized).toBe(false);
   expect(motor()).toBe("STANDBY");
 
-  input("reverse-controls::reverse-start", "pressed", true);
-  input("reverse-controls::reverse-start", "pressed", false);
+  input("reverse-stations::reverse-start", "pressed", true);
+  input("reverse-stations::reverse-start", "pressed", false);
   expect(state().get("reverse-power::contactor")?.energized).toBe(false);
   expect(state().get("reverse-power::reverse")?.energized).toBe(true);
   expect(motor()).toBe("-1470 rpm / 7.5 kW");
