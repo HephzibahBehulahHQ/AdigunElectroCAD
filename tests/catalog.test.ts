@@ -12,11 +12,12 @@ describe("IEC-oriented component catalog", () => {
     expect(componentLibraryCatalog.map((definition) => definition.id)).toContain("iec.motor-starter.01");
     const motor = genericComponentProfiles.find((definition) => definition.id === "generic.iec.induction-motor")!;
     expect(motor.name).toBe("Generic three-phase motor · 6 leads");
-    expect(motor.propertiesSchema).toMatchObject({ nominalVoltageV: 0, ratedCurrentA: 0, ratedPowerKw: 0, nominalSpeedRpm: 0 });
+    expect(motor.propertiesSchema).toMatchObject({ nominalVoltageV: 0, ratedCurrentA: 0, ratedPowerKw: 0, nominalSpeedRpm: 0, frequencyHz: 0, ratedFrequencyHz: 0, powerFactor: 0, efficiencyPercent: 0, lineVoltageV: 0, resistanceOhm: 0, reactanceOhm: 0, polePairs: 0 });
     expect(motor.terminals.map(({ id }) => id)).toEqual(["u1", "v1", "w1", "u2", "v2", "w2", "pe"]);
     expect(motor.simulationModelId).toBe("six-terminal-windings");
     expect(componentLibraryCatalog).toContain(motor);
     expect(motor.documentation).toContain("not a named manufacturer's device");
+    expect(motor.documentation).toContain("default to 0 (unset)");
     expect(catalogById.get("iec.induction-motor.03")).toBeDefined();
     const unsourcedMotor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.03")!;
     expect(unsourcedMotor.documentation).not.toContain("Source-backed");
