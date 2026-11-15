@@ -5,7 +5,7 @@ import { catalogById } from "../catalog/dolCatalog";
 import { componentsInMarquee, previewComponentMove } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { componentLabelOffsets } from "../cad/componentGeometry";
-import { terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
+import { staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
 import { appendFreehandPoint, freehandPathBounds } from "../cad/freehandPath";
