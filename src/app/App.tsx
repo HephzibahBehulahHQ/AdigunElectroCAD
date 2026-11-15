@@ -1698,14 +1698,13 @@ export function App() {
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
         window.setTimeout(() => {
-          if (!nav.matches(":hover")) {
-            nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
-              if (shouldCloseMenuOnPointerLeave(menu.matches(".projects-menu"), nav.matches(":hover"), projectsMenuPinnedRef.current)) {
-                if (menu.matches(".projects-menu")) closeProjectsMenu();
-                else menu.open = false;
-              }
-            });
-          }
+          nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
+            // Include the absolutely positioned popover in the hover check.
+            if (shouldCloseMenuOnPointerLeave(menu.matches(".projects-menu"), menu.matches(":hover"), projectsMenuPinnedRef.current)) {
+              if (menu.matches(".projects-menu")) closeProjectsMenu();
+              else menu.open = false;
+            }
+          });
         }, 240);
       }} onClickCapture={(event) => {
         const target = event.target as Element;
