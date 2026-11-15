@@ -22,13 +22,14 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
   verification: TemplateVerification;
   onSelect: (id: string) => void;
   onLoad: () => void;
+  onOpenWorkbook: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
@@ -65,6 +66,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <details><summary>Operating sequence</summary><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol></details>
       <p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : verification.failedExpectations.join(" ")}</p>
       <button className="primary wide" onClick={onLoad}>Load into free sheet</button>
+      {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button>}
     </section>
   </section>;
 }

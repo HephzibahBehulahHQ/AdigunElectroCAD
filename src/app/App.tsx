@@ -877,11 +877,31 @@ export function App() {
     setActiveSheetId(firstSheet.id);
     setComponentSelection(firstSheet.document.components[0]?.id ?? "");
     setSelectedWireId("");
+    setSelectedContinuationId("");
+    setSelectedAnnotationId("");
+    setSelectedGraphicId("");
+    setSelectedGraphicIds([]);
+    setAnnotationMode(false);
+    setGraphicMode(null);
+    setWireRouteEditId("");
     setWireMode(false);
     setWireStart(null);
+    setWireBranchStart(null);
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
+    setRuntimeDocument(null);
+    setIsRunning(false);
+    setRightDockView("properties");
     setDirty(true);
     setSimulation(initialDolState());
     setNotice("Nine-motor feeder workbook restored with all ten sheets.");
+  };
+
+  const openFeederWorkbook = () => {
+    if (!window.confirm("Open the 10-sheet motor feeder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
+    restoreDol();
+    closeProjectsMenu();
   };
 
   const undo = () => {
@@ -1613,7 +1633,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
