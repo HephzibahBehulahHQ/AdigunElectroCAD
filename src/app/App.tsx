@@ -46,7 +46,7 @@ import { readLocalProject, writeLocalProject } from "../projects/projectLocalSto
 import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
-import { resolveTopLevelMenu } from "./topLevelMenu";
+import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave } from "./topLevelMenu";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../cad/terminalAnchors";
@@ -120,8 +120,10 @@ export function App() {
   const [consoleView, setConsoleView] = useState<"labs">("labs");
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
   const projectsMenuRef = useRef<HTMLDetailsElement | null>(null);
+  const projectsMenuPinnedRef = useRef(false);
   const [projectsMenuOpen, setProjectsMenuOpen] = useState(false);
-  const closeProjectsMenu = () => { setProjectsMenuOpen(false); if (projectsMenuRef.current) projectsMenuRef.current.open = false; };
+  const setProjectsMenuPinned = (pinned: boolean) => { projectsMenuPinnedRef.current = pinned; };
+  const closeProjectsMenu = () => { setProjectsMenuPinned(false); setProjectsMenuOpen(false); if (projectsMenuRef.current) projectsMenuRef.current.open = false; };
   const [isLabPage, setIsLabPage] = useState(() => window.location.hash.toUpperCase() === "#LAB");
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
@@ -140,7 +142,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const closeMenus = () => { window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; }); setProjectsMenuOpen(false); };
+    const closeMenus = () => { window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; }); closeProjectsMenu(); };
     const onOutsidePress = (event: MouseEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest(".menu-row")) closeMenus();
     };
@@ -1080,6 +1082,7 @@ export function App() {
     setWireStart(null);
     setDirty(true);
     setNotice(`${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
+    closeProjectsMenu();
   };
 
   const exportReport = (section: ReportSection, scope: "sheet" | "project") => {
@@ -1667,29 +1670,33 @@ export function App() {
         }
         event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
           if (menu !== current) {
-            menu.open = false;
-            if (menu.matches(".projects-menu")) setProjectsMenuOpen(false);
+            if (menu.matches(".projects-menu")) closeProjectsMenu();
+            else menu.open = false;
           }
         });
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
         window.setTimeout(() => {
           if (!nav.matches(":hover")) {
-            nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; });
-            setProjectsMenuOpen(false);
+            nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
+              if (shouldCloseMenuOnPointerLeave(menu.matches(".projects-menu"), nav.matches(":hover"), projectsMenuPinnedRef.current)) {
+                if (menu.matches(".projects-menu")) closeProjectsMenu();
+                else menu.open = false;
+              }
+            });
           }
         }, 240);
       }} onClickCapture={(event) => {
         const target = event.target as Element;
         if (target.closest(".projects-menu")) {
-          if (target.closest(".project-menu-close, .project-menu-selection .primary, .workbook-open")) window.setTimeout(closeProjectsMenu, 0);
+          if (target.closest(".project-menu-close")) window.setTimeout(closeProjectsMenu, 0);
           return;
         }
         if (target.closest(".menu-popover button, .menu-popover input")) {
           const nav = event.currentTarget;
           window.setTimeout(() => {
             nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; });
-            setProjectsMenuOpen(false);
+            closeProjectsMenu();
           }, 0);
         }
       }}>
@@ -1702,7 +1709,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); setProjectsMenuOpen(true); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); const nextOpen = !projectsMenuPinnedRef.current; setProjectsMenuPinned(nextOpen); setProjectsMenuOpen(nextOpen); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
@@ -1766,7 +1773,8 @@ export function App() {
 
         <aside className="panel workspace-dock" aria-label="Properties and project library">
           <nav className="workspace-dock-tabs" aria-label="Right panel">
-            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "runtime"} onClick={() => setRightDockView("runtime")}>Runtime</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "properties"} onClick={() => setRightDockView("properties")}>Properties</button>
+            <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "runtime"} onClick={() => setRightDockView("runtime")}>Runtime</button>
             <button type="button" hidden={!rightPanelOpen} aria-pressed={rightDockView === "diagnostics"} onClick={() => setRightDockView("diagnostics")}>Diagnostics</button>
             <button type="button" className="panel-toggle" aria-expanded={rightPanelOpen} aria-label={rightPanelOpen ? "Close right panel" : "Open right panel"} title={rightPanelOpen ? "Close right panel" : "Open right panel"} onClick={() => setRightPanelOpen((open) => !open)}>{rightPanelOpen ? "›" : "‹"}</button>
           </nav>
@@ -1793,7 +1801,8 @@ export function App() {
       </section>
 
       <section className={isLabPage ? "engineering-console lab-route-console" : "engineering-console editor-console"}>
-        <nav className="console-tabs" aria-label="Engineering console">          <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
+        <nav className="console-tabs" aria-label="Engineering console">
+          <button type="button" aria-pressed={consoleView === "labs"} onClick={() => setConsoleView("labs")}>Laboratories</button>
           <button type="button" className="console-collapse" aria-expanded={!consoleCollapsed} onClick={() => setConsoleCollapsed((collapsed) => !collapsed)}>{consoleCollapsed ? "Show console" : "Hide console"}</button>
         </nav>
         <div className="console-view laboratory-view" aria-label="Laboratory controls and results" hidden={!isLabPage}>
