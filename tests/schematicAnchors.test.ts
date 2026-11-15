@@ -2,7 +2,8 @@ import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
-import { Schematic, terminalAnchors } from "../src/components/Schematic";
+import { Schematic } from "../src/components/Schematic";
+import { terminalAnchors, terminalGridReference } from "../src/cad/terminalAnchors";
 import type { ProjectContinuation } from "../src/types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -587,3 +588,21 @@ it("renders the Siemens star/delta motor with seven real winding and earth termi
 });
 
 
+
+
+it("converts the exact canvas terminal anchor into its project grid reference", () => {
+  const document = createStarDeltaCircuit();
+  const toReference = (x: number, y: number) => {
+    let index = Math.max(0, Math.round(x / 20));
+    let column = "";
+    while (index >= 0) {
+      column = String.fromCharCode(65 + index % 26) + column;
+      index = Math.floor(index / 26) - 1;
+    }
+    return `${column}${Math.floor(y / 20) + 1}`;
+  };
+  for (const anchor of terminalAnchors(document)) {
+    expect(terminalGridReference(document, anchor.endpoint)).toBe(toReference(anchor.x, anchor.y));
+  }
+  expect(terminalGridReference(document, { componentId: "missing", terminalId: "missing" })).toBe("A1");
+});

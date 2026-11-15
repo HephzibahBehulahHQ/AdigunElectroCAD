@@ -44,7 +44,8 @@ import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
-import { Schematic, terminalAnchors } from "../components/Schematic";
+import { Schematic } from "../components/Schematic";
+import { terminalAnchors, terminalGridReference } from "../cad/terminalAnchors";
 import { ReversingLab } from "../components/ReversingLab";
 import { StarDeltaLab } from "../components/StarDeltaLab";
 
@@ -66,17 +67,6 @@ const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "o
 
 const isUserSymbolDefinition = (definitionId: string) => definitionId === "user.indicator-lamp" || definitionId === "user.drawn-symbol";
 
-function terminalGridReference(document: CircuitDocument, endpoint: TerminalEndpoint): string {
-  const anchor = terminalAnchors(document).find((item) => item.endpoint.componentId === endpoint.componentId && item.endpoint.terminalId === endpoint.terminalId);
-  if (!anchor) return "A1";
-  let columnIndex = Math.max(0, Math.round(anchor.x / 20));
-  let column = "";
-  while (columnIndex >= 0) {
-    column = String.fromCharCode(65 + columnIndex % 26) + column;
-    columnIndex = Math.floor(columnIndex / 26) - 1;
-  }
-  return `${column}${Math.floor(anchor.y / 20) + 1}`;
-}
 
 export function App() {
   const [project, setProject] = useState<ElectricalProject>(() => createBlankProject());
