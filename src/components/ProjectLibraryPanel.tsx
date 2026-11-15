@@ -22,7 +22,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
