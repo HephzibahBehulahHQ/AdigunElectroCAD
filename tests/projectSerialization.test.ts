@@ -59,7 +59,9 @@ describe("project JSON import validation", () => {
   it("repairs legacy continuation grid references from their actual terminal anchors", () => {
     const input = addFreeSchematicSheet(addFreeSchematicSheet(createStarterProject()));
     const source = input.sheets[0].document.components.find((component) => component.id === "supply")!;
-    const breaker = input.sheets[1].document.components.find((component) => component.id === "breaker")!;
+    const sourceBreaker = input.sheets[0].document.components.find((component) => component.id === "breaker")!;
+    const breaker = { ...sourceBreaker, id: "legacy-breaker", reference: "Q2", properties: { ...sourceBreaker.properties } };
+    input.sheets[1].document.components.push(breaker);
     const continuation = {
       id: "legacy-l1",
       label: "L1",
