@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu } from "../src/app/topLevelMenu";
+import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu, shouldPinProjectsMenuOnInteraction } from "../src/app/topLevelMenu";
 
 type MockNode = { tagName: string; parentElement: MockNode | null };
 const node = (tagName: string, parentElement: MockNode | null = null): MockNode => ({ tagName, parentElement });
@@ -51,4 +51,10 @@ it("continues closing hover-only and other menus after the pointer leaves", () =
 it("keeps a hover-open menu alive while the pointer is inside its popover", () => {
   expect(shouldCloseMenuOnPointerLeave(false, true, false)).toBe(false);
   expect(shouldCloseMenuOnPointerLeave(true, true, false)).toBe(false);
+});
+
+it("pins Projects as soon as a user interacts with its contents", () => {
+  expect(shouldPinProjectsMenuOnInteraction(true, false)).toBe(true);
+  expect(shouldPinProjectsMenuOnInteraction(true, true)).toBe(false);
+  expect(shouldPinProjectsMenuOnInteraction(false, false)).toBe(false);
 });
