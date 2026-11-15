@@ -22,6 +22,7 @@ it("splits the sourced star-delta starter into four complete, labeled sheets", (
     for (const point of continuation.points) {
       const sheet = project.sheets.find((item) => item.id === point.sheetId)!;
       expect(terminalGridReference(sheet.document, point.endpoint)).toBe(point.gridReference);
+      expect(point.gridReference).not.toBe("A1");
       expect(sheet.document.components.some((component) => component.id === point.endpoint.componentId)).toBe(true);
     }
   }
