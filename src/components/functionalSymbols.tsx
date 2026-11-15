@@ -19,8 +19,9 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   }
   if (symbolId === "supply-ac" || symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${y - 3} Q ${x - 6} ${y - 12} ${x} ${y - 3} T ${x + 11} ${y - 3}`} /><text x={x} y={y + 14} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor-01" || symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) {
-    const name = componentName ?? (symbolId === "motor-01" ? "Siemens SIMOTICS GP 1LE1003-1CB23-4AA4" : "Three-phase induction motor");
-    return <g className={mark} aria-label={`${name}, three-phase induction motor`}><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
+    const identifiedMotor = "Siemens SIMOTICS GP 1LE1003-1CB23-4AA4, 7.5 kW, 400 V delta, 14.3 A, 4-pole induction motor";
+    const name = componentName?.startsWith("Generic ") ? `${componentName}, three-phase induction motor` : componentName?.startsWith("Siemens SIMOTICS") ? identifiedMotor : componentName ?? (symbolId === "motor-01" ? identifiedMotor : "Three-phase induction motor");
+    return <g className={mark} aria-label={name}><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
   }
   if (symbolId === "meter" || symbolId.startsWith("meter-")) {
     const kind = typeof properties.measurementKind === "string" ? properties.measurementKind : "Voltage";
