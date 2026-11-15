@@ -22,7 +22,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook, onOpenPlcSensorWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
@@ -36,6 +36,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   onOpenTwoMotorWorkbook: () => void;
   onOpenAnalogWorkbook?: () => void;
   onOpenPneumaticWorkbook?: () => void;
+  onOpenPlcSensorWorkbook?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
@@ -51,6 +52,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <button className="primary wide" onClick={onLoad}>Load into Free Sheet</button>
       {selected.id === "analog-level-plc-threshold" && onOpenAnalogWorkbook && <button className="wide workbook-open" onClick={onOpenAnalogWorkbook}>Open 4-sheet analog level project</button>}
       {selected.id === "pneumatic-double" && onOpenPneumaticWorkbook && <button className="wide workbook-open" onClick={onOpenPneumaticWorkbook}>Open 4-sheet cylinder control</button>}
+      {selected.id === "plc-proximity-solenoid-hold" && onOpenPlcSensorWorkbook && <button className="wide workbook-open" onClick={onOpenPlcSensorWorkbook}>Open 3-sheet PLC sensor control</button>}
     </div>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />
