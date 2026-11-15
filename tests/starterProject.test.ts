@@ -42,8 +42,8 @@ it("keeps every DOL reference component on a valid catalog terminal and removes 
 
 it("starts with a ten-sheet motor-feeder project linked by source and destination terminals", () => {
   const project = createMotorStarterWorkbook();
-  expect(project.sheets[0].document.components[0].definitionId).toBe("generic.iec.ac-supply");
-  expect(catalogById.get("generic.iec.ac-supply")?.propertiesSchema.nominalVoltageV).toBe(0);
+  expect(project.sheets[0].document.components[0].definitionId).toBe("iec.ac-supply.01");
+  expect(catalogById.get("iec.ac-supply.01")?.terminals.map((terminal) => terminal.id)).toEqual(["l1-out", "l2-out", "l3-out", "pe"]);
   expect(project.sheets).toHaveLength(10);
   expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply · 9 feeders", ...Array.from({ length: 9 }, (_, index) => `M${index + 1} · DOL feeder`)]);
   expect(project.continuations).toHaveLength(36);
@@ -90,4 +90,5 @@ it("can save and reload the maximum sheet count and rejects another addition wit
   expect(() => addFreeSchematicSheet(project)).toThrow("at most");
   expect(JSON.stringify(project)).toBe(before);
 });
+
 

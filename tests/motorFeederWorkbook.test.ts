@@ -10,7 +10,9 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
   expect(project.sheets).toHaveLength(10);
   expect(project.continuations).toHaveLength(36);
   expect(validateProjectContinuations(project)).toEqual([]);
-  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["generic.iec.ac-supply"]);
+  expect(project.sheets[0].document.components.map((component) => component.definitionId)).toEqual(["iec.ac-supply.01"]);
+  expect(catalogById.get("iec.ac-supply.01")?.terminals.map((terminal) => terminal.id)).toEqual(["l1-out", "l2-out", "l3-out", "pe"]);
+  expect(project.sheets.flatMap((sheet) => sheet.document.components).some((component) => component.definitionId.startsWith("generic."))).toBe(false);
 
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     const sheet = project.sheets[ordinal];
@@ -59,4 +61,5 @@ it("simulates source continuations across sheets and keeps motor results scoped 
   expect(motor?.output.value).toContain("rpm");
   expect(otherMotor?.output.value).toBe("STANDBY");
 });
+
 
