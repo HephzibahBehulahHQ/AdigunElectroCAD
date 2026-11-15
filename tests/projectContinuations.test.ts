@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { terminalGridReference } from "../src/cad/terminalAnchors";
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
@@ -16,8 +17,6 @@ it("creates a real cross-sheet continuation and exposes both endpoints in the pr
     project,
     { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } },
     { sheetId: destination.id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
-    "G.12",
-    "C.4",
   );
 
   expect(result.ok).toBe(true);
@@ -26,8 +25,8 @@ it("creates a real cross-sheet continuation and exposes both endpoints in the pr
     label: "L1",
     conductorColor: "#c42626",
     points: [
-      { sheetId: source.id, gridReference: "G.12", role: "source" },
-      { sheetId: destination.id, gridReference: "C.4", role: "destination" },
+      { sheetId: source.id, gridReference: terminalGridReference(source.document, { componentId: supply.id, terminalId: "l1-out" }), role: "source" },
+      { sheetId: destination.id, gridReference: terminalGridReference(destination.document, { componentId: breaker.id, terminalId: "l1-in" }), role: "destination" },
     ],
   });
   expect(resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } })).toContainEqual({
@@ -106,14 +105,14 @@ it("extends a continuation to later sheets while preserving the original source 
   const thirdBreaker = { ...breaker, id: "third-breaker", reference: "Q3", properties: { ...breaker.properties } };
   thirdSheet.document.components.push(thirdBreaker);
   const result = extendProjectContinuation(extended, continuation.id,
-    { sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } }, "D.7");
+    { sheetId: thirdSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } });
 
   expect(result.ok).toBe(true);
   if (!result.ok) return;
   expect(result.continuation.points).toEqual([
-    { sheetId: source.id, gridReference: "A.1", role: "source", endpoint: { componentId: supply.id, terminalId: "l1-out" } },
-    { sheetId: project.sheets[1].id, gridReference: "A.1", role: "continuation", endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
-    { sheetId: thirdSheet.id, gridReference: "D.7", role: "destination", endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } },
+    { sheetId: source.id, gridReference: terminalGridReference(source.document, { componentId: supply.id, terminalId: "l1-out" }), role: "source", endpoint: { componentId: supply.id, terminalId: "l1-out" } },
+    { sheetId: project.sheets[1].id, gridReference: terminalGridReference(project.sheets[1].document, { componentId: breaker.id, terminalId: "l1-in" }), role: "continuation", endpoint: { componentId: breaker.id, terminalId: "l1-in" } },
+    { sheetId: thirdSheet.id, gridReference: terminalGridReference(thirdSheet.document, { componentId: thirdBreaker.id, terminalId: "l1-in" }), role: "destination", endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } },
   ]);
   const net = resolveProjectNet(result.project, { sheetId: source.id, endpoint: { componentId: supply.id, terminalId: "l1-out" } });
   expect(net).toContainEqual({ sheetId: project.sheets[1].id, endpoint: { componentId: breaker.id, terminalId: "l1-in" } });
@@ -140,7 +139,7 @@ it("extends a continuation onto an unused sheet even when tabs were reordered be
   reordered.splice(0, 0, moved);
   const reorderedProject = { ...extended, sheets: reordered };
   const result = extendProjectContinuation(reorderedProject, continuation.id,
-    { sheetId: newSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } }, "D.7");
+    { sheetId: newSheet.id, endpoint: { componentId: thirdBreaker.id, terminalId: "l1-in" } });
   expect(result.ok).toBe(true);
   if (!result.ok) return;
   expect(result.continuation.points[0]).toMatchObject({ sheetId: project.sheets[0].id, endpoint: { componentId: supply.id, terminalId: "l1-out" } });

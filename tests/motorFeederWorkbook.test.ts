@@ -5,6 +5,7 @@ import { createMotorStarterWorkbook } from "../src/projects/starterProject";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { validateCircuit } from "../src/electrical/topology";
 import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
+import { terminalGridReference } from "../src/cad/terminalAnchors";
 
 it("builds a ten-sheet motor-feeder project with real wired branches and terminal-level phase/PE continuations", () => {
   const project = createMotorFeederWorkbook();
@@ -54,6 +55,19 @@ it("resolves each source conductor to only its nine matching feeder terminals", 
     expect(destinations).toHaveLength(9);
     expect(destinations.map((item) => item.endpoint.terminalId)).toEqual(Array(9).fill(destinationTerminalId));
     expect(new Set(destinations.map((item) => item.sheetId)).size).toBe(9);
+  }
+});
+
+it("uses terminal-derived grid references and distinct phase colors across all 36 continuations", () => {
+  const project = createMotorFeederWorkbook();
+  const colors = new Map([["L1", "#c42626"], ["L2", "#d2a000"], ["L3", "#356ac3"], ["PE", "#1d8f53"]]);
+  for (const continuation of project.continuations ?? []) {
+    const conductor = continuation.label.startsWith("L1") ? "L1" : continuation.label.startsWith("L2") ? "L2" : continuation.label.startsWith("L3") ? "L3" : "PE";
+    expect(continuation.conductorColor).toBe(colors.get(conductor));
+    for (const point of continuation.points) {
+      const sheet = project.sheets.find((item) => item.id === point.sheetId)!;
+      expect(point.gridReference).toBe(terminalGridReference(sheet.document, point.endpoint));
+    }
   }
 });
 
