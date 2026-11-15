@@ -181,6 +181,7 @@ export function hasFunctionalModel(modelId: string) { return ["contactor-dol-v1"
 export function evaluateFunctionalSignal(modelId: string, properties: Properties, terminalId?: string): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
+  if (modelId === "catalog-selector-switch" && ["14", "22"].includes(terminalId ?? "")) return signal("boolean", bool(properties, "closed") && bool(properties, "inputSignal"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
   if (modelId === "thermal-overload-dol-v1") return signal("boolean", terminalId === "aux-98" ? bool(properties, "tripped") : !bool(properties, "tripped"));
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", terminalId === "42" ? !safetyOutput(properties) : safetyOutput(properties));

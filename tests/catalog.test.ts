@@ -108,9 +108,11 @@ describe("IEC-oriented component catalog", () => {
     const nc = modeledCatalog.find((definition) => definition.id === "iec.selector-switch.02")!;
     expect(no.propertiesSchema.contactForm).toBe("NO");
     expect(no.propertiesSchema.closed).toBe(false);
+    expect(no.propertiesSchema.positions).toBe(2);
     expect(no.terminals.map((terminal) => terminal.id)).toEqual(["13", "14"]);
     expect(nc.propertiesSchema.contactForm).toBe("NC");
     expect(nc.propertiesSchema.closed).toBe(true);
+    expect(nc.propertiesSchema.positions).toBe(2);
     expect(nc.terminals.map((terminal) => terminal.id)).toEqual(["21", "22"]);
   });
 

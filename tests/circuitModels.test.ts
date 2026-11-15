@@ -6,6 +6,26 @@ import { advanceCircuitClock } from "../src/simulation/circuitClock";
 import { templateFixtures } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("conducts wired signals through selector contacts only while the contact is closed", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "source", definitionId: "logic.no-contact", reference: "S0", x: 100, y: 100, rotation: 0, properties: { input: true } },
+      { id: "selector", definitionId: "iec.selector-switch.01", reference: "S1", x: 300, y: 100, rotation: 0, properties: { closed: false, contactForm: "NO", positions: 2, inputSignal: false } },
+      { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 500, y: 100, rotation: 0, properties: { input: false } },
+    ];
+    document.wires = [
+      { id: "selector-in", from: { componentId: "source", terminalId: "out" }, to: { componentId: "selector", terminalId: "13" }, points: [], netName: "CONTROL" },
+      { id: "selector-out", from: { componentId: "selector", terminalId: "14" }, to: { componentId: "coil", terminalId: "in" }, points: [], netName: "CONTROL" },
+    ];
+    const coilInput = () => executeCircuitModels(document, catalogById).find((run) => run.componentId === "coil")!.evaluatedProperties.input;
+    expect(coilInput()).toBe(false);
+    document.components[1].properties.closed = true;
+    expect(coilInput()).toBe(true);
+    document.components[1].properties.closed = false;
+    expect(coilInput()).toBe(false);
+  });
+
+
   it("uses the wired coil command before tracing motor power", () => {
     const document = structuredClone(templateFixtures[0].document);
     document.components.push({ id: "coil-command", definitionId: "logic.no-contact", reference: "S2", x: 100, y: 600, rotation: 0, properties: { input: false } });
