@@ -34,6 +34,28 @@ describe("placed functional component execution", () => {
     }
   });
 
+  it("routes powered control through the motor starter NO and NC auxiliary contacts", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "source", definitionId: "logic.no-contact", reference: "S0", x: 100, y: 100, rotation: 0, properties: { input: true } },
+      { id: "starter", definitionId: "iec.motor-starter.01", reference: "KM1", x: 300, y: 100, rotation: 0, properties: { energized: false } },
+      { id: "no-load", definitionId: "logic.output-coil", reference: "Q1", x: 500, y: 100, rotation: 0, properties: { input: false } },
+      { id: "nc-load", definitionId: "logic.output-coil", reference: "Q2", x: 500, y: 300, rotation: 0, properties: { input: false } },
+    ];
+    document.wires = [
+      { id: "feed-no", from: { componentId: "source", terminalId: "out" }, to: { componentId: "starter", terminalId: "aux-13" }, points: [], netName: "NO-FEED" },
+      { id: "feed-nc", from: { componentId: "source", terminalId: "out" }, to: { componentId: "starter", terminalId: "aux-21" }, points: [], netName: "NC-FEED" },
+      { id: "no-output", from: { componentId: "starter", terminalId: "aux-14" }, to: { componentId: "no-load", terminalId: "in" }, points: [], netName: "NO-OUTPUT" },
+      { id: "nc-output", from: { componentId: "starter", terminalId: "aux-22" }, to: { componentId: "nc-load", terminalId: "in" }, points: [], netName: "NC-OUTPUT" },
+    ];
+    const loadInput = (id: string) => executeCircuitModels(document, catalogById).find((run) => run.componentId === id)!.evaluatedProperties.input;
+    expect(loadInput("no-load")).toBe(false);
+    expect(loadInput("nc-load")).toBe(true);
+    document.components[1].properties.energized = true;
+    expect(loadInput("no-load")).toBe(true);
+    expect(loadInput("nc-load")).toBe(false);
+  });
+
   it("conducts wired signals through selector contacts only while the contact is closed", () => {
     const document = createDolMotorStarter();
     document.components = [
