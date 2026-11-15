@@ -6,16 +6,15 @@ import { createWiredReversingCircuit } from "./wiredReversingCircuit";
 const pageSpecs = [
   { id: "reverse-supply", name: "Supply", title: "Three-phase supply and breaker", components: ["supply", "breaker"] },
   { id: "reverse-power", name: "Reversing power", title: "Forward/reverse contactors and motor", components: ["contactor", "reverse", "overload", "motor"] },
-  { id: "reverse-controls", name: "Control", title: "24 V supply, STOP and direction stations", components: ["control", "control-psu", "stop", "start", "reverse-start"] },
-  { id: "reverse-indication", name: "Indication", title: "Direction indicator lamps", components: ["lamp-h1", "lamp-h2", "lamp-h3"] },
+  { id: "reverse-controls", name: "Control supply", title: "24 V control source and STOP", components: ["control", "control-psu", "stop"] },
+  { id: "reverse-stations", name: "Direction stations", title: "Forward and reverse START stations", components: ["start", "reverse-start"] },
 ] as const;
 
 const positions: Record<string, { x: number; y: number }> = {
   supply: { x: 180, y: 220 }, breaker: { x: 520, y: 220 },
   contactor: { x: 200, y: 260 }, reverse: { x: 520, y: 260 }, overload: { x: 360, y: 470 }, motor: { x: 360, y: 680 },
   control: { x: 180, y: 180 }, "control-psu": { x: 500, y: 180 },
-  stop: { x: 150, y: 430 }, start: { x: 420, y: 430 }, "reverse-start": { x: 700, y: 430 },
-  "lamp-h1": { x: 180, y: 320 }, "lamp-h2": { x: 440, y: 320 }, "lamp-h3": { x: 700, y: 320 },
+  stop: { x: 260, y: 430 }, start: { x: 240, y: 320 }, "reverse-start": { x: 600, y: 320 },
 };
 
 const phaseColor = "#c42626";
