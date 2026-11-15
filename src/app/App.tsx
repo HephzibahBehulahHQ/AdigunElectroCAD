@@ -50,7 +50,7 @@ import { readLocalProject, writeLocalProject } from "../projects/projectLocalSto
 import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
-import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu } from "./topLevelMenu";
+import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu, shouldPinProjectsMenuOnInteraction } from "./topLevelMenu";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../cad/terminalAnchors";
@@ -1713,6 +1713,12 @@ export function App() {
             }
           });
         }, 240);
+      }} onPointerDownCapture={(event) => {
+        const target = event.target as Element;
+        if (shouldPinProjectsMenuOnInteraction(Boolean(target.closest(".projects-menu")), Boolean(target.closest(".projects-menu > summary, .project-menu-close")))) {
+          setProjectsMenuPinned(true);
+          setProjectsMenuOpen(true);
+        }
       }} onClickCapture={(event) => {
         const target = event.target as Element;
         if (target.closest(".projects-menu")) {
