@@ -26,6 +26,7 @@ export function createReversingCircuit(): CircuitDocument {
     connect("forward", `${phases[index]}-out`, "motor", ["u1", "v1", "w1"][index]);
     connect("reverse", `${phases[index]}-out`, "motor", ["w1", "v1", "u1"][index]);
   }
+  connect("breaker", "aux-closed", "overload-control", "aux-95");
   for (const direction of ["forward", "reverse"]) {
     connect(`${direction}-command`, "out", `${direction}-permit`, "in-a");
     connect("overload-control", "aux-96", `${direction}-permit`, "in-b");
