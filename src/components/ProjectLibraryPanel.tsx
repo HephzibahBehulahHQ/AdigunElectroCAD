@@ -44,7 +44,10 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   const currentPage = Math.min(page, pages - 1);
   const visible = filtered.slice(currentPage * 5, currentPage * 5 + 5);
   return <section className="dock-content project-library-panel" aria-label="Project library" hidden={!active}>
-    <div className="panel-title"><strong>Project Library</strong><span>{templates.length} entries</span></div>
+    <div className="project-menu-selection">
+      <div className="project-menu-selection-copy"><span>Selected project</span><strong title={selected.name}>{selected.name}</strong><small className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "Verified and ready" : "Verification needs review"}</small></div>
+      <button className="primary wide" onClick={onLoad}>Load into Free Sheet</button>
+    </div>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />
       <div className="project-filters">
@@ -52,7 +55,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
         <select aria-label="Project category" value={category} onChange={(event) => { setCategory(event.target.value); setPage(0); }}><option value="">All categories</option>{[...new Set(templates.map((template) => template.category))].map((value) => <option key={value}>{value}</option>)}</select>
       </div>
     </div>
-    <div className="project-card-list">
+    <div className="project-card-list" aria-label="Matching projects">
       {!visible.length && <p className="catalog-empty">No projects match these filters.</p>}
       {visible.map((template) => <button className={template.id === selected.id ? "project-card selected" : "project-card"} key={template.id} onClick={() => onSelect(template.id)} aria-pressed={template.id === selected.id}>
         <ProjectPreview template={template} />
@@ -66,14 +69,11 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <small>{filtered.length ? currentPage * 5 + 1 : 0}–{Math.min((currentPage + 1) * 5, filtered.length)} of {filtered.length}</small>
     </nav>
     <section className="template-library">
-      <strong>{selected.name}</strong><p>{selected.description}</p>
-      <details><summary>Operating sequence</summary><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol></details>
-      <p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : verification.failedExpectations.join(" ")}</p>
-      <button className="primary wide" onClick={onLoad}>Load into free sheet</button>
-      {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <><button className="wide workbook-open" onClick={onOpenFourSheetWorkbook}>Open 4-sheet DOL project</button><button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button></>}
-      {selected.id === "wired-star-delta-control" && <button className="wide workbook-open" onClick={onOpenStarDeltaWorkbook}>Open 4-sheet star–delta project</button>}
-      {selected.id === "wired-reversing-interlocks" && <button className="wide workbook-open" onClick={onOpenReversingWorkbook}>Open 4-sheet reversing project</button>}
-      {selected.id === "two-motor-sequence" && <button className="wide workbook-open" onClick={onOpenTwoMotorWorkbook}>Open 4-sheet two-motor project</button>}
+      <details className="project-information"><summary>Project details and operating sequence</summary><strong>{selected.name}</strong><p>{selected.description}</p><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol><p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : verification.failedExpectations.join(" ")}</p></details>
+      {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenFourSheetWorkbook}>Open 4-sheet DOL project</button><button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button></details>}
+      {selected.id === "wired-star-delta-control" && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenStarDeltaWorkbook}>Open 4-sheet star–delta project</button></details>}
+      {selected.id === "wired-reversing-interlocks" && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenReversingWorkbook}>Open 4-sheet reversing project</button></details>}
+      {selected.id === "two-motor-sequence" && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenTwoMotorWorkbook}>Open 4-sheet two-motor project</button></details>}
     </section>
   </section>;
 }

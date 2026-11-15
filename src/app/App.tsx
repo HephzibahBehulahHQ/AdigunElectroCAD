@@ -119,10 +119,8 @@ export function App() {
   const [consoleView, setConsoleView] = useState<"labs">("labs");
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
   const projectsMenuRef = useRef<HTMLDetailsElement | null>(null);
-  const projectsMenuPinnedRef = useRef(false);
-  const [projectsMenuPinned, setProjectsMenuPinned] = useState(false);
-  const setProjectsPinned = (pinned: boolean) => { projectsMenuPinnedRef.current = pinned; setProjectsMenuPinned(pinned); };
-  const closeProjectsMenu = () => { if (projectsMenuRef.current) projectsMenuRef.current.open = false; setProjectsPinned(false); };
+  const [projectsMenuOpen, setProjectsMenuOpen] = useState(false);
+  const closeProjectsMenu = () => { setProjectsMenuOpen(false); if (projectsMenuRef.current) projectsMenuRef.current.open = false; };
   const [isLabPage, setIsLabPage] = useState(() => window.location.hash.toUpperCase() === "#LAB");
   const [plcInputA, setPlcInputA] = useState(false);
   const [plcInputB, setPlcInputB] = useState(false);
@@ -135,23 +133,13 @@ export function App() {
   const [plcRight, setPlcRight] = useState(40);
 
   useEffect(() => {
-    const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
-      if (projectsMenuPinnedRef.current && !projectsMenuRef.current?.contains(event.target as Node)) closeProjectsMenu();
-    };
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && projectsMenuRef.current?.open) closeProjectsMenu(); };
-    window.document.addEventListener("pointerdown", closeOnOutsidePointer);
-    window.document.addEventListener("keydown", closeOnEscape);
-    return () => { window.document.removeEventListener("pointerdown", closeOnOutsidePointer); window.document.removeEventListener("keydown", closeOnEscape); };
-  }, []);
-
-  useEffect(() => {
     const syncLabRoute = () => setIsLabPage(window.location.hash.toUpperCase() === "#LAB");
     window.addEventListener("hashchange", syncLabRoute);
     return () => window.removeEventListener("hashchange", syncLabRoute);
   }, []);
 
   useEffect(() => {
-    const closeMenus = () => window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; });
+    const closeMenus = () => { window.document.querySelectorAll<HTMLDetailsElement>(".menu-row details[open]").forEach((menu) => { menu.open = false; }); setProjectsMenuOpen(false); };
     const onOutsidePress = (event: MouseEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest(".menu-row")) closeMenus();
     };
@@ -1672,22 +1660,36 @@ export function App() {
 
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
         const current = (event.target as Element).closest<HTMLDetailsElement>("details");
-        if (current && event.pointerType === "mouse") current.open = true;
+        if (current && event.pointerType === "mouse") {
+          current.open = true;
+          if (current.matches(".projects-menu")) setProjectsMenuOpen(true);
+        }
         event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
-          if (menu !== current && !(menu.matches(".projects-menu") && projectsMenuPinnedRef.current)) menu.open = false;
+          if (menu !== current) {
+            menu.open = false;
+            if (menu.matches(".projects-menu")) setProjectsMenuOpen(false);
+          }
         });
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
-        window.setTimeout(() => { if (!nav.matches(":hover")) nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (!projectsMenuPinnedRef.current || !menu.matches(".projects-menu")) menu.open = false; }); }, 140);
+        window.setTimeout(() => {
+          if (!nav.matches(":hover")) {
+            nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; });
+            setProjectsMenuOpen(false);
+          }
+        }, 240);
       }} onClickCapture={(event) => {
         const target = event.target as Element;
         if (target.closest(".projects-menu")) {
-          if (target.closest(".project-menu-close, .project-menu-popover .primary.wide")) window.setTimeout(closeProjectsMenu, 0);
+          if (target.closest(".project-menu-close, .project-menu-selection .primary, .workbook-open")) window.setTimeout(closeProjectsMenu, 0);
           return;
         }
         if (target.closest(".menu-popover button, .menu-popover input")) {
           const nav = event.currentTarget;
-          window.setTimeout(() => nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { if (!projectsMenuPinnedRef.current || !menu.matches(".projects-menu")) menu.open = false; }), 0);
+          window.setTimeout(() => {
+            nav.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => { menu.open = false; });
+            setProjectsMenuOpen(false);
+          }, 0);
         }
       }}>
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
@@ -1699,7 +1701,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); setProjectsMenuOpen(true); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
