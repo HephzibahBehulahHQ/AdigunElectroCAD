@@ -80,9 +80,9 @@ const scenarios: Scenario[] = [
   },
   {
     id: "timed-relay", name: "Timed relay control", category: "Control Circuit",
-    definitions: ["on-delay-timer", "interface-relay", "solenoid-actuator"], references: ["KT1", "K1", "Y1"], wires: [[0, "18", 1, "a1"], [0, "18", 1, "11"], [1, "14", 2, "a1"], [0, "a2", 1, "a2"]],
-    testSequence: (ordinal) => [`Energize KT1 for ${1 + (ordinal % 5)} seconds.`, "Confirm the timed contact closes.", "Confirm K1 energizes Y1."],
-    properties: (ordinal) => profile({ energized: true, elapsedSeconds: 1 + (ordinal % 5), delaySeconds: 1 + (ordinal % 5) }, { energized: true }, { energized: true }),
+    definitions: ["on-delay-timer", "interface-relay", "solenoid-actuator", "logic.no-contact"], references: ["KT1", "K1", "Y1", "S1"], wires: [[0, "18", 1, "a1"], [0, "18", 1, "11"], [1, "14", 2, "a1"], [0, "a2", 1, "a2"], [3, "out", 0, "a1"], [3, "out", 0, "15"]],
+    testSequence: (ordinal) => [`Close S1 to energize KT1 for ${1 + (ordinal % 5)} seconds.`, "Confirm KT1 transfers 15-16 to 15-18 after the delay.", "Confirm K1 energizes Y1."],
+    properties: (ordinal) => profile({ energized: true, elapsedSeconds: 1 + (ordinal % 5), delaySeconds: 1 + (ordinal % 5) }, { energized: true }, { energized: true }, { input: true }),
     expectations: () => [{ reference: "KT1", label: "Timer contact", valueIncludes: "CLOSED" }, { reference: "K1", label: "Relay contacts", valueIncludes: "ENERGIZED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
   },
   {
@@ -115,7 +115,7 @@ function createTemplate(index: number): ProjectTemplate {
   const ordinal = index + 1;
   const variant = String((index % 32) + 1).padStart(2, "0");
   const componentProperties = scenario.properties(ordinal);
-  const components = scenario.definitions.map((definition, componentIndex) => instance(ordinal, componentIndex, `iec.${definition}.${["safety-relay", "motor-starter"].includes(definition) ? "01" : variant}`, scenario.references[componentIndex], componentProperties[componentIndex]));
+  const components = scenario.definitions.map((definition, componentIndex) => instance(ordinal, componentIndex, definition.startsWith("logic.") ? definition : `iec.${definition}.${["safety-relay", "motor-starter"].includes(definition) ? "01" : variant}`, scenario.references[componentIndex], componentProperties[componentIndex]));
   const wires = scenario.wires.map(([fromIndex, fromTerminal, toIndex, toTerminal], wireIndex) => wire(ordinal, wireIndex, components[fromIndex].id, fromTerminal, components[toIndex].id, toTerminal));
   const name = `${scenario.name} ${String(ordinal).padStart(3, "0")}`;
   const testSequence = scenario.testSequence(ordinal);
@@ -147,7 +147,7 @@ function createTemplate(index: number): ProjectTemplate {
     ] : scenario.id === "timed-relay" ? [
       { name: "Before delay", durationSeconds: 1, changes: [{ reference: "KT1", properties: { energized: true, delaySeconds: 2, elapsedSeconds: 0 } }, { reference: "Y1", properties: { returnSpring: true } }], expectations: [{ reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
       { name: "Delay expires", durationSeconds: 1, changes: [{ reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "CLOSED" }, { reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },
-      { name: "Timer de-energized", durationSeconds: 0.1, changes: [{ reference: "KT1", properties: { energized: false } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "0.0 / 2.0 s" }, { reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
+      { name: "Open S1", durationSeconds: 0.1, changes: [{ reference: "S1", properties: { input: false } }], expectations: [{ reference: "KT1", label: "Timer contact", exact: "0.0 / 2.0 s" }, { reference: "K1", label: "Relay contacts", exact: "DE-ENERGIZED" }, { reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
     ] : scenario.id === "safety-output" ? [
       { name: "Reset released", durationSeconds: 0.1, changes: [{ reference: "Y1", properties: { strokeMm: 20 } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "RETRACTED" }] },
       { name: "Accept fresh reset", durationSeconds: 0.1, changes: [{ reference: "KSR1", properties: { reset: true } }], expectations: [{ reference: "Y1", label: "Actuator position", exact: "EXTENDED 20 mm" }] },

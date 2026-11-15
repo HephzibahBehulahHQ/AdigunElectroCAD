@@ -34,6 +34,30 @@ describe("placed functional component execution", () => {
     }
   });
 
+  it("routes an on-delay timer's powered 15 common to NC 16 and NO 18", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "source", definitionId: "logic.no-contact", reference: "S1", x: 100, y: 100, rotation: 0, properties: { input: true } },
+      { id: "timer", definitionId: "iec.on-delay-timer.01", reference: "KT1", x: 300, y: 100, rotation: 0, properties: { energized: false, elapsedSeconds: 0, delaySeconds: 1 } },
+      { id: "nc-load", definitionId: "logic.output-coil", reference: "K1", x: 500, y: 100, rotation: 0, properties: { input: false } },
+      { id: "no-load", definitionId: "logic.output-coil", reference: "K2", x: 500, y: 300, rotation: 0, properties: { input: false } },
+    ];
+    document.wires = [
+      { id: "coil-feed", from: { componentId: "source", terminalId: "out" }, to: { componentId: "timer", terminalId: "a1" }, points: [], netName: "ENABLE" },
+      { id: "contact-common", from: { componentId: "source", terminalId: "out" }, to: { componentId: "timer", terminalId: "15" }, points: [], netName: "CONTACT" },
+      { id: "nc-output", from: { componentId: "timer", terminalId: "16" }, to: { componentId: "nc-load", terminalId: "in" }, points: [], netName: "NC" },
+      { id: "no-output", from: { componentId: "timer", terminalId: "18" }, to: { componentId: "no-load", terminalId: "in" }, points: [], netName: "NO" },
+    ];
+    const input = (id: string) => executeCircuitModels(document, catalogById).find((run) => run.componentId === id)!.evaluatedProperties.input;
+    expect(input("nc-load")).toBe(true);
+    expect(input("no-load")).toBe(false);
+    document.components.find((component) => component.id === "timer")!.properties.elapsedSeconds = 1;
+    expect(input("nc-load")).toBe(false);
+    expect(input("no-load")).toBe(true);
+    document.components.find((component) => component.id === "source")!.properties.input = false;
+    expect(input("nc-load")).toBe(false);
+    expect(input("no-load")).toBe(false);
+  });
   it("routes the overload NC and NO trip contacts only when their common terminals are fed", () => {
     const document = createDolMotorStarter();
     document.components = [
@@ -134,6 +158,7 @@ describe("placed functional component execution", () => {
   it("holds a wired relay and actuator off until the timer expires", () => {
     const document = structuredClone(templateFixtures[3].document);
     const timer = document.components[0];
+    const source = document.components.find((component) => component.reference === "S1")!;
     timer.properties.delaySeconds = 2;
     timer.properties.elapsedSeconds = 1;
     document.components[2].properties.returnSpring = true;
@@ -141,7 +166,7 @@ describe("placed functional component execution", () => {
     expect(actuator()).toBe("RETRACTED");
     timer.properties.elapsedSeconds = 2;
     expect(actuator()).toContain("EXTENDED");
-    timer.properties.energized = false;
+    source.properties.input = false;
     expect(actuator()).toBe("RETRACTED");
   });
   it("propagates sensor inputs and PLC output commands through catalog wires", () => {

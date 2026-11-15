@@ -51,6 +51,7 @@ export function createTwoMotorSequence(): CircuitDocument {
   connect("master", "out", "run", "in-b", [{ x: 570, y: 640 }, { x: 570, y: 580 }, { x: 850, y: 580 }, { x: 850, y: 372 }]);
   connect("run", "out", "km1", "a1", [{ x: 1050, y: 360 }, { x: 1050, y: 460 }, { x: 230, y: 460 }, { x: 230, y: 368 }]);
   connect("run", "out", "timer", "a1", [{ x: 1030, y: 360 }, { x: 1030, y: 300 }, { x: 880, y: 300 }, { x: 880, y: 188 }]);
+  connect("run", "out", "timer", "15", [{ x: 1020, y: 350 }, { x: 860, y: 350 }, { x: 860, y: 188 }]);
   connect("run", "out", "second", "in-b", [{ x: 1040, y: 360 }, { x: 1040, y: 280 }, { x: 680, y: 280 }, { x: 680, y: 212 }]);
   connect("timer", "18", "second", "in-a", [{ x: 1030, y: 200 }, { x: 1030, y: 100 }, { x: 670, y: 100 }, { x: 670, y: 188 }]);
   connect("second", "out", "km2", "a1", [{ x: 820, y: 200 }, { x: 820, y: 310 }, { x: 630, y: 310 }, { x: 630, y: 368 }]);

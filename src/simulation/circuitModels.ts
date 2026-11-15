@@ -37,6 +37,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-motor-starter" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-motor-starter" && ["aux-13", "aux-21"].includes(terminalId)) return { property: terminalId === "aux-13" ? "aux13Input" : "aux21Input", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-on-delay-timer" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
+  if (modelId === "catalog-on-delay-timer" && terminalId === "15") return { property: "timerContactCommon", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-panel-meter" && terminalId === "signal") return { property: "measuredValue", acceptedUnits: numericalUnits };
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
