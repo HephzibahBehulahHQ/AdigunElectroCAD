@@ -370,4 +370,3 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .component-context-menu button:focus-visible { background: #193553; outline: 1px solid #38bdf8; }
 .component-context-menu button:disabled { opacity: .45; cursor: not-allowed; }
 .component-context-menu button.danger { color: #ff9a9a; }
-
