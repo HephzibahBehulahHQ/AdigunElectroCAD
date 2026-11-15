@@ -14,6 +14,7 @@ import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchemati
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
+import { createFourSheetDolWorkbook } from "../projects/fourSheetDolWorkbook";
 import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
@@ -839,8 +840,7 @@ export function App() {
     }
   };
 
-  const restoreDol = () => {
-    const starter = createMotorStarterWorkbook();
+  const loadWorkbookProject = (starter: ElectricalProject, noticeText: string) => {
     recordEdit(starter);
     const firstSheet = starter.sheets[0];
     setActiveSheetId(firstSheet.id);
@@ -864,12 +864,20 @@ export function App() {
     setRightDockView("properties");
     setDirty(true);
     setSimulation(initialDolState());
-    setNotice("Nine-motor feeder workbook restored with all ten sheets.");
+    setNotice(noticeText);
   };
+
+  const restoreDol = () => loadWorkbookProject(createMotorStarterWorkbook(), "Nine-motor feeder workbook restored with all ten sheets.");
 
   const openFeederWorkbook = () => {
     if (!window.confirm("Open the 10-sheet motor feeder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
     restoreDol();
+    closeProjectsMenu();
+  };
+
+  const openFourSheetDolWorkbook = () => {
+    if (!window.confirm("Open the 4-sheet DOL starter example and replace the current project? Save or export the current project first if you need to keep it.")) return;
+    loadWorkbookProject(createFourSheetDolWorkbook(), "Four-sheet sourced DOL starter opened with labeled cross-sheet wires.");
     closeProjectsMenu();
   };
 
@@ -1602,7 +1610,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
