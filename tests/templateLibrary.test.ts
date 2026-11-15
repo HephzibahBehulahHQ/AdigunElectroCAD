@@ -2,25 +2,25 @@ import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { validateCircuit } from "../src/electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet } from "../src/projects/starterProject";
-import { templateLibrary } from "../src/projects/templateLibrary";
+import { templateFixtures, templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 
 describe("project template library", () => {
   it("rejects a dedicated analog project with reversed threshold logic", () => {
-    const template = structuredClone(templateLibrary[499]);
+    const template = structuredClone(templateLibrary.find((item) => item.id === "analog-level-plc-threshold")!);
     expect(template.category).toBe("Analog Instrumentation");
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
     template.document.components.find((component) => component.reference === "PLC1")!.properties.program = "LT AI0 13824; OUT Q0";
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
   });
   it.each(["LD I0; OUT Q0", "LD I0; OR Q0; OUT Q0"])("rejects PLC templates that lose holding or STOP behavior: %s", (program) => {
-    const template = structuredClone(templateLibrary[2]);
+    const template = structuredClone(templateFixtures[2]);
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
     template.document.components[1].properties.program = program;
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
   });
   it("advances real timer runtime in recorded operating steps without changing the design", () => {
-    const template = structuredClone(templateLibrary[3]);
+    const template = structuredClone(templateFixtures[3]);
     const before = JSON.stringify(template.document);
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
     expect(JSON.stringify(template.document)).toBe(before);
@@ -31,7 +31,7 @@ describe("project template library", () => {
     }
   });
   it("fails invalid numeric expectations, unknown changes, and unchecked steps", () => {
-    const document = templateLibrary[0].document;
+    const document = templateFixtures[0].document;
     const expectation = { reference: "M1", label: "Nominal motor point", numeric: 1450 };
     const results = verifyCircuitSequence(document, [
       { name: "NaN target", changes: [], expectations: [{ ...expectation, numeric: NaN }] },
@@ -43,14 +43,14 @@ describe("project template library", () => {
     expect(results.every((result) => !result.passed)).toBe(true);
   });
   it("enforces recorded operating steps for motor-feeder variants", () => {
-    const template = structuredClone(templateLibrary[0]);
+    const template = structuredClone(templateFixtures[0]);
     expect(template.operatingSequence).toHaveLength(4);
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
     template.operatingSequence![1].expectations[0].numeric = 9999;
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
   });
   it("executes a motor switching sequence with exact stopped and numeric running checks", () => {
-    const document = templateLibrary[0].document;
+    const document = templateFixtures[0].document;
     const before = JSON.stringify(document);
     const label = "Nominal motor point";
     const steps = verifyCircuitSequence(document, [
@@ -62,13 +62,13 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(509);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(509);
-    expect(new Set(templateLibrary.map((template) => template.level)).size).toBe(5);
+    expect(templateLibrary).toHaveLength(10);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(10);
+    expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });
 
   it("builds a wireable variable-speed drive feeder through U/V/W and PE", () => {
-    const template = templateLibrary.find((item) => item.name.startsWith("Variable-speed drive feeder"))!;
+    const template = templateFixtures.find((item) => item.name.startsWith("Variable-speed drive feeder"))!;
     const drive = template.document.components.find((component) => component.reference === "U1")!;
     expect(drive.definitionId).toBe("iec.variable-frequency-drive.02");
     expect(validateCircuit(template.document, catalogById)).toEqual([]);
