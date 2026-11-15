@@ -87,10 +87,32 @@ export const genericComponentProfiles: ElectricalComponentDefinition[] = [...fam
   standardsReferences: source.standardsReferences.filter((reference) => reference.startsWith("IEC ")),
 }));
 
+/** Generic three-lead motor profile for VFD/DOL feeders; ratings are deliberately unset. */
+export const genericThreePhaseMotor: ElectricalComponentDefinition = {
+  id: "generic.iec.three-phase-motor",
+  name: "Generic three-phase motor · U1/V1/W1 + PE",
+  category: "Motors",
+  referencePrefix: "M",
+  description: "Generic three-phase induction motor with three line terminals and protective earth. This profile makes no manufacturer or nameplate claim; set verified project values before using calculated operating points.",
+  symbolId: "motor",
+  terminals: [
+    { id: "u1", label: "U1", kind: "power", direction: "input" },
+    { id: "v1", label: "V1", kind: "power", direction: "input" },
+    { id: "w1", label: "W1", kind: "power", direction: "input" },
+    { id: "pe", label: "PE", kind: "protective-earth", direction: "bidirectional" },
+  ],
+  propertiesSchema: { nominalVoltageV: 0, ratedCurrentA: 0, ratedPowerKw: 0, nominalSpeedRpm: 0, frequencyHz: 0, ratedFrequencyHz: 0, energized: false },
+  simulationModelId: "catalog-induction-motor",
+  simulationSupport: "numerical",
+  documentation: "Generic three-lead motor simulation model. Manufacturer identity and all nameplate ratings default to 0 (unset). A configured speed point is an explicit project assumption; slip and load dynamics are not modeled.",
+  standardsReferences: ["IEC 60034-1"],
+};
+
 export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
   ...dolCatalog,
   ...functionalCatalog,
   ...genericComponentProfiles,
+  genericThreePhaseMotor,
   ...modeledCatalog.filter((definition) => sourceBackedCatalogIds.has(definition.id)),
   ...windingCatalog,
   ...userSymbolCatalog,
@@ -98,6 +120,6 @@ export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
 ];
 export const componentLibraryById = new Map(componentLibraryCatalog.map((definition) => [definition.id, definition]));
 /** All current and legacy definitions remain resolvable when loading existing projects. */
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor, ...genericComponentProfiles];
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor, ...genericComponentProfiles, genericThreePhaseMotor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
 
