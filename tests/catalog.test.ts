@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { catalogById, componentCatalog, componentLibraryCatalog, dolCatalog, genericComponentProfiles } from "../src/catalog/dolCatalog";
+import { catalogById, componentCatalog, componentLibraryCatalog, dolCatalog, genericComponentProfiles, genericThreePhaseMotor } from "../src/catalog/dolCatalog";
 import { modeledCatalog } from "../src/catalog/modeledCatalog";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, hasFunctionalModel } from "../src/simulation/functionalModels";
 import { functionalOutputTerminals } from "../src/electrical/signalContracts";
 
 describe("IEC-oriented component catalog", () => {
+  it("provides a distinct generic three-lead motor with unset nameplate ratings", () => {
+    expect(componentLibraryCatalog).toContain(genericThreePhaseMotor);
+    expect(catalogById.get(genericThreePhaseMotor.id)).toBe(genericThreePhaseMotor);
+    expect(genericThreePhaseMotor.terminals.map(({ id }) => id)).toEqual(["u1", "v1", "w1", "pe"]);
+    expect(genericThreePhaseMotor.propertiesSchema).toMatchObject({ nominalVoltageV: 0, ratedCurrentA: 0, ratedPowerKw: 0, nominalSpeedRpm: 0, ratedFrequencyHz: 0 });
+    expect(genericThreePhaseMotor.documentation).toContain("default to 0 (unset)");
+  });
+
   it("offers one clearly generic profile per modeled family and keeps sourced devices distinct", () => {
     expect(componentLibraryCatalog.length).toBeLessThan(200);
     expect(componentLibraryCatalog.map((definition) => definition.id)).not.toContain("iec.induction-motor.03");

@@ -9,6 +9,7 @@ import { createTwoMotorTemplate } from "./twoMotorSequence";
 import { createWiredStarDeltaTemplate } from "./wiredStarDeltaCircuit";
 import { createSourcedDolTemplate } from "./sourcedDolTemplate";
 import { createPlcSensorActuatorProject } from "./plcSensorActuator";
+import { createVfdFeederProject } from "./vfdFeederProject";
 
 export type TemplateLevel = "Beginner" | "Intermediate" | "Advanced" | "Industrial" | "Expert";
 
@@ -110,6 +111,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createThermalWiredReversingTemplate(),
   createWiredStarDeltaTemplate(),
   createSourcedDolTemplate(),
+  createVfdFeederProject(),
 ];
 
 function createTemplate(index: number): ProjectTemplate {
