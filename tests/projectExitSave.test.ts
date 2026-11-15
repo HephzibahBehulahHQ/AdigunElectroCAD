@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { bindProjectExitPrompt } from "../src/projects/projectExitSave";
 
 it("warns before unloading only while the canvas has unsaved work", () => {
@@ -16,11 +16,34 @@ it("warns before unloading only while the canvas has unsaved work", () => {
   release();
 });
 
-it("removes the warning listener when the app releases it", () => {
+it("clears transient workspace when browser history restores a cached page", () => {
   const events = new EventTarget();
-  const release = bindProjectExitPrompt(events, () => true);
+  const reset = vi.fn();
+  const release = bindProjectExitPrompt(events, () => false, reset);
+
+  const ordinaryLoad = new Event("pageshow");
+  Object.defineProperty(ordinaryLoad, "persisted", { value: false });
+  events.dispatchEvent(ordinaryLoad);
+  expect(reset).not.toHaveBeenCalled();
+
+  const restoredLoad = new Event("pageshow");
+  Object.defineProperty(restoredLoad, "persisted", { value: true });
+  events.dispatchEvent(restoredLoad);
+  expect(reset).toHaveBeenCalledOnce();
   release();
+});
+
+it("removes both unload and restore listeners when the app releases them", () => {
+  const events = new EventTarget();
+  const reset = vi.fn();
+  const release = bindProjectExitPrompt(events, () => true, reset);
+  release();
+
   const exit = new Event("beforeunload", { cancelable: true });
   events.dispatchEvent(exit);
+  const restoredLoad = new Event("pageshow");
+  Object.defineProperty(restoredLoad, "persisted", { value: true });
+  events.dispatchEvent(restoredLoad);
   expect(exit.defaultPrevented).toBe(false);
+  expect(reset).not.toHaveBeenCalled();
 });
