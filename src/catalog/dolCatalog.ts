@@ -67,12 +67,15 @@ for (const definition of modeledCatalog) {
   if (!familyId || sourceBackedCatalogIds.has(definition.id) || familyProfileIds.has(familyId)) continue;
   familyProfileIds.set(familyId, definition);
 }
+// The generic induction motor must expose six winding ends for star/delta wiring.
+const sixTerminalMotor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.41");
+if (sixTerminalMotor) familyProfileIds.set("induction-motor", sixTerminalMotor);
 const ratingFields = new Set(["nominalVoltageV", "ratedVoltageV", "ratedCurrentA", "ratedPowerKw", "nominalSpeedRpm", "coilVoltageV", "breakingCapacityKa"]);
 export const genericComponentProfiles: ElectricalComponentDefinition[] = [...familyProfileIds].map(([familyId, source]) => ({
   ...source,
   id: `generic.iec.${familyId}`,
-  name: `Generic ${source.name.split(" · ")[0]}`,
-  description: `Editable ${source.category.toLowerCase()} model. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design.`,
+  name: familyId === "induction-motor" ? "Generic three-phase motor · 6 leads" : `Generic ${source.name.split(" · ")[0]}`,
+  description: familyId === "induction-motor" ? "Editable three-phase motor with U1/V1/W1 and U2/V2/W2 winding ends plus PE for star/delta wiring. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design." : `Editable ${source.category.toLowerCase()} model. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design.`,
   propertiesSchema: Object.fromEntries(Object.entries(source.propertiesSchema).map(([key, value]) => [key, ratingFields.has(key) ? 0 : value])),
   documentation: `Generic IEC-oriented ${source.category.toLowerCase()} simulation abstraction. It is not a named manufacturer's device. Values are editable model assumptions; verify all required electrical ratings and behavior for the intended application.`,
   standardsReferences: source.standardsReferences.filter((reference) => reference.startsWith("IEC ")),
