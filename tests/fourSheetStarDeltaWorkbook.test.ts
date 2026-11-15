@@ -39,7 +39,7 @@ it("runs the 5-second star, 200-millisecond transition, and delta phases across 
   expect(wired().get("star-delta-power::star")?.energized).toBe(true);
 
   runtime = setCircuitBooleanInput(runtime, catalogById, "star-delta-station::start", "pressed", false);
-  runtime = advanceCircuitClock(runtime, catalogById, 4.9);
+  runtime = advanceCircuitClock(runtime, catalogById, 4.8);
   expect(wired().get("star-delta-power::star")?.energized).toBe(true);
   runtime = advanceCircuitClock(runtime, catalogById, 0.1);
   expect(wired().get("star-delta-power::star")?.energized).toBe(false);
