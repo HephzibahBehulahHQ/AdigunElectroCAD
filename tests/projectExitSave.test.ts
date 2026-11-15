@@ -16,6 +16,16 @@ it("warns before unloading only while the canvas has unsaved work", () => {
   release();
 });
 
+it("clears the transient canvas after the browser accepts a page exit", () => {
+  const events = new EventTarget();
+  const reset = vi.fn();
+  const release = bindProjectExitPrompt(events, () => false, reset);
+
+  events.dispatchEvent(new Event("pagehide"));
+  expect(reset).toHaveBeenCalledOnce();
+  release();
+});
+
 it("clears transient workspace when browser history restores a cached page", () => {
   const events = new EventTarget();
   const reset = vi.fn();
@@ -33,7 +43,7 @@ it("clears transient workspace when browser history restores a cached page", () 
   release();
 });
 
-it("removes both unload and restore listeners when the app releases them", () => {
+it("removes unload, exit, and restore listeners when the app releases them", () => {
   const events = new EventTarget();
   const reset = vi.fn();
   const release = bindProjectExitPrompt(events, () => true, reset);
@@ -41,6 +51,7 @@ it("removes both unload and restore listeners when the app releases them", () =>
 
   const exit = new Event("beforeunload", { cancelable: true });
   events.dispatchEvent(exit);
+  events.dispatchEvent(new Event("pagehide"));
   const restoredLoad = new Event("pageshow");
   Object.defineProperty(restoredLoad, "persisted", { value: true });
   events.dispatchEvent(restoredLoad);
