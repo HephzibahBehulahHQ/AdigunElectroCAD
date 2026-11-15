@@ -3,6 +3,21 @@ import { modeledCatalog } from "../catalog/modeledCatalog";
 
 const topologyProperties = new Set(["poles", "changeoverContacts", "contactForm", "channelCount"]);
 
+/** Return the actual catalog topology choices for an editable generic field. */
+export function genericTopologyChoices(definitionId: string, property: string): Array<string | number> | undefined {
+  const familyId = /^generic\.iec\.(.+)$/.exec(definitionId)?.[1];
+  if (!familyId || !topologyProperties.has(property)) return undefined;
+  if (familyId === "plc-digital-io") return property === "channelCount" ? [4] : undefined;
+
+  const values = new Set<string | number>();
+  for (const definition of modeledCatalog) {
+    if (!definition.id.startsWith(`iec.${familyId}.`)) continue;
+    const value = definition.propertiesSchema[property];
+    if (typeof value === "string" || typeof value === "number") values.add(value);
+  }
+  return values.size ? [...values] : undefined;
+}
+
 /**
  * Resolve editable generic topology fields to an existing terminal set.
  * Undefined means the edited field does not change topology; null means the
@@ -13,7 +28,7 @@ export function genericTopologyTerminalsForChange(
   property: string,
   value: string | number | boolean,
 ): TerminalDefinition[] | null | undefined {
-  const familyId = /^generic\\.iec\\.(.+)$/.exec(definitionId)?.[1];
+  const familyId = /^generic\.iec\.(.+)$/.exec(definitionId)?.[1];
   if (!familyId || !topologyProperties.has(property)) return undefined;
 
   // This model implements exactly two inputs and two outputs, plus common.
