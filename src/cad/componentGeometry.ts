@@ -8,6 +8,11 @@ export function powerTerminalOffset(modelId: string, terminalId: string, poles =
     if (sourcePhase) return { x: [-24, 0, 24][Number(sourcePhase[1]) - 1], y: -35 };
     if (terminalId === "pe") return { x: 47, y: 0 };
   }
+  if (modelId === "catalog-ac-supply") {
+    const sourcePhase = /^l([123])-out$/.exec(terminalId);
+    if (sourcePhase) return { x: [-32, 0, 32][Number(sourcePhase[1]) - 1], y: 27 };
+    if (terminalId === "pe") return { x: 47, y: 0 };
+  }
   if (modelId === "catalog-motor-starter") {
     const phase = /^l([123])-(in|out)$/.exec(terminalId);
     if (phase) return { x: [-24, 0, 24][Number(phase[1]) - 1], y: phase[2] === "in" ? -27 : 27 };

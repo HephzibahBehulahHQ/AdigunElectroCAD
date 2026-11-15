@@ -2,14 +2,14 @@ const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
 export function hasDedicatedFunctionalSymbol(symbolId: string) {
-  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload-3p", "supply-3p", "motor-3p", "motor-3phase", "power-supply-01"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || symbolId.startsWith("switch-") || symbolId.startsWith("terminal-") || symbolId.startsWith("actuator-") || symbolId.startsWith("meter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
+  return ["pushbutton-no", "pushbutton-nc", "control-supply", "contactor-3p", "breaker", "breaker-3p", "overload", "overload-3p", "supply-ac", "supply-3p", "motor-3p", "motor-3phase", "power-supply", "power-supply-01", "starter", "relay", "fuse", "transformer", "plc-io", "vfd", "timer", "switch", "terminal", "actuator", "meter", "sensor"].includes(symbolId) || symbolId === "motor" || symbolId.startsWith("supply-ac-") || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-")) || symbolId.startsWith("breaker-") || symbolId.startsWith("starter-") || symbolId.startsWith("relay-") || symbolId.startsWith("fuse-") || symbolId.startsWith("transformer-") || symbolId.startsWith("plc-io-") || symbolId.startsWith("vfd-") || symbolId.startsWith("timer-") || symbolId.startsWith("switch-") || symbolId.startsWith("terminal-") || symbolId.startsWith("actuator-") || symbolId.startsWith("meter-") || /^(logic|sensor|signal|pneumatic|hydraulic|hvac|solar|safety|panel|cable|user)-/.test(symbolId);
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean> }) {
   const cy = y - 13;
   if (!hasDedicatedFunctionalSymbol(symbolId)) return null;
 
-  if (symbolId === "power-supply-01") return <g className={mark} aria-label="Siemens SITOP PSU100C 24 V DC power supply"><rect x={x - 29} y={cy - 21} width="58" height="42" rx="4" /><path d={`M ${x - 16} ${cy} H ${x + 16} M ${x - 8} ${cy - 8} H ${x + 8} M ${x} ${cy - 14} V ${cy - 2}`} /><text x={x} y={cy + 15} textAnchor="middle" className={text}>DC</text></g>;
+  if (symbolId === "power-supply" || symbolId === "power-supply-01") return <g className={mark} aria-label="Siemens SITOP PSU100C 24 V DC power supply"><rect x={x - 29} y={cy - 21} width="58" height="42" rx="4" /><path d={`M ${x - 16} ${cy} H ${x + 16} M ${x - 8} ${cy - 8} H ${x + 8} M ${x} ${cy - 14} V ${cy - 2}`} /><text x={x} y={cy + 15} textAnchor="middle" className={text}>DC</text></g>;
   if (symbolId === "control-supply") return <g className={mark} aria-label="Isolated AC control supply"><circle cx={x} cy={cy} r="13" /><path d={`M ${x - 9} ${cy} Q ${x - 4} ${cy - 12} ${x} ${cy} T ${x + 9} ${cy}`} /></g>;
   if (symbolId === "user-indicator-lamp") {
     const color = typeof properties.color === "string" && /^#[0-9a-f]{6}$/i.test(properties.color) ? properties.color : "#64748b";
@@ -17,10 +17,10 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
     const terminal2 = typeof properties.terminalLabel2 === "string" ? properties.terminalLabel2.slice(0, 8) : "T2";
     return <g className={mark} aria-label="User-defined indicator symbol"><path d={`M ${x - 32} ${cy} H ${x - 12} M ${x + 12} ${cy} H ${x + 32}`} /><circle cx={x} cy={cy} r="12" fill={color} fillOpacity=".32" /><path d={`M ${x - 6} ${cy - 6} L ${x + 6} ${cy + 6} M ${x - 6} ${cy + 6} L ${x + 6} ${cy - 6}`} /><text x={x - 24} y={cy + 24} textAnchor="middle" className={text} textLength="32" lengthAdjust="spacingAndGlyphs">{terminal1}</text><text x={x + 24} y={cy + 24} textAnchor="middle" className={text} textLength="32" lengthAdjust="spacingAndGlyphs">{terminal2}</text></g>;
   }
-  if (symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${y - 3} Q ${x - 6} ${y - 12} ${x} ${y - 3} T ${x + 11} ${y - 3}`} /><text x={x} y={y + 14} textAnchor="middle" className={text}>3~</text></g>;
+  if (symbolId === "supply-ac" || symbolId === "supply-3p" || symbolId.startsWith("supply-ac-")) return <g className={mark} aria-label="Three-phase AC supply"><circle cx={x} cy={y} r="19" /><path d={`M ${x - 11} ${y - 3} Q ${x - 6} ${y - 12} ${x} ${y - 3} T ${x + 11} ${y - 3}`} /><text x={x} y={y + 14} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor-01") return <g className={mark} aria-label="Siemens SIMOTICS GP 1LE1003-1CB23-4AA4, 7.5 kW, 400 V delta, 14.3 A, 4-pole induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
   if (symbolId === "motor" || symbolId === "motor-3p" || symbolId === "motor-3phase" || (symbolId.startsWith("motor-") && !symbolId.startsWith("motor-ac-"))) return <g className={mark} aria-label="Siemens SIMOTICS GP 1LE1003-1CB23-4AA4, 7.5 kW, 400 V delta, 14.3 A, 4-pole induction motor"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 1} textAnchor="middle" className={text}>M</text><text x={x} y={y + 13} textAnchor="middle" className={text}>3~</text></g>;
-  if (symbolId.startsWith("meter-")) {
+  if (symbolId === "meter" || symbolId.startsWith("meter-")) {
     const kind = typeof properties.measurementKind === "string" ? properties.measurementKind : "Voltage";
     const units: Record<string, string> = { Voltage: "V", Current: "A", Power: "W", Frequency: "Hz" };
     const unit = units[kind] ?? "";
@@ -36,12 +36,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <text x={x} y={y + 19} textAnchor="middle" className={text}>{unit}</text>
     </g>;
   }
-  if (/^sensor-\d+$/.test(symbolId)) return <g className={mark} aria-label="Inductive proximity sensor with +24V, SIG and 0V terminals">
+  if (symbolId === "sensor" || /^sensor-\d+$/.test(symbolId)) return <g className={mark} aria-label="Inductive proximity sensor with +24V, SIG and 0V terminals">
     <rect x={x - 24} y={cy - 14} width="38" height="28" rx="3" />
     <path d={`M ${x + 14} ${cy - 9} Q ${x + 24} ${cy} ${x + 14} ${cy + 9} M ${x + 19} ${cy - 14} Q ${x + 34} ${cy} ${x + 19} ${cy + 14}`} />
     <circle cx={x - 13} cy={cy} r="3" />
   </g>;
-  if (symbolId.startsWith("actuator-")) {
+  if (symbolId === "actuator" || symbolId.startsWith("actuator-")) {
     const energized = properties.energized === true;
     const plunger = energized ? x + 24 : x + 10;
     const spring = properties.returnSpring === true;
@@ -50,7 +50,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <path d={`M ${x - 20} ${y - 10} q 16 5 0 10 q -16 5 0 10 M ${x} ${y} H ${plunger} M ${plunger} ${y - 8} V ${y + 8}${spring ? ` M ${x + 27} ${y - 10} l 4 5 l -8 5 l 8 5 l -4 5` : ""}`} />
     </g>;
   }
-  if (symbolId.startsWith("terminal-")) {
+  if (symbolId === "terminal" || symbolId.startsWith("terminal-")) {
     const connected = properties.continuityClosed !== false;
     return <g className={mark} aria-label={`Feed-through terminal block, ${connected ? "connected" : "open"}`} data-state={connected ? "connected" : "open"}>
       <path d={`M ${x - 47} ${y} H ${x - 22} M ${x + 22} ${y} H ${x + 47}`} />
@@ -59,7 +59,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <circle cx={x} cy={y - 7} r="3" />
     </g>;
   }
-  if (symbolId.startsWith("switch-")) {
+  if (symbolId === "switch" || symbolId.startsWith("switch-")) {
     const closed = properties.closed === true;
     const form = properties.contactForm === "NC" ? "normally closed" : "normally open";
     const positions = Math.max(2, Math.min(4, Number(properties.positions) || 2));
@@ -74,7 +74,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       })}
     </g>;
   }
-  if (symbolId.startsWith("timer-")) {
+  if (symbolId === "timer" || symbolId.startsWith("timer-")) {
     const energized = properties.energized === true;
     const timingComplete = energized && Number(properties.elapsedSeconds ?? 0) >= Number(properties.delaySeconds ?? Infinity);
     return <g className={mark} aria-label={`On-delay timer, ${timingComplete ? "timed contact made" : energized ? "timing" : "de-energized"}`} data-state={timingComplete ? "timed" : energized ? "timing" : "idle"}>
@@ -84,24 +84,24 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <path d={`M ${x - 1} ${y - 10} V ${y - 16} M ${x - 1} ${y - 10} L ${x + 5} ${y - 7} M ${x} ${y + 27} V ${y + 3} M ${x + 23} ${y - 12} H ${x + 14} M ${x + 23} ${y + 12} H ${x + 14} M ${x} ${y + 3} L ${x + (timingComplete ? 9 : -9)} ${y + 10}`} />
     </g>;
   }
-  if (symbolId.startsWith("vfd-")) return <g className={mark} aria-label="Variable-frequency drive with three-phase input and U/V/W output">
+  if (symbolId === "vfd" || symbolId.startsWith("vfd-")) return <g className={mark} aria-label="Variable-frequency drive with three-phase input and U/V/W output">
     <rect x={x - 30} y={y - 22} width="60" height="44" rx="2" />
     <path d={`M ${x} ${y - 22} V ${y + 22}`} />
     <text x={x - 15} y={y + 5} textAnchor="middle" className={text}>~</text>
     <text x={x + 15} y={y + 5} textAnchor="middle" className={text}>f</text>
   </g>;
-  if (symbolId.startsWith("plc-io-")) return <g className={mark} aria-label="PLC digital and analog I/O module">
+  if (symbolId === "plc-io" || symbolId.startsWith("plc-io-")) return <g className={mark} aria-label="PLC digital and analog I/O module">
     <rect x={x - 25} y={y - 24} width="50" height="48" rx="2" />
     <path d={`M ${x} ${y - 24} V ${y + 24}`} />
     <text x={x - 12} y={y + 4} textAnchor="middle" className={text}>I</text>
     <text x={x + 12} y={y + 4} textAnchor="middle" className={text}>Q</text>
   </g>;
-  if (symbolId.startsWith("transformer-")) return <g className={mark} aria-label="Transformer with primary and secondary windings">
+  if (symbolId === "transformer" || symbolId.startsWith("transformer-")) return <g className={mark} aria-label="Transformer with primary and secondary windings">
     <path d={`M ${x - 8} ${y - 24} C ${x - 22} ${y - 24} ${x - 22} ${y - 16} ${x - 8} ${y - 16} C ${x - 22} ${y - 16} ${x - 22} ${y - 8} ${x - 8} ${y - 8} C ${x - 22} ${y - 8} ${x - 22} ${y} ${x - 8} ${y} C ${x - 22} ${y} ${x - 22} ${y + 8} ${x - 8} ${y + 8} C ${x - 22} ${y + 8} ${x - 22} ${y + 16} ${x - 8} ${y + 16} C ${x - 22} ${y + 16} ${x - 22} ${y + 24} ${x - 8} ${y + 24}`} />
     <path d={`M ${x + 8} ${y - 24} C ${x + 22} ${y - 24} ${x + 22} ${y - 16} ${x + 8} ${y - 16} C ${x + 22} ${y - 16} ${x + 22} ${y - 8} ${x + 8} ${y - 8} C ${x + 22} ${y - 8} ${x + 22} ${y} ${x + 8} ${y} C ${x + 22} ${y} ${x + 22} ${y + 8} ${x + 8} ${y + 8} C ${x + 22} ${y + 8} ${x + 22} ${y + 16} ${x + 8} ${y + 16} C ${x + 22} ${y + 16} ${x + 22} ${y + 24} ${x + 8} ${y + 24}`} />
     <path d={`M ${x - 2} ${y - 27} V ${y + 27} M ${x + 2} ${y - 27} V ${y + 27}`} />
   </g>;
-  if (symbolId.startsWith("fuse-")) {
+  if (symbolId === "fuse" || symbolId.startsWith("fuse-")) {
     const healthy = properties.fuseHealthy !== false;
     return <g className={mark} aria-label={`Three-pole fuse switch, ${healthy ? "healthy" : "fuse open"}`} data-state={healthy ? "healthy" : "open"}>
       {[-32, 0, 32].map(offset => <g key={offset}>
@@ -111,7 +111,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       </g>)}
     </g>;
   }
-  if (symbolId.startsWith("relay-")) {
+  if (symbolId === "relay" || symbolId.startsWith("relay-")) {
     const contacts = Math.max(1, Math.min(3, Number(properties.changeoverContacts) || 1));
     const energized = properties.energized === true;
     const columns = [-30, 0, 30].slice(0, contacts);
@@ -132,7 +132,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       {offsets.map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset - 7} ${y - 12} H ${x + offset - 2} M ${closed ? `M ${x + offset - 2} ${y - 12} V ${y + 8}` : `M ${x + offset - 2} ${y - 12} L ${x + offset + 7} ${y + 1}`} M ${x + offset + 2} ${y + 8} H ${x + offset + 7} V ${y + 27}`} /></g>)}
     </g>;
   }
-  if (symbolId === "overload-3p") {
+  if (symbolId === "overload" || symbolId === "overload-3p") {
     const tripped = properties.tripped === true || properties.runtimeThermalTripped === true;
     const contact95Closed = !tripped;
     const contact97Closed = tripped;
@@ -147,7 +147,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {} }: { symbolId
       <circle cx={x + 19} cy={y + 18} r="3" fill={tripped ? "#c62828" : "#16824a"} aria-label={tripped ? "Tripped" : "Healthy"} />
     </g>;
   }
-  if (symbolId.startsWith("starter-")) {
+  if (symbolId === "starter" || symbolId.startsWith("starter-")) {
     const energized = properties.energized === true;
     return <g className={mark} aria-label={`Siemens SIRIUS 3RT2025-1BB40 contactor, three main poles, one NO auxiliary and one NC auxiliary, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "de-energized"}>
       {[-24, 0, 24].map(offset => <g key={offset}>
