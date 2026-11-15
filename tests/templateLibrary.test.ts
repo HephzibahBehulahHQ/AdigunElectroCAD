@@ -62,8 +62,8 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(10);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(10);
+    expect(templateLibrary).toHaveLength(11);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(11);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });
 

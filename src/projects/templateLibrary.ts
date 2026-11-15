@@ -8,6 +8,7 @@ import { createPneumaticTemplate } from "./pneumaticCircuit";
 import { createTwoMotorTemplate } from "./twoMotorSequence";
 import { createWiredStarDeltaTemplate } from "./wiredStarDeltaCircuit";
 import { createSourcedDolTemplate } from "./sourcedDolTemplate";
+import { createPlcSensorActuatorProject } from "./plcSensorActuator";
 
 export type TemplateLevel = "Beginner" | "Intermediate" | "Advanced" | "Industrial" | "Expert";
 
@@ -99,6 +100,7 @@ export const templateFixtures: ProjectTemplate[] = scenarios.map((_, index) => c
 
 export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
+  createPlcSensorActuatorProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
   createTwoMotorTemplate(),
