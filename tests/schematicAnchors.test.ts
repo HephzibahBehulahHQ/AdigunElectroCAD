@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { catalogById } from "../src/catalog/dolCatalog";
+import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
 import { Schematic, terminalAnchors } from "../src/components/Schematic";
 import type { ProjectContinuation } from "../src/types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
@@ -11,6 +11,18 @@ import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createSourcedDolMotorStarter } from "../src/projects/sourcedDolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+
+it("places every selectable catalog terminal at a distinct wireable canvas point", () => {
+  for (const definition of componentLibraryCatalog) {
+    const document = {
+      id: "catalog-terminal-audit", name: definition.name, description: "", revision: 1, wires: [],
+      components: [{ id: "device", definitionId: definition.id, reference: `${definition.referencePrefix}1`, x: 550, y: 390, rotation: 0 as const, properties: { ...definition.propertiesSchema } }],
+    };
+    const anchors = terminalAnchors(document);
+    expect(anchors.map((item) => item.endpoint.terminalId), definition.name).toEqual(definition.terminals.map((terminal) => terminal.id));
+    expect(new Set(anchors.map((item) => `${item.x},${item.y}`)).size, `${definition.name} has overlapping wire points`).toBe(definition.terminals.length);
+  }
+});
 
 it("renders a user-selected component name beside its editable indication", () => {
   const project = addFreeSchematicSheet(createStarterProject());
