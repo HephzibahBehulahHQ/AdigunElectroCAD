@@ -13,6 +13,7 @@ const text = (properties: Properties, key: string, fallback = "") => typeof prop
 const binary = (value: boolean) => value ? "ON" : "OFF";
 const signal = (unit: SignalUnit, value: FunctionalSignal["value"]): FunctionalSignal => ({ unit, value });
 const fault = (error: string): FunctionalSignal => ({ unit: "boolean", value: false, error });
+const levelLoopOpenError = "4–20 mA level-transmitter loop is open; PLC input is invalid.";
 const mathInput = (properties: Properties, key: string) => properties[key] === undefined ? 0 : typeof properties[key] === "number" ? properties[key] : NaN;
 
 export function timerParameterError(properties: Properties): string | undefined {
@@ -68,7 +69,7 @@ const models: Record<string, Model> = {
   "sensor-pt100": (p) => { const result = pt100Signal(p); return { label: "PT100 resistance", error: result.error, value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(2)} Ω` }; },
   "sensor-thermocouple": (p) => { const result = thermocoupleSignal(p); return { label: "Type K terminal EMF", error: result.error, value: result.error ? `ERROR: ${result.error}` : `${Number(result.value).toFixed(3)} mV` }; },
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
-  "sensor-level-4-20": (p) => ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
+  "sensor-level-4-20": (p) => bool(p, "simulateOpenLoop") ? { label: "Signal fault", error: levelLoopOpenError, value: `ERROR: ${levelLoopOpenError}` } : ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
   "sensor-encoder": (p) => ({ label: "Encoder pulses", value: String(encoderPulses(number(p, "revolutions"), number(p, "pulsesPerRevolution", 1024))) }),
   "sensor-load-cell": (p) => ({ label: "Load-cell output", value: `${loadCellMillivolt(number(p, "forceN"), number(p, "capacityN", 1000)).toFixed(3)} mV` }),
@@ -122,7 +123,7 @@ const models: Record<string, Model> = {
   "catalog-induction-motor": (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" }),
   "catalog-control-transformer": (p) => ({ label: "Ideal ratio output", value: `${(number(p, "secondaryVoltageV") * (1 - number(p, "loadPercent") / 2000)).toFixed(1)} V from ${number(p, "primaryVoltageV")} V` }),
   "catalog-proximity-sensor": (p) => ({ label: "Sensor output", value: bool(p, "detected") ? `${text(p, "outputType", "PNP")} ON` : `${text(p, "outputType", "PNP")} OFF` }),
-  "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p, "out-0"))}${(/\bQ1\b/.test(text(p, "program").toUpperCase()) || bool(p, "output1") || bool(p, "runtimeQ1")) ? ` · Q1 ${binary(plcOutput(p, "out-1"))}` : ""}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${number(p, "analogInput0")}` : ""}${text(p, "program").toUpperCase().includes("AI1") ? ` · AI1 ${number(p, "analogInput1")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
+  "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p, "out-0"))}${(/\bQ1\b/.test(text(p, "program").toUpperCase()) || bool(p, "output1") || bool(p, "runtimeQ1")) ? ` · Q1 ${binary(plcOutput(p, "out-1"))}` : ""}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${p.runtimeInvalidAi0 === true ? "INVALID" : number(p, "analogInput0")}` : ""}${text(p, "program").toUpperCase().includes("AI1") ? ` · AI1 ${p.runtimeInvalidAi1 === true ? "INVALID" : number(p, "analogInput1")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
   "catalog-on-delay-timer": (p) => ({ label: "Timer contact", value: bool(p, "energized") && number(p, "elapsedSeconds") >= number(p, "delaySeconds") ? "CLOSED" : `${number(p, "elapsedSeconds").toFixed(1)} / ${number(p, "delaySeconds").toFixed(1)} s` }),
   "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
@@ -227,7 +228,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-pt100") return pt100Signal(properties);
   if (modelId === "sensor-thermocouple") return thermocoupleSignal(properties);
   if (modelId === "sensor-flow") return signal("hertz", flowPulseHz(number(properties, "flowLpm"), number(properties, "pulsesPerLitre", 100)));
-  if (modelId === "sensor-level-4-20") return signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
+  if (modelId === "sensor-level-4-20") return bool(properties, "simulateOpenLoop") ? fault(levelLoopOpenError) : signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
   if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));
   if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
   if (modelId === "sensor-load-cell") return signal("millivolt", loadCellMillivolt(number(properties, "forceN"), number(properties, "capacityN", 1000)));
