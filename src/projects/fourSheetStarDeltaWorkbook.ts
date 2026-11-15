@@ -41,7 +41,6 @@ export function createFourSheetStarDeltaWorkbook(): ElectricalProject {
   const base = createWiredStarDeltaCircuit();
   const components = new Map(base.components.map((component) => [component.id, component]));
   const sheetByComponent = new Map<string, string>();
-  const componentsByPage = new Map<string, typeof base.components>();
   const sheetDocuments = new Map<string, CircuitDocument>();
 
   for (const page of pageSpecs) {
@@ -50,9 +49,9 @@ export function createFourSheetStarDeltaWorkbook(): ElectricalProject {
       if (!component) throw new Error(`The star/delta example is missing component ${id}.`);
       sheetByComponent.set(id, page.id);
       const position = positions[id];
+      if (!position) throw new Error(`The star/delta example has no placement for component ${id}.`);
       return { ...component, x: position.x, y: position.y, properties: { ...component.properties } };
     });
-    componentsByPage.set(page.id, pageComponents);
     sheetDocuments.set(page.id, {
       id: page.id,
       name: page.title,
