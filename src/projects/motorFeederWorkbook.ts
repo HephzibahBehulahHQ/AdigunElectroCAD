@@ -1,9 +1,8 @@
 import { createSourcedDolMotorStarter } from "./sourcedDolMotorStarter";
+import { terminalGridReference } from "../cad/terminalAnchors";
 import type { CircuitDocument, ComponentInstance, ElectricalProject, ProjectContinuation, Wire } from "../types/electrical";
 
-const conductorColors = { L1: "#c42626", L2: "#c42626", L3: "#c42626", PE: "#1d8f53" };
-const sourceGridReferences = { L1: "G17", L2: "I17", L3: "K17" };
-const breakerGridReferences = { L1: "S10", L2: "U10", L3: "V10" };
+const conductorColors = { L1: "#c42626", L2: "#d2a000", L3: "#356ac3", PE: "#1d8f53" };
 
 /** Ten purposeful sheets: a three-phase source and nine individually wired motor feeders. */
 export function createMotorFeederWorkbook(): ElectricalProject {
@@ -61,8 +60,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
         label: `${conductor} / M${ordinal}`,
         conductorColor: conductorColors[conductor],
         points: [
-          { sheetId: "sheet-source", gridReference: sourceGridReferences[conductor], role: "source", endpoint: { componentId: "distribution-source", terminalId: `${conductor.toLowerCase()}-out` } },
-          { sheetId, gridReference: breakerGridReferences[conductor], role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
+          { sheetId: "sheet-source", gridReference: terminalGridReference(sourceDocument, { componentId: "distribution-source", terminalId: `${conductor.toLowerCase()}-out` }), role: "source", endpoint: { componentId: "distribution-source", terminalId: `${conductor.toLowerCase()}-out` } },
+          { sheetId, gridReference: terminalGridReference(document, { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` }), role: "destination", endpoint: { componentId: breaker.id, terminalId: `${conductor.toLowerCase()}-in` } },
         ],
       });
     }
@@ -71,8 +70,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
       label: `PE / M${ordinal}`,
       conductorColor: conductorColors.PE,
       points: [
-        { sheetId: "sheet-source", gridReference: "K16", role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
-        { sheetId, gridReference: "W31", role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
+        { sheetId: "sheet-source", gridReference: terminalGridReference(sourceDocument, { componentId: "distribution-source", terminalId: "pe" }), role: "source", endpoint: { componentId: "distribution-source", terminalId: "pe" } },
+        { sheetId, gridReference: terminalGridReference(document, { componentId: motor.id, terminalId: "pe" }), role: "destination", endpoint: { componentId: motor.id, terminalId: "pe" } },
       ],
     });
   }
