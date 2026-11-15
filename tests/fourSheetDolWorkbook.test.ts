@@ -4,6 +4,7 @@ import { validateCircuit } from "../src/electrical/topology";
 import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createFourSheetDolWorkbook } from "../src/projects/fourSheetDolWorkbook";
 import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
+import { terminalGridReference } from "../src/cad/terminalAnchors";
 
 it("builds a four-sheet sourced DOL starter with real devices and every wire retained locally or as a labeled continuation", () => {
   const project = createFourSheetDolWorkbook();
@@ -30,6 +31,10 @@ it("builds a four-sheet sourced DOL starter with real devices and every wire ret
   for (const sheet of project.sheets) expect(validateCircuit(sheet.document, catalogById), sheet.name).toEqual([]);
   for (const continuation of project.continuations ?? []) {
     const [source, destination] = continuation.points;
+    for (const point of continuation.points) {
+      const sheet = project.sheets.find((item) => item.id === point.sheetId)!;
+      expect(point.gridReference).toBe(terminalGridReference(sheet.document, point.endpoint));
+    }
     expect(source?.role).toBe("source");
     expect(destination?.role).toBe("destination");
     const resolved = resolveProjectNet(project, { sheetId: source!.sheetId, endpoint: source!.endpoint });
