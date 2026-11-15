@@ -6,12 +6,23 @@ export const SOURCE_BACKED_DOL_TEMPLATE_ID = "source-backed-dol-starter";
 /** A loadable library entry for the existing, source-identified and terminal-wired Siemens DOL example. */
 export function createSourcedDolTemplate(): ProjectTemplate {
   const document = createSourcedDolMotorStarter();
-  document.components.find((component) => component.reference === "M1")!.properties.energized = false;
-  const testSequence = [
-    "Inspect the 400 V three-phase path through Q1, KM1 and F1 to M1.",
-    "Trace STOP, overload and START wiring to the 24 V DC contactor coil.",
-    "Use the verified component controls to check continuity and the stopped motor state.",
+  const running = [
+    { reference: "KM1", label: "Starter contacts", exact: "CLOSED · 24 V coil" },
+    { reference: "M1", label: "Nominal motor point", exact: "1470 rpm / 7.5 kW" },
   ];
+  const stopped = [
+    { reference: "KM1", label: "Starter contacts", exact: "OPEN" },
+    { reference: "M1", label: "Nominal motor point", exact: "STANDBY" },
+  ];
+  const operatingSequence: NonNullable<ProjectTemplate["operatingSequence"]> = [
+    { name: "Press START", durationSeconds: 0.1, changes: [{ reference: "S1", properties: { pressed: true } }], expectations: running },
+    { name: "Release START; holding contact retains coil", durationSeconds: 0.1, changes: [{ reference: "S1", properties: { pressed: false } }], expectations: running },
+    { name: "Press STOP", durationSeconds: 0.1, changes: [{ reference: "S0", properties: { pressed: true } }], expectations: stopped },
+    { name: "Release STOP; motor remains stopped", durationSeconds: 0.1, changes: [{ reference: "S0", properties: { pressed: false } }], expectations: stopped },
+    { name: "Trip overload", durationSeconds: 0.1, changes: [{ reference: "F1", properties: { tripped: true } }], expectations: stopped },
+    { name: "Reset overload; no automatic restart", durationSeconds: 0.1, changes: [{ reference: "F1", properties: { tripped: false } }], expectations: stopped },
+  ];
+  const testSequence = operatingSequence.map((step) => step.name);
   return {
     id: SOURCE_BACKED_DOL_TEMPLATE_ID,
     name: "Siemens DOL starter · 7.5 kW",
@@ -19,6 +30,7 @@ export function createSourcedDolTemplate(): ProjectTemplate {
     level: "Intermediate",
     description: "Editable 400 V three-phase starter with a Siemens 5SY6332-7 breaker, 3RT2025-1BB40 contactor, 3RU2126-4AB0 overload, 1LE1003 motor, and 230 V AC / 24 V DC control supply. It has 9 identified devices and 22 terminal-to-terminal wires. Protection coordination and motor transients are not simulated.",
     testSequence,
+    operatingSequence,
     expectedOutputs: [
       { reference: "X1", label: "Nominal supply", valueIncludes: "400 V / 50 Hz" },
       { reference: "Q1", label: "Breaker path", valueIncludes: "CLOSED · 3P / 32 A" },
@@ -28,3 +40,4 @@ export function createSourcedDolTemplate(): ProjectTemplate {
     document,
   };
 }
+
