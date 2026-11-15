@@ -22,7 +22,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
@@ -35,6 +35,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   onOpenReversingWorkbook: () => void;
   onOpenTwoMotorWorkbook: () => void;
   onOpenAnalogWorkbook?: () => void;
+  onOpenPneumaticWorkbook?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
@@ -49,6 +50,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <div className="project-menu-selection-copy"><span>Selected project</span><strong title={selected.name}>{selected.name}</strong><small className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "Verified and ready" : "Verification needs review"}</small></div>
       <button className="primary wide" onClick={onLoad}>Load into Free Sheet</button>
       {selected.id === "analog-level-plc-threshold" && onOpenAnalogWorkbook && <button className="wide workbook-open" onClick={onOpenAnalogWorkbook}>Open 4-sheet analog level project</button>}
+      {selected.id === "pneumatic-double" && onOpenPneumaticWorkbook && <button className="wide workbook-open" onClick={onOpenPneumaticWorkbook}>Open 4-sheet cylinder control</button>}
     </div>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />

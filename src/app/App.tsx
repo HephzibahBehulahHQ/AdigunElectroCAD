@@ -20,6 +20,7 @@ import { createFourSheetStarDeltaWorkbook } from "../projects/fourSheetStarDelta
 import { createFourSheetReversingWorkbook } from "../projects/fourSheetReversingWorkbook";
 import { createFourSheetTwoMotorWorkbook } from "../projects/fourSheetTwoMotorWorkbook";
 import { createFourSheetAnalogLevelWorkbook } from "../projects/fourSheetAnalogLevelWorkbook";
+import { createFourSheetPneumaticWorkbook } from "../projects/fourSheetPneumaticWorkbook";
 import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
@@ -935,6 +936,12 @@ export function App() {
     closeProjectsMenu();
   };
 
+  const openFourSheetPneumaticWorkbook = () => {
+    if (!window.confirm("Open the 4-sheet double-acting cylinder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
+    loadWorkbookProject(createFourSheetPneumaticWorkbook(), "Four-sheet double-acting cylinder control opened with labeled command and feedback continuations.");
+    closeProjectsMenu();
+  };
+
   const undo = () => {
     const result = undoProject(history, project);
     if (!result.project) return;
@@ -1716,7 +1723,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); const nextOpen = !projectsMenuPinnedRef.current; setProjectsMenuPinned(nextOpen); setProjectsMenuOpen(nextOpen); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} onOpenAnalogWorkbook={openFourSheetAnalogLevelWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); const nextOpen = !projectsMenuPinnedRef.current; setProjectsMenuPinned(nextOpen); setProjectsMenuOpen(nextOpen); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} onOpenAnalogWorkbook={openFourSheetAnalogLevelWorkbook} onOpenPneumaticWorkbook={openFourSheetPneumaticWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
