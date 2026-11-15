@@ -3,7 +3,7 @@ import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
+import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, nextComponentReference, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../cad/documentOps";
 import { controlTerminalOffset } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
@@ -916,11 +916,10 @@ export function App() {
       setNotice("This sheet's placement grid is full. Add another free sheet to keep symbols clear and non-overlapping.");
       return;
     }
-    const number = document.components.filter((component) => component.definitionId === selectedDefinition.id).length + 1;
     const instance: ComponentInstance = {
       id: `${selectedDefinition.id.replaceAll(".", "-")}-${Date.now()}`,
       definitionId: selectedDefinition.id,
-      reference: `${selectedDefinition.referencePrefix}${number}`,
+      reference: nextComponentReference(document.components, selectedDefinition.referencePrefix),
       x: placement.x,
       y: placement.y,
       rotation: 0,

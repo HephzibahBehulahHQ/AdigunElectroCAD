@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponent, moveComponentsByGrid, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
+import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponent, moveComponentsByGrid, nextComponentReference, reconnectWire, removeComponent, removeWire, renameWire, resizeComponent, rotateComponent, updateComponentProperty } from "../src/cad/documentOps";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -8,6 +8,14 @@ import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createStarterProject } from "../src/projects/starterProject";
 
 describe("component movement", () => {
+  it("assigns unique references across component definitions that share a prefix", () => {
+    const stop = { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S1", x: 180, y: 160, rotation: 0 as const, properties: {} };
+    const start = { id: "start", definitionId: "pushbutton.start-no", reference: "S2", x: 360, y: 160, rotation: 0 as const, properties: {} };
+    expect(nextComponentReference([], "S")).toBe("S1");
+    expect(nextComponentReference([stop, start], "S")).toBe("S3");
+    expect(nextComponentReference([stop, start], "KM")).toBe("KM1");
+  });
+
   it("duplicates a placed instance with an independent edit state, free position, and unique reference", () => {
     const first = { id: "lamp-1", definitionId: "user.drawn-symbol", reference: "U1", displayName: "Panel lamp", x: 360, y: 280, rotation: 90 as const, size: 1.2, draftingColor: "#7b3fa1", properties: { indication: "Run", terminalLabel1: "PLUS" }, terminalLabels: { t1: "L+", t2: "N" }, customTerminals: [{ id: "t1", label: "T1", kind: "control", direction: "bidirectional" }, { id: "t2", label: "T2", kind: "control", direction: "bidirectional" }, { id: "t3", label: "T3", kind: "control", direction: "bidirectional" }], customTerminalOffsets: { t3: { x: 44, y: -24 } }, customSymbolGraphics: [{ kind: "line", x1: -10, y1: 0, x2: 10, y2: 0, color: "#19324f", strokeWidth: 2 }], customProperties: { note: "Panel A" } };
     const source = { ...first, id: "lamp-2", reference: "U2", x: 520 };
