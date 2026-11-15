@@ -16,6 +16,7 @@ import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
+import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
 import { verifyProjectTemplate } from "../projects/templateVerification";
 import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn, signOut, signUp, startAnonymousPreview } from "../services/auth";
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
@@ -119,7 +120,7 @@ export function App() {
   const [selectedGraphicIds, setSelectedGraphicIds] = useState<string[]>([]);
   const [graphicMode, setGraphicMode] = useState<SchematicGraphicKind | "freehand" | null>(null);
   const [reconnectingWireId, setReconnectingWireId] = useState("");
-  const [selectedTemplateId, setSelectedTemplateId] = useState(templateLibrary[0].id);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(SOURCE_BACKED_DOL_TEMPLATE_ID);
   const [rightDockView, setRightDockView] = useState<"properties" | "runtime" | "diagnostics">("properties");
   const [reportsOpen, setReportsOpen] = useState(false);
   const [consoleView, setConsoleView] = useState<"labs">("labs");
@@ -210,7 +211,7 @@ export function App() {
   const selectedAnnotation = document.annotations?.find((annotation) => annotation.id === selectedAnnotationId);
   const selectedGraphic = document.graphics?.find((graphic) => graphic.id === selectedGraphicId);
   const selectedDefinition = componentLibraryById.get(selectedDefinitionId) ?? componentLibraryCatalog[0];
-  const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary[0];
+  const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary.find((template) => template.id === SOURCE_BACKED_DOL_TEMPLATE_ID)!;
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
