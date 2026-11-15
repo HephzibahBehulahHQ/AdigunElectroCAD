@@ -166,10 +166,13 @@ describe("source-backed Siemens overload relay", () => {
     expect(overload.propertiesSchema).toMatchObject({ settingMinA: 11, settingMaxA: 16, tripClass: 10 });
     expect(overload.standardsReferences.some((source) => source.includes("3RU2126-4AB0"))).toBe(true);
     expect(functionalOutputTerminals(overload).map((terminal) => terminal.id)).toEqual(["aux-96", "aux-98"]);
-    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: false }, "aux-96")?.value).toBe(true);
-    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: false }, "aux-98")?.value).toBe(false);
-    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: true }, "aux-96")?.value).toBe(false);
-    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: true }, "aux-98")?.value).toBe(true);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, { tripped: false }, "aux-96")).toBeUndefined();
+    const healthy = { tripped: false, aux95Input: true, aux97Input: true };
+    expect(evaluateFunctionalSignal(overload.simulationModelId, healthy, "aux-96")?.value).toBe(true);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, healthy, "aux-98")?.value).toBe(false);
+    const tripped = { ...healthy, tripped: true };
+    expect(evaluateFunctionalSignal(overload.simulationModelId, tripped, "aux-96")?.value).toBe(false);
+    expect(evaluateFunctionalSignal(overload.simulationModelId, tripped, "aux-98")?.value).toBe(true);
   });
 });
 
