@@ -3,11 +3,11 @@ import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { advanceCircuitClock } from "../src/simulation/circuitClock";
-import { templateLibrary } from "../src/projects/templateLibrary";
+import { templateFixtures } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
   it("uses the wired coil command before tracing motor power", () => {
-    const document = structuredClone(templateLibrary[0].document);
+    const document = structuredClone(templateFixtures[0].document);
     document.components.push({ id: "coil-command", definitionId: "logic.no-contact", reference: "S2", x: 100, y: 600, rotation: 0, properties: { input: false } });
     document.wires.push({ id: "coil-control", from: { componentId: "coil-command", terminalId: "out" }, to: { componentId: document.components[2].id, terminalId: "a1" }, points: [], netName: "COIL" });
     const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
@@ -24,7 +24,7 @@ describe("placed functional component execution", () => {
     expect(run?.output.value).toBe("ON");
   });
   it("drops the wired actuator when either safety channel opens", () => {
-    let document = structuredClone(templateLibrary[4].document);
+    let document = structuredClone(templateFixtures[4].document);
     document = advanceCircuitClock(document, catalogById, 0.1);
     document.components[0].properties.reset = true;
     document = advanceCircuitClock(document, catalogById, 0.1);
@@ -40,7 +40,7 @@ describe("placed functional component execution", () => {
     expect(actuator()).toBe("RETRACTED");
   });
   it("holds a wired relay and actuator off until the timer expires", () => {
-    const document = structuredClone(templateLibrary[3].document);
+    const document = structuredClone(templateFixtures[3].document);
     const timer = document.components[0];
     timer.properties.delaySeconds = 2;
     timer.properties.elapsedSeconds = 1;
@@ -53,7 +53,7 @@ describe("placed functional component execution", () => {
     expect(actuator()).toBe("RETRACTED");
   });
   it("propagates sensor inputs and PLC output commands through catalog wires", () => {
-    const document = structuredClone(templateLibrary[2].document);
+    const document = structuredClone(templateFixtures[2].document);
     document.components[0].properties.detected = false;
     document.components[1].properties.output = false;
     document.components[2].properties.returnSpring = true;
@@ -74,7 +74,7 @@ describe("placed functional component execution", () => {
   });
 
   it("scales motor speed with drive frequency and stops at zero command", () => {
-    const document = structuredClone(templateLibrary[1].document);
+    const document = structuredClone(templateFixtures[1].document);
     document.components[3].properties.nominalSpeedRpm = 1500;
     const drive = document.components[2];
     const speed = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
@@ -89,7 +89,7 @@ describe("placed functional component execution", () => {
     expect(speed()).toBe("STANDBY");
   });
   it("removes motor power when the source or starter is switched off", () => {
-    const document = structuredClone(templateLibrary[0].document);
+    const document = structuredClone(templateFixtures[0].document);
     const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
     document.components[0].properties.outputEnabled = false;
     expect(motor()).toBe("STANDBY");
@@ -100,20 +100,20 @@ describe("placed functional component execution", () => {
     expect(motor()).toContain("rpm");
   });
   it("rejects a motor supplied with phases from independent sources", () => {
-    const document = structuredClone(templateLibrary[0].document);
+    const document = structuredClone(templateFixtures[0].document);
     const source = { ...structuredClone(document.components[0]), id: "independent-source", reference: "X2" };
     document.components.push(source);
     document.wires[0].from.componentId = source.id;
     expect(executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")?.output.value).toBe("STANDBY");
   });
   it("does not run a motor whose three terminals receive the same phase", () => {
-    const document = structuredClone(templateLibrary[0].document);
+    const document = structuredClone(templateFixtures[0].document);
     for (const wire of document.wires.filter((wire) => wire.to.componentId === document.components[3].id)) wire.from.terminalId = "l1-out";
     const motor = executeCircuitModels(document, catalogById).find((run) => run.reference === "M1");
     expect(motor?.output.value).toBe("STANDBY");
   });
   it("removes motor power when its breaker opens or a phase wire is removed", () => {
-    const document = structuredClone(templateLibrary[0].document);
+    const document = structuredClone(templateFixtures[0].document);
     const motor = () => executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")!.output.value;
     expect(motor()).toContain("rpm");
     const breaker = document.components.find((component) => component.reference === "Q1")!;
