@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { templateLibrary } from "../src/projects/templateLibrary";
+import { templateFixtures } from "../src/projects/templateLibrary";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("circuit simulation clock", () => {
   it("scans wired PLC inputs, retains Q0, and fails closed on a program error", () => {
-    const design = structuredClone(templateLibrary[2].document);
+    const design = structuredClone(templateFixtures[2].document);
     const plc = design.components[1];
     plc.properties = { program: "LD I0; OR Q0; ANDN I1; OUT Q0", inputB: false, output: false };
     design.components[2].properties.returnSpring = true;
@@ -32,7 +32,7 @@ describe("circuit simulation clock", () => {
     for (const property of ["program", "runtimeQ0", "missing"]) expect(() => setCircuitBooleanInput(runtime, catalogById, plc.id, property, true)).toThrow();
   });
   it.each(["positive", "negative"])("emits a single wired %s edge pulse per transition", (kind) => {
-    let runtime = structuredClone(templateLibrary[3].document);
+    let runtime = structuredClone(templateFixtures[3].document);
     runtime.components = [
       { id: "input", definitionId: "logic.no-contact", reference: "S1", x: 100, y: 100, rotation: 0, properties: { input: kind === "negative" } },
       { id: "edge", definitionId: `logic.edge-${kind}`, reference: "E1", x: 300, y: 100, rotation: 0, properties: { previous: kind === "negative", input: false } },
@@ -58,7 +58,7 @@ describe("circuit simulation clock", () => {
     expect(output()).toBe("ON");
   });
   it.each(["set", "reset"])("retains the %s latch state after its command is released", (kind) => {
-    const design = structuredClone(templateLibrary[3].document);
+    const design = structuredClone(templateFixtures[3].document);
     design.components = [{ id: "latch", definitionId: `logic.${kind}-coil`, reference: "K1", x: 100, y: 100, rotation: 0, properties: { previous: kind === "reset", input: true } }];
     design.wires = [];
     let runtime = advanceCircuitClock(design, catalogById, 0.1);
@@ -71,7 +71,7 @@ describe("circuit simulation clock", () => {
     expect(design.components[0].properties.runtimePrevious).toBeUndefined();
   });
   it("uses the wired coil signal for timing and drops the actuator on signal loss", () => {
-    const design = structuredClone(templateLibrary[3].document);
+    const design = structuredClone(templateFixtures[3].document);
     const timer = design.components[0];
     timer.properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
     design.components[2].properties.returnSpring = true;
@@ -93,14 +93,14 @@ describe("circuit simulation clock", () => {
     expect(timer.properties.elapsedSeconds).toBe(0);
   });
   it("expires at the exact threshold after ten 100 ms steps", () => {
-    let runtime = structuredClone(templateLibrary[3].document);
+    let runtime = structuredClone(templateFixtures[3].document);
     runtime.components[0].properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
     for (let index = 0; index < 10; index++) runtime = advanceCircuitClock(runtime, catalogById, 0.1);
     expect(runtime.components[0].properties.elapsedSeconds).toBe(1);
     expect(executeCircuitModels(runtime, catalogById).find((run) => run.reference === "KT1")?.output.value).toBe("CLOSED");
   });
   it("resets runtime timing while preserving configured design values", () => {
-    const design = structuredClone(templateLibrary[3].document);
+    const design = structuredClone(templateFixtures[3].document);
     design.components[0].properties.elapsedSeconds = 9;
     const runtime = resetCircuitClock(design, catalogById);
     expect(runtime.components[0].properties.elapsedSeconds).toBe(0);
@@ -108,7 +108,7 @@ describe("circuit simulation clock", () => {
     expect(runtime.components[0].properties.delaySeconds).toBe(design.components[0].properties.delaySeconds);
   });
   it("accumulates timer time, switches the wired actuator, and resets on power loss", () => {
-    const design = structuredClone(templateLibrary[3].document);
+    const design = structuredClone(templateFixtures[3].document);
     design.components[0].properties = { energized: true, delaySeconds: 2, elapsedSeconds: 0 };
     design.components[2].properties.returnSpring = true;
     let runtime = advanceCircuitClock(design, catalogById, 1);
@@ -123,7 +123,7 @@ describe("circuit simulation clock", () => {
     expect(design.components[0].properties.elapsedSeconds).toBe(0);
   });
   it("rejects invalid clock steps", () => {
-    for (const delta of [-1, NaN, Infinity]) expect(() => advanceCircuitClock(templateLibrary[3].document, catalogById, delta)).toThrow();
+    for (const delta of [-1, NaN, Infinity]) expect(() => advanceCircuitClock(templateFixtures[3].document, catalogById, delta)).toThrow();
   });
 });
 
