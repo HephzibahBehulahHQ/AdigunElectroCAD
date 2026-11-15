@@ -48,7 +48,7 @@ import { readLocalProject, writeLocalProject } from "../projects/projectLocalSto
 import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
-import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave } from "./topLevelMenu";
+import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu } from "./topLevelMenu";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../cad/terminalAnchors";
@@ -1678,15 +1678,15 @@ export function App() {
 
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
         const current = resolveTopLevelMenu(event.target as Element, event.currentTarget);
-        if (current && event.pointerType === "mouse") {
-          current.open = true;
-          if (current.matches(".projects-menu")) setProjectsMenuOpen(true);
-        }
+        if (!current || event.pointerType !== "mouse") return;
+        const projectsMenu = event.currentTarget.querySelector<HTMLDetailsElement>(".projects-menu");
+        if (projectsMenuPinnedRef.current && projectsMenu && current !== projectsMenu) return;
+        current.open = true;
+        if (current.matches(".projects-menu")) setProjectsMenuOpen(true);
         event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]").forEach((menu) => {
-          if (menu !== current) {
-            if (menu.matches(".projects-menu")) closeProjectsMenu();
-            else menu.open = false;
-          }
+          if (!shouldCloseSiblingMenu(current, menu)) return;
+          if (menu.matches(".projects-menu")) closeProjectsMenu();
+          else menu.open = false;
         });
       }} onMouseLeave={(event) => {
         const nav = event.currentTarget;
