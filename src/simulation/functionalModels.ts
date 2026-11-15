@@ -197,7 +197,12 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "catalog-feed-through-terminal") return signal("boolean", bool(properties, "continuityClosed") && bool(properties, "inputSignal"));
   if (modelId === "catalog-on-delay-timer") {
     const error = timerParameterError(properties);
-    return error ? fault(error) : signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
+    if (error) return fault(error);
+    if (terminalId !== "16" && terminalId !== "18") return undefined;
+    const common = properties.timerContactCommon;
+    if (typeof common !== "boolean") return undefined;
+    const elapsed = bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds");
+    return signal("boolean", common && (terminalId === "18" ? elapsed : !elapsed));
   }
   if (modelId === "catalog-interface-relay" && /^[1-3][24]$/.test(terminalId ?? "")) {
     const common = properties[`contact${terminalId![0]}1`];
