@@ -22,7 +22,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
@@ -33,6 +33,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   onOpenFourSheetWorkbook: () => void;
   onOpenStarDeltaWorkbook: () => void;
   onOpenReversingWorkbook: () => void;
+  onOpenTwoMotorWorkbook: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
@@ -72,6 +73,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <><button className="wide workbook-open" onClick={onOpenFourSheetWorkbook}>Open 4-sheet DOL project</button><button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button></>}
       {selected.id === "wired-star-delta-control" && <button className="wide workbook-open" onClick={onOpenStarDeltaWorkbook}>Open 4-sheet star–delta project</button>}
       {selected.id === "wired-reversing-interlocks" && <button className="wide workbook-open" onClick={onOpenReversingWorkbook}>Open 4-sheet reversing project</button>}
+      {selected.id === "two-motor-sequence" && <button className="wide workbook-open" onClick={onOpenTwoMotorWorkbook}>Open 4-sheet two-motor project</button>}
     </section>
   </section>;
 }
