@@ -1,7 +1,8 @@
 import { expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { advanceCircuitClock, setCircuitLevelInput } from "../src/simulation/circuitClock";
+import { advanceCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
 
@@ -42,4 +43,31 @@ it("reads converted 4–20 mA levels in the PLC program and switches a wired out
   expect(JSON.stringify(design)).toBe(before);
   for (const value of [-1, 101, NaN, Infinity]) expect(() => setCircuitLevelInput(runtime, catalogById, "level", value)).toThrow();
   expect(() => setCircuitLevelInput(runtime, catalogById, "plc", 50)).toThrow();
+});
+
+it("fails an open 4–20 mA loop closed without presenting the last raw value as valid", () => {
+  const design = createAnalogLevelProject().document;
+  const before = JSON.stringify(design);
+  let runtime = setCircuitLevelInput(design, catalogById, "level", 75);
+  runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+  expect(executeCircuitModels(runtime, catalogById).find((run) => run.reference === "K1")!.output.value).toBe("ON");
+
+  runtime = setCircuitBooleanInput(runtime, catalogById, "level", "simulateOpenLoop", true);
+  runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+  const runs = executeCircuitModels(runtime, catalogById);
+  const transmitter = runs.find((run) => run.reference === "B1")!;
+  const adc = runs.find((run) => run.reference === "ADC1")!;
+  const plc = runs.find((run) => run.reference === "PLC1")!;
+  const coil = runs.find((run) => run.reference === "K1")!;
+  const trace = JSON.parse(String(runtime.components.find((component) => component.reference === "PLC1")!.properties.runtimeScanTrace));
+
+  expect(transmitter.output.error).toMatch(/loop is open/i);
+  expect(adc.output.error).toMatch(/loop is open/i);
+  expect(plc.output.error).toMatch(/loop is open/i);
+  expect(plc.output.value).toContain("AI0 INVALID");
+  expect(plc.output.value).toContain("Q0 OFF");
+  expect(coil.output.error).toMatch(/loop is open/i);
+  expect(coil.evaluatedProperties.input).toBe(false);
+  expect(trace.at(-1).status).toBe("inhibited");
+  expect(JSON.stringify(design)).toBe(before);
 });

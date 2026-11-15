@@ -112,9 +112,13 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const inputError = incoming?.error ?? unitError;
         if (inputError && binding) {
           if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
+          if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
+          if (binding.property === "analogInput1") activeProperties.runtimeInvalidAi1 = true;
           if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
           continue;
         }
+        if (binding?.property === "analogInput0") activeProperties.runtimeInvalidAi0 = false;
+        if (binding?.property === "analogInput1") activeProperties.runtimeInvalidAi1 = false;
         const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
         if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
           activeProperties[binding.property] = incoming.value;

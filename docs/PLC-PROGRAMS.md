@@ -68,7 +68,7 @@ AI0 and AI1 each accept an independently wired ADC block's `plc-raw` output (int
 GT AI0 13824; OUT Q0
 ```
 
-This switches Q0 on above 50% level. A second independent branch can use `GT AI1 13824; OUT Q1`. Physical input diagnostics and wire-break/overrange faults remain unimplemented.
+This switches Q0 on above 50% level. A second independent branch can use `GT AI1 13824; OUT Q1`. For the level sensor, Live Simulation Controls include **Simulate Open Loop**. Enabling it marks the transmitter signal invalid, propagates a fault through the ADC, inhibits the PLC scan, clears Q0/Q1, and shows the affected analog input as `INVALID` instead of displaying its last raw value as current. Turning the fault off resumes the scan from the live level. This is a user-triggered educational fault injection on this signal path; it does not detect physically missing wires, provide NAMUR fault bands, or implement certified diagnostics.
 
 Select a placed level sensor and use its **Live Level Percent** slider to change the runtime input from 0 to 100% while scanning continues. The saved level stays unchanged, and Stop restores it. The dedicated analog-level example in the project library includes the complete wired chain.
 
