@@ -41,7 +41,7 @@ export function createFourSheetDolWorkbook(): ElectricalProject {
   const localWires = new Map<string, Wire[]>();
   for (const page of pageSpecs) localWires.set(page.id, []);
   const continuations: ProjectContinuation[] = [];
-  const pageOrder = new Map(pageSpecs.map((page, index) => [page.id, index]));
+  const pageOrder = new Map<string, number>(pageSpecs.map((page, index) => [page.id, index]));
   for (const sourceWire of base.wires) {
     const fromSheetId = sheetByComponent.get(sourceWire.from.componentId);
     const toSheetId = sheetByComponent.get(sourceWire.to.componentId);
