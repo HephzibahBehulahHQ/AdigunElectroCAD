@@ -18,6 +18,7 @@ describe("Project Library full workbook entry", () => {
       onSelect: () => {},
       onLoad: () => {},
       onOpenWorkbook: () => {},
+      onOpenTwoMotorWorkbook: () => {},
     }));
     expect(markup).toContain("Open 10-sheet feeder workbook");
     expect(markup).toContain("Load into free sheet");
@@ -33,8 +34,24 @@ describe("Project Library full workbook entry", () => {
       onSelect: () => {},
       onLoad: () => {},
       onOpenWorkbook: () => {},
+      onOpenTwoMotorWorkbook: () => {},
     }));
     expect(markup).not.toContain("Open 10-sheet feeder workbook");
   });
 });
 
+
+it("offers the four-sheet sequence only for the two-motor project", () => {
+  const selected = templateLibrary.find((template) => template.id === "two-motor-sequence")!;
+  const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {
+    active: true,
+    templates: templateLibrary,
+    selected,
+    verification: verifyProjectTemplate(selected, catalogById),
+    onSelect: () => {},
+    onLoad: () => {},
+    onOpenWorkbook: () => {},
+    onOpenTwoMotorWorkbook: () => {},
+  }));
+  expect(markup).toContain("Open 4-sheet two-motor project");
+});
