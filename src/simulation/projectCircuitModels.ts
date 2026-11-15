@@ -70,7 +70,7 @@ export function executeProjectCircuitModels(
   const assembled = assembleProjectCircuitDocument(project, runtimeSheetId, runtimeSheetId ? runtimeDocument : null);
   const isProjectRuntime = !runtimeSheetId && runtimeDocument?.id === projectRuntimeId(project);
   const document = isProjectRuntime ? runtimeDocument! : assembled.document;
-  const componentOrigins = isProjectRuntime
+  const componentOrigins: Map<string, { sheetId: string; componentId: string }> = isProjectRuntime
     ? new Map(project.sheets.flatMap((sheet) => sheet.document.components.map((component) => [
       `${sheet.id}::${component.id}`,
       { sheetId: sheet.id, componentId: component.id },
