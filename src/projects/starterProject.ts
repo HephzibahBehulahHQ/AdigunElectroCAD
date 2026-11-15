@@ -12,6 +12,16 @@ export const createStarterProject = (): ElectricalProject => ({
   sheets: [{ id: "sheet-dol", name: "Power & Control Circuit", kind: "reference-dol", document: createSourcedDolMotorStarter() }],
 });
 
+export function createBlankProject(): ElectricalProject {
+  return {
+    id: "untitled-electrical-project",
+    name: "Untitled project",
+    description: "New blank electrical project.",
+    revision: 1,
+    sheets: [{ id: "sheet-1", name: "Sheet 1", kind: "free-schematic", document: blankDocument("sheet-1", "Sheet 1") }],
+  };
+}
+
 export const createMotorStarterWorkbook = createMotorFeederWorkbook;
 
 export function addFreeSchematicSheet(project: ElectricalProject): ElectricalProject {

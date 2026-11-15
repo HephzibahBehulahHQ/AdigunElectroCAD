@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { validateCircuit } from "../src/electrical/topology";
-import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
+import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { validateProjectContinuations } from "../src/projects/projectContinuations";
 import { MAX_PROJECT_SHEETS } from "../src/projects/projectLimits";
 
 describe("multi-sheet starter project", () => {
+  it("creates a clean blank project for a fresh workspace", () => {
+    const project = createBlankProject();
+    expect(project.sheets).toHaveLength(1);
+    expect(project.sheets[0]).toMatchObject({ id: "sheet-1", name: "Sheet 1", kind: "free-schematic" });
+    expect(project.sheets[0].document).toMatchObject({ components: [], wires: [] });
+    expect(project.continuations ?? []).toEqual([]);
+  });
+
   it("adds an independent free schematic sheet", () => {
     const project = createStarterProject();
     const next = addFreeSchematicSheet(project);

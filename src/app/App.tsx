@@ -13,7 +13,7 @@ import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, mo
 import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, validateCircuit } from "../electrical/topology";
-import { addFreeSchematicSheet, createMotorStarterWorkbook, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
+import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
@@ -38,7 +38,7 @@ import { LiveCopilot } from "../components/LiveCopilot";
 import { HeaderUtilities } from "../components/HeaderUtilities";
 import { MAX_PROJECT_SHEETS } from "../projects/projectLimits";
 import { readLocalProject, writeLocalProject } from "../projects/projectLocalStore";
-import { bindProjectExitSave } from "../projects/projectExitSave";
+import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
@@ -77,15 +77,15 @@ function terminalGridReference(document: CircuitDocument, endpoint: TerminalEndp
 }
 
 export function App() {
-  const [project, setProject] = useState<ElectricalProject>(() => createMotorStarterWorkbook());
+  const [project, setProject] = useState<ElectricalProject>(() => createBlankProject());
   const latestProject = useRef(project);
   latestProject.current = project;
-  const [activeSheetId, setActiveSheetId] = useState("sheet-source");
+  const [activeSheetId, setActiveSheetId] = useState("sheet-1");
   const [schematicZoom, setSchematicZoom] = useState(.85);
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
-  const [selectedComponentId, setSelectedComponentId] = useState("distribution-source");
-  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(["distribution-source"]);
+  const [selectedComponentId, setSelectedComponentId] = useState("");
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("supply.three-phase");
   const [componentPanelOpen, setComponentPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -97,9 +97,7 @@ export function App() {
   const [botActivation, setBotActivation] = useState(0);
   const [botUnread, setBotUnread] = useState(false);
   const [botEditsUnsaved, setBotEditsUnsaved] = useState(false);
-  const pendingLocalSave = useRef({ project, dirty, botEditsUnsaved });
-  pendingLocalSave.current = { project, dirty, botEditsUnsaved };
-  const [notice, setNotice] = useState("DOL starter ready — local-only project storage.");
+  const [notice, setNotice] = useState("Blank canvas ready. Save locally or export to keep your work.");
   const [simulation, setSimulation] = useState<DolSimulationState>(() => initialDolState());
   const [isRunning, setIsRunning] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -276,36 +274,7 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [isRunning, isReferenceSheet, document]);
 
-  useEffect(() => {
-    try {
-      const saved = readLocalProject(window.localStorage, STORAGE_KEY);
-      if (!saved) return;
-      const restored = saved.project;
-      const firstSheet = restored.sheets[0];
-      setProject(restored);
-      setActiveSheetId(firstSheet.id);
-      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
-      setSelectedWireId("");
-      setNotice(`${restored.name} restored from ${saved.source === "previous" ? "the previous local save; the current record remains unchanged" : "local storage"}.`);
-    } catch {
-      setNotice("The saved local project could not be restored. It was left unchanged for manual review.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!dirty || botEditsUnsaved) return;
-    const timer = window.setTimeout(() => {
-      try {
-        writeLocalProject(window.localStorage, STORAGE_KEY, project);
-        setDirty(false);
-      } catch {
-        setNotice("Local autosave could not complete. Use File → Export JSON to preserve this project.");
-      }
-    }, 650);
-    return () => window.clearTimeout(timer);
-  }, [dirty, project, botEditsUnsaved]);
-
-  useEffect(() => bindProjectExitSave(window, () => pendingLocalSave.current, (latest) => writeLocalProject(window.localStorage, STORAGE_KEY, latest)), []);
+  useEffect(() => bindProjectExitPrompt(window, () => dirty || botEditsUnsaved), [dirty, botEditsUnsaved]);
 
   const recordEdit = (next: ElectricalProject) => {
     setHistory((state) => recordProjectEdit(state, project));
