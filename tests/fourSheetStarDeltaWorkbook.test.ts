@@ -12,7 +12,7 @@ it("splits the sourced star-delta starter into four complete, labeled sheets", (
   expect(project.sheets.map((sheet) => sheet.name)).toEqual(["Supply", "Motor power", "Control", "Operator station"]);
   expect(project.continuations.length).toBeGreaterThan(10);
   const componentSheets = new Map(project.sheets.flatMap((sheet) => sheet.document.components.map((component) => [component.id, sheet] as const)));
-  expect(componentSheets.size).toBe(13);
+  expect(componentSheets.size).toBe(14);
   expect([...componentSheets.keys()].sort()).toEqual(["breaker", "control", "control-psu", "delta", "forward", "motor", "overload", "star", "star-point", "star-timer", "start", "stop", "supply", "transition-timer"].sort());
 
   const sourced = createProjectRuntimeDocument(project);
