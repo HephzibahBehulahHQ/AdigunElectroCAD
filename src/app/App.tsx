@@ -46,6 +46,7 @@ import { readLocalProject, writeLocalProject } from "../projects/projectLocalSto
 import { bindProjectExitPrompt } from "../projects/projectExitSave";
 import { readCloudProjectSelection, rememberCloudProjectSelection, selectedCloudProjectId, type CloudProjectSelection } from "../services/cloudProjectSelection";
 import { ProjectLibraryPanel } from "../components/ProjectLibraryPanel";
+import { resolveTopLevelMenu } from "./topLevelMenu";
 import type { CircuitDocument, CircuitSheet, ComponentInstance, ElectricalProject, ProjectContinuation, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, Wire } from "../types/electrical";
 import { Schematic } from "../components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../cad/terminalAnchors";
@@ -1659,7 +1660,7 @@ export function App() {
       </section>}
 
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
-        const current = (event.target as Element).closest<HTMLDetailsElement>("details");
+        const current = resolveTopLevelMenu(event.target as Element, event.currentTarget);
         if (current && event.pointerType === "mouse") {
           current.open = true;
           if (current.matches(".projects-menu")) setProjectsMenuOpen(true);
