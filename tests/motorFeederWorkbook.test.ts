@@ -3,6 +3,7 @@ import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createMotorStarterWorkbook } from "../src/projects/starterProject";
 import { catalogById } from "../src/catalog/dolCatalog";
+import { validateCircuit } from "../src/electrical/topology";
 import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
 
 it("builds a ten-sheet motor-feeder project with real wired branches and terminal-level phase/PE continuations", () => {
@@ -30,36 +31,48 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
   }
 });
 
+it("validates the actual terminal wiring on every sheet", () => {
+  const project = createMotorFeederWorkbook();
+  for (const sheet of project.sheets) {
+    expect(validateCircuit(sheet.document, catalogById), sheet.name).toEqual([]);
+  }
+});
+
 it("uses the real ten-sheet feeder workbook as the motor starter project", () => {
   expect(createMotorStarterWorkbook().sheets).toHaveLength(10);
 });
 
-it("resolves a source phase to all nine real feeder breaker terminals without mixing phases", () => {
+it("resolves each source conductor to only its nine matching feeder terminals", () => {
   const project = createMotorFeederWorkbook();
-  const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l1-out" } });
-  expect(net).toHaveLength(10);
-  expect(net.every((item) => item.endpoint.terminalId === "l1-out" || item.endpoint.terminalId === "l1-in")).toBe(true);
-  expect(net.filter((item) => item.endpoint.terminalId === "l1-in")).toHaveLength(9);
-  const otherPhase = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId: "l2-out" } });
-  expect(otherPhase).toHaveLength(10);
-  expect(otherPhase.some((item) => item.endpoint.terminalId === "l1-in")).toBe(false);
+  for (const conductor of ["l1", "l2", "l3", "pe"] as const) {
+    const terminalId = conductor === "pe" ? "pe" : `${conductor}-out`;
+    const destinationTerminalId = conductor === "pe" ? "pe" : `${conductor}-in`;
+    const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId } });
+    const destinations = net.filter((item) => item.sheetId !== "sheet-source");
+
+    expect(net).toHaveLength(10);
+    expect(destinations).toHaveLength(9);
+    expect(destinations.map((item) => item.endpoint.terminalId)).toEqual(Array(9).fill(destinationTerminalId));
+    expect(new Set(destinations.map((item) => item.sheetId)).size).toBe(9);
+  }
 });
 
-it("simulates source continuations across sheets and keeps motor results scoped to their sheet", () => {
+it("starts each feeder independently when its own START control is pressed", () => {
   const project = createMotorFeederWorkbook();
-  const feeder = project.sheets.find((sheet) => sheet.id === "sheet-motor-1")!;
-  const pressedDocument = {
-    ...feeder.document,
-    components: feeder.document.components.map((component) => component.id === "m1-start"
-      ? { ...component, properties: { ...component.properties, pressed: true } }
-      : component),
-  };
-  const runs = executeProjectCircuitModels(project, catalogById, feeder.id, pressedDocument);
-  const motor = runs.find((run) => run.sheetId === feeder.id && run.componentId === "m1-motor");
-  const otherMotor = runs.find((run) => run.sheetId === "sheet-motor-2" && run.componentId === "m2-motor");
-
-  expect(motor?.output.value).toContain("rpm");
-  expect(otherMotor?.output.value).toBe("STANDBY");
+  for (let ordinal = 1; ordinal <= 9; ordinal++) {
+    const feeder = project.sheets[ordinal];
+    const pressedDocument = {
+      ...feeder.document,
+      components: feeder.document.components.map((component) => component.id === `m${ordinal}-start`
+        ? { ...component, properties: { ...component.properties, pressed: true } }
+        : component),
+    };
+    const runs = executeProjectCircuitModels(project, catalogById, feeder.id, pressedDocument);
+    for (let motorOrdinal = 1; motorOrdinal <= 9; motorOrdinal++) {
+      const motor = runs.find((run) => run.sheetId === `sheet-motor-${motorOrdinal}` && run.componentId === `m${motorOrdinal}-motor`);
+      expect(motor, `M${motorOrdinal} result while S${ordinal} is pressed`).toBeDefined();
+      if (motorOrdinal === ordinal) expect(motor!.output.value).toContain("rpm");
+      else expect(motor!.output.value).toBe("STANDBY");
+    }
+  }
 });
-
-
