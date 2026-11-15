@@ -22,7 +22,7 @@ it("uses the actual component name for generic motor accessibility labels", () =
     y: 0,
     componentName: motor.name,
   }));
-  expect(markup).toContain('aria-label="Generic Induction motor, three-phase induction motor"');
+  expect(markup).toContain('aria-label="Generic three-phase motor · 6 leads, three-phase induction motor"');
   expect(markup).not.toContain("Siemens SIMOTICS");
 });
 
