@@ -6,6 +6,34 @@ import { advanceCircuitClock } from "../src/simulation/circuitClock";
 import { templateFixtures } from "../src/projects/templateLibrary";
 
 describe("placed functional component execution", () => {
+  it("routes each wired interface-relay pole to NC or NO according to coil state", () => {
+    const document = createDolMotorStarter();
+    const poles = [1, 2, 3];
+    document.components = [
+      ...poles.map((pole) => ({ id: `source-${pole}`, definitionId: "logic.no-contact", reference: `S${pole}`, x: 100, y: pole * 100, rotation: 0 as const, properties: { input: true } })),
+      { id: "relay", definitionId: "iec.interface-relay.03", reference: "K1", x: 300, y: 100, rotation: 0, properties: { energized: false, changeoverContacts: 3 } },
+      ...poles.flatMap((pole) => [
+        { id: `nc-${pole}`, definitionId: "logic.output-coil", reference: `Q${pole}`, x: 500, y: pole * 100, rotation: 0 as const, properties: { input: false } },
+        { id: `no-${pole}`, definitionId: "logic.output-coil", reference: `R${pole}`, x: 700, y: pole * 100, rotation: 0 as const, properties: { input: false } },
+      ]),
+    ];
+    document.wires = poles.flatMap((pole) => [
+      { id: `common-${pole}`, from: { componentId: `source-${pole}`, terminalId: "out" }, to: { componentId: "relay", terminalId: `${pole}1` }, points: [], netName: `POLE${pole}` },
+      { id: `nc-contact-${pole}`, from: { componentId: "relay", terminalId: `${pole}2` }, to: { componentId: `nc-${pole}`, terminalId: "in" }, points: [], netName: `NC${pole}` },
+      { id: `no-contact-${pole}`, from: { componentId: "relay", terminalId: `${pole}4` }, to: { componentId: `no-${pole}`, terminalId: "in" }, points: [], netName: `NO${pole}` },
+    ]);
+    const input = (id: string) => executeCircuitModels(document, catalogById).find((run) => run.componentId === id)!.evaluatedProperties.input;
+    for (const pole of poles) {
+      expect(input(`nc-${pole}`)).toBe(true);
+      expect(input(`no-${pole}`)).toBe(false);
+    }
+    document.components.find((component) => component.id === "relay")!.properties.energized = true;
+    for (const pole of poles) {
+      expect(input(`nc-${pole}`)).toBe(false);
+      expect(input(`no-${pole}`)).toBe(true);
+    }
+  });
+
   it("conducts wired signals through selector contacts only while the contact is closed", () => {
     const document = createDolMotorStarter();
     document.components = [
