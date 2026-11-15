@@ -627,6 +627,19 @@ export function App() {
     if (action === "reset") setIsRunning(false);
   };
 
+  const startSimulation = () => {
+    if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById));
+    setIsRunning(true);
+  };
+
+  const pauseSimulation = () => setIsRunning(false);
+
+  const stopSimulation = () => {
+    setIsRunning(false);
+    if (isReferenceSheet) runAction("reset");
+    else setRuntimeDocument(resetCircuitClock(document, catalogById));
+  };
+
   const saveLocally = () => {
     if (botEditsUnsaved && (!authUser || anonymousSession)) { setAuthOpen(true); setAuthMessage("Sign in to a permanent account before saving Bot edits. They remain on the canvas without autosave."); return; }
     try {
@@ -1091,6 +1104,21 @@ export function App() {
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId(""); setSelectedGraphicIds([]);
     if (!next) setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
+  };
+
+  const activateSelectTool = () => {
+    setWireMode(false);
+    setWireStart(null);
+    setWireBranchStart(null);
+    setWireRouteEditId("");
+    setReconnectingWireId("");
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
+    setAnnotationMode(false);
+    setGraphicMode(null);
+    setComponentContextMenu(null);
+    setNotice("Select mode active. Click or drag components, wires, or drawing objects on the sheet.");
   };
 
   const beginCrossSheetContinuation = () => {
@@ -1654,18 +1682,18 @@ export function App() {
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
-        <details><summary>Insert</summary><div className="menu-popover"><button onClick={() => setNotice("Select a catalog entry and use Insert to place a real catalog instance.")}>Component</button></div></details>
+        <details><summary>Insert</summary><div className="menu-popover"><button onClick={addSelectedComponent}>Component</button></div></details>
         <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
-        <details><summary>Simulation</summary><div className="menu-popover"><button onClick={() => setNotice("Simulation buttons operate the validated DOL model in this increment.")}>Simulation controls</button></div></details>
+        <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
-        <button onClick={() => setNotice("Documentation is included in the repository docs folder.")}>Help</button>
+        <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
         <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
       <section className="tool-row" aria-label="CAD and simulation tools">
         <div className="tool-group" aria-label="Selection and editing"><span className="tool-group-label">Edit</span><div className="tool-group-actions">
-          <button className="tool-button selected" onClick={() => setNotice("Select components directly on the schematic or from the catalog.")}>⌖<span>Select</span></button>
+          <button className={!wireMode && !annotationMode && !graphicMode && !crossSheetContinuationMode && !reconnectingWireId && !wireRouteEditId ? "tool-button selected" : "tool-button"} onClick={activateSelectTool} aria-pressed={!wireMode && !annotationMode && !graphicMode && !crossSheetContinuationMode && !reconnectingWireId && !wireRouteEditId}>⌖<span>Select</span></button>
           <button className="tool-button" onClick={addSelectedComponent}>⊞<span>Insert</span></button>
           <button className="tool-button" onClick={undo} disabled={!history.undo.length} aria-label="Undo last project edit">↶<span>Undo</span></button>
           <button className="tool-button" onClick={redo} disabled={!history.redo.length} aria-label="Redo last project edit">↷<span>Redo</span></button>
@@ -1693,9 +1721,9 @@ export function App() {
           <button id="adigun-bot-launcher" className="bot-button" onClick={() => setBotActivation((value) => value + 1)} aria-expanded={botOpen}>◌ Adigun BOT{botUnread && <span className="bot-unread" aria-label="Pending Bot suggestion">●</span>}</button>
         </div></div>
         <div className="tool-group tool-group-simulation" aria-label="Simulation controls"><span className="tool-group-label">Simulation</span><div className="tool-group-actions">
-          <button className="run" onClick={() => { if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById)); setIsRunning(true); }}>▶ Run</button>
-          <button onClick={() => setIsRunning(false)}>Ⅱ Pause</button>
-          <button className="danger" onClick={() => { setIsRunning(false); if (isReferenceSheet) runAction("reset"); else setRuntimeDocument(resetCircuitClock(document, catalogById)); }}>■ Stop</button>
+          <button className="run" onClick={startSimulation}>▶ Run</button>
+          <button onClick={pauseSimulation}>Ⅱ Pause</button>
+          <button className="danger" onClick={stopSimulation}>■ Stop</button>
           <button onClick={() => runAction("trip-overload")} disabled={!isReferenceSheet}>⚠ Trip F1</button>
         </div></div>
       </section>
