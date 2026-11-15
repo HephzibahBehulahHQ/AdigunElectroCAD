@@ -10,3 +10,7 @@ export function shouldCloseMenuOnPointerLeave(isProjectsMenu: boolean, menuRowHo
   return !menuRowHovered && (!isProjectsMenu || !projectsPinned);
 }
 
+export function shouldCloseSiblingMenu(activeMenu: MenuAncestor | null, candidateMenu: MenuAncestor): boolean {
+  return activeMenu !== null && activeMenu !== candidateMenu && activeMenu.parentElement === candidateMenu.parentElement;
+}
+

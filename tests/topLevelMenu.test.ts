@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave } from "../src/app/topLevelMenu";
+import { resolveTopLevelMenu, shouldCloseMenuOnPointerLeave, shouldCloseSiblingMenu } from "../src/app/topLevelMenu";
 
 type MockNode = { tagName: string; parentElement: MockNode | null };
 const node = (tagName: string, parentElement: MockNode | null = null): MockNode => ({ tagName, parentElement });
@@ -22,6 +22,18 @@ it("resolves sibling top-level menus independently", () => {
 
   expect(resolveTopLevelMenu(electricalButton as unknown as Element, menuRow as unknown as HTMLElement)).toBe(electrical);
   expect(projects.parentElement).toBe(menuRow);
+});
+
+it("only closes sibling top-level menus, never nested project disclosures", () => {
+  const menuRow = node("NAV");
+  const projects = node("DETAILS", menuRow);
+  const projectPopover = node("DIV", projects);
+  const projectDetails = node("DETAILS", projectPopover);
+  const electrical = node("DETAILS", menuRow);
+
+  expect(shouldCloseSiblingMenu(projects, electrical)).toBe(true);
+  expect(shouldCloseSiblingMenu(projects, projectDetails)).toBe(false);
+  expect(shouldCloseSiblingMenu(null, electrical)).toBe(false);
 });
 
 it("keeps clicked Projects open after the pointer leaves the menu row", () => {
