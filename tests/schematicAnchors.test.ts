@@ -75,6 +75,18 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   }));
   expect(render(false)).toContain('r="7" class="terminal-pin"');
   expect(render(true)).toContain('r="7" class="terminal-anchor"');
+
+  const freeDocument = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
+  const motorDefinition = catalogById.get("iec.induction-motor.41")!;
+  freeDocument.components.push({ id: "free-motor", definitionId: motorDefinition.id, reference: "M1", x: 500, y: 340, rotation: 0, properties: { ...motorDefinition.propertiesSchema } });
+  const renderFree = (wireMode: boolean) => renderToStaticMarkup(createElement(Schematic, {
+    document: freeDocument, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(renderFree(false)).toContain('class="terminal-pin"');
+  expect(renderFree(false)).not.toContain('class="terminal-anchor"');
+  expect(renderFree(true)).toContain('r="7" class="terminal-anchor"');
+  expect(renderFree(false).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
 });
 
 it("lays out every documented PNOZ terminal outside its module symbol", () => {
