@@ -158,6 +158,7 @@ describe("placed functional component execution", () => {
   it("holds a wired relay and actuator off until the timer expires", () => {
     const document = structuredClone(templateFixtures[3].document);
     const timer = document.components[0];
+    const source = document.components.find((component) => component.reference === "S1")!;
     timer.properties.delaySeconds = 2;
     timer.properties.elapsedSeconds = 1;
     document.components[2].properties.returnSpring = true;
@@ -165,7 +166,7 @@ describe("placed functional component execution", () => {
     expect(actuator()).toBe("RETRACTED");
     timer.properties.elapsedSeconds = 2;
     expect(actuator()).toContain("EXTENDED");
-    timer.properties.energized = false;
+    source.properties.input = false;
     expect(actuator()).toBe("RETRACTED");
   });
   it("propagates sensor inputs and PLC output commands through catalog wires", () => {
