@@ -6,3 +6,7 @@ export function resolveTopLevelMenu(target: MenuAncestor | null, menuRow: MenuAn
   return candidate?.tagName === "DETAILS" ? candidate as HTMLDetailsElement : null;
 }
 
+export function shouldCloseMenuOnPointerLeave(isProjectsMenu: boolean, menuRowHovered: boolean, projectsPinned: boolean): boolean {
+  return !menuRowHovered && (!isProjectsMenu || !projectsPinned);
+}
+
