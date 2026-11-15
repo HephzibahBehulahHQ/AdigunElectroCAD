@@ -22,7 +22,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
@@ -31,6 +31,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   onLoad: () => void;
   onOpenWorkbook: () => void;
   onOpenFourSheetWorkbook: () => void;
+  onOpenStarDeltaWorkbook: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
@@ -68,6 +69,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : verification.failedExpectations.join(" ")}</p>
       <button className="primary wide" onClick={onLoad}>Load into free sheet</button>
       {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <><button className="wide workbook-open" onClick={onOpenFourSheetWorkbook}>Open 4-sheet DOL project</button><button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button></>}
+      {selected.id === "wired-star-delta-control" && <button className="wide workbook-open" onClick={onOpenStarDeltaWorkbook}>Open 4-sheet star–delta project</button>}
     </section>
   </section>;
 }
