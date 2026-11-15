@@ -38,6 +38,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-panel-meter" && terminalId === "signal") return { property: "measuredValue", acceptedUnits: numericalUnits };
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
+  if (modelId === "catalog-selector-switch" && ["13", "21"].includes(terminalId)) return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (terminalId === "in") {
