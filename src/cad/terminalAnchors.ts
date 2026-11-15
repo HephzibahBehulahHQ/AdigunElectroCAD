@@ -10,7 +10,7 @@ export interface TerminalAnchor {
   vertical?: boolean;
 }
 
-const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
+export const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   const anchors: TerminalAnchor[] = document.id === "reference-dol-motor-starter" ? [
     anchor("supply", "l1", 165, 100), anchor("supply", "l2", 255, 100), anchor("supply", "l3", 345, 100), anchor("supply", "pe", 445, 100),
