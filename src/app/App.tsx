@@ -1389,7 +1389,11 @@ export function App() {
   const updateSelectedProperty = (property: string, rawValue: string | boolean) => {
     if (!selectedComponent) return;
     const definition = catalogById.get(selectedComponent.definitionId);
-    const schemaValue = definition?.propertiesSchema[property];
+    if (!definition) {
+      setNotice("The selected catalog definition is unavailable.");
+      return;
+    }
+    const schemaValue = definition.propertiesSchema[property];
     if (schemaValue === undefined) {
       setNotice("That property is not part of the selected catalog definition.");
       return;
