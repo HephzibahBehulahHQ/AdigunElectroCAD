@@ -1,6 +1,7 @@
 import { catalogById } from "../catalog/dolCatalog";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
 import { canConnectTerminals } from "../electrical/topology";
+import { terminalGridReference } from "../cad/terminalAnchors";
 
 /** Validate sheet membership, real local terminals, and the retained source of every cross-sheet net. */
 export function validateProjectContinuations(project: ElectricalProject): string[] {
@@ -30,6 +31,7 @@ export function validateProjectContinuations(project: ElectricalProject): string
       const definition = component && catalogById.get(component.definitionId);
       const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === point.endpoint.terminalId);
       if (!component || !terminal) { issues.push(`Continuation ${continuation.label} references an unknown terminal on sheet ${point.sheetId}.`); return; }
+      if (point.gridReference !== terminalGridReference(sheet.document, point.endpoint)) issues.push(`Continuation ${continuation.label} grid reference ${point.gridReference} does not point to ${point.endpoint.componentId}.${point.endpoint.terminalId} on sheet ${point.sheetId}.`);
       if (expectedKind && terminal.kind !== expectedKind) issues.push(`Continuation ${continuation.label} joins incompatible terminal kinds.`);
       expectedKind = terminal.kind;
     });
@@ -109,8 +111,8 @@ export function createProjectContinuation(
   project: ElectricalProject,
   first: ProjectTerminalReference,
   second: ProjectTerminalReference,
-  firstGridReference = "A.1",
-  secondGridReference = "A.1",
+  firstGridReference?: string,
+  secondGridReference?: string,
 ): CreateProjectContinuationResult {
   if (first.sheetId === second.sheetId) return { ok: false, reason: "A sheet continuation must connect two different sheets." };
   const sheetOrder = new Map(project.sheets.map((sheet, index) => [sheet.id, index]));
@@ -142,9 +144,11 @@ export function createProjectContinuation(
     { componentId: "continuation-first", terminalId: first.endpoint.terminalId },
     { componentId: "continuation-second", terminalId: second.endpoint.terminalId });
   if (!connectionCheck.ok) return { ok: false, reason: connectionCheck.reason ?? "Those terminals cannot be connected." };
+  const firstGrid = firstGridReference ?? terminalGridReference(project.sheets[firstOrder]!.document, first.endpoint);
+  const secondGrid = secondGridReference ?? terminalGridReference(project.sheets[secondOrder]!.document, second.endpoint);
   const [source, destination, sourceGrid, destinationGrid] = firstOrder < secondOrder
-    ? [first, second, firstGridReference, secondGridReference] as const
-    : [second, first, secondGridReference, firstGridReference] as const;
+    ? [first, second, firstGrid, secondGrid] as const
+    : [second, first, secondGrid, firstGrid] as const;
   const sourceTerminal = resolve(source)!;
   const endpointId = (reference: ProjectTerminalReference) => `${reference.sheetId}:${reference.endpoint.componentId}:${reference.endpoint.terminalId}`;
   const pair = new Set([endpointId(source), endpointId(destination)]);
@@ -178,7 +182,7 @@ export function extendProjectContinuation(
   project: ElectricalProject,
   continuationId: string,
   nextPoint: ProjectTerminalReference,
-  nextGridReference = "A.1",
+  nextGridReference?: string,
 ): CreateProjectContinuationResult {
   const existing = project.continuations?.find((item) => item.id === continuationId);
   if (!existing) return { ok: false, reason: "Select an existing project continuation first." };
@@ -217,7 +221,7 @@ export function extendProjectContinuation(
   const points = [
     ...existing.points.slice(0, -1).map((point) => ({ ...point })),
     { ...lastPoint, role: "continuation" as const },
-    { ...nextPoint, gridReference: nextGridReference, role: "destination" as const },
+    { ...nextPoint, gridReference: nextGridReference ?? terminalGridReference(destinationSheet.document, nextPoint.endpoint), role: "destination" as const },
   ];
   const continuation = { ...existing, points };
   const next = {
