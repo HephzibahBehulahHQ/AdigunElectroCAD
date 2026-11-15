@@ -24,6 +24,24 @@ describe("IEC-oriented component catalog", () => {
     expect(unsourcedMotor.documentation).not.toContain("Siemens SIMOTICS");
   });
 
+  it("starts source-unverified generic device ratings and limits unset", () => {
+    const unsetProperties = [
+      "nominalVoltageV", "ratedVoltageV", "ratedCurrentA", "ratedPowerKw", "nominalSpeedRpm",
+      "coilVoltageV", "breakingCapacityKa", "frequencyHz", "ratedFrequencyHz",
+      "inputVoltageV", "outputVoltageV", "primaryVoltageV", "secondaryVoltageV",
+      "maximumFrequencyHz", "sensingDistanceMm", "scaleMaximum", "conductorAreaMm2", "strokeMm",
+    ];
+    for (const profile of genericComponentProfiles) {
+      for (const property of unsetProperties) {
+        if (property in profile.propertiesSchema) expect(profile.propertiesSchema[property], `${profile.id}.${property}`).toBe(0);
+      }
+      expect(profile.documentation).toContain("default to 0 (unset)");
+    }
+    expect(genericComponentProfiles.find(({ id }) => id === "generic.iec.control-transformer")?.propertiesSchema).toMatchObject({ primaryVoltageV: 0, secondaryVoltageV: 0 });
+    expect(genericComponentProfiles.find(({ id }) => id === "generic.iec.ac-supply")?.propertiesSchema.frequencyHz).toBe(0);
+    expect(genericComponentProfiles.find(({ id }) => id === "generic.iec.proximity-sensor")?.propertiesSchema.sensingDistanceMm).toBe(0);
+  });
+
   it("contains the required distribution of unique modeled entries", () => {
     expect(modeledCatalog).toHaveLength(491);
     expect(componentCatalog.length).toBeGreaterThanOrEqual(563);
