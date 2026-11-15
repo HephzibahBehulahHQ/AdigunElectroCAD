@@ -110,12 +110,16 @@ export function canPlaceComponent(components: ComponentInstance[], componentId: 
   return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, movingSize, component));
 }
 
-export function duplicateComponentInstance(components: ComponentInstance[], source: ComponentInstance, id: string, referencePrefix: string): ComponentInstance | null {
-  if (components.some((component) => component.id === id) || !components.some((component) => component.id === source.id)) return null;
+export function nextComponentReference(components: ComponentInstance[], referencePrefix: string): string {
   const usedReferences = new Set(components.map((component) => component.reference.toLowerCase()));
   let suffix = 1;
   while (usedReferences.has(`${referencePrefix}${suffix}`.toLowerCase())) suffix += 1;
-  const reference = `${referencePrefix}${suffix}`;
+  return `${referencePrefix}${suffix}`;
+}
+
+export function duplicateComponentInstance(components: ComponentInstance[], source: ComponentInstance, id: string, referencePrefix: string): ComponentInstance | null {
+  if (components.some((component) => component.id === id) || !components.some((component) => component.id === source.id)) return null;
+  const reference = nextComponentReference(components, referencePrefix);
   const candidateId = `__duplicate_candidate__${id}`;
   const candidate: ComponentInstance = { ...source, id: candidateId };
   const augmented = [...components, candidate];
