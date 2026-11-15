@@ -14,3 +14,6 @@ export function shouldCloseSiblingMenu(activeMenu: MenuAncestor | null, candidat
   return activeMenu !== null && activeMenu !== candidateMenu && activeMenu.parentElement === candidateMenu.parentElement;
 }
 
+export function shouldPinProjectsMenuOnInteraction(isProjectsMenu: boolean, isMenuToggleOrClose: boolean): boolean {
+  return isProjectsMenu && !isMenuToggleOrClose;
+}
