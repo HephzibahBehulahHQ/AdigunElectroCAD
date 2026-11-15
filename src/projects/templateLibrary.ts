@@ -94,9 +94,21 @@ const scenarios: Scenario[] = [
   },
 ];
 
-export const templateLibrary: ProjectTemplate[] = Array.from({ length: 500 }, (_, index) => createTemplate(index));
-templateLibrary[499] = createAnalogLevelProject();
-templateLibrary.push(createPneumaticTemplate(false), createPneumaticTemplate(true), createTwoMotorTemplate(), createWiredHoldingTemplate(), createWiredReversingTemplate(), createThermalOverloadTemplate(), createThermalWiredReversingTemplate(), createWiredStarDeltaTemplate(), createSourcedDolTemplate());
+// Keep scenario fixtures available to model tests without exposing generated variants to users.
+export const templateFixtures: ProjectTemplate[] = scenarios.map((_, index) => createTemplate(index));
+
+export const templateLibrary: ProjectTemplate[] = [
+  createAnalogLevelProject(),
+  createPneumaticTemplate(false),
+  createPneumaticTemplate(true),
+  createTwoMotorTemplate(),
+  createWiredHoldingTemplate(),
+  createWiredReversingTemplate(),
+  createThermalOverloadTemplate(),
+  createThermalWiredReversingTemplate(),
+  createWiredStarDeltaTemplate(),
+  createSourcedDolTemplate(),
+];
 
 function createTemplate(index: number): ProjectTemplate {
   const scenario = scenarios[index % scenarios.length];
