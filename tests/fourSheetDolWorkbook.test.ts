@@ -16,7 +16,8 @@ it("builds a four-sheet sourced DOL starter with every wire retained locally or 
 
   const feederNet = resolveProjectNet(project, { sheetId: "dol-page-supply", endpoint: { componentId: "breaker", terminalId: "l1-out" } });
   expect(feederNet).toContainEqual({ sheetId: "dol-page-motor", endpoint: { componentId: "contactor", terminalId: "l1-in" } });
-  expect(feederNet).toContainEqual({ sheetId: "dol-page-motor", endpoint: { componentId: "motor", terminalId: "u1" } });
+  const motorNet = resolveProjectNet(project, { sheetId: "dol-page-motor", endpoint: { componentId: "overload", terminalId: "t1" } });
+  expect(motorNet).toContainEqual({ sheetId: "dol-page-motor", endpoint: { componentId: "motor", terminalId: "u1" } });
 });
 
 it("runs the source-backed motor from the remote operator sheet through cross-sheet control wires", () => {
