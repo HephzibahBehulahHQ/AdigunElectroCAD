@@ -31,7 +31,7 @@ import { initialDolState, transitionDol, type DolAction, type DolSimulationState
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
 import type { FunctionalModelResult } from "../simulation/functionalModels";
-import { executeProjectCircuitModels } from "../simulation/projectCircuitModels";
+import { createProjectRuntimeDocument, executeProjectCircuitModels } from "../simulation/projectCircuitModels";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../simulation/circuitClock";
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
@@ -194,6 +194,7 @@ export function App() {
   const document = activeSheet.document;
   const [runtimeDocument, setRuntimeDocument] = useState<CircuitDocument | null>(null);
   const isReferenceSheet = activeSheet.kind === "reference-dol";
+  const isReferenceProject = project.sheets.length === 1 && isReferenceSheet;
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const contextComponent = componentContextMenu ? document.components.find((component) => component.id === componentContextMenu.componentId) : undefined;
   const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
@@ -206,7 +207,7 @@ export function App() {
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
   const projectReport = useMemo(() => createProjectWideReport(project.sheets.map((sheet, index) => ({ name: `${sheet.name} · Sheet ${index + 1}`, document: sheet.document })), catalogById), [project.sheets]);
-  const circuitModelRuns = useMemo(() => executeProjectCircuitModels(project, catalogById, activeSheet.id, runtimeDocument), [project, activeSheet.id, runtimeDocument]);
+  const circuitModelRuns = useMemo(() => executeProjectCircuitModels(project, catalogById, runtimeDocument ? undefined : activeSheet.id, runtimeDocument), [project, activeSheet.id, runtimeDocument]);
   const activeSheetModelRuns = circuitModelRuns.filter((run) => run.sheetId === activeSheet.id);
   const selectedPlcRun = activeSheetModelRuns.find((run) => run.componentId === selectedComponentId && run.modelId === "catalog-plc-digital-io");
   const ladderPreviewInputs = selectedPlcRun && !selectedPlcRun.output.error ? { input0: selectedPlcRun.evaluatedProperties.inputA === true, input1: selectedPlcRun.evaluatedProperties.inputB === true, q0: selectedPlcRun.evaluatedProperties.runtimeQ0 === true, q1: selectedPlcRun.evaluatedProperties.runtimeQ1 === true || selectedPlcRun.evaluatedProperties.output1 === true, previousInput0: selectedPlcRun.evaluatedProperties.runtimeInput0Previous === true, previousInput1: selectedPlcRun.evaluatedProperties.runtimeInput1Previous === true, analogInput0: Number(selectedPlcRun.evaluatedProperties.analogInput0 ?? 0), analogInput1: Number(selectedPlcRun.evaluatedProperties.analogInput1 ?? 0), registers: Array.from({ length: 8 }, (_, index) => Number(selectedPlcRun.evaluatedProperties[`runtimeD${index}`] ?? 0)), memory: Array.from({ length: 8 }, (_, index) => selectedPlcRun.evaluatedProperties[`runtimeM${index}`] === true), timers: Object.fromEntries([0, 1, 2, 3].map((index) => [`T${index}`, { elapsedSeconds: Number(selectedPlcRun.evaluatedProperties[`runtimeT${index}Elapsed`] ?? 0), done: selectedPlcRun.evaluatedProperties[`runtimeT${index}Done`] === true }])), deltaSeconds: 0.1 } : undefined;
@@ -255,16 +256,16 @@ export function App() {
   useEffect(() => {
     setRuntimeDocument(null);
     setIsRunning(false);
-  }, [document]);
+  }, [project]);
 
   useEffect(() => {
     if (!isRunning) return;
     const timer = window.setInterval(() => {
-      if (isReferenceSheet) setSimulation((state) => transitionDol(state, "tick", 100));
-      else setRuntimeDocument((state) => advanceCircuitClock(state ?? resetCircuitClock(document, catalogById), catalogById, 0.1));
+      if (isReferenceProject) setSimulation((state) => transitionDol(state, "tick", 100));
+      else setRuntimeDocument((state) => advanceCircuitClock(state ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, 0.1));
     }, 100);
     return () => window.clearInterval(timer);
-  }, [isRunning, isReferenceSheet, document]);
+  }, [isRunning, isReferenceProject, project]);
 
   useEffect(() => bindProjectExitPrompt(window, () => dirty || botEditsUnsaved, () => {
     const blank = createBlankProject();
@@ -618,7 +619,7 @@ export function App() {
   };
 
   const startSimulation = () => {
-    if (!isReferenceSheet && !runtimeDocument) setRuntimeDocument(resetCircuitClock(document, catalogById));
+    if (!isReferenceProject && !runtimeDocument) setRuntimeDocument(resetCircuitClock(createProjectRuntimeDocument(project), catalogById));
     setIsRunning(true);
   };
 
@@ -627,7 +628,7 @@ export function App() {
   const stopSimulation = () => {
     setIsRunning(false);
     if (isReferenceSheet) runAction("reset");
-    else setRuntimeDocument(resetCircuitClock(document, catalogById));
+    else setRuntimeDocument(resetCircuitClock(createProjectRuntimeDocument(project), catalogById));
   };
 
   const saveLocally = () => {
@@ -1749,7 +1750,7 @@ export function App() {
 
             <div className="panel-title"><strong>Properties</strong><span>{selectedContinuation?.label ?? selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
-            {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === selectedComponent.id)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(document, catalogById), catalogById, selectedComponent.id, property, value))} />}
+            {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === `${activeSheet.id}::${selectedComponent.id}`)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, property, value))} />}
           {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && selectedWire.id.startsWith("manual-wire-") && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} selectionCount={selectedComponentIds.length} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} selectionCount={selectedGraphicIds.length} stackCapabilities={canReorderSchematicGraphics(document.graphics ?? [], selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id])} onStackChange={(order) => updateGraphicStackOrder(selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id], order)} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <section className="catalog-properties-preview"><strong>{selectedDefinition.name}</strong><p>{selectedDefinition.description}</p><dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Simulation</dt><dd>{selectedDefinition.simulationSupport}</dd></dl><button type="button" className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button></section>}
             {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId)?.simulationModelId === "catalog-plc-digital-io" && <LadderEditor key={`${activeSheet.id}:${selectedComponent.id}`} program={String(selectedComponent.properties.program ?? "")} previewInputs={ladderPreviewInputs} onApply={(program) => updateSelectedProperty("program", program)} />}
