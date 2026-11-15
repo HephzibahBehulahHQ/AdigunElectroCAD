@@ -34,6 +34,28 @@ describe("placed functional component execution", () => {
     }
   });
 
+  it("routes the overload NC and NO trip contacts only when their common terminals are fed", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "source", definitionId: "logic.no-contact", reference: "S0", x: 100, y: 100, rotation: 0, properties: { input: true } },
+      { id: "overload", definitionId: "overload.thermal", reference: "F1", x: 300, y: 100, rotation: 0, properties: { tripped: false } },
+      { id: "nc-load", definitionId: "logic.output-coil", reference: "K1", x: 500, y: 100, rotation: 0, properties: { input: false } },
+      { id: "no-load", definitionId: "logic.output-coil", reference: "K2", x: 500, y: 300, rotation: 0, properties: { input: false } },
+    ];
+    document.wires = [
+      { id: "feed-95", from: { componentId: "source", terminalId: "out" }, to: { componentId: "overload", terminalId: "aux-95" }, points: [], netName: "CONTROL" },
+      { id: "feed-97", from: { componentId: "source", terminalId: "out" }, to: { componentId: "overload", terminalId: "aux-97" }, points: [], netName: "CONTROL" },
+      { id: "trip-nc", from: { componentId: "overload", terminalId: "aux-96" }, to: { componentId: "nc-load", terminalId: "in" }, points: [], netName: "TRIP-NC" },
+      { id: "trip-no", from: { componentId: "overload", terminalId: "aux-98" }, to: { componentId: "no-load", terminalId: "in" }, points: [], netName: "TRIP-NO" },
+    ];
+    const input = (id: string) => executeCircuitModels(document, catalogById).find((run) => run.componentId === id)!.evaluatedProperties.input;
+    expect(input("nc-load")).toBe(true);
+    expect(input("no-load")).toBe(false);
+    document.components[1].properties.tripped = true;
+    expect(input("nc-load")).toBe(false);
+    expect(input("no-load")).toBe(true);
+  });
+
   it("routes powered control through the motor starter NO and NC auxiliary contacts", () => {
     const document = createDolMotorStarter();
     document.components = [

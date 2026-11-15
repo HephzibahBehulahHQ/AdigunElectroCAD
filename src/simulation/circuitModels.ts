@@ -33,6 +33,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
     if (terminalId === "in-b") return { property: "channelBClosed", acceptedUnits: ["boolean"] };
     if (terminalId === "reset") return { property: "reset", acceptedUnits: ["boolean"] };
   }
+  if (modelId === "thermal-overload-dol-v1" && ["aux-95", "aux-97"].includes(terminalId)) return { property: terminalId === "aux-95" ? "aux95Input" : "aux97Input", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-motor-starter" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-motor-starter" && ["aux-13", "aux-21"].includes(terminalId)) return { property: terminalId === "aux-13" ? "aux13Input" : "aux21Input", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-on-delay-timer" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };

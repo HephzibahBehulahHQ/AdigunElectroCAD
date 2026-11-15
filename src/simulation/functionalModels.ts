@@ -183,7 +183,11 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (modelId === "catalog-selector-switch" && ["14", "22"].includes(terminalId ?? "")) return signal("boolean", bool(properties, "closed") && bool(properties, "inputSignal"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
-  if (modelId === "thermal-overload-dol-v1") return signal("boolean", terminalId === "aux-98" ? bool(properties, "tripped") : !bool(properties, "tripped"));
+  if (modelId === "thermal-overload-dol-v1" && (terminalId === "aux-96" || terminalId === "aux-98")) {
+    const common = properties[terminalId === "aux-96" ? "aux95Input" : "aux97Input"];
+    if (typeof common !== "boolean") return undefined;
+    return signal("boolean", common && (terminalId === "aux-96" ? !bool(properties, "tripped") : bool(properties, "tripped")));
+  }
   if (modelId === "catalog-safety-relay" || modelId === "safety-dual-relay") return signal("boolean", terminalId === "42" ? !safetyOutput(properties) : safetyOutput(properties));
   if (modelId === "catalog-motor-starter" && ["aux-14", "aux-22"].includes(terminalId ?? "")) {
     const common = properties[terminalId === "aux-14" ? "aux13Input" : "aux21Input"];
