@@ -1,21 +1,24 @@
-/** Warn before discarding unsaved work and reset transient state if browser history restores a cached page. */
+/** Warn before discarding unsaved work and clear transient workspace state when the page exits or is restored from browser history. */
 export function bindProjectExitPrompt(
   events: Pick<EventTarget, "addEventListener" | "removeEventListener">,
   hasUnsavedWork: () => boolean,
-  resetRestoredWorkspace: () => void = () => undefined,
+  resetWorkspace: () => void = () => undefined,
 ): () => void {
   const warn = (event: Event) => {
     if (!hasUnsavedWork()) return;
     event.preventDefault();
     (event as BeforeUnloadEvent).returnValue = "";
   };
-  const resetCachedPage = (event: Event) => {
-    if ((event as PageTransitionEvent).persisted) resetRestoredWorkspace();
+  const clearOnExit = () => resetWorkspace();
+  const clearRestoredPage = (event: Event) => {
+    if ((event as PageTransitionEvent).persisted) resetWorkspace();
   };
   events.addEventListener("beforeunload", warn);
-  events.addEventListener("pageshow", resetCachedPage);
+  events.addEventListener("pagehide", clearOnExit);
+  events.addEventListener("pageshow", clearRestoredPage);
   return () => {
     events.removeEventListener("beforeunload", warn);
-    events.removeEventListener("pageshow", resetCachedPage);
+    events.removeEventListener("pagehide", clearOnExit);
+    events.removeEventListener("pageshow", clearRestoredPage);
   };
 }
