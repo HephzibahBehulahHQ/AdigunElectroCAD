@@ -17,6 +17,7 @@ import { canConnectTerminals, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { createFourSheetDolWorkbook } from "../projects/fourSheetDolWorkbook";
 import { createFourSheetStarDeltaWorkbook } from "../projects/fourSheetStarDeltaWorkbook";
+import { createFourSheetReversingWorkbook } from "../projects/fourSheetReversingWorkbook";
 import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManagement";
 import { templateLibrary } from "../projects/templateLibrary";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
@@ -923,6 +924,12 @@ export function App() {
     closeProjectsMenu();
   };
 
+  const openFourSheetReversingWorkbook = () => {
+    if (!window.confirm("Open the 4-sheet forward/reverse starter and replace the current project? Save or export the current project first if you need to keep it.")) return;
+    loadWorkbookProject(createFourSheetReversingWorkbook(), "Four-sheet sourced reversing starter opened with labeled terminal grid references.");
+    closeProjectsMenu();
+  };
+
   const undo = () => {
     const result = undoProject(history, project);
     if (!result.project) return;
@@ -1685,7 +1692,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef}><summary aria-expanded={projectsMenuPinned} onClick={(event) => { event.preventDefault(); if (projectsMenuPinnedRef.current) closeProjectsMenu(); else { if (projectsMenuRef.current) projectsMenuRef.current.open = true; setProjectsPinned(true); } }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 
