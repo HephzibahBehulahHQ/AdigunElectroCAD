@@ -70,15 +70,20 @@ for (const definition of modeledCatalog) {
 // The generic induction motor must expose six winding ends for star/delta wiring.
 const sixTerminalMotor = modeledCatalog.find((definition) => definition.id === "iec.induction-motor.41");
 if (sixTerminalMotor) familyProfileIds.set("induction-motor", sixTerminalMotor);
-const ratingFields = new Set(["nominalVoltageV", "ratedVoltageV", "ratedCurrentA", "ratedPowerKw", "nominalSpeedRpm", "coilVoltageV", "breakingCapacityKa"]);
-const genericMotorUnsetFields = new Set(["frequencyHz", "ratedFrequencyHz", "powerFactor", "efficiencyPercent", "lineVoltageV", "resistanceOhm", "reactanceOhm", "polePairs"]);
+const genericUnsetRatingFields = new Set([
+  "nominalVoltageV", "ratedVoltageV", "ratedCurrentA", "ratedPowerKw", "nominalSpeedRpm",
+  "coilVoltageV", "breakingCapacityKa", "frequencyHz", "ratedFrequencyHz",
+  "inputVoltageV", "outputVoltageV", "primaryVoltageV", "secondaryVoltageV",
+  "maximumFrequencyHz", "sensingDistanceMm", "scaleMaximum", "conductorAreaMm2", "strokeMm",
+]);
+const genericMotorUnsetFields = new Set(["powerFactor", "efficiencyPercent", "lineVoltageV", "resistanceOhm", "reactanceOhm", "polePairs"]);
 export const genericComponentProfiles: ElectricalComponentDefinition[] = [...familyProfileIds].map(([familyId, source]) => ({
   ...source,
   id: `generic.iec.${familyId}`,
   name: familyId === "induction-motor" ? "Generic three-phase motor · 6 leads" : `Generic ${source.name.split(" · ")[0]}`,
   description: familyId === "induction-motor" ? "Editable three-phase motor with U1/V1/W1 and U2/V2/W2 winding ends plus PE for star/delta wiring. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design." : `Editable ${source.category.toLowerCase()} model. No manufacturer identity or nameplate rating is claimed; set and verify its properties for your design.`,
-  propertiesSchema: Object.fromEntries(Object.entries(source.propertiesSchema).map(([key, value]) => [key, ratingFields.has(key) || (familyId === "induction-motor" && genericMotorUnsetFields.has(key)) ? 0 : value])),
-  documentation: familyId === "induction-motor" ? "Generic IEC-oriented six-lead motor model, not a named manufacturer's device. Nameplate and winding values default to 0 (unset); enter verified project values before running models that require them." : `Generic IEC-oriented ${source.category.toLowerCase()} simulation abstraction. It is not a named manufacturer's device. Values are editable model assumptions; verify all required electrical ratings and behavior for the intended application.`,
+  propertiesSchema: Object.fromEntries(Object.entries(source.propertiesSchema).map(([key, value]) => [key, genericUnsetRatingFields.has(key) || (familyId === "induction-motor" && genericMotorUnsetFields.has(key)) ? 0 : value])),
+  documentation: familyId === "induction-motor" ? "Generic IEC-oriented six-lead motor model, not a named manufacturer's device. Nameplate and winding values default to 0 (unset); enter verified project values before running models that require them." : `Generic IEC-oriented ${source.category.toLowerCase()} simulation abstraction. It is not a named manufacturer's device. Device ratings and operating limits default to 0 (unset); enter verified project values before dependent models run. Other values remain editable model assumptions; verify behavior for the intended application.`,
   standardsReferences: source.standardsReferences.filter((reference) => reference.startsWith("IEC ")),
 }));
 
