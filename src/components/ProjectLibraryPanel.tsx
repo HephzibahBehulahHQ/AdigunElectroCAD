@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ProjectTemplate } from "../projects/templateLibrary";
 import type { TemplateVerification } from "../projects/templateVerification";
+import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
 
 function ProjectPreview({ template }: { template: ProjectTemplate }) {
   const components = template.document.components;
@@ -33,7 +34,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   const [level, setLevel] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(0);
-  const filtered = templates.filter((template) => (!level || template.level === level) && (!category || template.category === category) && `${template.name} ${template.category} ${template.id}`.toLowerCase().includes(query.toLowerCase()));
+  const filtered = templates.slice().sort((a, b) => Number(b.id === SOURCE_BACKED_DOL_TEMPLATE_ID) - Number(a.id === SOURCE_BACKED_DOL_TEMPLATE_ID)).filter((template) => (!level || template.level === level) && (!category || template.category === category) && `${template.name} ${template.category} ${template.id}`.toLowerCase().includes(query.toLowerCase()));
   const pages = Math.max(1, Math.ceil(filtered.length / 5));
   const currentPage = Math.min(page, pages - 1);
   const visible = filtered.slice(currentPage * 5, currentPage * 5 + 5);
