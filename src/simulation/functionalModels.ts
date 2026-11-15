@@ -191,7 +191,11 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
     const error = timerParameterError(properties);
     return error ? fault(error) : signal("boolean", bool(properties, "energized") && number(properties, "elapsedSeconds") >= number(properties, "delaySeconds"));
   }
-  if (modelId === "catalog-interface-relay") return signal("boolean", bool(properties, "energized"));
+  if (modelId === "catalog-interface-relay" && /^[1-3][24]$/.test(terminalId ?? "")) {
+    const common = properties[`contact${terminalId![0]}1`];
+    if (typeof common !== "boolean") return undefined;
+    return signal("boolean", common && (bool(properties, "energized") === terminalId!.endsWith("4")));
+  }
   if (modelId === "catalog-proximity-sensor") return signal("boolean", bool(properties, "detected"));
   if (modelId === "catalog-plc-digital-io") return signal("boolean", plcOutput(properties, terminalId));
   if (modelId === "logic-no") return signal("boolean", normallyOpen(bool(properties, "input")));

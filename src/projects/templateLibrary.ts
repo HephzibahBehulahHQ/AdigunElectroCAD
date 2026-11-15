@@ -80,7 +80,7 @@ const scenarios: Scenario[] = [
   },
   {
     id: "timed-relay", name: "Timed relay control", category: "Control Circuit",
-    definitions: ["on-delay-timer", "interface-relay", "solenoid-actuator"], references: ["KT1", "K1", "Y1"], wires: [[0, "18", 1, "a1"], [1, "14", 2, "a1"], [0, "a2", 1, "a2"]],
+    definitions: ["on-delay-timer", "interface-relay", "solenoid-actuator"], references: ["KT1", "K1", "Y1"], wires: [[0, "18", 1, "a1"], [0, "18", 1, "11"], [1, "14", 2, "a1"], [0, "a2", 1, "a2"]],
     testSequence: (ordinal) => [`Energize KT1 for ${1 + (ordinal % 5)} seconds.`, "Confirm the timed contact closes.", "Confirm K1 energizes Y1."],
     properties: (ordinal) => profile({ energized: true, elapsedSeconds: 1 + (ordinal % 5), delaySeconds: 1 + (ordinal % 5) }, { energized: true }, { energized: true }),
     expectations: () => [{ reference: "KT1", label: "Timer contact", valueIncludes: "CLOSED" }, { reference: "K1", label: "Relay contacts", valueIncludes: "ENERGIZED" }, { reference: "Y1", label: "Actuator position", valueIncludes: "EXTENDED" }],
