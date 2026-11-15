@@ -39,6 +39,8 @@ export function createTwoMotorSequence(): CircuitDocument {
   connect("start", "out", "plc", "in-0", [{ x: 180, y: 140 }, { x: 180, y: 240 }, { x: 20, y: 240 }, { x: 20, y: 442 }]);
   connect("f1", "aux-96", "overloads", "in-a", [{ x: 370, y: 500 }, { x: 370, y: 580 }, { x: 30, y: 580 }, { x: 30, y: 628 }]);
   connect("f2", "aux-96", "overloads", "in-b", [{ x: 770, y: 500 }, { x: 770, y: 600 }, { x: 20, y: 600 }, { x: 20, y: 652 }]);
+  connect("breaker", "aux-closed", "f1", "aux-95", [{ x: 600, y: 260 }, { x: 600, y: 480 }, { x: 370, y: 480 }]);
+  connect("breaker", "aux-closed", "f2", "aux-95", [{ x: 600, y: 260 }, { x: 600, y: 480 }, { x: 770, y: 480 }]);
   connect("overloads", "out", "master", "in-a", [{ x: 180, y: 640 }, { x: 180, y: 620 }, { x: 430, y: 620 }, { x: 430, y: 628 }]);
   connect("breaker", "aux-closed", "master", "in-b", [{ x: 590, y: 260 }, { x: 590, y: 620 }, { x: 430, y: 620 }, { x: 430, y: 652 }]);
   connect("master", "out", "fault", "in-a", [{ x: 570, y: 640 }, { x: 570, y: 620 }, { x: 880, y: 620 }, { x: 880, y: 680 }]);
