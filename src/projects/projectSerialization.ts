@@ -1,6 +1,7 @@
 import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
 import { validateProjectContinuations } from "./projectContinuations";
+import { terminalGridReference } from "../cad/terminalAnchors";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
@@ -24,6 +25,15 @@ export function parseProjectJson(text: string): ElectricalProject {
   };
   if (project.continuations && project.continuations.length > 5000) throw new Error("A project cannot contain more than 5000 cross-sheet continuations.");
   if (new Set(project.sheets.map((sheet) => sheet.id)).size !== project.sheets.length) throw new Error("Every sheet must have a unique sheet id.");
+  if (project.continuations) {
+    project.continuations = project.continuations.map((continuation) => ({
+      ...continuation,
+      points: continuation.points.map((point) => {
+        const sheet = project.sheets.find((item) => item.id === point.sheetId);
+        return sheet ? { ...point, gridReference: terminalGridReference(sheet.document, point.endpoint) } : point;
+      }),
+    }));
+  }
   const continuationIssues = validateProjectContinuations(project);
   if (continuationIssues.length) throw new Error(continuationIssues[0]);
   return project;
