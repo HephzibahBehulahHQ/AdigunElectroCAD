@@ -10,6 +10,7 @@ import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOp
 import { controlTerminalOffset } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
+import { cameraBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
 import { applyGenericTopologyTerminals, genericTopologyChoices, genericTopologyTerminalsForChange } from "../cad/componentTopology";
 import { toggleComponentSelection } from "../cad/componentSelection";
 import { appendWireRoutePoint, type WireBranchSource } from "../cad/wirePath";
@@ -87,6 +88,9 @@ export function App() {
   latestProject.current = project;
   const [activeSheetId, setActiveSheetId] = useState("sheet-1");
   const [schematicZoom, setSchematicZoom] = useState(.85);
+  const [freeCamera, setFreeCamera] = useState<DrawingCamera>({ center: { x: 550, y: 390 }, zoom: .85 });
+  const [drawingViewport, setDrawingViewport] = useState({ width: 0, height: 0 });
+  const drawingAreaRef = useRef<HTMLElement>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("");
@@ -199,6 +203,46 @@ export function App() {
   const document = activeSheet.document;
   const [runtimeDocument, setRuntimeDocument] = useState<CircuitDocument | null>(null);
   const isReferenceSheet = activeSheet.kind === "reference-dol";
+  const currentZoom = isReferenceSheet ? schematicZoom : freeCamera.zoom;
+  const freeView = !isReferenceSheet && drawingViewport.width > 0 && drawingViewport.height > 0
+    ? cameraBounds(freeCamera, drawingViewport) : undefined;
+
+  useEffect(() => {
+    const viewport = drawingAreaRef.current?.querySelector<HTMLElement>(".schematic-wrap");
+    if (!viewport || isReferenceSheet) return;
+    const size = () => ({ width: viewport.clientWidth, height: viewport.clientHeight });
+    const resize = new ResizeObserver(() => setDrawingViewport(size()));
+    resize.observe(viewport);
+    setDrawingViewport(size());
+    const handlers = new AbortController();
+    const options = { signal: handlers.signal };
+    viewport.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const dimensions = size();
+      const bounds = viewport.getBoundingClientRect();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? dimensions.height : 1;
+      const dx = event.deltaX * unit, dy = event.deltaY * unit;
+      setFreeCamera((camera) => event.ctrlKey || event.metaKey
+        ? zoomDrawingAt(camera, dimensions, { x: event.clientX - bounds.left, y: event.clientY - bounds.top }, Math.max(.25, Math.min(2, camera.zoom * Math.exp(-dy / 500))))
+        : { ...camera, center: { x: camera.center.x + dx / camera.zoom, y: camera.center.y + dy / camera.zoom } });
+    }, { ...options, passive: false });
+    let drag: { id: number; x: number; y: number } | undefined;
+    viewport.addEventListener("pointerdown", (event) => {
+      if (event.button !== 1) return;
+      event.preventDefault();
+      event.stopPropagation();
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      viewport.setPointerCapture(event.pointerId);
+    }, { ...options, capture: true });
+    viewport.addEventListener("pointermove", (event) => {
+      if (drag?.id !== event.pointerId) return;
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      setFreeCamera((camera) => ({ ...camera, center: { x: camera.center.x - dx / camera.zoom, y: camera.center.y - dy / camera.zoom } }));
+    }, options);
+    viewport.addEventListener("lostpointercapture", () => { drag = undefined; }, options);
+    return () => { handlers.abort(); resize.disconnect(); };
+  }, [isReferenceSheet]);
   const isReferenceProject = project.sheets.length === 1 && isReferenceSheet;
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const contextComponent = componentContextMenu ? document.components.find((component) => component.id === componentContextMenu.componentId) : undefined;
@@ -1640,6 +1684,7 @@ export function App() {
   };
 
   const zoomSchematicAroundCenter = (nextZoom: number) => {
+    if (!isReferenceSheet) { setFreeCamera((camera) => ({ ...camera, zoom: nextZoom })); return; }
     const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
     if (!viewport) { setSchematicZoom(nextZoom); return; }
     const centerX = (viewport.scrollLeft + viewport.clientWidth / 2) / schematicZoom;
@@ -1675,6 +1720,7 @@ export function App() {
     const nextZoom = Math.max(.25, Math.min(2, (viewport.clientWidth - 48) / width, (viewport.clientHeight - 48) / height));
     const centerX = (bounds.left + bounds.right) / 2;
     const centerY = (bounds.top + bounds.bottom) / 2;
+    if (!isReferenceSheet) { setFreeCamera({ center: { x: centerX, y: centerY }, zoom: nextZoom }); return; }
     setSchematicZoom(nextZoom);
     window.requestAnimationFrame(() => {
       viewport.scrollLeft = centerX * nextZoom - viewport.clientWidth / 2;
@@ -1798,9 +1844,9 @@ export function App() {
           </>}
         </div></div>
         <div className="tool-group" aria-label="Canvas view"><span className="tool-group-label">View</span><div className="tool-group-actions">
-          <button onClick={() => zoomSchematicAroundCenter(Math.max(.25, Math.round((schematicZoom - .1) * 100) / 100))} disabled={schematicZoom <= .25} aria-label="Zoom out">−</button>
-          <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(schematicZoom * 100)}%</output>
-          <button onClick={() => zoomSchematicAroundCenter(Math.min(2, Math.round((schematicZoom + .1) * 100) / 100))} disabled={schematicZoom >= 2} aria-label="Zoom in">＋</button>
+          <button onClick={() => zoomSchematicAroundCenter(Math.max(.25, Math.round((currentZoom - .1) * 100) / 100))} disabled={currentZoom <= .25} aria-label="Zoom out">−</button>
+          <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(currentZoom * 100)}%</output>
+          <button onClick={() => zoomSchematicAroundCenter(Math.min(2, Math.round((currentZoom + .1) * 100) / 100))} disabled={currentZoom >= 2} aria-label="Zoom in">＋</button>
           <button onClick={fitSchematicContent} aria-label="Fit drawing content in canvas">Fit</button>
           <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
         </div></div>
@@ -1831,9 +1877,9 @@ export function App() {
           </div>
         </aside>
 
-        <section className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
+        <section ref={drawingAreaRef} className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs" role="tablist" aria-label="Project sheets">{project.sheets.map((sheet, index) => <div key={sheet.id} className={`sheet-tab ${sheet.id === activeSheet.id ? "active" : ""} ${draggedSheetId === sheet.id ? "dragging" : ""}`} draggable onDragStart={(event) => { if ((event.target as HTMLElement).closest(".sheet-tab-remove")) { event.preventDefault(); return; } setDraggedSheetId(sheet.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", sheet.id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); const sourceId = event.dataTransfer.getData("text/plain") || draggedSheetId; moveSheetTab(sourceId, sheet.id); }} onDragEnd={() => setDraggedSheetId("")} title="Drag to reorder sheet"><button type="button" role="tab" aria-selected={sheet.id === activeSheet.id} className="sheet-tab-select" onClick={() => selectSheet(sheet.id)} onKeyDown={(event) => { if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return; event.preventDefault(); const target = project.sheets[index + (event.key === "ArrowLeft" ? -1 : 1)]; if (target) moveSheetTab(sheet.id, target.id); }}>{sheet.name} · Sheet {index + 1}</button><button type="button" className="sheet-tab-remove" aria-label={`Remove ${sheet.name}`} title="Remove sheet (Undo restores it)" disabled={project.sheets.length <= 1} onClick={(event) => { event.stopPropagation(); removeSheetTab(sheet.id); }}>×</button></div>)}<button className="add-sheet-tab" onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={schematicZoom} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
+          <Schematic document={document} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={schematicZoom} freeView={freeView} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and drag placed symbols freely.</>}</div>
         </section>
 

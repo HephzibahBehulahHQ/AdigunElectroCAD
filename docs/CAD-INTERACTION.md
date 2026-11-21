@@ -26,7 +26,7 @@ Select one component on a free sheet to show its resize and rotation handles. Dr
 
 Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. The free-sheet preview follows the pointer and recomputes wire endpoints from the preview position. Design edits reset runtime simulation state.
 
-Zoom changes display scale from 25% to 200% without changing drawing coordinates. Fit sizes the sheet to its viewport. Menu and toolbar Grid controls share one visibility state. Scroll within the schematic viewport to inspect enlarged drawings.
+On a free sheet, the SVG view fills the canvas viewport. Scroll or middle-drag to pan, and use Ctrl/Command + wheel to zoom around the pointer. Toolbar zoom keeps the view center fixed. Fit frames the current drawing content. Resizing the viewport leaves the model coordinates unchanged. The reference DOL view retains its existing scroll navigation. SVG and PNG still export the legacy sheet frame independently of the free-sheet view.
 
 In Wiring mode, select a source terminal and then compatible targets. Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The tap is a drawing attachment; the electrical model still connects the new wire to the selected parent endpoint rather than creating a separate junction node. Removing the parent wire also removes its dependent branches.
 
