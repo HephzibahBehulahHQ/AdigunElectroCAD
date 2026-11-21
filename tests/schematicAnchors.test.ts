@@ -163,6 +163,17 @@ it("lays out every documented PNOZ terminal outside its module symbol", () => {
   expect(symbol).toContain("PNOZ X2.7P");
 });
 
+it("renders the generic dual-channel relay with separate signal anchors", () => {
+  const definition = catalogById.get("safety.dual-relay")!;
+  const component = { id: "SR1", definitionId: definition.id, reference: "SR1", x: 300, y: 300, rotation: 0 as const, properties: definition.propertiesSchema };
+  const document = { id: "signal-monitor", name: "Signal monitor", description: "", revision: 1, components: [component], wires: [] };
+  const positions = Object.fromEntries(terminalAnchors(document).map(({ endpoint, x, y }) => [endpoint.terminalId, [x, y]]));
+  expect(positions).toEqual({ "in-a": [253, 272], "in-b": [253, 290], reset: [253, 308], out: [347, 290], common: [300, 325] });
+  const symbol = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 300, y: 300 }));
+  expect(symbol).toContain("Generic dual-channel monitoring relay");
+  expect(symbol).not.toContain("PNOZ");
+});
+
 it("renders anchors for every free-sheet wire even when component IDs match the reference sheet", () => {
   for (const document of [createStarDeltaCircuit(), createReversingCircuit()]) {
     const endpoints = new Set(terminalAnchors(document).map((anchor) => `${anchor.endpoint.componentId}.${anchor.endpoint.terminalId}`));
