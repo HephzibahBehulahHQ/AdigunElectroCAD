@@ -412,3 +412,6 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .drawing-guide-preview-x { inset: 0 auto 0 0; border-left-width: 1px; }
 .drawing-guide-preview-y { inset: 0 0 auto; border-top-width: 1px; }
 .drawing-guide-lines { stroke: #007c91; stroke-width: 1; stroke-dasharray: 6 4; }
+.component-placement-preview { opacity: .72; }
+.component-placement-outline { fill: #0f766e12; stroke: #0f766e; stroke-width: 1.5; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
+.component-placement-preview.blocked .component-placement-outline { fill: #b91c1c19; stroke: #b91c1c; }

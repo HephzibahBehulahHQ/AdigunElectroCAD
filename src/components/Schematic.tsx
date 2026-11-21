@@ -6,12 +6,12 @@ import { draftingDashArray, resolveDraftingStyle } from "../cad/draftingLayers";
 import { componentsInStackOrder } from "../cad/componentStack";
 import { componentsInMarquee, previewComponentMove } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
-import { transformComponent, type ComponentTransform } from "../cad/documentOps";
+import { canPlaceComponent, nextComponentReference, transformComponent, type ComponentTransform } from "../cad/documentOps";
 import { ComponentTransformHandles } from "./ComponentTransformHandles";
 import { DrawingRulers } from "./DrawingRulers";
 import { PrintFrame } from "./PrintFrame";
 import { snapToDrawingGuides } from "../cad/drawingGuides";
-import { componentLabelOffsets } from "../cad/componentGeometry";
+import { componentFootprint, componentLabelOffsets } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
@@ -37,6 +37,8 @@ const componentDraftingStyles = `
 interface Props {
   symbolStates?: ReadonlyMap<string, CircuitDocument["components"][number]["properties"]>;
   onPlaceComponent?: (x: number, y: number) => void;
+  placementPreviewDefinitionId?: string;
+  placementDragging?: boolean;
   onComponentDrop?: (definitionId: string, x: number, y: number) => void;
   onComponentTransform?: (componentId: string, transform: ComponentTransform) => void;
   onMove?: (componentId: string, x: number, y: number) => void;
@@ -251,6 +253,58 @@ function PlacedSymbol({ component, evaluatedProperties, indicatorLit, draftingSt
   </g>;
 }
 
+function ComponentPlacementPreview({ document, definitionId, resolvePoint, dragging }: {
+  document: CircuitDocument;
+  definitionId: string;
+  resolvePoint: (point: { x: number; y: number }) => { x: number; y: number };
+  dragging: boolean;
+}) {
+  const marker = useRef<SVGGElement>(null);
+  const clientPoint = useRef<{ clientX: number; clientY: number } | null>(null);
+  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const svg = marker.current?.ownerSVGElement;
+    if (!svg) return;
+    const track = (event: { clientX: number; clientY: number }) => {
+      clientPoint.current = { clientX: event.clientX, clientY: event.clientY };
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const next = resolvePoint(new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()));
+      setPoint(previous => previous?.x === next.x && previous.y === next.y ? previous : next);
+    };
+    const clear = () => { clientPoint.current = null; setPoint(null); };
+    const dragLeave = (event: DragEvent) => {
+      if (!(event.relatedTarget instanceof Node) || !svg.contains(event.relatedTarget)) clear();
+    };
+    const events = new AbortController();
+    const options = { signal: events.signal };
+    if (dragging) {
+      svg.addEventListener("dragover", track, options);
+      svg.addEventListener("dragleave", dragLeave, options);
+    } else {
+      svg.addEventListener("pointermove", track, options);
+      svg.addEventListener("pointerleave", clear, options);
+    }
+    if (clientPoint.current) track(clientPoint.current);
+    return () => events.abort();
+  }, [dragging, resolvePoint]);
+
+  const definition = catalogById.get(definitionId);
+  const component = point && definition ? {
+    ...point, id: "placement-preview", definitionId, rotation: 0 as const,
+    reference: nextComponentReference(document.components, definition.referencePrefix), properties: definition.propertiesSchema,
+  } : null;
+  const bounds = component ? componentFootprint(component.x, component.y, component.rotation, definitionId) : null;
+  const clear = component && canPlaceComponent(document.components, "", component.x, component.y, definitionId);
+  return <g ref={marker} className={clear ? "component-placement-preview" : "component-placement-preview blocked"} data-export-exclude="" pointerEvents="none" aria-hidden="true">
+    {component && bounds && <>
+      <rect className="component-placement-outline" x={bounds.left} y={bounds.top} width={bounds.right - bounds.left} height={bounds.bottom - bounds.top} />
+      <PlacedSymbol component={component} draftingStyle={{}} selectedComponentId="" onSelect={() => {}}
+        terminalAnchorsForComponent={terminalAnchors({ ...document, components: [component], wires: [] })} />
+    </>}
+  </g>;
+}
+
 function wireDraftingStyle(wire: Wire, layers: CircuitDocument["draftingLayers"]): CSSProperties {
   const style = resolveDraftingStyle(wire, layers);
   return { stroke: style.draftingColor, strokeWidth: style.lineWeight, strokeDasharray: draftingDashArray(style.lineType) };
@@ -285,7 +339,7 @@ export function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number;
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, onSelect, onComponentContextMenu, onComponentDrop, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId = "", onWireRouteChange, onTerminalSelect, onMove, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds = [], onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect }: Props) {
+function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, onSelect, onComponentContextMenu, onComponentDrop, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId = "", onWireRouteChange, onTerminalSelect, onMove, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds = [], onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect }: Props) {
   const [transformPreview, setTransformPreview] = useState<{ id: string; action: ComponentTransform } | null>(null);
   const transformTarget = onComponentTransform && !wireMode && !graphicMode && !annotationMode && !wireRouteEditId && selectedComponentIds.length <= 1
     ? document.components.find((component) => component.id === selectedComponentId)
@@ -459,14 +513,14 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
     const { x, y, guideSnap } = draftingPoint(point, Boolean(snapped), annotationMode || !!onPlaceComponent);
     readout.textContent = `X ${x}  Y ${y}  du${guideSnap ? " · Guide snap" : snapped ? " · Grid snap" : ""}`;
   }} onPointerLeave={() => { if (cursorReadout.current) cursorReadout.current.textContent = "X —  Y —  du"; }}>
-    <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); const snapped = draftingPoint(point, false, true); onComponentDrop(definitionId, snapped.x, snapped.y); }} onPointerDownCapture={(event) => { if (isPathMode) { event.stopPropagation(); addPathVertex(event); event.currentTarget.focus(); } }} onPointerMoveCapture={(event) => { if (isPathMode) { event.stopPropagation(); previewPathVertex(event); } }} onDoubleClickCapture={(event) => { if (isPathMode) { event.stopPropagation(); finishPath(); } }} onKeyDown={(event) => { if (isPathMode && event.key === "Enter") { event.preventDefault(); finishPath(); } else if (isPathMode && event.key === "Escape") { event.preventDefault(); pathVertices.current = []; setGraphicPreview(null); } }} onClick={(event) => {
+    <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); const snapped = draftingPoint(point, false, true); onComponentDrop(definitionId, snapped.x, snapped.y); }} onClickCapture={(event) => { if (!onPlaceComponent || event.button !== 0) return; const matrix = event.currentTarget.getScreenCTM(); if (!matrix) return; event.stopPropagation(); const point = draftingPoint(new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()), false, true); onPlaceComponent(point.x, point.y); }} onPointerDownCapture={(event) => { if (onPlaceComponent && event.button === 0) { event.stopPropagation(); return; } if (isPathMode) { event.stopPropagation(); addPathVertex(event); event.currentTarget.focus(); } }} onPointerMoveCapture={(event) => { if (isPathMode) { event.stopPropagation(); previewPathVertex(event); } }} onDoubleClickCapture={(event) => { if (isPathMode) { event.stopPropagation(); finishPath(); } }} onKeyDown={(event) => { if (isPathMode && event.key === "Enter") { event.preventDefault(); finishPath(); } else if (isPathMode && event.key === "Escape") { event.preventDefault(); pathVertices.current = []; setGraphicPreview(null); } }} onClick={(event) => {
       if (!annotationMode) return;
       const matrix = event.currentTarget.getScreenCTM();
       if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); const snapped = draftingPoint(point, true, true); onAnnotationPlace(snapped.x, snapped.y); }
     }}>
       <style>{componentDraftingStyles}</style>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
-      <rect {...drawingBounds} data-viewport-fill="" className="sheet-bg" onClick={(event) => { if (onPlaceComponent) { const point = graphicPoint(event); if (point) { const snapped = draftingPoint(point, false, true); onPlaceComponent(snapped.x, snapped.y); } } }} onPointerDown={(event) => { if (onPlaceComponent) return; if (graphicMode) drawStart(event); else selectionStart(event); }} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect {...drawingBounds} data-viewport-fill="" fill="url(#free-grid)" pointerEvents="none" />}
+      <rect {...drawingBounds} data-viewport-fill="" className="sheet-bg" onPointerDown={(event) => { if (onPlaceComponent) return; if (graphicMode) drawStart(event); else selectionStart(event); }} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect {...drawingBounds} data-viewport-fill="" fill="url(#free-grid)" pointerEvents="none" />}
       {isPathMode && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
       {graphicMode === "freehand" && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Drag to sketch · select the path to edit its vertices, color, width and name</text>}
       {wireMode && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Click a wire to place a junction, then choose a compatible terminal. Shift-click targets to continue branching.</text>}
@@ -522,6 +576,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
       </g>
+      {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>
     {freeView && <><DrawingRulers bounds={drawingBounds} zoom={zoom} onAddGuide={onAddGuide} /><output ref={cursorReadout} aria-label="Drawing cursor coordinates" aria-live="off" className="drawing-cursor-readout">X —  Y —  du</output></>}
   </div>;
@@ -554,8 +609,8 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
   })}</g>;
 }
 
-export function Schematic({ document, symbolStates, onPlaceComponent, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId, onWireRouteChange, onTerminalSelect, onMove, onComponentDrop, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds, onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect, onComponentContextMenu }: Props) {
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} symbolStates={symbolStates} onPlaceComponent={onPlaceComponent} litIndicatorIds={litIndicatorIds} onComponentTransform={onComponentTransform} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onWireBranchStart={onWireBranchStart} wireRouteEditId={wireRouteEditId} onWireRouteChange={onWireRouteChange} onTerminalSelect={onTerminalSelect} onMove={onMove} onComponentDrop={onComponentDrop} zoom={zoom} freeView={freeView} onAddGuide={onAddGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} onContinuationNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onContinuationSelect={onContinuationSelect} onComponentContextMenu={onComponentContextMenu} />;
+export function Schematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId, onWireRouteChange, onTerminalSelect, onMove, onComponentDrop, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds, onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect, onComponentContextMenu }: Props) {
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} symbolStates={symbolStates} onPlaceComponent={onPlaceComponent} placementPreviewDefinitionId={placementPreviewDefinitionId} placementDragging={placementDragging} litIndicatorIds={litIndicatorIds} onComponentTransform={onComponentTransform} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onWireBranchStart={onWireBranchStart} wireRouteEditId={wireRouteEditId} onWireRouteChange={onWireRouteChange} onTerminalSelect={onTerminalSelect} onMove={onMove} onComponentDrop={onComponentDrop} zoom={zoom} freeView={freeView} onAddGuide={onAddGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} onContinuationNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onContinuationSelect={onContinuationSelect} onComponentContextMenu={onComponentContextMenu} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;

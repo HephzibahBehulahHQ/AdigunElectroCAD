@@ -4,11 +4,12 @@ import { ComponentSymbolPreview } from "./ComponentSymbolPreview";
 
 export const CATALOG_CATEGORY_PAGE_SIZE = 40;
 
-export function CatalogTree({ definitions, selectedId, searching, onSelect }: {
+export function CatalogTree({ definitions, selectedId, searching, onSelect, onDragPreview }: {
   definitions: ElectricalComponentDefinition[];
   selectedId: string;
   searching: boolean;
   onSelect: (id: string) => void;
+  onDragPreview?: (id: string) => void;
 }) {
   const [pages, setPages] = useState<Record<string, number>>({});
   const categories = new Map<string, ElectricalComponentDefinition[]>();
@@ -27,7 +28,7 @@ export function CatalogTree({ definitions, selectedId, searching, onSelect }: {
       const changePage = (next: number) => setPages((current) => ({ ...current, [category]: next }));
       return <details className="catalog-category" key={category} open={searching || category === selectedCategory}>
         <summary><span>{category}</span><small>{members.length}</small></summary>
-        {members.slice(page * size, (page + 1) * size).map((definition) => <button key={definition.id} draggable title="Drag onto the canvas to place at that position" className={definition.id === selectedId ? "catalog-item selected" : "catalog-item"} onClick={() => onSelect(definition.id)} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("application/x-adigun-electrocad-component", definition.id); }} aria-label={`${definition.name}; drag to place on the canvas`} aria-pressed={definition.id === selectedId}>
+        {members.slice(page * size, (page + 1) * size).map((definition) => <button key={definition.id} draggable title="Drag onto the canvas to place at that position" className={definition.id === selectedId ? "catalog-item selected" : "catalog-item"} onClick={() => onSelect(definition.id)} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("application/x-adigun-electrocad-component", definition.id); onDragPreview?.(definition.id); }} onDragEnd={() => onDragPreview?.("")} aria-label={`${definition.name}; drag to place on the canvas`} aria-pressed={definition.id === selectedId}>
           <ComponentSymbolPreview definition={definition} thumbnail />
           <span><strong>{definition.name}</strong><small>{definition.simulationSupport}</small></span>
         </button>)}

@@ -22,6 +22,8 @@ Pick a part in the component bank and click clear space on a free sheet, or drag
 
 On free sheets, component positions may be negative or extend past the old export frame. Drag, duplicate, arrow movement, rotation and numeric placement use the same neighbor-clearance rules. Quick Insert searches the current view and switches to click placement if it finds no clear position. The fixed reference sheet retains its frame limits.
 
+While placing a catalog component, its preview uses the same symbol, terminal positions, and guide-snapped reference point as the committed instance. A red dashed outline shows that the shared clearance rules reject the position. The preview is omitted from drawing exports.
+
 Select one component on a free sheet to show its resize and rotation handles. Drag the lower-right handle to scale the symbol uniformly around its center in 5% steps, from 50% to 200%. Drag the upper handle to snap rotation to a right angle, or click it to turn 90° clockwise. With either handle focused, arrow keys step the transform. Properties offers the existing size field and Rotate 90° button, plus an exact rotation selector. During an accepted preview, terminal markers, labels, and connected routes follow the transformed symbol. Releasing the pointer commits one undoable edit if the proposed transform clears the sheet edges and neighboring symbols.
 
 Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. The free-sheet preview follows the pointer and recomputes wire endpoints from the preview position. Design edits reset runtime simulation state.
