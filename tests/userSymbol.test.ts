@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { schematicGraphicToSymbolGraphic, schematicGraphicsToSymbolGraphics } from "../src/cad/userSymbol";
 import { Schematic } from "../src/components/Schematic";
-import { canPlaceComponent, transformComponent } from "../src/cad/documentOps";
+import { canPlaceComponent, positionCustomTerminal, transformComponent } from "../src/cad/documentOps";
+import { terminalAnchors } from "../src/cad/terminalAnchors";
+import { catalogById } from "../src/catalog/dolCatalog";
 import type { ComponentInstance, SchematicGraphic } from "../src/types/electrical";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
@@ -11,6 +13,26 @@ import { addFreeSchematicSheet, createStarterProject } from "../src/projects/sta
 const shape: SchematicGraphic = { id: "graphic-1", name: "Fan blade", kind: "polyline", x1: 300, y1: 200, x2: 360, y2: 240, points: [{ x: 300, y: 220 }, { x: 330, y: 200 }, { x: 360, y: 220 }, { x: 330, y: 240 }], color: "#c62828", strokeWidth: 3 };
 
 describe("user-drawn component symbols", () => {
+  it("rejects a blocked terminal edit atomically and keeps a clear edit attached to the same endpoint", () => {
+    const document = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
+    const definition = catalogById.get("user.drawn-symbol")!;
+    const custom: ComponentInstance = {
+      id: "custom", definitionId: definition.id, reference: "U1", x: -300, y: -180, rotation: 0, properties: {},
+      customTerminals: [...definition.terminals, { id: "t3", label: "T3", kind: "control", direction: "bidirectional" }],
+    };
+    const neighbor: ComponentInstance = { ...custom, id: "neighbor", reference: "U2", x: -175 };
+    const from = { componentId: custom.id, terminalId: "t3" };
+    document.components = [custom, neighbor];
+    document.wires = [{ id: "control-wire", from, to: { componentId: neighbor.id, terminalId: "t1" }, points: [] }];
+
+    expect(positionCustomTerminal(document, custom.id, "t3", { x: 60, y: 0 })).toMatchObject({ ok: false });
+    expect(positionCustomTerminal(document, custom.id, "t3", { x: 60, y: 0 }).document).toBe(document);
+    const moved = positionCustomTerminal(document, custom.id, "t3", { x: 45, y: 0 });
+    expect(moved.ok).toBe(true);
+    expect(moved.document.wires).toBe(document.wires);
+    expect(terminalAnchors(moved.document).find((anchor) => anchor.endpoint.componentId === custom.id && anchor.endpoint.terminalId === "t3")).toMatchObject({ x: -255, y: -180 });
+  });
+
   it("checks custom geometry and displaced pins on both sides of placement and rotation", () => {
     const document = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
     const custom: ComponentInstance = {
