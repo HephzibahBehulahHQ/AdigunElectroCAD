@@ -4,8 +4,32 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { moveComponentToGrid } from "../src/cad/documentOps";
+import { moveComponentsByOffset } from "../src/cad/documentOps";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createStarterProject } from "../src/projects/starterProject";
+
+it("preserves off-grid coordinates and attached wires during a free move", () => {
+  const document = createAnalogLevelProject().document;
+  const moved = moveComponentsByOffset(document, ["level"], 17.25, 34.5);
+  expect(moved.ok).toBe(true);
+  expect(moved.document.components.find((item) => item.id === "level")).toMatchObject({ x: 157.25, y: 334.5 });
+  expect(moved.document.wires).toBe(document.wires);
+  expect(moveComponentsByOffset(document, ["level"], 200, 0)).toMatchObject({ ok: false, document });
+});
+
+it("reconnects the source and carries dependent taps while retaining wire appearance", () => {
+  const document = createAnalogLevelProject().document;
+  const parent = document.wires.find((item) => item.id === "plc-output")!;
+  parent.draftingColor = "#a12345";
+  parent.lineWeight = 4;
+  const branch = createManualWire(document, parent.from, { componentId: "second-load", terminalId: "in" }, { wireId: parent.id, source: "from", position: .5 });
+  document.wires.push(branch);
+  const replacement = { componentId: "plc", terminalId: "out-1" };
+  const result = reconnectWire(document, parent.id, replacement, "from");
+  expect(result.wires.find((item) => item.id === parent.id)).toMatchObject({ from: replacement, to: parent.to, draftingColor: "#a12345", lineWeight: 4 });
+  expect(result.wires.find((item) => item.id === branch.id)).toMatchObject({ from: replacement, branchOfWireId: parent.id, to: branch.to });
+  expect(reconnectWire(result, parent.id, replacement, "from")).toBe(result);
+});
 
 describe("component movement", () => {
   it("assigns unique references across component definitions that share a prefix", () => {
