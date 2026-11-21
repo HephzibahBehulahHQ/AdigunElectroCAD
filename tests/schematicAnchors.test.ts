@@ -151,6 +151,7 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   expect(renderFree(false)).toContain('class="terminal-pin"');
   expect(renderFree(false)).not.toContain('class="terminal-anchor"');
   expect(renderFree(true)).toContain('r="7" class="terminal-anchor"');
+  expect(renderFree(true).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
   expect(renderFree(false).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
 });
 
