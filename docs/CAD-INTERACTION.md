@@ -20,6 +20,8 @@ Free-sheet components can be selected individually, added/toggled with Shift+Cli
 
 Arrow movement and rotation use the same sheet-boundary and label-clearance rules. A rotation near the lower edge may be rejected because its taller body and upright labels would leave the sheet; move the component upward first.
 
+Select one component on a free sheet to show its resize and rotation handles. Drag the lower-right handle to scale the symbol uniformly around its center in 5% steps, from 50% to 200%. Drag the upper handle to snap rotation to a right angle, or click it to turn 90° clockwise. With either handle focused, arrow keys step the transform. Properties offers the existing size field and Rotate 90° button, plus an exact rotation selector. During an accepted preview, terminal markers, labels, and connected routes follow the transformed symbol. Releasing the pointer commits one undoable edit if the proposed transform clears the sheet edges and neighboring symbols.
+
 Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. During a drag, the component previews its snapped position; wires retain their previous drawing paths until the drop is accepted. Design edits reset runtime simulation state.
 
 Zoom changes display scale from 25% to 200% without changing drawing coordinates. Fit sizes the sheet to its viewport. Menu and toolbar Grid controls share one visibility state. Scroll within the schematic viewport to inspect enlarged drawings.

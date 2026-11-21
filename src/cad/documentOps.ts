@@ -50,11 +50,26 @@ export function moveComponent(document: CircuitDocument, componentId: string, de
   };
 }
 
-export function rotateComponent(document: CircuitDocument, componentId: string): CircuitDocument {
+export function rotateComponent(document: CircuitDocument, componentId: string, requestedRotation?: ComponentInstance["rotation"]): CircuitDocument {
   const component = document.components.find((item) => item.id === componentId);
   if (!component) return document;
-  const rotation = component.rotation === 270 ? 0 : (component.rotation + 90) as 90 | 180 | 270;
+  const rotation = requestedRotation ?? (component.rotation === 270 ? 0 : (component.rotation + 90) as 90 | 180 | 270);
+  if (rotation === component.rotation) return document;
   return { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, rotation } : item) };
+}
+
+export type ComponentTransform =
+  | { kind: "resize"; size: number }
+  | { kind: "rotate"; rotation: ComponentInstance["rotation"] };
+
+export function transformComponent(document: CircuitDocument, componentId: string, transform: ComponentTransform, clearanceComponents = document.components): { document: CircuitDocument; ok: boolean; reason?: string } {
+  if (transform.kind === "resize") return resizeComponent(document, componentId, transform.size);
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component || ![0, 90, 180, 270].includes(transform.rotation)) return { document, ok: false, reason: "Choose a valid right-angle rotation." };
+  const candidate = { ...component, rotation: transform.rotation };
+  const clearance = clearanceComponents.map((item) => item.id === componentId ? candidate : item);
+  if (!canPlaceComponent(clearance, componentId, component.x, component.y)) return { document, ok: false, reason: "Rotation blocked by sheet bounds or symbol/label clearance." };
+  return { document: rotateComponent(document, componentId, transform.rotation), ok: true };
 }
 
 export function updateComponentProperty(document: CircuitDocument, componentId: string, property: string, value: string | number | boolean): CircuitDocument {
