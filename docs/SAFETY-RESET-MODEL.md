@@ -7,3 +7,5 @@ Catalog relay channel inputs are S11/S12; the functional dual relay uses IN A/IN
 The runtime samples reset transitions at 100 ms. Stop discards runtime memory and leaves the relay inhibited. Saved design parameters remain unchanged by live operations.
 
 This model does not simulate physical contact redundancy, welded-contact detection, feedback/EDM, cross-circuit faults, channel discrepancy timing, physical reset wiring voltages, or a certified safety category, PL or SIL. Its enable output is an educational Boolean signal.
+
+Open **Dual-channel inhibit · monitored reset** in Projects for an editable example with two wired normally closed contacts, a separate reset contact, and a monitored enable coil. Its recorded sequence checks held reset at startup, channel A recovery with reset held, fresh reset, and channel B interruption and restoration without automatic restart.
