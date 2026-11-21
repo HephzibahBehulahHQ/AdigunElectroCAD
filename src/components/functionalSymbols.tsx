@@ -305,7 +305,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     <text x={x} y={y - 5} textAnchor="middle" className={text}>2 CH</text>
   </g>;
   if (symbolId === "safety-relay" || /^safety-relay-\d+$/.test(symbolId)) return <g className={mark} aria-label="Pilz PNOZ X2.7P safety relay, 24 volts AC/DC, three safety normally-open contacts and one auxiliary normally-closed contact">
-    <rect x={x - 54} y={y - 38} width="108" height="76" rx="4" />
+    <rect x={x - 54} y={y - 47} width="108" height="94" rx="4" />
+    {["a1", "a2", "s11", "s52", "s21", "s22", "s12", "s34", "13", "14", "23", "24", "33", "34", "41", "42"].map(terminalId => {
+      const offset = controlTerminalOffset("catalog-safety-relay", terminalId)!;
+      const lead = terminalId === "a1" || terminalId === "a2" ? `V ${y - 47}` : `H ${x + Math.sign(offset.x) * 54}`;
+      return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} ${lead}`} />;
+    })}
     <text x={x} y={y - 5} textAnchor="middle" className={text}>PILZ</text>
     <text x={x} y={y + 15} textAnchor="middle" className={text}>PNOZ X2.7P</text>
     <path d={`M ${x - 44} ${y - 26} H ${x - 30} M ${x - 30} ${y - 26} L ${x - 20} ${y - 34} M ${x - 10} ${y - 26} H ${x + 4} M ${x + 4} ${y - 26} L ${x + 14} ${y - 34} M ${x + 24} ${y - 26} H ${x + 40} M ${x - 40} ${y + 28} H ${x - 26} M ${x - 26} ${y + 28} H ${x - 10}`} />

@@ -3,7 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
 import { Schematic } from "../src/components/Schematic";
-import { terminalAnchors, terminalGridReference } from "../src/cad/terminalAnchors";
+import { terminalAnchors, terminalGridReference, terminalHitRadius } from "../src/cad/terminalAnchors";
+import { componentFootprint } from "../src/cad/componentGeometry";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
 import { transformComponent } from "../src/cad/documentOps";
 import { transformFromHandle } from "../src/components/ComponentTransformHandles";
@@ -140,8 +141,8 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
     document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode, wireStart: null,
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
   }));
-  expect(render(false)).toContain('r="7" class="terminal-pin"');
-  expect(render(true)).toContain('r="7" class="terminal-anchor"');
+  expect(render(false)).toContain('r="3" class="terminal-pin"');
+  expect(render(true)).toContain('r="4" pointer-events="none" vector-effect="non-scaling-stroke" class="terminal-anchor"');
 
   const freeDocument = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
   const motorDefinition = catalogById.get("iec.induction-motor.41")!;
@@ -152,7 +153,7 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   }));
   expect(renderFree(false)).toContain('class="terminal-pin"');
   expect(renderFree(false)).not.toContain('class="terminal-anchor"');
-  expect(renderFree(true)).toContain('r="7" class="terminal-anchor"');
+  expect(renderFree(true)).toContain('r="4" pointer-events="none" vector-effect="non-scaling-stroke" class="terminal-anchor"');
   expect(renderFree(true).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
   expect(renderFree(false).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
 });
@@ -167,6 +168,20 @@ it("lays out every documented PNOZ terminal outside its module symbol", () => {
   const symbol = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: component.x, y: component.y }));
   expect(symbol).toContain("PNOZ X2.7P safety relay");
   expect(symbol).toContain("PNOZ X2.7P");
+  for (const anchor of anchors) expect(symbol).toContain(`M ${anchor.x} ${anchor.y} `);
+  const right = anchors.filter(anchor => anchor.x === component.x + 74);
+  expect(terminalHitRadius(right[0], anchors, .25)).toBeLessThan(6);
+  expect(terminalHitRadius(right[0], anchors, 2)).toBe(4.5);
+  for (const rotation of [0, 90, 180, 270] as const) {
+    const scaled = { ...component, rotation, size: 1.5 };
+    const bounds = componentFootprint(scaled.x, scaled.y, rotation, definition.id, scaled.size);
+    for (const pin of terminalAnchors({ ...document, components: [scaled] })) {
+      expect(pin.x).toBeGreaterThan(bounds.left);
+      expect(pin.x).toBeLessThan(bounds.right);
+      expect(pin.y).toBeGreaterThan(bounds.top);
+      expect(pin.y).toBeLessThan(bounds.bottom);
+    }
+  }
 });
 
 it("renders the generic dual-channel relay with separate signal anchors", () => {

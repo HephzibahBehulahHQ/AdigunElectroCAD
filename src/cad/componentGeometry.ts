@@ -164,12 +164,17 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
 export function componentLabelOffsets(rotation: ComponentInstance["rotation"], definitionId?: string) {
   const reference = rotation === 90 || rotation === 270 ? 75 : 50;
   if (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41") return { reference: reference + 28, kind: reference + 45 };
+  if (definitionId === "iec.safety-relay.01") return { reference: reference + 14, kind: reference + 31 };
   return { reference, kind: reference + 17 };
 }
 
 /** Include upright labels as well as the rotated symbol in placement clearance. */
 export function componentFootprint(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string, size = 1) {
   const sideways = rotation === 90 || rotation === 270;
+  if (definitionId === "iec.safety-relay.01") {
+    const halfWidth = (sideways ? 77 : 106) * size;
+    return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 91 : 70) * size, bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
+  }
   const halfWidth = (Math.max(sideways ? 35 : 55, 55) + 6) * size;
   const terminalExtension = (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41" ? 16 : 0) * size;
   return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 55 : 35) * size - 6 - terminalExtension, bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
