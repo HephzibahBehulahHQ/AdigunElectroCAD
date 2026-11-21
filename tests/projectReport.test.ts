@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
-import { createProjectReport, createProjectWideReport, reportCsv } from "../src/reports/projectReport";
+import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
+import { assignProjectCableCore } from "../src/projects/projectContinuations";
+import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable } from "../src/reports/projectReport";
 
 describe("engineering project reports", () => {
   it("derives a BOM, wire list and terminal list from the DOL document", () => {
@@ -32,10 +34,10 @@ describe("engineering project reports", () => {
 
 it("aggregates BOM, wires, and terminals across sheets with sheet context", () => {
   const sheets = [
-    { name: "Power · Sheet 1", document: createDolMotorStarter() },
-    { name: "Control · Sheet 2", document: createDolMotorStarter() },
-  ];
-  const report = createProjectWideReport(sheets, catalogById);
+    { id: "power", name: "Power", document: createDolMotorStarter(), kind: "free-schematic" },
+    { id: "control", name: "Control", document: createDolMotorStarter(), kind: "free-schematic" },
+  ] as const;
+  const report = createProjectWideReport({ sheets: [...sheets] }, catalogById);
   const contactor = report.bom.find((line) => line.definitionId === "contactor.three-pole");
 
   expect(report.bom).toHaveLength(8);
@@ -44,6 +46,38 @@ it("aggregates BOM, wires, and terminals across sheets with sheet context", () =
   expect(report.wires[0]).toMatchObject({ sheet: "Power · Sheet 1", netName: "L1" });
   expect(report.terminals).toHaveLength(80);
   expect(report.terminals[0].sheet).toBe("Power · Sheet 1");
-  expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To"');
+  expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To","Continuation ID","Cable ID","Core ID","Original source"');
   expect(reportCsv(report, "terminals").split("\n")[0]).toBe('"Sheet","Reference","Terminal","Kind","Direction"');
+});
+
+it("reports every continuation hop with its current cable core, adjacent terminals and original source", () => {
+  const workbook = createMotorFeederWorkbook();
+  const edited = assignProjectCableCore(workbook, "feed-m2-l1", { cableId: 'Panel "A", W2', coreId: "Phase A" });
+  if (!edited.ok) throw new Error(edited.reason);
+  const project = edited.project;
+  const [source, junction, destination, ...remaining] = project.sheets;
+  project.sheets = [junction, source, destination, ...remaining];
+  const report = createProjectWideReport(project, catalogById);
+  const continuation = project.continuations!.find((item) => item.id === "feed-m2-l1")!;
+  const [start, middle, end] = continuation.points;
+  const hops = report.wires.filter((line) => line.continuation?.id === continuation.id);
+  const originalSource = `${source.name} · Sheet 2 · ${start.gridReference} · X1.L1`;
+  expect(report.wires.filter((line) => line.continuation)).toHaveLength(39);
+  expect(hops).toHaveLength(2);
+  expect(hops[0].from).toBe(originalSource);
+  expect(hops[0].to).toBe(`${junction.name} · Sheet 1 · ${middle.gridReference} · XW2-L1.J`);
+  expect(hops[1].from).toBe(hops[0].to);
+  expect(hops[1].to).toContain(`${destination.name} · Sheet 3 · ${end.gridReference} · Q2.`);
+  expect(hops[1].continuation).toEqual({ id: continuation.id, cableCore: continuation.cableCore, originalSource });
+  expect(wireReportTable(report).rows).toContainEqual([
+    `${junction.name} · Sheet 1`, continuation.label, hops[1].from, hops[1].to,
+    continuation.id, 'Panel "A", W2', "Phase A", originalSource,
+  ]);
+  expect(reportCsv(report, "wires")).toContain('"feed-m2-l1","Panel ""A"", W2","Phase A"');
+
+  const cleared = assignProjectCableCore(project, continuation.id, null);
+  if (!cleared.ok) throw new Error(cleared.reason);
+  const csv = reportCsv(createProjectWideReport(cleared.project, catalogById), "wires");
+  expect(csv).toContain('"feed-m2-l1","",""');
+  expect(csv).not.toContain('Panel ""A"", W2');
 });

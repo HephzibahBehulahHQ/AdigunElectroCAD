@@ -1,4 +1,4 @@
-import type { ElectricalComponentDefinition, CircuitDocument } from "../types/electrical";
+import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
 
 export interface BomLine {
   definitionId: string;
@@ -14,6 +14,11 @@ export interface WireLine {
   netName: string;
   from: string;
   to: string;
+  continuation?: {
+    id: string;
+    cableCore?: ProjectContinuation["cableCore"];
+    originalSource: string;
+  };
 }
 
 export interface TerminalLine {
@@ -25,6 +30,7 @@ export interface TerminalLine {
 }
 
 export interface ProjectReport {
+  projectWide?: true;
   bom: BomLine[];
   wires: WireLine[];
   terminals: TerminalLine[];
@@ -62,30 +68,82 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
 
 export function reportCsv(report: ProjectReport, section: ReportSection): string {
   if (section === "bom") return toCsv(["Component", "Category", "Quantity", "References"], report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")]));
-  if (section === "wires") return report.wires.some((line) => line.sheet) ? toCsv(["Sheet", "Net", "From", "To"], report.wires.map((line) => [line.sheet ?? "", line.netName, line.from, line.to])) : toCsv(["Net", "From", "To"], report.wires.map((line) => [line.netName, line.from, line.to]));
+  if (section === "wires") {
+    const { headers, rows } = wireReportTable(report);
+    return toCsv(headers, rows);
+  }
   return report.terminals.some((line) => line.sheet) ? toCsv(["Sheet", "Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction])) : toCsv(["Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction]));
+}
+
+export function wireReportTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
+  if (!report.projectWide) {
+    return { headers: ["Net", "From", "To"], rows: report.wires.map((line) => [line.netName, line.from, line.to]) };
+  }
+  return {
+    headers: ["Sheet", "Net", "From", "To", "Continuation ID", "Cable ID", "Core ID", "Original source"],
+    rows: report.wires.map((line) => [
+      line.sheet ?? "", line.netName, line.from, line.to,
+      line.continuation?.id ?? "", line.continuation?.cableCore?.cableId ?? "",
+      line.continuation?.cableCore?.coreId ?? "", line.continuation?.originalSource ?? "",
+    ]),
+  };
 }
 
 function toCsv(headers: string[], rows: string[][]): string {
   return [headers, ...rows].map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(",")).join("\n");
 }
 
-export function createProjectWideReport(sheets: { name: string; document: CircuitDocument }[], definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
+export function createProjectWideReport({ sheets, continuations }: Pick<ElectricalProject, "sheets" | "continuations">, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
   const wires: WireLine[] = [];
   const terminals: TerminalLine[] = [];
+  const sheetLocations = new Map(sheets.map((sheet, index) => [sheet.id, {
+    name: `${sheet.name} · Sheet ${index + 1}`,
+    components: new Map(sheet.document.components.map((component) => [component.id, component])),
+  }]));
   for (const sheet of sheets) {
+    const { name } = sheetLocations.get(sheet.id)!;
     const report = createProjectReport(sheet.document, definitions);
     for (const line of report.bom) {
       const aggregate = bomByDefinition.get(line.definitionId) ?? { ...line, quantity: 0, references: [] };
       aggregate.quantity += line.quantity;
-      aggregate.references.push(...line.references.map((reference) => `${sheet.name} · ${reference}`));
+      aggregate.references.push(...line.references.map((reference) => `${name} · ${reference}`));
       bomByDefinition.set(line.definitionId, aggregate);
     }
-    wires.push(...report.wires.map((wire) => ({ ...wire, sheet: sheet.name })));
-    terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: sheet.name })));
+    wires.push(...report.wires.map((wire) => ({ ...wire, sheet: name })));
+    terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: name })));
+  }
+
+  const describePoint = ({ sheetId, endpoint, gridReference }: ProjectContinuationPoint) => {
+    const sheet = sheetLocations.get(sheetId);
+    const component = sheet?.components.get(endpoint.componentId);
+    const definition = component && definitions.get(component.definitionId);
+    const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === endpoint.terminalId);
+    const label = component?.terminalLabels?.[endpoint.terminalId] ?? terminal?.label ?? endpoint.terminalId;
+    return `${sheet?.name ?? sheetId} · ${gridReference} · ${component?.reference ?? endpoint.componentId}.${label}`;
+  };
+  for (const continuation of continuations ?? []) {
+    const [source, ...destinations] = continuation.points;
+    if (!source) continue;
+    const originalSource = describePoint(source);
+    let from = originalSource;
+    let fromSheetId = source.sheetId;
+    for (const [index, destination] of destinations.entries()) {
+      const to = describePoint(destination);
+      wires.push({
+        id: `${continuation.id}:${index + 1}`,
+        sheet: sheetLocations.get(fromSheetId)?.name,
+        netName: continuation.label,
+        from,
+        to,
+        continuation: { id: continuation.id, cableCore: continuation.cableCore, originalSource },
+      });
+      from = to;
+      fromSheetId = destination.sheetId;
+    }
   }
   return {
+    projectWide: true,
     bom: [...bomByDefinition.values()].sort((left, right) => left.category.localeCompare(right.category) || left.component.localeCompare(right.component)),
     wires,
     terminals,

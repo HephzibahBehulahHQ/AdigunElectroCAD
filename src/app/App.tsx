@@ -33,7 +33,7 @@ import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
-import { createProjectReport, createProjectWideReport, reportCsv, type ProjectReport, type ReportSection } from "../reports/projectReport";
+import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
@@ -204,7 +204,8 @@ export function App() {
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
-  const projectReport = useMemo(() => createProjectWideReport(project.sheets.map((sheet, index) => ({ name: `${sheet.name} · Sheet ${index + 1}`, document: sheet.document })), catalogById), [project.sheets]);
+  const { sheets, continuations } = project;
+  const projectReport = useMemo(() => createProjectWideReport({ sheets, continuations }, catalogById), [sheets, continuations]);
   const circuitModelRuns = useMemo(() => executeProjectCircuitModels(project, catalogById, runtimeDocument ? undefined : activeSheet.id, runtimeDocument), [project, activeSheet.id, runtimeDocument]);
   const activeSheetModelRuns = circuitModelRuns.filter((run) => run.sheetId === activeSheet.id);
   const selectedPlcRun = activeSheetModelRuns.find((run) => run.componentId === selectedComponentId && run.modelId === "catalog-plc-digital-io");
@@ -2053,7 +2054,7 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, on
     </div>
     <div className="report-grid">
       <ReportTable title="Bill of materials" headers={["Component", "Category", "Qty", "References"]} rows={report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")])} />
-      <ReportTable title="Wire list" headers={projectScope ? ["Sheet", "Net", "From", "To"] : ["Net", "From", "To"]} rows={report.wires.map((line) => projectScope ? [line.sheet ?? "", line.netName, line.from, line.to] : [line.netName, line.from, line.to])} />
+      <ReportTable title="Wire list" {...wireReportTable(report)} />
       <ReportTable title="Terminal list" headers={projectScope ? ["Sheet", "Reference", "Terminal", "Kind", "Direction"] : ["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => projectScope ? [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction] : [line.reference, line.terminal, line.kind, line.direction])} />
     </div>
   </section>;
