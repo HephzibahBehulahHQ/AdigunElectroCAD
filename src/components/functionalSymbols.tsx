@@ -1,3 +1,5 @@
+import { controlTerminalOffset } from "../cad/componentGeometry";
+
 const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
 
@@ -111,9 +113,14 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     <text x={x + 15} y={y + 5} textAnchor="middle" className={text}>f</text>
   </g>;
   if (symbolId === "plc-io" || symbolId.startsWith("plc-io-")) return <g className={mark} aria-label="PLC digital and analog I/O module">
-    <rect x={x - 25} y={y - 24} width="50" height="48" rx="2" />
-    <path d={`M ${x} ${y - 24} V ${y + 24}`} />
-    <text x={x - 12} y={y + 4} textAnchor="middle" className={text}>I</text>
+    <rect x={x - 25} y={y - 29} width="50" height="58" rx="2" />
+    <path d={`M ${x} ${y - 29} V ${y + 29} M ${x - 25} ${y} H ${x}`} />
+    {["in-0", "in-1", "ai-0", "ai-1", "out-0", "out-1", "common"].map((terminalId) => {
+      const offset = controlTerminalOffset("catalog-plc-digital-io", terminalId)!;
+      return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x + Math.sign(offset.x) * 25}`} />;
+    })}
+    <text x={x - 12} y={y - 11} textAnchor="middle" className={text}>I</text>
+    <text x={x - 12} y={y + 18} textAnchor="middle" className={text}>AI</text>
     <text x={x + 12} y={y + 4} textAnchor="middle" className={text}>Q</text>
   </g>;
   if (symbolId === "transformer" || symbolId.startsWith("transformer-")) return <g className={mark} aria-label="Transformer with primary and secondary windings">
@@ -232,7 +239,14 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "sensor-encoder") return <g className={mark}><circle cx={x} cy={cy} r="14" />{[0, 90, 180, 270].map((angle) => <path key={angle} d={`M ${x} ${cy - 14} V ${cy - 8}`} transform={`rotate(${angle} ${x} ${cy})`} />)}<circle cx={x} cy={cy} r="3" /></g>;
   if (symbolId === "sensor-load-cell") return <g className={mark}><path d={`M ${x - 25} ${cy - 10} H ${x + 25} M ${x - 16} ${cy + 10} H ${x + 16}`} /><path d={`M ${x - 12} ${cy - 10} L ${x - 6} ${cy + 10} M ${x + 12} ${cy - 10} L ${x + 6} ${cy + 10}`} /></g>;
   if (symbolId === "sensor-ct") return <g className={mark}><circle cx={x} cy={cy} r="14" /><path d={`M ${x - 28} ${cy} H ${x + 28}`} /><text x={x} y={cy + 5} textAnchor="middle" className={text}>CT</text></g>;
-  if (symbolId === "signal-adc" || symbolId === "signal-dac") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>{symbolId === "signal-adc" ? "A/D" : "D/A"}</text></g>;
+  if (symbolId === "signal-adc" || symbolId === "signal-dac") return <g className={mark} aria-label={symbolId === "signal-adc" ? "Analog to digital converter" : "Digital to analog converter"}>
+    <rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />
+    {["in", "out", "common"].map((terminalId) => {
+      const offset = controlTerminalOffset(symbolId, terminalId)!;
+      return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x + Math.sign(offset.x) * 24}`} />;
+    })}
+    <text x={x} y={cy + 5} textAnchor="middle" className={text}>{symbolId === "signal-adc" ? "A/D" : "D/A"}</text>
+  </g>;
   if (symbolId === "signal-resistance-transmitter") return <g className={mark} aria-label="Resistance to current transmitter"><rect x={x - 33} y={cy - 15} width="66" height="30" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>Ω → mA</text></g>;
 
   if (symbolId.startsWith("pneumatic-valve-")) return <g className={mark}>{symbolId.endsWith("5-2") ? <><rect x={x - 26} y={cy - 15} width="26" height="30" /><rect x={x} y={cy - 15} width="26" height="30" /><path d={`M ${x - 22} ${cy + 8} L ${x - 4} ${cy - 8} M ${x + 4} ${cy - 8} L ${x + 22} ${cy + 8}`} /></> : <><rect x={x - 18} y={cy - 15} width="36" height="30" /><path d={`M ${x - 13} ${cy + 8} L ${x + 13} ${cy - 8} M ${x} ${cy - 15} V ${cy + 15}`} /></>}<circle cx={x - 32} cy={cy} r="4" /><circle cx={x + 32} cy={cy} r="4" /></g>;

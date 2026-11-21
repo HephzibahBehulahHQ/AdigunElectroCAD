@@ -537,6 +537,19 @@ it("positions all PLC I/O terminals around a dedicated module symbol", () => {
   expect(svg).toContain('aria-label="PLC digital and analog I/O module"');
   expect(svg).toContain(">I</text>");
   expect(svg).toContain(">Q</text>");
+  expect(svg).toContain(">AI</text>");
+  for (const { x, y } of anchors) expect(svg).toContain(`M ${x} ${y} H ${x < 500 ? 475 : 525}`);
+});
+
+it.each(["signal.adc", "signal.dac"])("connects every %s symbol lead to its anchor", (definitionId) => {
+  const definition = catalogById.get(definitionId)!;
+  const document = { id: "converter-sheet", name: "Converter", description: "", revision: 0, wires: [], components: [
+    { id: "converter", definitionId, reference: "U1", x: 500, y: 340, rotation: 0 as const, properties: {} },
+  ] };
+  const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 500, y: 340 }));
+  const anchors = terminalAnchors(document);
+  expect(anchors).toHaveLength(3);
+  for (const { x, y } of anchors) expect(svg).toContain(`M ${x} ${y} H ${x < 500 ? 476 : 524}`);
 });
 
 it("positions transformer primary and secondary pins around a dedicated winding symbol", () => {
