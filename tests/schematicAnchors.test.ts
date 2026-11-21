@@ -444,6 +444,9 @@ it("draws the solenoid actuator and positions its coil terminals", () => {
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 340, y: 250, properties: { energized: true, returnSpring: true } }));
   expect(svg).toContain('aria-label="Solenoid actuator, energized"');
   expect(svg).toContain('data-state="energized"');
+  for (const anchor of anchors) {
+    expect(svg).toContain(`d="M ${anchor.x} ${anchor.y} H 316"`);
+  }
 });
 
 it("draws a feed-through terminal block and positions both wire terminals", () => {
