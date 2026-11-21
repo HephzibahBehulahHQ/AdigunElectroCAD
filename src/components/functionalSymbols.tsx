@@ -77,6 +77,10 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     const plunger = energized ? x + 24 : x + 10;
     const spring = properties.returnSpring === true;
     return <g className={mark} aria-label={`Solenoid actuator, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "idle"}>
+      {["a1", "a2"].map((terminalId) => {
+        const offset = controlTerminalOffset("catalog-solenoid-actuator", terminalId)!;
+        return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x - 24}`} />;
+      })}
       <rect x={x - 24} y={y - 17} width="24" height="34" rx="2" />
       <path d={`M ${x - 20} ${y - 10} q 16 5 0 10 q -16 5 0 10 M ${x} ${y} H ${plunger} M ${plunger} ${y - 8} V ${y + 8}${spring ? ` M ${x + 27} ${y - 10} l 4 5 l -8 5 l 8 5 l -4 5` : ""}`} />
     </g>;
