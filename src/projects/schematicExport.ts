@@ -55,6 +55,13 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | 
   ];
   copy.querySelectorAll(editingAids.join(", ")).forEach((node) => node.remove());
   copy.querySelectorAll(".selected, .selected-wire").forEach((node) => node.classList.remove("selected", "selected-wire"));
+  copy.querySelectorAll("[data-export-grid-spacing]").forEach(pattern => {
+    const spacing = pattern.getAttribute("data-export-grid-spacing")!;
+    pattern.setAttribute("width", spacing);
+    pattern.setAttribute("height", spacing);
+    pattern.querySelector("path")?.setAttribute("d", `M ${spacing} 0 L 0 0 0 ${spacing}`);
+    pattern.removeAttribute("data-export-grid-spacing");
+  });
   copy.removeAttribute("style");
   const frame = layout ? printFrameBounds(layout) : { x: 0, y: 0, width: 1100, height: 780 };
   const printOverlay = copy.querySelector("[data-print-frame]");

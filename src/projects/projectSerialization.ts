@@ -8,6 +8,7 @@ import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotat
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 import { MAX_DRAWING_GUIDES } from "../cad/drawingGuides";
 import { validPrintLayout, type PrintLayout } from "../cad/printLayout";
+import { validDrawingGrid, type DrawingGrid } from "../cad/drawingGrid";
 import type { DrawingGuide } from "../types/electrical";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -110,6 +111,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
     ...(document.guides === undefined ? {} : { guides: parseDrawingGuides(document.guides) }),
     ...(document.printLayout === undefined ? {} : { printLayout: parsePrintLayout(document.printLayout) }),
+    ...(document.drawingGrid === undefined ? {} : { drawingGrid: parseDrawingGrid(document.drawingGrid) }),
   };
   const ids = new Set(parsed.draftingLayers?.map((layer) => layer.id));
   if ([...parsed.components, ...parsed.wires].some((entity) => entity.layerId !== undefined && !ids.has(entity.layerId))) {
@@ -120,6 +122,13 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
+}
+
+function parseDrawingGrid(value: unknown): DrawingGrid {
+  const raw = object(value, "Invalid drawing grid.");
+  const grid = { displaySpacing: raw.displaySpacing, snapSpacing: raw.snapSpacing, snapEnabled: raw.snapEnabled } as DrawingGrid;
+  if (!validDrawingGrid(grid)) throw new Error("Invalid drawing grid spacing or snap setting.");
+  return grid;
 }
 
 function parsePrintLayout(value: unknown): PrintLayout {
