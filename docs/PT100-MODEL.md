@@ -13,3 +13,5 @@ Tests compare eight rounded published checkpoints from −200 through 850 °C, c
 The local workspace's 291 tests and production build passed; it also contains separate draft work. Browser checks displayed 107.79 Ω at 20 °C, 18.52 Ω at −200 °C, 280.98 Ω at 500 °C and 390.48 Ω at 850 °C. At −201 °C the panel showed a supported-range error. Undo and reload restored the original two-sheet project.
 
 This is a nominal sensor transfer function. Probe calibration, tolerance classes, lead resistance/three-wire compensation, excitation and self-heating, thermal dynamics, physical current solving and inverse temperature conversion are not modeled. Production behavior remains unverified.
+
+On 2026-11-21, production browser verification loaded the transmitter example from Projects. At 0 °C the probe showed 100.00 Ω and PLC1 displayed AI0 0 with Q0 OFF. Editing the probe to 100 °C gave 138.51 Ω. Running the PLC produced AI0 27648 and Q0 ON. Deleting the ADC-to-PLC wire and running again showed AI0 INVALID, Q0 OFF, and a diagnostic naming the missing PLC1.AI0 wire. Undo restored the wire, and restarting simulation recovered AI0 27648 and Q0 ON. The temporary edits were undone.
