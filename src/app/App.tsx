@@ -125,6 +125,8 @@ export function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [wireMode, setWireMode] = useState(false);
   const [wireStart, setWireStart] = useState<TerminalEndpoint | null>(null);
+  const [wireBends, setWireBends] = useState<Array<{ x: number; y: number }>>([]);
+  useEffect(() => { setWireBends([]); }, [wireStart, wireMode, activeSheetId]);
   const [crossSheetContinuationMode, setCrossSheetContinuationMode] = useState(false);
   const [crossSheetContinuationStart, setCrossSheetContinuationStart] = useState<ProjectTerminalReference | null>(null);
   const [crossSheetContinuationExtendId, setCrossSheetContinuationExtendId] = useState("");
@@ -1305,7 +1307,12 @@ export function App() {
   };
 
   const selectWireTerminal = (endpoint: TerminalEndpoint, continueBranch = false) => {
-    if (!wireMode) return;
+    if (!wireMode) {
+      toggleWireMode();
+      setWireStart(endpoint);
+      setNotice("Wire start selected. Click another terminal to connect, or click the drawing to add bends.");
+      return;
+    }
     if (crossSheetContinuationMode) {
       const selected: ProjectTerminalReference = { sheetId: activeSheet.id, endpoint };
       if (crossSheetContinuationExtendId) {
@@ -1358,7 +1365,7 @@ export function App() {
     if (!wireStart) {
       setWireStart(endpoint);
       setWireBranchStart(null);
-      setNotice("Wire start selected. Choose a compatible target terminal.");
+      setNotice("Wire start selected. Click another terminal to connect, or click the drawing to add bends.");
       return;
     }
     const reconnectingWire = reconnectingWireId ? document.wires.find((wire) => wire.id === reconnectingWireId) : undefined;
@@ -1379,11 +1386,13 @@ export function App() {
       const check = canConnectTerminals(document, catalogById, wireStart, endpoint);
       if (!check.ok) { setNotice(check.reason ?? "The selected terminals cannot be connected."); return; }
       const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
+      if (!wireBranchStart) wire.points = wireBends;
       updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
       setSelectedWireId(wire.id);
       setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
     }
     setWireStart(continueBranch && !reconnectingWire ? wireStart : null);
+    setWireBends([]);
     setWireBranchStart(continueBranch && !reconnectingWire ? wireBranchStart : null);
     setReconnectingWireId("");
   };
@@ -1986,7 +1995,7 @@ export function App() {
 
         <section ref={drawingAreaRef} className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs" role="tablist" aria-label="Project sheets">{project.sheets.map((sheet, index) => <div key={sheet.id} className={`sheet-tab ${sheet.id === activeSheet.id ? "active" : ""} ${draggedSheetId === sheet.id ? "dragging" : ""}`} draggable onDragStart={(event) => { if ((event.target as HTMLElement).closest(".sheet-tab-remove")) { event.preventDefault(); return; } setDraggedSheetId(sheet.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", sheet.id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); const sourceId = event.dataTransfer.getData("text/plain") || draggedSheetId; moveSheetTab(sourceId, sheet.id); }} onDragEnd={() => setDraggedSheetId("")} title="Drag to reorder sheet"><button type="button" role="tab" aria-selected={sheet.id === activeSheet.id} className="sheet-tab-select" onClick={() => selectSheet(sheet.id)} onKeyDown={(event) => { if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return; event.preventDefault(); const target = project.sheets[index + (event.key === "ArrowLeft" ? -1 : 1)]; if (target) moveSheetTab(sheet.id, target.id); }}>{sheet.name} · Sheet {index + 1}</button><button type="button" className="sheet-tab-remove" aria-label={`Remove ${sheet.name}`} title="Remove sheet (Undo restores it)" disabled={project.sheets.length <= 1} onClick={(event) => { event.stopPropagation(); removeSheetTab(sheet.id); }}>×</button></div>)}<button className="add-sheet-tab" onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} placementPreviewDefinitionId={isReferenceSheet || wireMode || graphicMode || annotationMode ? undefined : catalogDragId || placementDefinitionId} placementDragging={Boolean(catalogDragId)} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={currentZoom} freeView={freeView} onAddGuide={isReferenceSheet ? undefined : addDrawingGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: snapDrawingCoordinate(x, snapSpacing), y: snapDrawingCoordinate(y, snapSpacing) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
+          <Schematic document={document} placementPreviewDefinitionId={isReferenceSheet || wireMode || graphicMode || annotationMode ? undefined : catalogDragId || placementDefinitionId} placementDragging={Boolean(catalogDragId)} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} wireBends={wireBends} onWireBend={wireMode && wireStart && !wireBranchStart && !crossSheetContinuationMode && !reconnectingWireId ? (point) => setWireBends((bends) => { const last = bends.at(-1); return last?.x === point.x && last.y === point.y ? bends : [...bends, point]; }) : undefined} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={currentZoom} freeView={freeView} onAddGuide={isReferenceSheet ? undefined : addDrawingGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: snapDrawingCoordinate(x, snapSpacing), y: snapDrawingCoordinate(y, snapSpacing) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and drag placed symbols freely.</>}</div>
         </section>
 
