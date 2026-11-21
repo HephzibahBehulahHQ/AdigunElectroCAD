@@ -4,6 +4,14 @@ export type DrawingCamera = { center: DrawingPoint; zoom: number };
 export type DrawingBounds = DrawingPoint & DrawingViewport;
 export const MIN_FREE_ZOOM = .0001;
 export const MAX_FREE_ZOOM = 2;
+export const DRAWING_RULER_LEFT = 55;
+export const DRAWING_RULER_TOP = 21;
+
+export function unobstructedDrawingBounds(bounds: DrawingBounds, zoom: number): DrawingBounds {
+  const left = DRAWING_RULER_LEFT / zoom;
+  const top = DRAWING_RULER_TOP / zoom;
+  return { x: bounds.x + left, y: bounds.y + top, width: Math.max(0, bounds.width - left), height: Math.max(0, bounds.height - top) };
+}
 
 export function fitDrawingCamera(bounds: DrawingBounds, viewport: DrawingViewport): DrawingCamera {
   const scale = Math.min((viewport.width - 128) / Math.max(bounds.width, 1), (viewport.height - 72) / Math.max(bounds.height, 1));
