@@ -20,11 +20,14 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
 }
 
 export function moveComponentsByGrid(document: CircuitDocument, componentIds: string[], deltaX: number, deltaY: number): { document: CircuitDocument; ok: boolean; reason?: string } {
+  return moveComponentsByOffset(document, componentIds, Math.round(deltaX / 20) * 20, Math.round(deltaY / 20) * 20);
+}
+
+export function moveComponentsByOffset(document: CircuitDocument, componentIds: string[], dx: number, dy: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const ids = [...new Set(componentIds)];
-  if (!ids.length || !Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return { document, ok: false, reason: "Select components and use a finite grid movement." };
+  if (!ids.length || !Number.isFinite(dx) || !Number.isFinite(dy)) return { document, ok: false, reason: "Select components and enter a finite movement." };
   const selected = document.components.filter((component) => ids.includes(component.id));
   if (selected.length !== ids.length) return { document, ok: false, reason: "One or more selected components no longer exist." };
-  const dx = Math.round(deltaX / 20) * 20; const dy = Math.round(deltaY / 20) * 20;
   if (dx === 0 && dy === 0) return { document, ok: true };
   const selectedIds = new Set(ids);
   const stationary = document.components.filter((component) => !selectedIds.has(component.id));
@@ -89,9 +92,39 @@ export function renameWire(document: CircuitDocument, wireId: string, netName: s
   return { ...document, revision: document.revision + 1, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, netName } : wire) };
 }
 
-export function reconnectWire(document: CircuitDocument, wireId: string, target: TerminalEndpoint): CircuitDocument {
-  if (!document.wires.some((wire) => wire.id === wireId)) return document;
-  return { ...document, revision: document.revision + 1, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, to: target, points: [] } : wire) };
+export function reconnectWire(document: CircuitDocument, wireId: string, target: TerminalEndpoint, side: "from" | "to" = "to"): CircuitDocument {
+  const current = document.wires.find((wire) => wire.id === wireId);
+  if (!current || sameEndpoint(current[side], target)) return document;
+  const replacement: Wire = { ...current, [side]: target, points: [] };
+  if (side === "from") {
+    delete replacement.branchOfWireId;
+    delete replacement.branchSource;
+    delete replacement.branchPosition;
+  }
+  const replacements = new Map<string, Wire>([[wireId, replacement]]);
+  const branchesByParent = new Map<string, Wire[]>();
+  for (const wire of document.wires) {
+    if (!wire.branchOfWireId) continue;
+    const siblings = branchesByParent.get(wire.branchOfWireId) ?? [];
+    siblings.push(wire);
+    branchesByParent.set(wire.branchOfWireId, siblings);
+  }
+  const pending = [replacement];
+  while (pending.length) {
+    const parent = pending.pop()!;
+    for (const branch of branchesByParent.get(parent.id) ?? []) {
+      const anchor = parent[branch.branchSource ?? "from"];
+      if (replacements.has(branch.id) || sameEndpoint(branch.from, anchor)) continue;
+      const next = { ...branch, from: anchor };
+      replacements.set(next.id, next);
+      pending.push(next);
+    }
+  }
+  return { ...document, revision: document.revision + 1, wires: document.wires.map((wire) => replacements.get(wire.id) ?? wire) };
+}
+
+function sameEndpoint(left: TerminalEndpoint, right: TerminalEndpoint): boolean {
+  return left.componentId === right.componentId && left.terminalId === right.terminalId;
 }
 
 export function removeWire(document: CircuitDocument, wireId: string): CircuitDocument {
