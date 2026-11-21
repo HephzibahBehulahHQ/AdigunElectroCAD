@@ -59,8 +59,9 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | 
   let clipsContent = false;
   const content = copy.querySelector<SVGGElement>("[data-drawing-content]");
   if (content?.childElementCount) {
-    // Measure the sanitized geometry in world units with the editor's fonts loaded.
-    copy.setAttribute("style", "position: fixed; visibility: hidden; pointer-events: none");
+    // Use a fixed CSS scale so browser text measurements cannot vary with the camera.
+    copy.setAttribute("viewBox", "0 0 1100 780");
+    copy.setAttribute("style", "position: fixed; visibility: hidden; pointer-events: none; width: 1100px; height: 780px; min-width: 0; min-height: 0");
     drawing.parentElement?.append(copy);
     try {
       const measured = content.getBBox();
