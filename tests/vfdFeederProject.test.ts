@@ -9,6 +9,7 @@ import { createVfdFeederProject } from "../src/projects/vfdFeederProject";
 import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { templateLibrary } from "../src/projects/templateLibrary";
 import { verifyProjectTemplate } from "../src/projects/templateVerification";
+import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 it("registers an executable VFD feeder with real terminals and explicitly bounded generic assumptions", () => {
   const template = templateLibrary.find((item) => item.id === "vfd-motor-feeder")!;
@@ -21,6 +22,25 @@ it("registers an executable VFD feeder with real terminals and explicitly bounde
   expect(template.document.wires).toHaveLength(11);
   expect(template.document.components.find((item) => item.reference === "M1")?.properties).toMatchObject({ nominalSpeedRpm: 1500, ratedFrequencyHz: 50 });
   expect(template.operatingSequence?.map((step) => step.name)).toEqual(["Enable drive at 25 Hz", "Raise command to 50 Hz", "Disable drive"]);
+});
+
+it("inhibits every drive output when any input phase is disconnected and recovers when rewired", () => {
+  const { document } = createVfdFeederProject();
+  const enabled = {
+    ...document,
+    components: document.components.map(component => component.id === "drive"
+      ? { ...component, properties: { ...component.properties, enabled: true, commandHz: 25 } }
+      : component),
+  };
+  for (const phase of ["l1", "l2", "l3"]) {
+    const disconnected = { ...enabled, wires: enabled.wires.filter(wire => wire.id !== `breaker-${phase}`) };
+    const results = executeCircuitModels(disconnected, catalogById);
+    expect(results.find(result => result.componentId === "drive")?.output.value).toBe("INPUT SUPPLY INCOMPLETE");
+    expect(results.find(result => result.componentId === "motor")?.output.value).toBe("STANDBY");
+  }
+  const restored = executeCircuitModels(enabled, catalogById);
+  expect(restored.find(result => result.componentId === "drive")?.output.value).toBe("25.0 Hz");
+  expect(restored.find(result => result.componentId === "motor")?.output.value).toBe("750 rpm / 0 kW");
 });
 
 it("keeps phase and PE continuation identities linked across four workbook sheets", () => {
