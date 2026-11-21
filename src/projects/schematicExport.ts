@@ -33,7 +33,18 @@ const standaloneStyles = `
   .project-continuation-marker text { font: 700 10px Inter, Arial, sans-serif; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
 `;
 
-export function snapshotSchematicSvg(drawing: SVGSVGElement): SVGSVGElement {
+type DrawingBounds = { x: number; y: number; width: number; height: number };
+
+export function paddedDrawingBounds(bounds: DrawingBounds, padding = 24): DrawingBounds {
+  const x = Math.floor(bounds.x - padding), y = Math.floor(bounds.y - padding);
+  return { x, y, width: Math.ceil(bounds.x + bounds.width + padding) - x, height: Math.ceil(bounds.y + bounds.height + padding) - y };
+}
+
+export function drawingFitsFrame(bounds: DrawingBounds, frame: DrawingBounds): boolean {
+  return bounds.x >= frame.x && bounds.y >= frame.y && bounds.x + bounds.width <= frame.x + frame.width && bounds.y + bounds.height <= frame.y + frame.height;
+}
+
+export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | "frame" = "drawing"): { svg: SVGSVGElement; clipsContent: boolean } {
   const copy = drawing.cloneNode(true) as SVGSVGElement;
   const editingAids = [
     "[data-export-exclude]", ".selection-boundary", ".selection-marquee", ".terminal-anchors",
@@ -41,27 +52,36 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement): SVGSVGElement {
     "[data-resize-handle]", "[data-vertex-handle]", "[data-graphic-id=__preview__]",
   ];
   copy.querySelectorAll(editingAids.join(", ")).forEach((node) => node.remove());
+  copy.querySelectorAll(".selected, .selected-wire").forEach((node) => node.classList.remove("selected", "selected-wire"));
   copy.removeAttribute("style");
-  const exportView = drawing.getAttribute("data-export-view-box");
-  const { width, height } = drawing.viewBox.baseVal;
-  if (exportView) {
-    const [x, y, exportWidth, exportHeight] = exportView.split(" ");
-    copy.setAttribute("viewBox", exportView);
-    copy.removeAttribute("data-export-view-box");
-    copy.querySelectorAll("[data-viewport-fill]").forEach((node) => {
-      node.setAttribute("x", x);
-      node.setAttribute("y", y);
-      node.setAttribute("width", exportWidth);
-      node.setAttribute("height", exportHeight);
-      node.removeAttribute("data-viewport-fill");
-    });
-    copy.setAttribute("width", exportWidth);
-    copy.setAttribute("height", exportHeight);
-    return copy;
+  const frame = { x: 0, y: 0, width: 1100, height: 780 };
+  let bounds = frame;
+  let clipsContent = false;
+  const content = copy.querySelector<SVGGElement>("[data-drawing-content]");
+  if (content?.childElementCount) {
+    // Measure the sanitized geometry in world units with the editor's fonts loaded.
+    copy.setAttribute("style", "position: fixed; visibility: hidden; pointer-events: none");
+    drawing.parentElement?.append(copy);
+    try {
+      const measured = content.getBBox();
+      if (measured.width > 0 || measured.height > 0) {
+        clipsContent = !drawingFitsFrame(paddedDrawingBounds(measured, 6), frame);
+        if (scope === "drawing") bounds = paddedDrawingBounds(measured);
+      }
+    } finally {
+      copy.remove();
+      copy.removeAttribute("style");
+    }
   }
+  const { x, y, width, height } = bounds;
+  copy.setAttribute("viewBox", `${x} ${y} ${width} ${height}`);
+  copy.querySelectorAll("[data-viewport-fill]").forEach((node) => {
+    for (const [name, value] of Object.entries(bounds)) node.setAttribute(name, String(value));
+    node.removeAttribute("data-viewport-fill");
+  });
   copy.setAttribute("width", String(width));
   copy.setAttribute("height", String(height));
-  return copy;
+  return { svg: copy, clipsContent };
 }
 
 export function prepareStandaloneSchematicSvg(markup: string): string {

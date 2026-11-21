@@ -842,20 +842,25 @@ export function App() {
     URL.revokeObjectURL(url);
   };
 
-  const captureSchematicSvg = () => {
+  const captureSchematicSvg = (scope: "drawing" | "frame" = "drawing") => {
     const drawing = window.document.querySelector("svg.schematic");
     if (!(drawing instanceof SVGSVGElement)) {
       setNotice("No schematic drawing is available for export.");
       return null;
     }
-    const copy = snapshotSchematicSvg(drawing);
-    return prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(copy));
+    const { svg, clipsContent } = snapshotSchematicSvg(drawing, scope);
+    if (scope === "frame" && clipsContent && !window.confirm("The 1100 × 780 frame clips part of this drawing. Export the frame anyway?")) return null;
+    return {
+      markup: prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(svg)),
+      width: Number(svg.getAttribute("width")), height: Number(svg.getAttribute("height")),
+    };
   };
 
-  const exportSchematicSvg = () => {
+  const exportSchematicSvg = (scope: "drawing" | "frame" = "drawing") => {
     try {
-      const markup = captureSchematicSvg();
-      if (!markup) return;
+      const image = captureSchematicSvg(scope);
+      if (!image) return;
+      const { markup } = image;
       downloadBlob(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }), "adigun-electro-cad-schematic.svg");
       setNotice("Standalone schematic SVG exported.");
     } catch {
@@ -865,14 +870,16 @@ export function App() {
 
   const exportSchematicPng = () => {
     try {
-      const markup = captureSchematicSvg();
-      if (!markup) return;
+      const capture = captureSchematicSvg();
+      if (!capture) return;
+      const { markup, width, height } = capture;
       const sourceUrl = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }));
       const image = new Image();
       image.onload = () => {
         const canvas = window.document.createElement("canvas");
-        canvas.width = 1100;
-        canvas.height = 780;
+        const scale = Math.min(1, 4096 / Math.max(width, height));
+        canvas.width = Math.max(1, Math.ceil(width * scale));
+        canvas.height = Math.max(1, Math.ceil(height * scale));
         const context = canvas.getContext("2d");
         if (!context) {
           URL.revokeObjectURL(sourceUrl);
@@ -1810,7 +1817,7 @@ export function App() {
           }, 0);
         }
       }}>
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={exportSchematicSvg}>Export SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button></div></details>
