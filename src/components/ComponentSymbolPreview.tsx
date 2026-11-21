@@ -31,7 +31,9 @@ export function ComponentSymbolPreview({ definition, thumbnail = false }: {
       const label = definition.terminals.find(({ id }) => id === endpoint.terminalId)?.label;
       return <text key={endpoint.terminalId} className="free-terminal-label"
         x={x + (vertical || x === 0 ? 0 : x < 0 ? -4 : 4)} y={y + (y < 0 ? -4 : 10)}
-        textAnchor={vertical || x === 0 ? "middle" : x < 0 ? "end" : "start"}>{label}</text>;
+        textAnchor={vertical || x === 0 ? "middle" : x < 0 ? "end" : "start"}
+        textLength={vertical && label && label.length > 3 ? 18 : undefined}
+        lengthAdjust={vertical && label && label.length > 3 ? "spacingAndGlyphs" : undefined}>{label}</text>;
     })}
   </svg>;
 }
