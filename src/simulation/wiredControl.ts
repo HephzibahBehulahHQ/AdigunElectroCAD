@@ -1,4 +1,5 @@
 import type { CircuitDocument, ElectricalComponentDefinition } from "../types/electrical";
+import { isControlTransformerPrimary } from "../electrical/topology";
 
 export interface WiredCoilState { energized: boolean; voltageV: number; error?: string; }
 
@@ -19,7 +20,8 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
   const loads = [...coils, ...indicators];
   const acSources = document.components.filter(c => model(c.id) === "control-supply-v1");
   const dcSources = document.components.filter(c => model(c.id) === "catalog-dc-control-supply");
-  const sources = [...acSources, ...dcSources];
+  const transformers = document.components.filter(c => model(c.id) === "catalog-control-transformer");
+  const sources = [...acSources, ...dcSources, ...transformers];
   if (!loads.length) return new Map();
   let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true || (model(c.id) === "catalog-on-delay-timer" && props(c.id).energized === true)]));
   const seen = new Set<string>();
@@ -37,7 +39,8 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       const c = document.components.find(c => c.id === id);
       return (c?.customTerminals ?? catalog.get(c?.definitionId ?? "")?.terminals)?.some(t => t.id === terminal && t.kind === "control");
     };
-    for (const wire of document.wires) if (isControl(wire.from.componentId, wire.from.terminalId) && isControl(wire.to.componentId, wire.to.terminalId)) {
+    const supportsControl = (id: string, terminal: string) => isControl(id, terminal) || isControlTransformerPrimary(model(id), terminal);
+    for (const wire of document.wires) if (supportsControl(wire.from.componentId, wire.from.terminalId) && supportsControl(wire.to.componentId, wire.to.terminalId)) {
       link(key(wire.from.componentId, wire.from.terminalId), key(wire.to.componentId, wire.to.terminalId));
     }
     for (const c of document.components) {
@@ -59,9 +62,31 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       for (let n = 0; n < queue.length; n++) for (const next of graph.get(queue[n]) ?? []) if (!visited.has(next)) { visited.add(next); queue.push(next); }
       return visited;
     };
-    const supplyPorts = (supplyId: string) => model(supplyId) === "catalog-dc-control-supply"
-      ? { live: "plus-out", return: "zero-out", voltage: props(supplyId).nominalVoltageV, dc: true }
-      : { live: "line", return: "neutral", voltage: props(supplyId).voltageV, dc: false };
+    const transformerVoltage = new Map<string, number>();
+    for (const transformer of transformers) {
+      const p = props(transformer.id);
+      const a = reachable(key(transformer.id, "p1"));
+      const b = reachable(key(transformer.id, "p2"));
+      const candidates = acSources.filter(source => [a, b].some(net => net.has(key(source.id, "line")) || net.has(key(source.id, "neutral"))));
+      if (candidates.length !== 1 || a.has(key(transformer.id, "p2"))) continue;
+      const input = props(candidates[0].id);
+      const line = key(candidates[0].id, "line"), neutral = key(candidates[0].id, "neutral");
+      if (input.outputEnabled === false || !((a.has(line) && b.has(neutral)) || (b.has(line) && a.has(neutral)))) continue;
+      if ([a, b].some(net => sources.some(source => transformer.id !== source.id && !acSources.includes(source) &&
+        ["s1", "s2", "plus-out", "zero-out"].some(terminal => net.has(key(source.id, terminal)))))) continue;
+      if ([a, b].some(net => net.has(key(transformer.id, "s1")) || net.has(key(transformer.id, "s2")))) continue;
+      const primary = Number(p.primaryVoltageV), secondary = Number(p.secondaryVoltageV), applied = Number(input.voltageV);
+      const loadPercent = Number(p.loadPercent ?? 0);
+      if (![primary, secondary, applied].every(value => Number.isFinite(value) && value > 0) || !Number.isFinite(loadPercent) || loadPercent < 0 || loadPercent > 100) continue;
+      const voltage = applied * (secondary / primary) * (1 - loadPercent / 2000);
+      if (Number.isFinite(voltage) && voltage > 0) transformerVoltage.set(transformer.id, voltage);
+    }
+    const supplyPorts = (supplyId: string) => {
+      const supplyModel = model(supplyId);
+      if (supplyModel === "catalog-dc-control-supply") return { live: "plus-out", return: "zero-out", voltage: props(supplyId).nominalVoltageV, dc: true };
+      if (supplyModel === "catalog-control-transformer") return { live: "s1", return: "s2", voltage: transformerVoltage.get(supplyId), dc: false };
+      return { live: "line", return: "neutral", voltage: props(supplyId).voltageV, dc: false };
+    };
     const supplyError = (supplyId: string): string | undefined => {
       const p = props(supplyId);
       if (p.outputEnabled === false) return "Control supply output is disabled.";
@@ -92,6 +117,10 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
         const ports = supplyPorts(supply.id);
         const live = key(supply.id, ports.live), neutral = key(supply.id, ports.return);
         const disabled = supplyError(supply.id);
+        if (model(supply.id) === "catalog-control-transformer" && ports.voltage === undefined) {
+          result.set(load.id, value);
+          continue;
+        }
         if (disabled) value.error = disabled;
         else if (reachable(live).has(neutral)) value.error = "Control supply output terminals are shorted.";
         else if (indicator && ports.dc && a.has(neutral) && b.has(live)) value.error = "Indicator DC polarity is reversed; T1 requires the positive supply.";
