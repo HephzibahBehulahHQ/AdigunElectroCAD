@@ -66,6 +66,25 @@ describe("project template library", () => {
     ], catalogById);
     expect(results.every((result) => !result.passed)).toBe(true);
   });
+  it("requires baseline checks and a recorded sequence before marking an example verified", () => {
+    const template = templateLibrary[0];
+    expect(verifyProjectTemplate({ ...template, expectedOutputs: [], operatingSequence: [] }, catalogById)).toMatchObject({
+      passed: false,
+      failedExpectations: ["Project has no baseline output checks", "Project has no checked operating sequence"],
+    });
+  });
+
+  it("rejects an unasserted fault even when the recorded output still matches", () => {
+    const template = structuredClone(templateLibrary.find(({ id }) => id === "type-k-terminal-emf-alarm")!);
+    const probe = template.document.components.find(({ id }) => id === "probe")!;
+    probe.properties.temperatureC = 2000;
+    const expectations = [{ reference: "Q1", label: "Coil", exact: "OFF" }];
+    const [step] = verifyCircuitSequence(template.document, [{ name: "Unchecked probe failure", changes: [], expectations }], catalogById);
+    expect(step.failures).toEqual(expect.arrayContaining([expect.stringContaining("Unexpected fault at B1")]));
+    expect(verifyProjectTemplate(template, catalogById).failedExpectations).toEqual(
+      expect.arrayContaining([expect.stringContaining("Unexpected baseline fault at B1")]),
+    );
+  });
   it("enforces recorded operating steps for motor-feeder variants", () => {
     const template = structuredClone(templateFixtures[0]);
     expect(template.operatingSequence).toHaveLength(4);
