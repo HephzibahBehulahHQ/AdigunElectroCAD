@@ -15,10 +15,10 @@ describe("drafting graphic duplication", () => {
     expect(duplicate.points).not.toBe(pathGraphic.points);
   });
 
-  it("moves a duplicate left and up when the forward offset would cross the sheet edge", () => {
+  it("keeps the duplication offset when crossing the old frame", () => {
     const graphic: SchematicGraphic = { id: "box", name: "Box", kind: "rectangle", x1: 1080, y1: 760, x2: 1100, y2: 780, color: "#19324f", fillColor: null, strokeWidth: 2 };
     const duplicate = duplicateSchematicGraphic(graphic, "box-copy");
-    expect([duplicate.x1, duplicate.y1, duplicate.x2, duplicate.y2]).toEqual([1060, 740, 1080, 760]);
+    expect([duplicate.x1, duplicate.y1, duplicate.x2, duplicate.y2]).toEqual([1100, 780, 1120, 800]);
   });
 });
 
@@ -28,8 +28,8 @@ it("edits exact graphic coordinates while preserving its drafting properties", (
   expect(setSchematicGraphicBounds(rectangle, { x1: 80, y1: 90, x2: 360, y2: 270 })).toEqual({ ...rectangle, x1: 80, y1: 90, x2: 360, y2: 270 });
 });
 
-it("rejects graphic coordinates outside the sheet or spans too small to draw", () => {
-  expect(setSchematicGraphicBounds(rectangle, { x1: -1, y1: 90, x2: 360, y2: 270 })).toBeNull();
+it("accepts signed graphic coordinates and rejects spans too small to draw", () => {
+  expect(setSchematicGraphicBounds(rectangle, { x1: -1, y1: 90, x2: 360, y2: 270 })).toMatchObject({ x1: -1 });
   expect(setSchematicGraphicBounds(rectangle, { x1: 80, y1: 90, x2: 82, y2: 270 })).toBeNull();
 });
 
