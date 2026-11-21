@@ -6,6 +6,21 @@ import { catalogById } from "../src/catalog/dolCatalog";
 import { evaluateWiredControl } from "../src/simulation/wiredControl";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import { createTransformerPilotProject } from "../src/projects/transformerPilotProject";
+
+it("applies the transformer ratio only through a complete primary and secondary", () => {
+  const { document } = createTransformerPilotProject();
+  const closed = press(document, "start", true);
+  const lamp = (sheet: typeof document) => evaluateWiredControl(sheet, catalogById).get("lamp");
+  expect(lamp(closed)).toEqual({ energized: true, voltageV: 24 });
+  for (const id of ["switched-line", "neutral", "secondary-a", "secondary-b"]) {
+    expect(lamp({ ...closed, wires: closed.wires.filter(wire => wire.id !== id) })).toMatchObject({ energized: false, voltageV: 0 });
+  }
+  const reduced = { ...closed, components: closed.components.map(component => component.id === "supply"
+    ? { ...component, properties: { ...component.properties, voltageV: 115 } }
+    : component) };
+  expect(lamp(reduced)).toMatchObject({ energized: false, voltageV: 12 });
+});
 
 const design = () => ({ ...createDolMotorStarter(), id: "editable-wired-control" });
 const coil = (document: ReturnType<typeof design>) => evaluateWiredControl(document, catalogById).get("contactor")!;

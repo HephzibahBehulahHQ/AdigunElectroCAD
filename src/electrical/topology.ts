@@ -13,12 +13,21 @@ export interface ConnectionCheck {
   reason?: string;
 }
 
+export function isControlTransformerPrimary(modelId: string | undefined, terminalId: string): boolean {
+  return modelId === "catalog-control-transformer" && (terminalId === "p1" || terminalId === "p2");
+}
+
+function acceptsControlAtPrimary(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>, endpoint: TerminalEndpoint): boolean {
+  const component = document.components.find(item => item.id === endpoint.componentId);
+  return isControlTransformerPrimary(definitions.get(component?.definitionId ?? "")?.simulationModelId, endpoint.terminalId);
+}
+
 export function canConnectTerminals(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>, from: TerminalEndpoint, to: TerminalEndpoint): ConnectionCheck {
   if (from.componentId === to.componentId && from.terminalId === to.terminalId) return { ok: false, reason: "A wire cannot connect a terminal to itself." };
   const fromTerminal = resolveTerminal(from, document, definitions);
   const toTerminal = resolveTerminal(to, document, definitions);
   if (!fromTerminal || !toTerminal) return { ok: false, reason: "Both wire endpoints must be valid catalog terminals." };
-  if (fromTerminal.kind !== toTerminal.kind) return { ok: false, reason: `${fromTerminal.kind} and ${toTerminal.kind} terminals cannot be wired together.` };
+  if (fromTerminal.kind !== toTerminal.kind && !(fromTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, to)) && !(toTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, from))) return { ok: false, reason: `${fromTerminal.kind} and ${toTerminal.kind} terminals cannot be wired together.` };
   const signalIssue = incompatibleSignal(document, definitions, from, to);
   if (signalIssue) return { ok: false, reason: signalIssue };
   if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) return { ok: false, reason: "Two input terminals or two output terminals cannot be wired together." };
@@ -54,7 +63,7 @@ export function validateCircuit(document: CircuitDocument, definitions: Map<stri
     if (!fromTerminal || !toTerminal) continue;
     const signalIssue = incompatibleSignal(document, definitions, wire.from, wire.to);
     if (signalIssue) issues.push({ severity: "error", code: "incompatible-signal-unit", message: `${wire.id}: ${signalIssue}` });
-    if (fromTerminal.kind !== toTerminal.kind) issues.push({ severity: "error", code: "incompatible-terminal-kind", message: `${wire.id} joins incompatible ${fromTerminal.kind} and ${toTerminal.kind} terminals.` });
+    if (fromTerminal.kind !== toTerminal.kind && !(fromTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, wire.to)) && !(toTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, wire.from))) issues.push({ severity: "error", code: "incompatible-terminal-kind", message: `${wire.id} joins incompatible ${fromTerminal.kind} and ${toTerminal.kind} terminals.` });
     if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) issues.push({ severity: "error", code: "incompatible-terminal-direction", message: `${wire.id} joins two ${fromTerminal.direction} terminals.` });
     const connectionId = [endpointId(wire.from), endpointId(wire.to)].sort().join("|");
     if (seenConnections.has(connectionId)) issues.push({ severity: "error", code: "duplicate-terminal-connection", message: `${wire.id} duplicates an existing terminal connection.` });

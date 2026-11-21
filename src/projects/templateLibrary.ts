@@ -18,6 +18,7 @@ import { createWiredStarDeltaTemplate } from "./wiredStarDeltaCircuit";
 import { createSourcedDolTemplate } from "./sourcedDolTemplate";
 import { createPlcSensorActuatorProject } from "./plcSensorActuator";
 import { createTimedRelayTransferProject } from "./timedRelayTransfer";
+import { createTransformerPilotProject } from "./transformerPilotProject";
 import { createVfdFeederProject } from "./vfdFeederProject";
 
 export type TemplateLevel = "Beginner" | "Intermediate" | "Advanced" | "Industrial" | "Expert";
@@ -120,6 +121,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
   createTimedRelayTransferProject(),
+  createTransformerPilotProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
   createTwoMotorTemplate(),
