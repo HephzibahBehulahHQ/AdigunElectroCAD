@@ -5,7 +5,7 @@ export const SOURCE_BACKED_DOL_TEMPLATE_ID = "source-backed-dol-starter";
 
 /** A loadable library entry for the existing, source-identified and terminal-wired Siemens DOL example. */
 export function createSourcedDolTemplate(): ProjectTemplate {
-  const document = createSourcedDolMotorStarter();
+  const document = { ...createSourcedDolMotorStarter(), id: SOURCE_BACKED_DOL_TEMPLATE_ID };
   const running = [
     { reference: "KM1", label: "Starter contacts", exact: "CLOSED · 24 V coil" },
     { reference: "M1", label: "Nominal motor point", exact: "1470 rpm / 7.5 kW" },

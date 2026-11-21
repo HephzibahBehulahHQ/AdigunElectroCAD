@@ -1115,10 +1115,17 @@ export function App() {
     setComponentSelection(loadedSheet.document.components[0]?.id ?? "");
     setRightDockView("properties");
     setSelectedWireId("");
+    setSelectedContinuationId("");
+    setCrossSheetContinuationMode(false);
+    setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
     setWireMode(false);
     setWireStart(null);
     setDirty(true);
-    setNotice(`${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
+    const removedLinks = (targetProject.continuations?.length ?? 0) - (next.continuations?.length ?? 0);
+    setNotice(removedLinks
+      ? `${selectedTemplate.name} loaded. Removed ${removedLinks} cross-sheet net(s) connected to the replaced sheet. Undo restores the original sheet and links.`
+      : `${selectedTemplate.name} loaded with its recorded test sequence and executable component abstractions.`);
     closeProjectsMenu();
   };
 

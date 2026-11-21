@@ -26,7 +26,13 @@ describe("project JSON import validation", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     const sheet = kind === "free-schematic" ? input.sheets[0] : input.sheets[1];
     sheet.kind = kind;
+    if (kind === "free-schematic") sheet.document.id = "reference-dol-motor-starter";
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("type does not match");
+  });
+  it("restores an editable Siemens example saved with the old reference document ID", () => {
+    const input = createStarterProject();
+    input.sheets[0].kind = "free-schematic";
+    expect(parseProjectJson(JSON.stringify(input)).sheets[0].kind).toBe("free-schematic");
   });
   it("round-trips a project containing both reference and free sheets", () => {
     const input = addFreeSchematicSheet(createStarterProject());

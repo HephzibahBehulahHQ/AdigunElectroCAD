@@ -11,7 +11,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
-- 500 loadable engineering projects with parameterized component state, recorded test steps, expected outputs and automatic terminal-topology/model-output verification.
+- 13 selectable, authored engineering examples with editable component state, recorded test steps, and automatic topology and output checks. The PT100 temperature window alarm demonstrates independent low and high alarm paths.
 - Live PLC Control & Analog Lab covering NO/NC contacts, output and set/reset coils, edges, six logic gates, comparators, four math blocks, and a level-sensor → 4–20 mA → ADC → PLC/DAC signal path.
 - Live Industrial Device Lab for pneumatic/hydraulic actuation, HVAC thermal control, renewable energy, safety monitoring and three-phase cable calculations; these models are intentionally not represented as runnable catalog items until their symbol-level circuit integration is complete.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
@@ -30,7 +30,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
 - User-configurable indicator placeholders on the reference DOL sheet. Their colors, indication labels, terminal display labels and reference tags are editable; branch wiring is user-assigned and the generic symbols do not simulate lamp behavior.
 
-The catalog contains eight supported DOL simulation definitions, 67 executable component definitions and 563 parameterized IEC engineering entries, alongside 500 executable engineering projects. Project checks execute documented component abstractions, not high-fidelity plant simulations. It does not claim manufacturer certification or final production acceptance. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
+The internal catalog also includes parameterized definitions used by existing projects and model tests. Selectable library entries and authored projects are the basis for editor acceptance. Project checks execute documented component abstractions. Manufacturer certification and final production acceptance remain outside the current verification. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
 Cloud configuration is loaded before the app from [`public/runtime-config.js`](public/runtime-config.js). The matching schema migration, including ownership and permanent-user insert policies, is in [`supabase/migrations/202611020001_adigunelectrocad_cloud_projects.sql`](supabase/migrations/202611020001_adigunelectrocad_cloud_projects.sql).
 

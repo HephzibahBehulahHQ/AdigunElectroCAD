@@ -78,8 +78,10 @@ function parseSheet(value: unknown, index: number): CircuitSheet {
   const kind = sheet.kind;
   if (kind !== "reference-dol" && kind !== "free-schematic") throw new Error(`Sheet ${index + 1} has an unsupported type.`);
   const document = parseDocument(sheet.document, index);
-  const isDolReference = document.id === "reference-dol-motor-starter" || document.id === "siemens-dol-motor-starter";
-  if ((kind === "reference-dol") !== isDolReference) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
+  const usesFixedDrawing = document.id === "reference-dol-motor-starter";
+  // Older library loads used the Siemens document ID on an editable free sheet.
+  const supportsReferenceSheet = usesFixedDrawing || document.id === "siemens-dol-motor-starter";
+  if (kind === "reference-dol" ? !supportsReferenceSheet : usesFixedDrawing) throw new Error(`Sheet ${index + 1} type does not match its reference drawing model.`);
   if (kind === "reference-dol" && (document.graphics?.length ?? 0) > 0) throw new Error(`Sheet ${index + 1} user-drawn graphics are supported on free schematic sheets only.`);
   return { id: textValue(sheet.id, `sheet ${index + 1} id`, 96), name: textValue(sheet.name, `sheet ${index + 1} name`, 80), kind, document };
 }

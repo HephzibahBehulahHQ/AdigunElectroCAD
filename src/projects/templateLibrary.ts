@@ -4,6 +4,7 @@ import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
 import type { CircuitDocument, ComponentInstance, Wire } from "../types/electrical";
 import type { CircuitSequenceStep } from "./templateVerification";
 import { createAnalogLevelProject } from "./analogLevelProject";
+import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
 import { createPneumaticTemplate } from "./pneumaticCircuit";
 import { createTwoMotorTemplate } from "./twoMotorSequence";
 import { createWiredStarDeltaTemplate } from "./wiredStarDeltaCircuit";
@@ -101,6 +102,7 @@ export const templateFixtures: ProjectTemplate[] = scenarios.map((_, index) => c
 
 export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
+  createPt100TemperatureAlarmProject(),
   createPlcSensorActuatorProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
