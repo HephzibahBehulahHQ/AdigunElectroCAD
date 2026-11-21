@@ -388,3 +388,8 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .project-menu-popover .project-information > summary, .project-menu-popover .project-workbooks > summary { padding:6px 0; font-size:.68rem; font-weight:700; }
 .project-menu-popover .project-information p, .project-menu-popover .project-information li { font-size:.64rem; line-height:1.35; }
 .project-menu-popover .project-information ol { max-height:150px; overflow-y:auto; }
+
+.drafting-layer-fields, .drafting-layer-defaults { min-inline-size: 0; }
+.drafting-layer-defaults { grid-column: 1 / -1; }
+.drafting-layer-fields label { white-space: normal; }
+.drafting-layer-fields select { min-width: 0; }

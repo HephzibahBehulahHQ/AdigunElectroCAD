@@ -11,7 +11,7 @@ export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, o
 }) {
   const [name, setName] = useState("");
   const layer = layers.find((item) => item.id === entity.layerId);
-  return <fieldset className="properties-form graphic-geometry">
+  return <fieldset className="properties-form graphic-geometry drafting-layer-fields">
     <legend>Layer and stroke</legend>
     <label>Drafting layer<select value={entity.layerId ?? ""} onChange={(event) => onChange({ layerId: event.target.value || undefined })}>
       <option value="">Unassigned</option>
@@ -19,7 +19,7 @@ export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, o
     </select></label>
     <label>New layer name<input value={name} maxLength={64} onChange={(event) => setName(event.target.value)} /></label>
     <button type="button" disabled={!name.trim()} onClick={() => { if (onCreateLayer(name)) setName(""); }}>Create and assign layer</button>
-    {layer && <fieldset className="graphic-geometry" key={layer.id}>
+    {layer && <fieldset className="graphic-geometry drafting-layer-defaults" key={layer.id}>
       <legend>{layer.name} defaults</legend>
       <label>Layer color<input type="color" value={layer.draftingColor ?? "#68788b"} onInput={(event) => onLayerChange(layer.id, { draftingColor: event.currentTarget.value })} /></label>
       {layer.draftingColor && <button type="button" onClick={() => onLayerChange(layer.id, { draftingColor: undefined })}>Reset layer color</button>}
