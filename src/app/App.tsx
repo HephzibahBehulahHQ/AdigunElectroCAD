@@ -35,7 +35,7 @@ import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from ".
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
-import { prepareStandaloneSchematicSvg } from "../projects/schematicExport";
+import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
@@ -811,8 +811,7 @@ export function App() {
       setNotice("No schematic drawing is available for export.");
       return null;
     }
-    const copy = drawing.cloneNode(true) as SVGSVGElement;
-    copy.querySelectorAll(".terminal-anchors").forEach((node) => node.remove());
+    const copy = snapshotSchematicSvg(drawing);
     return prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(copy));
   };
 

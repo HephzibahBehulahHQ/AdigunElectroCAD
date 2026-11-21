@@ -6,6 +6,9 @@ describe("schematic SVG export", () => {
     const svg = prepareStandaloneSchematicSvg('<svg viewBox="0 0 10 10"><path class="wire" d="M 0 0 H 10" /></svg>');
     expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(svg).toContain(".wire");
+    expect(svg).toContain(".functional-symbol-text { stroke: none;");
+    expect(svg).toContain(".free-terminal-label");
+    expect(svg).toContain(".project-continuation-marker text");
     expect(svg).toContain('<path class="wire" d="M 0 0 H 10" />');
   });
 });

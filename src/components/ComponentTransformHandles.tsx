@@ -76,7 +76,7 @@ export function ComponentTransformHandles({ component, onPreview, onCommit }: { 
     }}
   />;
 
-  return <g aria-label={`Transform ${component.reference}`}>
+  return <g data-export-exclude="" aria-label={`Transform ${component.reference}`}>
     <path d={`M ${component.x} ${bounds.top} v -14`} stroke="#e0a526" pointerEvents="none" />
     {handle("rotate", component.x, bounds.top - 14)}
     {handle("resize", bounds.right, bounds.bottom)}
