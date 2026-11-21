@@ -1,5 +1,21 @@
 # CAD interaction
 
+## Existing commands and document effects
+
+| Surface | Command and effect |
+| --- | --- |
+| File | Restore or import replaces the project through the edit history. Local and cloud save/load use project JSON. JSON, SVG and PNG export and Print read the current project or drawing. |
+| Edit and toolbar Undo/Redo | Restore a previous or subsequent project snapshot. |
+| View and toolbar Zoom, Fit, Grid | Change canvas scale, framing or grid visibility. Entity coordinates stay in sheet units. |
+| Insert menu and toolbar Insert | Place the selected catalog definition as a real component instance with collision checks and stable terminal IDs. |
+| Electrical and toolbar Wiring | Validate topology, create or extend a continuation, or connect selected compatible terminals. |
+| Draw toolbar | Place text and geometric primitives in the sheet document. |
+| Simulation menu and toolbar | Run, Pause and Stop the runtime. Design and runtime state have separate lifecycles. |
+| Reports, Help, Projects and Laboratory | Generate reports from the current document, open documentation, load an editable template, or open the independent lab. |
+| Canvas, sheet tabs, and Properties | Select entities, move components and terminal routes, edit sheet and entity data, and invoke the existing geometry and stacking commands. |
+
+On free sheets, select one or more components and use **Drafting order** in Properties. These commands save a `zIndex` per component and preserve the selected group’s relative order. Symbols and wire hit targets render in that order. Old projects without a stacking index keep their component array order, and new unranked components render above ranked components. A stack edit is one Undo step and leaves terminal IDs, wire links, collision rules, and simulation traversal order intact. This operates within the existing component layer.
+
 Free-sheet components can be selected individually, added/toggled with Shift+Click, or selected by dragging a box across empty canvas. Box selection uses component and upright-label footprints in either drag direction; Shift-drag adds to the current group, and clicking blank canvas clears selection. Dragging a selected component moves the whole selected group together on the 20-unit grid. During the drag preview, connected wires and dependent branch taps follow the group. The group drop is rejected atomically if any symbol or upright label leaves the drawing area or overlaps a stationary component; rejected or cancelled moves restore the original drawing. Accepted drops preserve terminal endpoints and wire topology. Arrow controls move the selected group with one undoable edit.
 
 Arrow movement and rotation use the same sheet-boundary and label-clearance rules. A rotation near the lower edge may be rejected because its taller body and upright labels would leave the sheet; move the component upward first.

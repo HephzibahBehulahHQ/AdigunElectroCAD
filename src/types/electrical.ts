@@ -32,6 +32,8 @@ export interface ComponentInstance {
   x: number;
   y: number;
   rotation: 0 | 90 | 180 | 270;
+  /** Paint order within the component layer. Older documents use component array order. */
+  zIndex?: number;
   /** Relative symbol size. Missing values in older projects render at 100%. */
   size?: number;
   /** User-selected schematic ink color; presentation only, with no electrical meaning. */

@@ -4,6 +4,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
 import { Schematic } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../src/cad/terminalAnchors";
+import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
+import { parseProjectJson } from "../src/projects/projectSerialization";
+import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import type { ProjectContinuation } from "../src/types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -12,6 +15,33 @@ import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createSourcedDolMotorStarter } from "../src/projects/sourcedDolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+
+it("persists component stacking and renders symbols and terminal hit targets in paint order", () => {
+  const document = createAnalogLevelProject().document;
+  const originalIds = document.components.map((component) => component.id);
+  expect(componentsInStackOrder(document.components).map((component) => component.id)).toEqual(originalIds);
+  const components = reorderComponents(document.components, ["level", "adc"], "front");
+  expect(components.map((component) => component.id)).toEqual(originalIds);
+  expect(reorderComponents(components, ["level", "adc"], "front")).toBe(components);
+  const project = createStarterProject();
+  const sheet = { id: "stack", name: "Stack", kind: "free-schematic" as const, document: { ...document, components } };
+  const [restored] = parseProjectJson(JSON.stringify({ ...project, sheets: [sheet] })).sheets;
+  expect(componentsInStackOrder(restored.document.components).map((component) => component.id)).toEqual(["plc", "coil", "level", "adc"]);
+  expect(restored.document.wires.map(({ from, to }) => ({ from, to }))).toEqual(document.wires.map(({ from, to }) => ({ from, to })));
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document: restored.document,
+    selectedComponentId: "",
+    selectedWireId: "",
+    simulation: initialDolState(),
+    wireMode: true,
+    wireStart: null,
+    onSelect: () => {},
+    onWireSelect: () => {},
+    onTerminalSelect: () => {},
+  }));
+  expect(markup).toMatch(/class="free-reference"[^>]*>PLC1<.*class="free-reference"[^>]*>ADC1</);
+  expect(markup).toMatch(/Wire terminal plc\.ai-0.*Wire terminal adc\.in/);
+});
 
 it("places every selectable catalog terminal at a distinct wireable canvas point", () => {
   for (const definition of componentLibraryCatalog) {

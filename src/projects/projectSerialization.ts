@@ -191,6 +191,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
+    ...(component.zIndex === undefined ? {} : { zIndex: integer(component.zIndex, "component stacking index") }),
     ...(customTerminals === undefined ? {} : { customTerminals }),
     ...(customTerminalOffsets === undefined ? {} : { customTerminalOffsets }),
     ...(customSymbolGraphics === undefined ? {} : { customSymbolGraphics }),
