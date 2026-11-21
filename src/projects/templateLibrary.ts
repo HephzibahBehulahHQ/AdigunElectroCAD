@@ -6,6 +6,7 @@ import type { CircuitSequenceStep } from "./templateVerification";
 import { createAnalogLevelProject } from "./analogLevelProject";
 import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
 import { createPt100PlcTransmitterProject } from "./pt100PlcTransmitterProject";
+import { createPilotIndicatorProject } from "./pilotIndicatorProject";
 import { createPneumaticTemplate } from "./pneumaticCircuit";
 import { createTwoMotorTemplate } from "./twoMotorSequence";
 import { createWiredStarDeltaTemplate } from "./wiredStarDeltaCircuit";
@@ -105,6 +106,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
   createPt100TemperatureAlarmProject(),
   createPt100PlcTransmitterProject(),
+  createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),

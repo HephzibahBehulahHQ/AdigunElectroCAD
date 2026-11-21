@@ -151,6 +151,7 @@ const models: Record<string, Model> = {
   "breaker-3p-v1": breakerPath,
   "three-phase-source-v1": (p) => ({ label: "Nominal supply", value: `${number(p, "voltageV")} V / ${number(p, "frequencyHz")} Hz` }),
   "control-supply-v1": (p) => ({ label: "Nominal AC control supply", value: `${number(p, "voltageV")} V / ${number(p, "frequencyHz")} Hz` }),
+  "indicator-lamp-v1": (p) => ({ label: "Indicator lamp", value: bool(p, "runtimeLampLit") ? `LIT · ${number(p, "runtimeLampVoltageV")} V ${bool(p, "dc") ? "DC" : "AC"}` : "OFF" }),
   "pushbutton-start-v1": (p) => ({ label: "Dry contact 13–14", value: bool(p, "pressed") ? "CLOSED" : "OPEN" }),
   "pushbutton-stop-v1": (p) => ({ label: "Dry contact 21–22", value: bool(p, "pressed") ? "OPEN" : "CLOSED" }),
   "catalog-fuse-switch": (p) => ({ label: "Fuse check", value: bool(p, "fuseHealthy") && number(p, "loadCurrentA") <= number(p, "ratedCurrentA") ? `${(number(p, "loadCurrentA") / number(p, "ratedCurrentA", 1) * 100).toFixed(1)}% load` : "TRIPPED / OVERRATING" }),

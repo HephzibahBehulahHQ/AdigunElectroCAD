@@ -60,7 +60,7 @@ export function powerTerminalOffset(modelId: string, terminalId: string, poles =
 
 /** Keep supported command wires outside the symbol body; COM is a distinct lower anchor. */
 export function controlTerminalOffset(modelId: string, terminalId: string): { x: number; y: number } | undefined {
-  if (modelId === "user-indicator-symbol" || modelId === "user-drawn-symbol") {
+  if (modelId === "indicator-lamp-v1" || modelId === "user-drawn-symbol") {
     if (terminalId === "t1") return { x: -32, y: -13 };
     if (terminalId === "t2") return { x: 32, y: -13 };
     const pin = /^t([3-8])$/.exec(terminalId);
