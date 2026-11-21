@@ -19,7 +19,7 @@
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |
 | Local autosave | Debounced browser-local persistence records dirty project edits; persistence failures expose an export fallback notice | Build validation |
 | Supabase cloud persistence | `adigunelectrocad.projects` and `adigunelectrocad.user_preferences` exist with RLS, ownership policies, permanent-user insert restrictions, and authenticated API grants | Database query + build validation |
-| Schematic export | Standalone SVG namespace/style preparation is automated; browser SVG and PNG download controls are build validated | Automated + build validation |
+| Schematic export | On production release `e633ede`, downloaded the pilot indicator as SVG and PNG at 95% zoom with X1 selected. Both files measured 1100 × 780. The parsed SVG retained the four wires and four references with no editing overlays, and the rendered PNG showed the circuit without selection handles. Undo restored the test sheet. | Browser + automated |
 | Schematic print | The print command exposes only the active schematic and a compact product heading through print CSS | Build validation |
 | Engineering reports | BOM aggregation plus DOL wire-list and terminal-list generation | Automated |
 | Report CSV export | BOM aggregation and wire-list headers serialize as escaped CSV | Automated |
