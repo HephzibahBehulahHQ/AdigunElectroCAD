@@ -11,7 +11,7 @@ export interface CircuitModelRun { componentId: string; reference: string; model
 const endpointKey = (componentId: string, terminalId: string) => `${componentId}.${terminalId}`;
 
 const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
-type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; };
+type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; requiresWire?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
   if (modelId === "pneumatic-valve-5-2" && ["in-a", "in-b"].includes(terminalId)) return { property: terminalId === "in-a" ? "extendCoil" : "retractCoil", acceptedUnits: ["boolean"] };
@@ -21,8 +21,8 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
     if (terminalId === "in" || terminalId === "in-a") return { property: "extendCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDirectBound" };
     if (terminalId === "in-b") return { property: "retractCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDirectBound" };
   }
-  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"] };
-  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-1") return { property: "analogInput1", acceptedUnits: ["plc-raw"] };
+  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-0") return { property: "analogInput0", acceptedUnits: ["plc-raw"], requiresWire: "requireWiredAi0" };
+  if (modelId === "catalog-plc-digital-io" && terminalId === "ai-1") return { property: "analogInput1", acceptedUnits: ["plc-raw"], requiresWire: "requireWiredAi1" };
   if (modelId === "catalog-safety-relay") {
     if (terminalId === "s11") return { property: "channelAClosed", acceptedUnits: ["boolean"] };
     if (terminalId === "s21") return { property: "channelBClosed", acceptedUnits: ["boolean"] };
@@ -46,7 +46,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-plc-digital-io" && ["in-0", "in-1"].includes(terminalId)) return { property: terminalId === "in-0" ? "inputA" : "inputB", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (terminalId === "in") {
-    if (modelId === "signal-adc") return { property: "milliamp", acceptedUnits: ["milliamp"] };
+    if (modelId === "signal-adc") return { property: "milliamp", acceptedUnits: ["milliamp"], requiresWire: "requireWiredInput" };
     if (modelId === "signal-dac") return { property: "raw", acceptedUnits: ["plc-raw"] };
     return { property: "input", acceptedUnits: ["boolean"] };
   }
@@ -97,6 +97,9 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (coil.error) active.runtimeSignalError = coil.error;
   }
   const signals = new Map<string, FunctionalSignal>();
+  const wiredTerminals = new Set(document.wires.flatMap(({ from, to }) => [
+    endpointKey(from.componentId, from.terminalId), endpointKey(to.componentId, to.terminalId),
+  ]));
   const inputUnits = new Map<string, SignalUnit>();
   for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
     let changed = false;
@@ -105,11 +108,13 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       const activeProperties = properties.get(component.id);
       if (!definition || !activeProperties) continue;
       for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
-        const incoming = signals.get(endpointKey(component.id, terminal.id));
+        const key = endpointKey(component.id, terminal.id);
+        const incoming = signals.get(key);
         const binding = inputBinding(definition.simulationModelId, terminal.id);
         const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
         const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
-        const inputError = incoming?.error ?? unitError;
+        const missingWire = binding?.requiresWire && activeProperties[binding.requiresWire] === true && !wiredTerminals.has(key);
+        const inputError = missingWire ? `Required analog terminal ${component.reference}.${terminal.label} has no wire.` : incoming?.error ?? unitError;
         if (inputError && binding) {
           if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
           if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;

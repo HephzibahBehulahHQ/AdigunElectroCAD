@@ -70,6 +70,8 @@ GT AI0 13824; OUT Q0
 
 This switches Q0 on above 50% level. A second independent branch can use `GT AI1 13824; OUT Q1`. For the level sensor, Live Simulation Controls include **Simulate Open Loop**. Enabling it marks the transmitter signal invalid, propagates a fault through the ADC, inhibits the PLC scan, clears Q0/Q1, and shows the affected analog input as `INVALID` instead of displaying its last raw value as current. Turning the fault off resumes the scan from the live level. This is a user-triggered educational fault injection on this signal path; it does not detect physically missing wires, provide NAMUR fault bands, or implement certified diagnostics.
 
+The level-threshold example requires actual wiring at ADC1 input and PLC1 AI0. Removing either local wire or its cross-sheet continuation invalidates AI0, inhibits the PLC scan and de-energizes the controlled output. Reconnecting the path restores the live signal. In other projects, enable the corresponding `requireWiredInput`, `requireWiredAi0` or `requireWiredAi1` component property to require a connection. Existing manually configured inputs remain available with these properties disabled. This checks terminal connectivity in the schematic and models no physical current fault bands.
+
 Select a placed level sensor and use its **Live Level Percent** slider to change the runtime input from 0 to 100% while scanning continues. The saved level stays unchanged, and Stop restores it. The dedicated analog-level example in the project library includes the complete wired chain.
 
 ## Numeric registers and arithmetic
