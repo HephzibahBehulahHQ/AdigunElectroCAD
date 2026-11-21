@@ -12,6 +12,31 @@ import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 const holding: LadderRung[] = [{ stages: [[{ address: "I0", inverted: false }, { address: "Q0", inverted: false }], [{ address: "I1", inverted: true }]], coil: "OUT" }];
 
+it("edits canonical arithmetic rows and sees their register writes in later contacts", () => {
+  const program = "MOV AI0 D0; ADD D0 2 D1; SUB D1 1 D1; MUL D1 2 D2; DIV D2 2 D3; GT D3 10; OUT Q0";
+  const ladder = parseLadder(program)!;
+  expect(compileLadder(ladder)).toBe(program);
+  const inputs = { input0: false, input1: false, q0: false, previousInput0: false, previousInput1: false, analogInput0: 10, registers: [] };
+  expect(previewLadder(ladder, inputs)).toMatchObject({ output: true, contactEnergized: [[], [], [], [], [], [[true]]] });
+  expect(scanPlcProgram(program, false, false, false, 10)).toMatchObject({ ok: true, output: true, registers: [10, 11, 22, 11, 0, 0, 0, 0] });
+  const html = renderToStaticMarkup(createElement(LadderEditor, { program, onApply: () => {}, previewInputs: inputs }));
+  expect(html).toContain("Add arithmetic row");
+  expect(html).toContain("Destination register");
+  expect(html).toContain("DIV D2 2 D3");
+  expect(html).not.toContain("NaN");
+});
+
+it("previews arithmetic faults without changing retained state or leaving outputs energized", () => {
+  const program = "LD I0; SET M0; DIV 1 0 D0; LD I0; OUT Q0";
+  const ladder = parseLadder(program)!;
+  const inputs = { input0: true, input1: false, q0: true, q1: true, previousInput0: false, previousInput1: false, analogInput0: 0, registers: [5] };
+  expect(previewLadder(ladder, inputs)).toMatchObject({ output: false, output1: false, memory: Array(8).fill(false), error: expect.stringContaining("division by zero") });
+  expect(scanPlcProgram(program, true, false, true, 0, inputs.registers)).toMatchObject({ ok: false, output: false, error: expect.stringContaining("division by zero") });
+  expect(inputs.registers).toEqual([5]);
+  expect(parseLadder("MOV AI0 D8; LD I0; OUT Q0")).toBeNull();
+  expect(parseLadder("LD I0; MOV AI0 D0; OUT Q0")).toBeNull();
+});
+
 it("round-trips the start/stop ladder and compiles its actual holding program", () => {
   const program = compileLadder(holding);
   expect(program).toBe("LD I0; OR Q0; ANDN I1; OUT Q0");

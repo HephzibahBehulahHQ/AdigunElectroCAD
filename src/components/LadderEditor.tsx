@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { compileLadder, defaultLadder, duplicateLadderRung, moveLadderRung, parseLadder, previewLadder, type LadderAddress, type LadderComparisonContact, type LadderPreviewInputs, type LadderRung } from "../simulation/ladderProgram";
+import { compileLadder, defaultLadder, duplicateLadderRung, moveLadderRung, parseLadder, previewLadder, type LadderAddress, type LadderArithmetic, type LadderComparisonContact, type LadderPreviewInputs, type LadderRung } from "../simulation/ladderProgram";
+
+import { plcNumericOperations, type PlcNumericOperation } from "../simulation/plcProgram";
 
 export function LadderEditor({ program, onApply, previewInputs }: { program: string; onApply: (program: string) => void; previewInputs?: LadderPreviewInputs }) {
   const [rungs, setRungs] = useState<LadderRung[] | null>(() => parseLadder(program));
@@ -11,9 +13,10 @@ export function LadderEditor({ program, onApply, previewInputs }: { program: str
   return <section className="ladder-editor" aria-label="Graphical PLC ladder editor">
     <strong>Graphical ladder · 32-instruction scan budget</strong>
     <p>Choose OR or XOR for parallel contacts; series stages use AND. Use up to 16 rungs; the 32-instruction PLC scan limit controls the total ladder size. M0–M7 are retained internal bits with OUT/SET/RESET coils. T0–T3 contacts read timer done state; TON coils accumulate scan time while enabled and reset when false. Apply commits one program edit. Run executes it.</p>
-    {!rungs ? <><p>The current text program is outside this editor's contact/coil subset. It stays unchanged until you explicitly apply a new ladder.</p><button onClick={() => setRungs(defaultLadder())}>Create ladder draft</button></> : <>
+    {!rungs ? <><p>The current text program cannot be represented in the graphical editor. It stays unchanged until you explicitly apply a new ladder.</p><button onClick={() => setRungs(defaultLadder())}>Create ladder draft</button></> : <>
       <div className="ladder-preview"><LadderDiagram rungs={rungs} contactEnergized={preview?.contactEnergized} /></div>
-      {preview && <p className="muted" aria-live="polite">Next-scan logic preview: green contact paths conduct under the latest PLC inputs. This is a logic preview, not electrical power flow.</p>}
+      {preview?.error && <p role="status">Next scan fault: {preview.error}</p>}
+      {preview && !preview.error && <p className="muted" aria-live="polite">Next-scan logic preview: green contact paths conduct under the latest PLC inputs. This is a logic preview, not electrical power flow.</p>}
       {rungs.map((rung, rungIndex) => <fieldset key={rungIndex}><legend>Rung {rungIndex + 1}</legend>
         {rung.stages.map((contacts, stageIndex) => <div className="ladder-stage" key={stageIndex}><strong>Series stage {stageIndex + 1}</strong><label>Parallel logic<select aria-label={`R${rungIndex + 1} S${stageIndex + 1} parallel logic`} value={rung.stageOperators?.[stageIndex] ?? "OR"} onChange={(event) => edit((draft) => { const target = draft[rungIndex]; target.stageOperators ??= target.stages.map(() => "OR"); target.stageOperators[stageIndex] = event.target.value as "OR" | "XOR"; if (target.stageOperators.every((operation) => operation === "OR")) delete target.stageOperators; })}><option value="OR">OR</option><option value="XOR">XOR</option></select></label>
           {contacts.map((contact, contactIndex) => <div className="ladder-contact" key={contactIndex}>
@@ -30,26 +33,44 @@ export function LadderEditor({ program, onApply, previewInputs }: { program: str
           </div>)}
           <div className="ladder-actions"><button onClick={() => edit((draft) => { draft[rungIndex].stages[stageIndex].push({ address: "I1", inverted: false }); })}>Add parallel contact · R{rungIndex + 1} S{stageIndex + 1}</button><button disabled={rung.stages.length === 1} onClick={() => edit((draft) => { draft[rungIndex].stages.splice(stageIndex, 1); if (draft[rungIndex].stageOperators) { draft[rungIndex].stageOperators.splice(stageIndex, 1); if (draft[rungIndex].stageOperators.every((operation) => operation === "OR")) delete draft[rungIndex].stageOperators; } })}>Remove stage · R{rungIndex + 1} S{stageIndex + 1}</button></div>
         </div>)}
-        <div className="ladder-actions"><button onClick={() => edit((draft) => { draft[rungIndex].stages.push([{ address: "I1", inverted: false }]); if (draft[rungIndex].stageOperators) draft[rungIndex].stageOperators.push("OR"); })}>Add series stage · R{rungIndex + 1}</button><button type="button" aria-label={`Duplicate rung ${rungIndex + 1}`} disabled={rungs.length >= 16} onClick={() => setRungs((current) => current ? duplicateLadderRung(current, rungIndex) : current)}>Duplicate rung</button><button type="button" aria-label={`Move rung ${rungIndex + 1} up`} disabled={rungIndex === 0} onClick={() => setRungs((current) => current ? moveLadderRung(current, rungIndex, rungIndex - 1) : current)}>Move up</button><button type="button" aria-label={`Move rung ${rungIndex + 1} down`} disabled={rungIndex === rungs.length - 1} onClick={() => setRungs((current) => current ? moveLadderRung(current, rungIndex, rungIndex + 1) : current)}>Move down</button><button disabled={rungs.length === 1} onClick={() => edit((draft) => { draft.splice(rungIndex, 1); })}>Remove rung {rungIndex + 1}</button></div>
-        <label>Rung {rungIndex + 1} coil<select value={typeof rung.coil === "object" ? rung.coil.type === "OUTPUT" ? `${rung.coil.operation}1` : rung.coil.type : rung.coil} onChange={(event) => edit((draft) => { const value = event.target.value; draft[rungIndex].coil = /^(OUT|SET|RESET)1$/.test(value) ? { type: "OUTPUT", address: "Q1", operation: value.slice(0, -1) as "OUT" | "SET" | "RESET" } : value === "TON" ? { type: "TON", timer: "T0", presetSeconds: 0.2 } : value === "MEMORY" ? { type: "MEMORY", address: "M0", operation: "OUT" } : value as "OUT" | "SET" | "RESET"; })}><option value="OUT">Output Q0</option><option value="SET">Set Q0</option><option value="RESET">Reset Q0</option><option value="OUT1">Output Q1</option><option value="SET1">Set Q1</option><option value="RESET1">Reset Q1</option><option value="MEMORY">Internal memory coil</option><option value="TON">On-delay timer</option></select></label>
+        <div className="ladder-actions">{rung.stages.length > 0 && <button onClick={() => edit((draft) => { draft[rungIndex].stages.push([{ address: "I1", inverted: false }]); if (draft[rungIndex].stageOperators) draft[rungIndex].stageOperators.push("OR"); })}>Add series stage · R{rungIndex + 1}</button>}<button type="button" aria-label={`Duplicate rung ${rungIndex + 1}`} disabled={rungs.length >= 16} onClick={() => setRungs((current) => current ? duplicateLadderRung(current, rungIndex) : current)}>Duplicate rung</button><button type="button" aria-label={`Move rung ${rungIndex + 1} up`} disabled={rungIndex === 0} onClick={() => setRungs((current) => current ? moveLadderRung(current, rungIndex, rungIndex - 1) : current)}>Move up</button><button type="button" aria-label={`Move rung ${rungIndex + 1} down`} disabled={rungIndex === rungs.length - 1} onClick={() => setRungs((current) => current ? moveLadderRung(current, rungIndex, rungIndex + 1) : current)}>Move down</button><button disabled={rungs.length === 1} onClick={() => edit((draft) => { draft.splice(rungIndex, 1); })}>Remove rung {rungIndex + 1}</button></div>
+        {typeof rung.coil === "object" && rung.coil.type === "ARITHMETIC" ? <ArithmeticFields row={rung.coil} onChange={(row) => edit((draft) => { draft[rungIndex].coil = row; })} /> : <label>Rung {rungIndex + 1} coil<select value={typeof rung.coil === "object" ? rung.coil.type === "OUTPUT" ? `${rung.coil.operation}1` : rung.coil.type : rung.coil} onChange={(event) => edit((draft) => { const value = event.target.value; draft[rungIndex].coil = /^(OUT|SET|RESET)1$/.test(value) ? { type: "OUTPUT", address: "Q1", operation: value.slice(0, -1) as "OUT" | "SET" | "RESET" } : value === "TON" ? { type: "TON", timer: "T0", presetSeconds: 0.2 } : value === "MEMORY" ? { type: "MEMORY", address: "M0", operation: "OUT" } : value as "OUT" | "SET" | "RESET"; })}><option value="OUT">Output Q0</option><option value="SET">Set Q0</option><option value="RESET">Reset Q0</option><option value="OUT1">Output Q1</option><option value="SET1">Set Q1</option><option value="RESET1">Reset Q1</option><option value="MEMORY">Internal memory coil</option><option value="TON">On-delay timer</option></select></label>}
         {typeof rung.coil === "object" && rung.coil.type === "TON" && <div className="ladder-contact"><label>Timer<select value={rung.coil.timer} onChange={(event) => edit((draft) => { if (typeof draft[rungIndex].coil === "object" && draft[rungIndex].coil.type === "TON") draft[rungIndex].coil.timer = event.target.value as `T${0 | 1 | 2 | 3}`; })}>{["T0", "T1", "T2", "T3"].map((timer) => <option key={timer}>{timer}</option>)}</select></label><label>Preset (seconds)<input type="number" min="0" step="0.1" value={rung.coil.presetSeconds} onChange={(event) => edit((draft) => { if (typeof draft[rungIndex].coil === "object" && draft[rungIndex].coil.type === "TON") draft[rungIndex].coil.presetSeconds = Number(event.target.value); })} /></label></div>}
         {typeof rung.coil === "object" && rung.coil.type === "MEMORY" && <div className="ladder-contact"><label>Memory address<select value={rung.coil.address} onChange={(event) => edit((draft) => { if (typeof draft[rungIndex].coil === "object" && draft[rungIndex].coil.type === "MEMORY") draft[rungIndex].coil.address = event.target.value as `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; })}>{Array.from({ length: 8 }, (_, index) => `M${index}`).map((address) => <option key={address}>{address}</option>)}</select></label><label>Memory action<select value={rung.coil.operation} onChange={(event) => edit((draft) => { if (typeof draft[rungIndex].coil === "object" && draft[rungIndex].coil.type === "MEMORY") draft[rungIndex].coil.operation = event.target.value as "OUT" | "SET" | "RESET"; })}><option value="OUT">Assign</option><option value="SET">Set</option><option value="RESET">Reset</option></select></label></div>}
       </fieldset>)}
-      <div className="ladder-actions"><button disabled={rungs.length >= 16} onClick={() => edit((draft) => { draft.push(defaultLadder()[0]); })}>Add rung</button><button disabled={!!error} onClick={() => onApply(compiled)}>Apply ladder program</button><button onClick={() => setRungs(parseLadder(program))}>Discard ladder draft</button></div>
+      <div className="ladder-actions"><button disabled={rungs.length >= 16} onClick={() => edit((draft) => { draft.push(defaultLadder()[0]); })}>Add rung</button><button disabled={rungs.length >= 16} onClick={() => edit((draft) => { draft.push({ stages: [], coil: { type: "ARITHMETIC", operation: "MOV", left: "AI0", right: "", destination: "D0" } }); })}>Add arithmetic row</button><button disabled={!!error} onClick={() => onApply(compiled)}>Apply ladder program</button><button onClick={() => setRungs(parseLadder(program))}>Discard ladder draft</button></div>
       {error ? <p role="alert">{error}</p> : <><p className="muted">{compiled.split(";").length} / 32 scan instructions</p><pre aria-label="Compiled ladder program">{compiled}</pre></>}
     </>}
   </section>;
 }
 
+function ArithmeticFields({ row, onChange }: { row: LadderArithmetic; onChange: (next: LadderArithmetic) => void }) {
+  return <div className="ladder-contact">
+    <label>Operation<select value={row.operation} onChange={(event) => onChange({ ...row, operation: event.target.value as PlcNumericOperation })}>
+      {plcNumericOperations.map((operation) => <option key={operation}>{operation}</option>)}
+    </select></label>
+    <label>{row.operation === "MOV" ? "Source" : "Left operand"}<input value={row.left} onChange={(event) => onChange({ ...row, left: event.target.value.toUpperCase() })} /></label>
+    {row.operation !== "MOV" && <label>Right operand<input value={row.right} onChange={(event) => onChange({ ...row, right: event.target.value.toUpperCase() })} /></label>}
+    <label>Destination register<select value={row.destination} onChange={(event) => onChange({ ...row, destination: event.target.value })}>
+      {Array.from({ length: 8 }, (_, index) => `D${index}`).map((register) => <option key={register}>{register}</option>)}
+    </select></label>
+  </div>;
+}
+
 function LadderDiagram({ rungs, contactEnergized }: { rungs: LadderRung[]; contactEnergized?: boolean[][][] }) {
   const width = 150 + Math.max(...rungs.map((rung) => rung.stages.length)) * 110;
-  const heights = rungs.map((rung) => 70 + Math.max(...rung.stages.map((contacts) => contacts.length - 1)) * 40);
+  const heights = rungs.map((rung) => 70 + Math.max(0, ...rung.stages.map((contacts) => contacts.length - 1)) * 40);
   const height = heights.reduce((sum, value) => sum + value, 20);
   let top = 10;
   return <svg viewBox={`0 0 ${width} ${height}`} style={{ minWidth: width }} role="img" aria-label="Ladder contact and coil diagram">
     <path d={`M 15 5 V ${height - 5} M ${width - 15} 5 V ${height - 5}`} />
     {rungs.map((rung, index) => {
       const y = top + heights[index] / 2; top += heights[index];
+      if (typeof rung.coil === "object" && rung.coil.type === "ARITHMETIC") {
+        const { operation, left, right, destination } = rung.coil;
+        const command = [operation, left, ...(operation === "MOV" ? [] : [right]), destination].join(" ");
+        return <g key={index}><text x="18" y={y - 18}>R{index + 1}</text><text x="35" y={y} textLength={command.length > 34 ? width - 55 : undefined} lengthAdjust="spacingAndGlyphs">{command}</text></g>;
+      }
       return <g key={index}><text x="18" y={y - heights[index] / 2 + 14}>R{index + 1}</text><path d={`M 15 ${y} H 35 M ${35 + rung.stages.length * 110} ${y} H ${width - 88} M ${width - 52} ${y} H ${width - 15}`} />
         {rung.stages.map((contacts, stageIndex) => {
           const left = 35 + stageIndex * 110, right = left + 110;
