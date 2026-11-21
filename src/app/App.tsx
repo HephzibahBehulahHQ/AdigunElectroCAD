@@ -786,13 +786,7 @@ export function App() {
   };
 
   const exportProject = () => {
-    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = window.document.createElement("a");
-    anchor.href = url;
-    anchor.download = "adigun-electro-cad-project.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(new Blob([JSON.stringify(project, null, 2)], { type: "application/json" }), "adigun-electro-cad-project.json");
     setNotice("Project JSON exported.");
   };
 
@@ -874,21 +868,13 @@ export function App() {
     if (!file) return;
     try {
       const imported = parseProjectJson(await file.text());
-      const firstSheet = imported.sheets[0];
-      recordEdit(imported);
-      setActiveSheetId(firstSheet.id);
-      setComponentSelection(firstSheet.document.components[0]?.id ?? "");
-      setSelectedWireId("");
-      setWireMode(false);
-      setWireStart(null);
-      setDirty(true);
-      setNotice(`${imported.name} imported locally. Save to keep this project copy.`);
+      loadProjectIntoEditor(imported, `${imported.name} imported locally. Save to keep this project copy.`);
     } catch (error) {
       setNotice(`Import rejected: ${error instanceof Error ? error.message : "Unable to read project."}`);
     }
   };
 
-  const loadWorkbookProject = (starter: ElectricalProject, noticeText: string) => {
+  const loadProjectIntoEditor = (starter: ElectricalProject, noticeText: string) => {
     recordEdit(starter);
     const firstSheet = starter.sheets[0];
     setActiveSheetId(firstSheet.id);
@@ -904,6 +890,7 @@ export function App() {
     setWireMode(false);
     setWireStart(null);
     setWireBranchStart(null);
+    setReconnectingWireId("");
     setCrossSheetContinuationMode(false);
     setCrossSheetContinuationStart(null);
     setCrossSheetContinuationExtendId("");
@@ -915,7 +902,7 @@ export function App() {
     setNotice(noticeText);
   };
 
-  const restoreDol = () => loadWorkbookProject(createMotorStarterWorkbook(), "Nine-motor feeder workbook restored with all ten sheets.");
+  const restoreDol = () => loadProjectIntoEditor(createMotorStarterWorkbook(), "Nine-motor feeder workbook restored with all ten sheets.");
 
   const openFeederWorkbook = () => {
     if (!window.confirm("Open the 10-sheet motor feeder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
@@ -925,49 +912,49 @@ export function App() {
 
   const openFourSheetDolWorkbook = () => {
     if (!window.confirm("Open the 4-sheet DOL starter example and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetDolWorkbook(), "Four-sheet sourced DOL starter opened with labeled cross-sheet wires.");
+    loadProjectIntoEditor(createFourSheetDolWorkbook(), "Four-sheet sourced DOL starter opened with labeled cross-sheet wires.");
     closeProjectsMenu();
   };
 
   const openFourSheetStarDeltaWorkbook = () => {
     if (!window.confirm("Open the 4-sheet star–delta starter and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetStarDeltaWorkbook(), "Four-sheet sourced star–delta starter opened with actual terminal grid references.");
+    loadProjectIntoEditor(createFourSheetStarDeltaWorkbook(), "Four-sheet sourced star–delta starter opened with actual terminal grid references.");
     closeProjectsMenu();
   };
 
   const openFourSheetReversingWorkbook = () => {
     if (!window.confirm("Open the 4-sheet forward/reverse starter and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetReversingWorkbook(), "Four-sheet sourced reversing starter opened with labeled terminal grid references.");
+    loadProjectIntoEditor(createFourSheetReversingWorkbook(), "Four-sheet sourced reversing starter opened with labeled terminal grid references.");
     closeProjectsMenu();
   };
 
   const openFourSheetTwoMotorWorkbook = () => {
     if (!window.confirm("Open the 4-sheet two-motor sequence and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetTwoMotorWorkbook(), "Four-sheet, two-motor sequential starter opened with real terminal continuations.");
+    loadProjectIntoEditor(createFourSheetTwoMotorWorkbook(), "Four-sheet, two-motor sequential starter opened with real terminal continuations.");
     closeProjectsMenu();
   };
 
   const openFourSheetAnalogLevelWorkbook = () => {
     if (!window.confirm("Open the 4-sheet analog level control example and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetAnalogLevelWorkbook(), "Four-sheet 4–20 mA level control opened with labeled signal continuations.");
+    loadProjectIntoEditor(createFourSheetAnalogLevelWorkbook(), "Four-sheet 4–20 mA level control opened with labeled signal continuations.");
     closeProjectsMenu();
   };
 
   const openFourSheetPneumaticWorkbook = () => {
     if (!window.confirm("Open the 4-sheet double-acting cylinder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetPneumaticWorkbook(), "Four-sheet double-acting cylinder control opened with labeled command and feedback continuations.");
+    loadProjectIntoEditor(createFourSheetPneumaticWorkbook(), "Four-sheet double-acting cylinder control opened with labeled command and feedback continuations.");
     closeProjectsMenu();
   };
   const openFourSheetVfdFeederWorkbook = () => {
     if (!window.confirm("Open the 4-sheet VFD feeder example and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createFourSheetVfdFeederWorkbook(), "Four-sheet VFD feeder opened with phase and protective-earth continuations.");
+    loadProjectIntoEditor(createFourSheetVfdFeederWorkbook(), "Four-sheet VFD feeder opened with phase and protective-earth continuations.");
     closeProjectsMenu();
   };
 
 
   const openThreeSheetPlcSensorWorkbook = () => {
     if (!window.confirm("Open the 3-sheet PLC sensor and solenoid example and replace the current project? Save or export the current project first if you need to keep it.")) return;
-    loadWorkbookProject(createThreeSheetPlcSensorWorkbook(), "Three-sheet PLC sensor, scan and solenoid workbook opened with labeled terminal continuations.");
+    loadProjectIntoEditor(createThreeSheetPlcSensorWorkbook(), "Three-sheet PLC sensor, scan and solenoid workbook opened with labeled terminal continuations.");
     closeProjectsMenu();
   };
 
