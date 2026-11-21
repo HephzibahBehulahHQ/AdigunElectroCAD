@@ -10,7 +10,8 @@ import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOp
 import { controlTerminalOffset } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
-import { cameraBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
+import { cameraBounds, fitDrawingCamera, MAX_FREE_ZOOM, MIN_FREE_ZOOM, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
+import { svgDrawingBounds } from "../cad/svgDrawingBounds";
 import { DrawingGuideEditor } from "../components/DrawingGuideEditor";
 import { DrawingGridEditor } from "../components/DrawingGridEditor";
 import { defaultDrawingGrid, snapDrawingCoordinate, validDrawingGrid, type DrawingGrid } from "../cad/drawingGrid";
@@ -223,7 +224,7 @@ export function App() {
 
   useEffect(() => {
     const viewport = drawingAreaRef.current?.querySelector<HTMLElement>(".schematic-wrap");
-    if (!viewport || isReferenceSheet) return;
+    if (!viewport || isReferenceSheet || isLabPage) return;
     const size = () => ({ width: viewport.clientWidth, height: viewport.clientHeight });
     const resize = new ResizeObserver(() => setDrawingViewport(size()));
     resize.observe(viewport);
@@ -236,17 +237,34 @@ export function App() {
       const bounds = viewport.getBoundingClientRect();
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? dimensions.height : 1;
       const dx = event.deltaX * unit, dy = event.deltaY * unit;
-      setFreeCamera((camera) => event.ctrlKey || event.metaKey
-        ? zoomDrawingAt(camera, dimensions, { x: event.clientX - bounds.left, y: event.clientY - bounds.top }, Math.max(.25, Math.min(2, camera.zoom * Math.exp(-dy / 500))))
-        : { ...camera, center: { x: camera.center.x + dx / camera.zoom, y: camera.center.y + dy / camera.zoom } });
+      setFreeCamera((camera) => !event.shiftKey && dy !== 0
+        ? zoomDrawingAt(camera, dimensions, { x: event.clientX - bounds.left, y: event.clientY - bounds.top }, Math.max(MIN_FREE_ZOOM, Math.min(MAX_FREE_ZOOM, camera.zoom * Math.exp(-dy / 500))))
+        : { ...camera, center: { x: camera.center.x + (dx || dy) / camera.zoom, y: camera.center.y } });
     }, { ...options, passive: false });
     let drag: { id: number; x: number; y: number } | undefined;
-    viewport.addEventListener("pointerdown", (event) => {
-      if (event.button !== 1) return;
+    let spaceHeld = false;
+    let suppressClick = false;
+    const releaseSpace = () => { spaceHeld = false; viewport.classList.remove("pan-ready"); };
+    window.addEventListener("keydown", (event) => {
+      if (event.code !== "Space" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (event.target instanceof Element && event.target.closest("input, select, textarea, [contenteditable]")) return;
+      if (!(viewport.matches(":hover") || viewport.contains(window.document.activeElement))) return;
       event.preventDefault();
       event.stopPropagation();
+      spaceHeld = true;
+      viewport.classList.add("pan-ready");
+    }, { ...options, capture: true });
+    window.addEventListener("keyup", (event) => { if (event.code === "Space") releaseSpace(); }, options);
+    window.addEventListener("blur", releaseSpace, options);
+    viewport.addEventListener("pointerdown", (event) => {
+      suppressClick = false;
+      if (event.button !== 1 && !(spaceHeld && event.button === 0)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = event.button === 0;
       drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
       viewport.setPointerCapture(event.pointerId);
+      viewport.classList.add("panning");
     }, { ...options, capture: true });
     viewport.addEventListener("pointermove", (event) => {
       if (drag?.id !== event.pointerId) return;
@@ -254,9 +272,15 @@ export function App() {
       drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
       setFreeCamera((camera) => ({ ...camera, center: { x: camera.center.x - dx / camera.zoom, y: camera.center.y - dy / camera.zoom } }));
     }, options);
-    viewport.addEventListener("lostpointercapture", () => { drag = undefined; }, options);
-    return () => { handlers.abort(); resize.disconnect(); };
-  }, [isReferenceSheet]);
+    viewport.addEventListener("click", (event) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }, { ...options, capture: true });
+    viewport.addEventListener("lostpointercapture", () => { drag = undefined; viewport.classList.remove("panning"); }, options);
+    return () => { handlers.abort(); resize.disconnect(); viewport.classList.remove("pan-ready", "panning"); };
+  }, [isReferenceSheet, isLabPage]);
   const isReferenceProject = project.sheets.length === 1 && isReferenceSheet;
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const contextComponent = componentContextMenu ? document.components.find((component) => component.id === componentContextMenu.componentId) : undefined;
@@ -1743,9 +1767,7 @@ export function App() {
 
   const fitPrintFrame = () => {
     if (!document.printLayout || !drawingViewport.width || !drawingViewport.height) return;
-    const frame = printFrameBounds(document.printLayout);
-    const zoom = Math.max(.05, Math.min(2, (drawingViewport.width - 128) / frame.width, (drawingViewport.height - 72) / frame.height));
-    setFreeCamera({ zoom, center: { x: frame.x + frame.width / 2, y: frame.y + frame.height / 2 } });
+    setFreeCamera(fitDrawingCamera(printFrameBounds(document.printLayout), drawingViewport));
   };
 
   const saveGuides = (guides: DrawingGuide[]) => {
@@ -1786,31 +1808,19 @@ export function App() {
     });
   };
 
-  const fitSchematicContent = () => {
+  const fitSchematicContent = (scope: "drawing" | "selection" = "drawing") => {
     const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
     const svg = viewport?.querySelector<SVGSVGElement>("svg.schematic");
     if (!viewport || !svg) return;
-    const items = Array.from(svg.querySelectorAll<SVGGraphicsElement>(".schematic-component, .wire, [data-graphic-id], [data-annotation-id]"));
-    const boxes = items.flatMap((item) => {
-      try {
-        const box = item.getBBox();
-        return box.width || box.height ? [box] : [];
-      } catch { return []; }
-    });
-    const bounds = boxes.length
-      ? boxes.reduce((result, box) => ({
-          left: Math.min(result.left, box.x),
-          top: Math.min(result.top, box.y),
-          right: Math.max(result.right, box.x + box.width),
-          bottom: Math.max(result.bottom, box.y + box.height),
-        }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity })
-      : { left: 0, top: 0, right: 1100, bottom: 780 };
-    const width = Math.max(1, bounds.right - bounds.left);
-    const height = Math.max(1, bounds.bottom - bounds.top);
-    const nextZoom = Math.max(.25, Math.min(2, (viewport.clientWidth - (isReferenceSheet ? 48 : 128)) / width, (viewport.clientHeight - (isReferenceSheet ? 48 : 72)) / height));
-    const centerX = (bounds.left + bounds.right) / 2;
-    const centerY = (bounds.top + bounds.bottom) / 2;
-    if (!isReferenceSheet) { setFreeCamera({ center: { x: centerX, y: centerY }, zoom: nextZoom }); return; }
+    const measured = svgDrawingBounds(svg, scope === "selection"
+      ? ".schematic-component.selected, .wire.selected-wire, [data-drawing-selected], .project-continuation-marker.selected"
+      : ".schematic-component, .wire, [data-graphic-id], [data-annotation-id], .project-continuation-marker, .terminal-pin-markers");
+    if (!measured && scope === "selection") { setNotice("Select a drawing object to fit the selection."); return; }
+    const bounds = measured ?? { x: 0, y: 0, width: 1100, height: 780 };
+    if (!isReferenceSheet) { setFreeCamera(fitDrawingCamera(bounds, { width: viewport.clientWidth, height: viewport.clientHeight })); return; }
+    const nextZoom = Math.max(.25, Math.min(2, (viewport.clientWidth - 48) / Math.max(1, bounds.width), (viewport.clientHeight - 48) / Math.max(1, bounds.height)));
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
     setSchematicZoom(nextZoom);
     window.requestAnimationFrame(() => {
       viewport.scrollLeft = centerX * nextZoom - viewport.clientWidth / 2;
@@ -1904,7 +1914,7 @@ export function App() {
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
-        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}</div></details>
+        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <><button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={addSelectedComponent}>Component</button></div></details>
         <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
@@ -1934,10 +1944,10 @@ export function App() {
           </>}
         </div></div>
         <div className="tool-group" aria-label="Canvas view"><span className="tool-group-label">View</span><div className="tool-group-actions">
-          <button onClick={() => zoomSchematicAroundCenter(Math.max(.25, Math.round((currentZoom - .1) * 100) / 100))} disabled={currentZoom <= .25} aria-label="Zoom out">−</button>
-          <output className="zoom-readout" aria-label="Schematic zoom">{Math.round(currentZoom * 100)}%</output>
-          <button onClick={() => zoomSchematicAroundCenter(Math.min(2, Math.round((currentZoom + .1) * 100) / 100))} disabled={currentZoom >= 2} aria-label="Zoom in">＋</button>
-          <button onClick={fitSchematicContent} aria-label="Fit drawing content in canvas">Fit</button>
+          <button onClick={() => zoomSchematicAroundCenter(isReferenceSheet ? Math.max(.25, Math.round((currentZoom - .1) * 100) / 100) : Math.max(MIN_FREE_ZOOM, currentZoom / 1.15))} disabled={currentZoom <= (isReferenceSheet ? .25 : MIN_FREE_ZOOM)} aria-label="Zoom out">−</button>
+          <output className="zoom-readout" aria-label="Schematic zoom">{currentZoom < .1 ? Number((currentZoom * 100).toPrecision(2)) : Math.round(currentZoom * 100)}%</output>
+          <button onClick={() => zoomSchematicAroundCenter(isReferenceSheet ? Math.min(2, Math.round((currentZoom + .1) * 100) / 100) : Math.min(MAX_FREE_ZOOM, currentZoom * 1.15))} disabled={currentZoom >= MAX_FREE_ZOOM} aria-label="Zoom in">＋</button>
+          <button onClick={() => fitSchematicContent()} aria-label="Fit drawing content in canvas">Fit</button>
           <button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>▦ Grid</button>
         </div></div>
         <div className="tool-group tool-group-assistant" aria-label="Design assistant"><span className="tool-group-label">Assistant</span><div className="tool-group-actions">

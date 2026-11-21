@@ -1,6 +1,17 @@
 export type DrawingPoint = { x: number; y: number };
 export type DrawingViewport = { width: number; height: number };
 export type DrawingCamera = { center: DrawingPoint; zoom: number };
+export type DrawingBounds = DrawingPoint & DrawingViewport;
+export const MIN_FREE_ZOOM = .0001;
+export const MAX_FREE_ZOOM = 2;
+
+export function fitDrawingCamera(bounds: DrawingBounds, viewport: DrawingViewport): DrawingCamera {
+  const scale = Math.min((viewport.width - 128) / Math.max(bounds.width, 1), (viewport.height - 72) / Math.max(bounds.height, 1));
+  return {
+    center: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
+    zoom: Math.max(MIN_FREE_ZOOM, Math.min(MAX_FREE_ZOOM, scale)),
+  };
+}
 
 export function cameraBounds(camera: DrawingCamera, viewport: DrawingViewport) {
   const width = viewport.width / camera.zoom;
