@@ -1,6 +1,6 @@
 import type { CircuitDocument, TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
-import { controlTerminalOffset, powerTerminalOffset } from "./componentGeometry";
+import { controlTerminalOffset, powerTerminalOffset, rotateOffset } from "./componentGeometry";
 
 export const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${endpoint.terminalId}`;
 
@@ -43,13 +43,6 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
     });
   }
   return anchors;
-}
-
-function rotateOffset(x: number, y: number, rotation: 0 | 90 | 180 | 270): { x: number; y: number } {
-  if (rotation === 90) return { x: -y, y: x };
-  if (rotation === 180) return { x: -x, y: -y };
-  if (rotation === 270) return { x: y, y: -x };
-  return { x, y };
 }
 
 function anchor(componentId: string, terminalId: string, x: number, y: number): TerminalAnchor {

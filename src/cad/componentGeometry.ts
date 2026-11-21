@@ -186,4 +186,29 @@ export function componentFitsSheet(x: number, y: number, rotation: ComponentInst
   return bounds.left >= 10 && bounds.right <= 1090 && bounds.top >= 90 && bounds.bottom <= 770;
 }
 
+export function rotateOffset(x: number, y: number, rotation: ComponentInstance["rotation"]) {
+  if (rotation === 90) return { x: -y, y: x };
+  if (rotation === 180) return { x: -x, y: -y };
+  if (rotation === 270) return { x: y, y: -x };
+  return { x, y };
+}
+
+export function instanceFootprint(component: ComponentInstance) {
+  const { x, y, rotation, definitionId, size = 1 } = component;
+  const bounds = componentFootprint(x, y, rotation, definitionId, size);
+  const include = (point: { x: number; y: number }, margin: number) => {
+    const offset = rotateOffset(point.x * size, point.y * size, rotation);
+    bounds.left = Math.min(bounds.left, x + offset.x - margin);
+    bounds.right = Math.max(bounds.right, x + offset.x + margin);
+    bounds.top = Math.min(bounds.top, y + offset.y - margin);
+    bounds.bottom = Math.max(bounds.bottom, y + offset.y + margin);
+  };
+  for (const graphic of component.customSymbolGraphics ?? []) {
+    const margin = Math.max(graphic.strokeWidth, component.lineWeight ?? 0) * size / 2 + 4;
+    for (const point of graphic.points ?? [{ x: graphic.x1, y: graphic.y1 }, { x: graphic.x2, y: graphic.y2 }]) include(point, margin);
+  }
+  for (const point of Object.values(component.customTerminalOffsets ?? {})) include(point, 8);
+  return bounds;
+}
+
 

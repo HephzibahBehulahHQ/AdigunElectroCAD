@@ -1,5 +1,5 @@
 import type { CircuitDocument, ComponentInstance, TerminalEndpoint, Wire } from "../types/electrical";
-import { componentFootprint, componentFitsSheet } from "./componentGeometry";
+import { componentFootprint, instanceFootprint } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
 type PlacementView = { x: number; y: number; width: number; height: number };
@@ -185,8 +185,11 @@ export function canPlaceComponent(components: ComponentInstance[], componentId: 
   const movingDefinitionId = definitionId ?? moving?.definitionId;
   const movingSize = size ?? moving?.size ?? 1;
   if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(movingSize) || movingSize < .5 || movingSize > 2) return false;
-  if (layout === "reference" && !componentFitsSheet(x, y, rotation, movingDefinitionId, movingSize)) return false;
-  return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, movingSize, component));
+  const bounds = moving && movingDefinitionId
+    ? instanceFootprint({ ...moving, x, y, definitionId: movingDefinitionId, size: movingSize })
+    : componentFootprint(x, y, rotation, movingDefinitionId, movingSize);
+  if (layout === "reference" && (bounds.left < 10 || bounds.right > 1090 || bounds.top < 90 || bounds.bottom > 770)) return false;
+  return components.every((component) => component.id === componentId || !overlaps(bounds, instanceFootprint(component)));
 }
 
 export function nextComponentReference(components: ComponentInstance[], referencePrefix: string): string {
@@ -241,9 +244,7 @@ export function removeComponent(document: CircuitDocument, componentId: string):
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
 
-function overlaps(leftX: number, leftY: number, leftRotation: ComponentInstance["rotation"], leftDefinitionId: string | undefined, leftSize: number, rightComponent: ComponentInstance): boolean {
-  const left = componentFootprint(leftX, leftY, leftRotation, leftDefinitionId, leftSize);
-  const right = componentFootprint(rightComponent.x, rightComponent.y, rightComponent.rotation, rightComponent.definitionId, rightComponent.size ?? 1);
+function overlaps(left: ReturnType<typeof componentFootprint>, right: ReturnType<typeof componentFootprint>): boolean {
   return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
 
