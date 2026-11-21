@@ -217,6 +217,11 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "solar-inverter") return <g className={mark}><rect x={x - 23} y={cy - 14} width="46" height="28" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>DC~</text></g>;
   if (symbolId === "solar-grid-tie") return <g className={mark}><path d={`M ${x - 25} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 25} M ${x - 7} ${cy + 10} L ${x + 7} ${cy - 10}`} /><path d={`M ${x + 20} ${cy - 14} V ${cy + 14}`} /></g>;
 
+  if (symbolId === "safety-dual-relay") return <g className={mark} aria-label="Generic dual-channel monitoring relay">
+    <rect x={x - 32} y={y - 36} width="64" height="52" rx="4" />
+    <path d={`M ${x - 47} ${y - 28} H ${x - 32} M ${x - 47} ${y - 10} H ${x - 32} M ${x - 47} ${y + 8} H ${x - 32} M ${x + 32} ${y - 10} H ${x + 47} M ${x} ${y + 16} V ${y + 25}`} />
+    <text x={x} y={y - 5} textAnchor="middle" className={text}>2 CH</text>
+  </g>;
   if (symbolId === "safety-relay" || /^safety-relay-\d+$/.test(symbolId)) return <g className={mark} aria-label="Pilz PNOZ X2.7P safety relay, 24 volts AC/DC, three safety normally-open contacts and one auxiliary normally-closed contact">
     <rect x={x - 54} y={y - 38} width="108" height="76" rx="4" />
     <text x={x} y={y - 5} textAnchor="middle" className={text}>PILZ</text>

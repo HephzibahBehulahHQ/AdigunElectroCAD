@@ -85,6 +85,13 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
       return { x: column + (terminal === "2" ? -8 : terminal === "4" ? 8 : 0), y: terminal === "1" ? -27 : 27 };
     }
   }
+  if (modelId === "safety-dual-relay") {
+    const offsets: Record<string, { x: number; y: number }> = {
+      "in-a": { x: -47, y: -28 }, "in-b": { x: -47, y: -10 }, reset: { x: -47, y: 8 },
+      out: { x: 47, y: -10 }, common: { x: 0, y: 25 },
+    };
+    return offsets[terminalId];
+  }
   if (modelId === "catalog-safety-relay") {
     if (terminalId === "a1") return { x: -24, y: -56 };
     if (terminalId === "a2") return { x: 24, y: -56 };
