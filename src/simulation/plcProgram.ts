@@ -1,5 +1,26 @@
 export const PLC_REGISTER_COUNT = 8;
 export const PLC_MEMORY_COUNT = 8;
+export const plcNumericOperations = ["MOV", "ADD", "SUB", "MUL", "DIV"] as const;
+export type PlcNumericOperation = typeof plcNumericOperations[number];
+export const isPlcNumericOperation = (value: string): value is PlcNumericOperation => plcNumericOperations.some((operation) => operation === value);
+const validNumber = (value: number) => Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER;
+const registerIndex = (address: string) => /^D[0-7]$/.test(address) ? Number(address.slice(1)) : -1;
+
+export function readPlcNumericOperand(operand: string, registers: readonly number[], analogInput0: number, analogInput1: number): number {
+  const index = registerIndex(operand);
+  if (index >= 0) return registers[index];
+  if (operand === "AI0" || operand === "AI1") {
+    const value = operand === "AI0" ? analogInput0 : analogInput1;
+    return Number.isInteger(value) && value >= 0 && value <= 27648 ? value : NaN;
+  }
+  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(operand) ? Number(operand) : NaN;
+}
+
+export function calculatePlcNumber(operation: PlcNumericOperation, left: number, right: number): number | string {
+  if (!validNumber(left) || !validNumber(right) || (operation === "DIV" && right === 0)) return "Invalid numeric operand or division by zero.";
+  const value = operation === "MOV" ? left : operation === "ADD" ? left + right : operation === "SUB" ? left - right : operation === "MUL" ? left * right : left / right;
+  return validNumber(value) ? value : "Numeric result exceeds the safe numeric range.";
+}
 export type PlcMemoryState = boolean[];
 export type PlcTimerState = { elapsedSeconds: number; done: boolean };
 export type PlcTimerStates = Record<`T${0 | 1 | 2 | 3}`, PlcTimerState>;
@@ -26,14 +47,9 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
     return [`T${index}`, { elapsedSeconds: timer?.elapsedSeconds ?? 0, done: timer?.done ?? false }];
   })) as PlcTimerStates;
   const usedTimerCoils = new Set<string>();
-  const validNumber = (value: number) => Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER;
-  const registerIndex = (address: string) => /^D[0-7]$/.test(address) ? Number(address.slice(1)) : -1;
   const readNumber = (operand: string): number => {
-    const index = registerIndex(operand);
-    if (index >= 0) { usesRegisters = true; return registers[index]; }
-    if (operand === "AI0") return Number.isInteger(analogInput0) && analogInput0 >= 0 && analogInput0 <= 27648 ? analogInput0 : NaN;
-    if (operand === "AI1") return Number.isInteger(analogInput1) && analogInput1 >= 0 && analogInput1 <= 27648 ? analogInput1 : NaN;
-    return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(operand) ? Number(operand) : NaN;
+    if (registerIndex(operand) >= 0) usesRegisters = true;
+    return readPlcNumericOperand(operand, registers, analogInput0, analogInput1);
   };
   if (!registers.every(validNumber)) return fail("Register state must contain finite numbers within the safe numeric range.");
   if ((previousMemory && (previousMemory.length !== PLC_MEMORY_COUNT || previousMemory.some((value) => typeof value !== "boolean"))) || !memory.every((value) => typeof value === "boolean")) return fail("Memory state must contain eight Boolean values.");
@@ -53,15 +69,14 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       }
       continue;
     }
-    if (["MOV", "ADD", "SUB", "MUL", "DIV"].includes(operation)) {
+    if (isPlcNumericOperation(operation)) {
       const move = operation === "MOV";
       const destination = registerIndex(parts[move ? 2 : 3] ?? "");
       if (parts.length !== (move ? 3 : 4) || destination < 0) return fail("Numeric instructions require MOV source D0–D7 or ADD/SUB/MUL/DIV left right D0–D7.");
       const left = readNumber(address);
       const right = move ? 0 : readNumber(parts[2]);
-      if (!validNumber(left) || !validNumber(right) || (operation === "DIV" && right === 0)) return fail("Invalid numeric operand or division by zero.");
-      const value = move ? left : operation === "ADD" ? left + right : operation === "SUB" ? left - right : operation === "MUL" ? left * right : left / right;
-      if (!validNumber(value)) return fail("Numeric result exceeds the safe numeric range.");
+      const value = calculatePlcNumber(operation, left, right);
+      if (typeof value === "string") return fail(value);
       registers[destination] = value;
       usesRegisters = true;
       continue;

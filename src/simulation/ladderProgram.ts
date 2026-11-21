@@ -1,9 +1,12 @@
+import { calculatePlcNumber, isPlcNumericOperation, readPlcNumericOperand, type PlcNumericOperation } from "./plcProgram";
+
 export type LadderAddress = "I0" | "I1" | "Q0" | "Q1" | `T${0 | 1 | 2 | 3}` | `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type LadderMemoryAddress = `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export interface LadderBooleanContact { address: LadderAddress; inverted: boolean; edge?: "positive" | "negative"; }
 export interface LadderComparisonContact { comparison: "GT" | "GE" | "LT" | "LE" | "EQ" | "NE"; left: "AI0" | "AI1" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
 export type LadderContact = LadderBooleanContact | LadderComparisonContact;
-export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "OUTPUT"; address: "Q0" | "Q1"; operation: "OUT" | "SET" | "RESET" } | { type: "TON"; timer: `T${0 | 1 | 2 | 3}`; presetSeconds: number } | { type: "MEMORY"; address: LadderMemoryAddress; operation: "OUT" | "SET" | "RESET" };
+export type LadderArithmetic = { type: "ARITHMETIC"; operation: PlcNumericOperation; left: string; right: string; destination: string };
+export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "OUTPUT"; address: "Q0" | "Q1"; operation: "OUT" | "SET" | "RESET" } | { type: "TON"; timer: `T${0 | 1 | 2 | 3}`; presetSeconds: number } | { type: "MEMORY"; address: LadderMemoryAddress; operation: "OUT" | "SET" | "RESET" } | LadderArithmetic;
 export type LadderStageOperator = "OR" | "XOR";
 export interface LadderRung { stages: LadderContact[][]; stageOperators?: LadderStageOperator[]; coil: LadderCoil; }
 export const defaultLadder = (): LadderRung[] => [{ stages: [[{ address: "I0", inverted: false }]], coil: "OUT" }];
@@ -39,7 +42,7 @@ export function moveLadderRung(rungs: readonly LadderRung[], fromIndex: number, 
 }
 
 export interface LadderPreviewInputs { input0: boolean; input1: boolean; q0: boolean; q1?: boolean; previousInput0: boolean; previousInput1: boolean; analogInput0: number; analogInput1?: number; registers: readonly number[]; timers?: Partial<Record<`T${0 | 1 | 2 | 3}`, { elapsedSeconds: number; done: boolean }>>; memory?: readonly boolean[]; deltaSeconds?: number; }
-export interface LadderPreview { rungEnergized: boolean[]; contactEnergized: boolean[][][]; output: boolean; output1: boolean; memory: boolean[]; }
+export interface LadderPreview { rungEnergized: boolean[]; contactEnergized: boolean[][][]; output: boolean; output1: boolean; memory: boolean[]; error?: string; }
 
 /** Preview the next scan's rung conditions from the latest PLC I/O and retained state. */
 export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPreviewInputs): LadderPreview {
@@ -49,7 +52,20 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
   const timers = Object.fromEntries([0, 1, 2, 3].map((index) => { const timer = inputs.timers?.[`T${index}` as `T${0 | 1 | 2 | 3}`]; return [`T${index}`, { elapsedSeconds: timer?.elapsedSeconds ?? 0, done: timer?.done ?? false }]; })) as Record<`T${0 | 1 | 2 | 3}`, { elapsedSeconds: number; done: boolean }>;
   const rungEnergized: boolean[] = [];
   const contactEnergized: boolean[][][] = [];
+  const registers = Array.from({ length: 8 }, (_, index) => inputs.registers[index] ?? 0);
+  const read = (operand: string) => readPlcNumericOperand(operand, registers, inputs.analogInput0, inputs.analogInput1 ?? 0);
   for (const rung of rungs) {
+    if (typeof rung.coil === "object" && rung.coil.type === "ARITHMETIC") {
+      const { operation, left, right, destination } = rung.coil;
+      const result = calculatePlcNumber(operation, read(left), operation === "MOV" ? 0 : read(right));
+      if (typeof result === "string") {
+        return { rungEnergized: [], contactEnergized: [], output: false, output1: false, memory: Array.from({ length: 8 }, (_, index) => inputs.memory?.[index] === true), error: result };
+      }
+      registers[Number(destination.slice(1))] = result;
+      rungEnergized.push(true);
+      contactEnergized.push([]);
+      continue;
+    }
     let precedingStages = true;
     const poweredStages: boolean[][] = [];
     for (let stageIndex = 0; stageIndex < rung.stages.length; stageIndex++) {
@@ -57,7 +73,6 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
       const operation = rung.stageOperators?.[stageIndex] ?? "OR";
       const conditions = contacts.map((contact) => {
         if ("comparison" in contact) {
-          const read = (operand: string) => operand === "AI0" ? inputs.analogInput0 : operand === "AI1" ? inputs.analogInput1 ?? 0 : /^D[0-7]$/.test(operand) ? inputs.registers[Number(operand.slice(1))] ?? 0 : Number(operand);
           const left = read(contact.left), right = read(contact.right);
           return contact.comparison === "GT" ? left > right : contact.comparison === "GE" ? left >= right : contact.comparison === "LT" ? left < right : contact.comparison === "LE" ? left <= right : contact.comparison === "EQ" ? left === right : left !== right;
         }
@@ -107,6 +122,14 @@ export function compileLadder(rungs: readonly LadderRung[]): string {
   const loadContact = (contact: LadderContact) => isComparison(contact) ? `${contact.comparison} ${contact.left} ${contact.right}` : booleanInstruction(contact, "LD");
   const combineContact = (contact: LadderContact, operation: "OR" | "XOR") => isComparison(contact) ? ["PUSH", loadContact(contact), `${operation}POP`] : [booleanInstruction(contact, operation)];
   for (const rung of rungs) {
+    if (typeof rung.coil === "object" && rung.coil.type === "ARITHMETIC") {
+      const { operation, left, right, destination } = rung.coil;
+      if (rung.stages.length || !isPlcNumericOperation(operation) || !numericOperand(left) || (operation !== "MOV" && !numericOperand(right)) || !/^D[0-7]$/.test(destination)) {
+        throw new Error("Arithmetic rows require valid numeric operands and a D0–D7 destination.");
+      }
+      instructions.push(operation === "MOV" ? `MOV ${left} ${destination}` : `${operation} ${left} ${right} ${destination}`);
+      continue;
+    }
     const invalidCoil = typeof rung.coil === "string" ? !["OUT", "SET", "RESET"].includes(rung.coil) : rung.coil.type === "TON" ? !/^T[0-3]$/.test(rung.coil.timer) || !Number.isFinite(rung.coil.presetSeconds) || rung.coil.presetSeconds < 0 : rung.coil.type === "OUTPUT" ? !["Q0", "Q1"].includes(rung.coil.address) || !["OUT", "SET", "RESET"].includes(rung.coil.operation) : !/^M[0-7]$/.test(rung.coil.address) || !["OUT", "SET", "RESET"].includes(rung.coil.operation);
     if (!rung.stages.length || invalidCoil || (rung.stageOperators && (rung.stageOperators.length !== rung.stages.length || rung.stageOperators.some((operation) => operation !== "OR" && operation !== "XOR")))) throw new Error("Each rung needs stages and a defined Q0/Q1, memory or TON coil.");
     rung.stages.forEach((contacts, stageIndex) => {
@@ -158,7 +181,14 @@ export function parseLadder(program: string): LadderRung[] | null {
     return { stages: contacts, ...(operators.some((operation) => operation === "XOR") ? { stageOperators: operators } : {}) };
   };
   for (const instruction of instructions) {
-    const [operation, address, extra] = instruction.split(/\s+/);
+    const parts = instruction.split(/\s+/);
+    const [operation, address, extra, destination] = parts;
+    if (isPlcNumericOperation(operation)) {
+      const move = operation === "MOV";
+      if (accumulator || stack.length || parts.length !== (move ? 3 : 4)) return null;
+      rungs.push({ stages: [], coil: { type: "ARITHMETIC", operation, left: address, right: move ? "" : extra, destination: move ? extra : destination } });
+      continue;
+    }
     if (operation === "PUSH" && !address && accumulator) { stack.push(accumulator); continue; }
     if (["ANDPOP", "ORPOP", "XORPOP"].includes(operation) && !address && accumulator && stack.length) {
       accumulator = combine(operation === "ANDPOP" ? "AND" : operation === "ORPOP" ? "OR" : "XOR", stack.pop()!, accumulator); continue;
