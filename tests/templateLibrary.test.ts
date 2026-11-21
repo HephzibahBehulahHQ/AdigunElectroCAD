@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { validateCircuit } from "../src/electrical/topology";
-import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet } from "../src/projects/starterProject";
+import { canConnectTerminals, validateCircuit } from "../src/electrical/topology";
+import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet, replaceSheetDocument } from "../src/projects/starterProject";
 import { templateFixtures, templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
 import { createElement } from "react";
@@ -10,7 +10,7 @@ import { Schematic } from "../src/components/Schematic";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createFourSheetAnalogLevelWorkbook } from "../src/projects/fourSheetAnalogLevelWorkbook";
-import { createManualWire, moveComponentToGrid, removeWire } from "../src/cad/documentOps";
+import { canPlaceComponent, createManualWire, moveComponentsByOffset, moveComponentToGrid, removeWire } from "../src/cad/documentOps";
 import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
@@ -107,6 +107,39 @@ describe("project template library", () => {
     }));
     expect(svg).toContain("<svg");
     expect(terminalAnchors(document).length).toBeGreaterThan(0);
+  });
+
+  it.each(templateLibrary)("moves, rewires, and reloads $id with its recorded results intact", (template) => {
+    const project = addFreeSchematicSheet(createStarterProject());
+    const sheetId = project.sheets.at(-1)!.id;
+    const loaded = loadTemplateIntoSheet(project, sheetId, template);
+    const document = loaded.sheets.find((sheet) => sheet.id === sheetId)!.document;
+    const blocked = document.components.filter(({ id, x, y }) => !canPlaceComponent(document.components, id, x, y));
+    expect(blocked.map(({ reference }) => reference)).toEqual([]);
+    const wire = document.wires.find((candidate) =>
+      !candidate.branchOfWireId && !document.wires.some((child) => child.branchOfWireId === candidate.id),
+    )!;
+    expect(wire).toBeDefined();
+    const offsets = [[0.25, 0], [-0.25, 0], [0, 0.25], [0, -0.25]];
+    const moved = offsets.map(([dx, dy]) => moveComponentsByOffset(document, [wire.from.componentId], dx, dy))
+      .find((result) => result.ok && result.document !== document);
+    expect(moved).toBeDefined();
+    const sourceAnchor = (circuit: typeof document) => terminalAnchors(circuit).find(({ endpoint }) =>
+      endpoint.componentId === wire.from.componentId && endpoint.terminalId === wire.from.terminalId,
+    );
+    expect(sourceAnchor(document)).toBeDefined();
+    expect(sourceAnchor(moved!.document)).not.toEqual(sourceAnchor(document));
+    expect(moved!.document.wires).toBe(document.wires);
+
+    const disconnected = removeWire(moved!.document, wire.id);
+    expect(disconnected.wires).toHaveLength(document.wires.length - 1);
+    expect(canConnectTerminals(disconnected, catalogById, wire.from, wire.to).ok).toBe(true);
+    const replacement = { ...createManualWire(disconnected, wire.from, wire.to), netName: wire.netName, draftingColor: "#d5242a" };
+    const edited = { ...disconnected, revision: disconnected.revision + 1, wires: [...disconnected.wires, replacement] };
+    const reloaded = parseProjectJson(JSON.stringify(replaceSheetDocument(loaded, sheetId, edited)));
+    const restored = reloaded.sheets.find((sheet) => sheet.id === sheetId)!.document;
+    expect(restored).toEqual(edited);
+    expect(verifyProjectTemplate({ ...template, document: restored }, catalogById).passed).toBe(true);
   });
 
   it("drops links belonging to a replaced sheet without changing the rest of the workbook", () => {

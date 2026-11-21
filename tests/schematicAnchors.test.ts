@@ -244,10 +244,10 @@ it("renders the source-backed Siemens starter as three power poles, a coil and t
   const document = createSourcedDolMotorStarter();
   const anchors = terminalAnchors(document).filter((item) => item.endpoint.componentId === "contactor");
   expect(anchors).toHaveLength(12);
-  expect(anchors.find((item) => item.endpoint.terminalId === "l1-in")).toMatchObject({ x: 366, y: 313 });
-  expect(anchors.find((item) => item.endpoint.terminalId === "a1")).toMatchObject({ x: 374, y: 293 });
-  expect(anchors.find((item) => item.endpoint.terminalId === "aux-13")).toMatchObject({ x: 343, y: 328 });
-  expect(anchors.find((item) => item.endpoint.terminalId === "aux-22")).toMatchObject({ x: 437, y: 352 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "l1-in")).toMatchObject({ x: 366, y: 363 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "a1")).toMatchObject({ x: 374, y: 343 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "aux-13")).toMatchObject({ x: 343, y: 378 });
+  expect(anchors.find((item) => item.endpoint.terminalId === "aux-22")).toMatchObject({ x: 437, y: 402 });
 });
 
 it("keeps the three-phase source mark inside its symbol and every DOL wire on a real terminal", () => {
@@ -262,7 +262,7 @@ it("keeps the three-phase source mark inside its symbol and every DOL wire on a 
   for (const wire of document.wires) for (const endpoint of [wire.from, wire.to]) {
     expect(endpoints.has(`${endpoint.componentId}.${endpoint.terminalId}`)).toBe(true);
   }
-  for (const [terminalId, expected] of [["l1-out", [358, 127]], ["l2-out", [390, 127]], ["l3-out", [422, 127]]] as const) {
+  for (const [terminalId, expected] of [["l1-out", [358, 167]], ["l2-out", [390, 167]], ["l3-out", [422, 167]]] as const) {
     const pin = anchors.find((item) => item.endpoint.componentId === "supply" && item.endpoint.terminalId === terminalId)!;
     expect([pin.x, pin.y]).toEqual(expected);
   }
