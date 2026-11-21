@@ -101,47 +101,57 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     endpointKey(from.componentId, from.terminalId), endpointKey(to.componentId, to.terminalId),
   ]));
   const inputUnits = new Map<string, SignalUnit>();
-  for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
-    let changed = false;
-    for (const component of document.components) {
-      const definition = definitionsByComponent.get(component.id);
-      const activeProperties = properties.get(component.id);
-      if (!definition || !activeProperties) continue;
-      for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
-        const key = endpointKey(component.id, terminal.id);
-        const incoming = signals.get(key);
-        const binding = inputBinding(definition.simulationModelId, terminal.id);
-        const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
-        const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
-        const missingWire = binding?.requiresWire && activeProperties[binding.requiresWire] === true && !wiredTerminals.has(key);
-        const inputError = missingWire ? `Required analog terminal ${component.reference}.${terminal.label} has no wire.` : incoming?.error ?? unitError;
-        if (inputError && binding) {
-          if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
-          if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
-          if (binding.property === "analogInput1") activeProperties.runtimeInvalidAi1 = true;
-          if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
-          continue;
+  const requiredSignals = new Map<string, string>();
+  const settleSignals = (undriven: ReadonlyMap<string, string>) => {
+    for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
+      let changed = false;
+      for (const component of document.components) {
+        const definition = definitionsByComponent.get(component.id);
+        const activeProperties = properties.get(component.id);
+        if (!definition || !activeProperties) continue;
+        for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
+          const key = endpointKey(component.id, terminal.id);
+          const incoming = signals.get(key);
+          const binding = inputBinding(definition.simulationModelId, terminal.id);
+          const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
+          const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
+          const missingWire = binding?.requiresWire && activeProperties[binding.requiresWire] === true && !wiredTerminals.has(key);
+          if (binding?.requiresWire && activeProperties[binding.requiresWire] === true && wiredTerminals.has(key)) {
+            requiredSignals.set(key, `Required analog terminal ${component.reference}.${terminal.label} has no driving signal.`);
+          }
+          const inputError = missingWire ? `Required analog terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
+          if (inputError && binding) {
+            if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
+            if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
+            if (binding.property === "analogInput1") activeProperties.runtimeInvalidAi1 = true;
+            if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
+            continue;
+          }
+          if (binding?.property === "analogInput0") activeProperties.runtimeInvalidAi0 = false;
+          if (binding?.property === "analogInput1") activeProperties.runtimeInvalidAi1 = false;
+          const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
+          if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
+            activeProperties[binding.property] = incoming.value;
+            if (binding.boundProperty) activeProperties[binding.boundProperty] = true;
+            inputUnits.set(inputUnitKey, incoming.unit);
+            changed = true;
+          }
         }
-        if (binding?.property === "analogInput0") activeProperties.runtimeInvalidAi0 = false;
-        if (binding?.property === "analogInput1") activeProperties.runtimeInvalidAi1 = false;
-        const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
-        if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
-          activeProperties[binding.property] = incoming.value;
-          if (binding.boundProperty) activeProperties[binding.boundProperty] = true;
-          inputUnits.set(inputUnitKey, incoming.unit);
-          changed = true;
+        const outputs = functionalOutputTerminals(definition);
+        for (const output of outputs) {
+          const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties, output.id);
+          if (signal === undefined) continue;
+          const key = endpointKey(component.id, output.id);
+          if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
         }
       }
-      const outputs = functionalOutputTerminals(definition);
-      for (const output of outputs) {
-        const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties, output.id);
-        if (signal === undefined) continue;
-        const key = endpointKey(component.id, output.id);
-        if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
-      }
+      if (!propagateWires(document, definitionsByComponent, signals) && !changed) break;
     }
-    if (!propagateWires(document, definitionsByComponent, signals) && !changed) break;
-  }
+  };
+  settleSignals(new Map());
+  // Diagnose only after the normal sources have propagated through the network.
+  const undriven = new Map([...requiredSignals].filter(([key]) => !signals.has(key)));
+  if (undriven.size) settleSignals(undriven);
   const hasPhysicalControlSupply = document.components.some(component => {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     return model === "control-supply-v1" || model === "catalog-dc-control-supply";
