@@ -77,7 +77,13 @@ export const modeledCatalog: ElectricalComponentDefinition[] = families.flatMap(
   const variant = index + 1;
   const propertiesSchema = family.properties(variant);
   const terminals = family.terminalsForVariant?.(variant) ?? family.terminals;
-  if (family.id === "plc-digital-io") { propertiesSchema.program = ""; propertiesSchema.analogInput0 = 0; propertiesSchema.analogInput1 = 0; }
+  if (family.id === "plc-digital-io") {
+    propertiesSchema.program = "";
+    propertiesSchema.analogInput0 = 0;
+    propertiesSchema.analogInput1 = 0;
+    propertiesSchema.requireWiredAi0 = false;
+    propertiesSchema.requireWiredAi1 = false;
+  }
   if (family.id === "safety-relay") { propertiesSchema.reset = false; delete propertiesSchema.safetyCategory; }
   return {
     id: `iec.${family.id}.${String(variant).padStart(2, "0")}`,

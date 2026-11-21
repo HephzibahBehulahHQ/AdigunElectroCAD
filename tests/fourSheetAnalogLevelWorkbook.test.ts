@@ -80,3 +80,24 @@ it("carries the level threshold, open-loop fault, and recovery across sheet cont
   expect(coilValue(runtime)).toBe("ON");
   expect(JSON.stringify(project)).toBe(original);
 });
+
+it.each([
+  ["four-sheet-level-current", "ADC1."],
+  ["four-sheet-adc-raw", "PLC1.AI0"],
+])("inhibits the PLC when required continuation %s is removed", (continuationId, terminal) => {
+  const project = createFourSheetAnalogLevelWorkbook();
+  const run = (workbook: typeof project) => {
+    let runtime = resetCircuitClock(createProjectRuntimeDocument(workbook), catalogById);
+    runtime = setCircuitLevelInput(runtime, catalogById, "analog-field::level", 75);
+    runtime = advanceCircuitClock(runtime, catalogById, 0.1);
+    return executeProjectCircuitModels(workbook, catalogById, undefined, runtime);
+  };
+  const disconnected = { ...project, continuations: project.continuations.filter((item) => item.id !== continuationId) };
+  const broken = run(disconnected);
+  const plc = broken.find((item) => item.reference === "PLC1")!;
+  expect(plc.output.value).toContain("AI0 INVALID");
+  expect(plc.output.value).toContain("Q0 OFF");
+  expect(plc.output.error).toContain(`Required analog terminal ${terminal}`);
+  expect(broken.find((item) => item.reference === "K1")?.evaluatedProperties.input).toBe(false);
+  expect(run(project).find((item) => item.reference === "K1")?.output.value).toBe("ON");
+});
