@@ -150,6 +150,7 @@ export interface CircuitDocument {
   draftingLayers?: DraftingLayer[];
   guides?: DrawingGuide[];
   printLayout?: import("../cad/printLayout").PrintLayout;
+  drawingGrid?: import("../cad/drawingGrid").DrawingGrid;
   revision: number;
 }
 

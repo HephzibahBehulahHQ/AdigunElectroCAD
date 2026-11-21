@@ -11,6 +11,7 @@ import { ComponentTransformHandles } from "./ComponentTransformHandles";
 import { DrawingRulers } from "./DrawingRulers";
 import { PrintFrame } from "./PrintFrame";
 import { snapToDrawingGuides } from "../cad/drawingGuides";
+import { defaultDrawingGrid, snapDrawingCoordinate, visibleGridSpacing } from "../cad/drawingGrid";
 import { componentFootprint, componentLabelOffsets } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, terminalHitRadius, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
@@ -118,7 +119,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
   </g>;
 }
 
-function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete }: { graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
+function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, snapSpacing = 20 }: { snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
   const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; handle?: string; index?: number } | null>(null);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
@@ -152,8 +153,8 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       if (active.mode === "move") onMove?.(graphic.id, current.x - active.start.x, current.y - active.start.y);
       else if (active.mode === "vertex" && active.index !== undefined) onVertexMove?.(graphic.id, active.index, current.x, current.y);
       else {
-        const snappedX = Math.round(current.x / 20) * 20;
-        const snappedY = Math.round(current.y / 20) * 20;
+        const snappedX = snapDrawingCoordinate(current.x, snapSpacing);
+        const snappedY = snapDrawingCoordinate(current.y, snapSpacing);
         if (graphic.kind === "line") onResize?.(graphic.id, active.handle === "start" ? snappedX : graphic.x1, active.handle === "start" ? snappedY : graphic.y1, active.handle === "end" ? snappedX : graphic.x2, active.handle === "end" ? snappedY : graphic.y2);
         else {
           const opposite = { x: active.handle?.includes("w") ? x + width : x, y: active.handle?.includes("n") ? y + height : y };
@@ -385,12 +386,15 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  const grid = (value: number) => Math.round(value / 20) * 20;
+  const settings = document.drawingGrid ?? defaultDrawingGrid;
+  const snapSpacing = settings.snapEnabled ? settings.snapSpacing : null;
+  const displaySpacing = visibleGridSpacing(settings.displaySpacing, zoom);
+  const grid = (value: number) => snapDrawingCoordinate(value, snapSpacing);
   const svgPoint = (event: PointerEvent<SVGSVGElement>) => {
     const matrix = event.currentTarget.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  const snappedPathPoint = (x: number, y: number) => ({ x: grid(x), y: Math.round(y / 20) * 20 });
+  const snappedPathPoint = (x: number, y: number) => ({ x: grid(x), y: grid(y) });
   const routePointFromEvent = (event: PointerEvent<SVGCircleElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -444,7 +448,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     event.preventDefault(); graphicStart.current = point;
     const start = graphicMode === "freehand"
       ? { x: point.x, y: point.y }
-      : { x: grid(point.x), y: Math.round(point.y / 20) * 20 };
+      : { x: grid(point.x), y: grid(point.y) };
     if (graphicMode === "freehand") {
       pathVertices.current = appendFreehandPoint([], start);
       setGraphicPreview({ kind: "polyline", x1: start.x, y1: start.y, x2: start.x, y2: start.y, points: [...pathVertices.current] });
@@ -460,7 +464,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       if (bounds) setGraphicPreview({ kind: "polyline", ...bounds, points: [...pathVertices.current] });
       return;
     }
-    setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: Math.round(point.y / 20) * 20 } : null);
+    setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: grid(point.y) } : null);
   };
   const drawEnd = (event: PointerEvent<SVGRectElement>) => {
     const point = graphicPoint(event); const start = graphicStart.current; const kind = graphicMode;
@@ -472,8 +476,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       if (bounds && length >= 4) onGraphicCreate("polyline", bounds.x1, bounds.y1, bounds.x2, bounds.y2, points);
       pathVertices.current = [];
     } else if (start && point && kind && kind !== "freehand") {
-      const x1 = grid(start.x); const y1 = Math.round(start.y / 20) * 20;
-      const x2 = grid(point.x); const y2 = Math.round(point.y / 20) * 20;
+      const x1 = grid(start.x); const y1 = grid(start.y);
+      const x2 = grid(point.x); const y2 = grid(point.y);
       if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) >= 4 : Math.abs(x2 - x1) >= 4 && Math.abs(y2 - y1) >= 4) onGraphicCreate(kind, x1, y1, x2, y2);
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -506,7 +510,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   const cursorReadout = useRef<HTMLOutputElement>(null);
   const draftingPoint = (point: { x: number; y: number }, grid: boolean, guides: boolean) => {
     const snap = snapToDrawingGuides(point, guides ? document.guides ?? [] : [], 8 / zoom);
-    const format = (axis: "x" | "y") => snap.axes.has(axis) ? snap.point[axis] : grid ? Math.round(point[axis] / 20) * 20 : Math.round(point[axis] * 100) / 100;
+    const format = (axis: "x" | "y") => snap.axes.has(axis) ? snap.point[axis] : grid ? snapDrawingCoordinate(point[axis], snapSpacing) : Math.round(point[axis] * 100) / 100;
     return { x: format("x"), y: format("y"), guideSnap: snap.axes.size > 0 };
   };
   return <div className="schematic-wrap free-drawing-viewport" onPointerMoveCapture={(event) => {
@@ -517,7 +521,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
     const snapped = annotationMode || (graphicMode && graphicMode !== "freehand");
     const { x, y, guideSnap } = draftingPoint(point, Boolean(snapped), annotationMode || !!onPlaceComponent);
-    readout.textContent = `X ${x}  Y ${y}  du${guideSnap ? " · Guide snap" : snapped ? " · Grid snap" : ""}`;
+    readout.textContent = `X ${x}  Y ${y}  du${guideSnap ? " · Guide snap" : snapped && settings.snapEnabled ? " · Grid snap" : ""}`;
   }} onPointerLeave={() => { if (cursorReadout.current) cursorReadout.current.textContent = "X —  Y —  du"; }}>
     <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); const snapped = draftingPoint(point, false, true); onComponentDrop(definitionId, snapped.x, snapped.y); }} onClickCapture={(event) => { if (!onPlaceComponent || event.button !== 0) return; const matrix = event.currentTarget.getScreenCTM(); if (!matrix) return; event.stopPropagation(); const point = draftingPoint(new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()), false, true); onPlaceComponent(point.x, point.y); }} onPointerDownCapture={(event) => { if (onPlaceComponent && event.button === 0) { event.stopPropagation(); return; } if (isPathMode) { event.stopPropagation(); addPathVertex(event); event.currentTarget.focus(); } }} onPointerMoveCapture={(event) => { if (isPathMode) { event.stopPropagation(); previewPathVertex(event); } }} onDoubleClickCapture={(event) => { if (isPathMode) { event.stopPropagation(); finishPath(); } }} onKeyDown={(event) => { if (isPathMode && event.key === "Enter") { event.preventDefault(); finishPath(); } else if (isPathMode && event.key === "Escape") { event.preventDefault(); pathVertices.current = []; setGraphicPreview(null); } }} onClick={(event) => {
       if (!annotationMode) return;
@@ -525,7 +529,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); const snapped = draftingPoint(point, true, true); onAnnotationPlace(snapped.x, snapped.y); }
     }}>
       <style>{componentDraftingStyles}</style>
-      <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
+      <defs><pattern id="free-grid" data-export-grid-spacing={settings.displaySpacing} width={displaySpacing} height={displaySpacing} patternUnits="userSpaceOnUse"><path d={`M ${displaySpacing} 0 L 0 0 0 ${displaySpacing}`} fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
       <rect {...drawingBounds} data-viewport-fill="" className="sheet-bg" onPointerDown={(event) => { if (onPlaceComponent) return; if (graphicMode) drawStart(event); else selectionStart(event); }} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect {...drawingBounds} data-viewport-fill="" fill="url(#free-grid)" pointerEvents="none" />}
       {isPathMode && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
       {graphicMode === "freehand" && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Drag to sketch · select the path to edit its vertices, color, width and name</text>}
@@ -550,7 +554,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
           const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
           if (!matrix) return;
           const pointer = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
-          const inserted = insertWireRoutePointAt(from, to, wire.points, from.vertical ?? false, to.vertical ?? false, pointer);
+          const inserted = insertWireRoutePointAt(from, to, wire.points, from.vertical ?? false, to.vertical ?? false, pointer, 18 / zoom, snapSpacing);
           if (inserted) onWireRouteChange?.(wire.id, inserted.points);
         };
         const startBranch = (event: PointerEvent<SVGPathElement>) => {
@@ -570,10 +574,10 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
           {wireRouteEditId === wire.id && !wire.branchOfWireId && <path d={path} className="wire-route-hit-target" aria-hidden="true" onClick={insertRoutePoint} />}
           {wireMode && onWireBranchStart && <path d={path} className="wire-branch-hit-target" role="button" tabIndex={0} aria-label={`Create a branch from ${wire.netName ?? wire.id}`} onClick={startBranch} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onWireBranchStart(wire.id, "from", .5); } }} />}
           {branch && <circle cx={branch.point.x} cy={branch.point.y} r="5" className="wire-junction" aria-label={`Electrical junction on ${wire.netName ?? wire.id}`} />}
-          {wireRouteEditId === wire.id && !wire.branchOfWireId && routePoints.map((point, index) => <circle key={index} className="wire-route-handle" data-route-point={index} cx={point.x} cy={point.y} r="6" role="button" tabIndex={0} aria-label={`Route point ${index + 1} on ${wire.netName ?? wire.id}; drag to move or use arrow keys`} onPointerDown={(event) => { event.stopPropagation(); routeGesture.current = { wireId: wire.id, index, points: [...routePoints] }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => moveRoutePoint(event, wire.id)} onPointerUp={(event) => finishRoutePoint(event, wire.id)} onPointerCancel={() => { routeGesture.current = null; setRoutePreview(null); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); }} onKeyDown={(event) => { const delta = event.shiftKey ? 100 : 20; const move = event.key === "ArrowLeft" ? { x: -delta, y: 0 } : event.key === "ArrowRight" ? { x: delta, y: 0 } : event.key === "ArrowUp" ? { x: 0, y: -delta } : event.key === "ArrowDown" ? { x: 0, y: delta } : null; if (move) { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.map((item, pointIndex) => pointIndex === index ? snappedPathPoint(item.x + move.x, item.y + move.y) : item)); } else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); } }} />)}
+          {wireRouteEditId === wire.id && !wire.branchOfWireId && routePoints.map((point, index) => <circle key={index} className="wire-route-handle" data-route-point={index} cx={point.x} cy={point.y} r="6" role="button" tabIndex={0} aria-label={`Route point ${index + 1} on ${wire.netName ?? wire.id}; drag to move or use arrow keys`} onPointerDown={(event) => { event.stopPropagation(); routeGesture.current = { wireId: wire.id, index, points: [...routePoints] }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => moveRoutePoint(event, wire.id)} onPointerUp={(event) => finishRoutePoint(event, wire.id)} onPointerCancel={() => { routeGesture.current = null; setRoutePreview(null); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); }} onKeyDown={(event) => { const delta = (event.shiftKey ? 5 : 1) * (snapSpacing ?? 20); const move = event.key === "ArrowLeft" ? { x: -delta, y: 0 } : event.key === "ArrowRight" ? { x: delta, y: 0 } : event.key === "ArrowUp" ? { x: 0, y: -delta } : event.key === "ArrowDown" ? { x: 0, y: delta } : null; if (move) { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.map((item, pointIndex) => pointIndex === index ? snappedPathPoint(item.x + move.x, item.y + move.y) : item)); } else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); } }} />)}
         </g>;
       })}
-      {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
+      {(document.graphics ?? []).map((graphic) => <PlacedGraphic snapSpacing={snapSpacing} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {paintOrder.map((component) => <PlacedSymbol key={component.id} component={component} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}

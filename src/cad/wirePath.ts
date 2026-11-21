@@ -30,7 +30,7 @@ export function appendWireRoutePoint(from: Point, to: Point, bends: readonly Poi
   return [...bends, point];
 }
 
-export function insertWireRoutePointAt(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, pointer: Point, tolerance = 18): { points: Point[]; point: Point; index: number } | null {
+export function insertWireRoutePointAt(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, pointer: Point, tolerance = 18, spacing: number | null = 20): { points: Point[]; point: Point; index: number } | null {
   const segments: { start: Point; end: Point; index: number }[] = [];
   const addSegment = (start: Point, end: Point, index: number) => {
     if (start.x !== end.x || start.y !== end.y) segments.push({ start, end, index });
@@ -56,7 +56,7 @@ export function insertWireRoutePointAt(from: Point, to: Point, bends: readonly P
     const projected = Math.max(low, Math.min(high, coordinate));
     const fixed = horizontal ? segment.start.y : segment.start.x;
     const distance = Math.hypot(pointer.x - (horizontal ? projected : fixed), pointer.y - (horizontal ? fixed : projected));
-    const gridCoordinate = Math.max(low, Math.min(high, Math.round(projected / 20) * 20));
+    const gridCoordinate = spacing === null ? projected : Math.max(low, Math.min(high, Math.round(projected / spacing) * spacing));
     const point = horizontal ? { x: gridCoordinate, y: fixed } : { x: fixed, y: gridCoordinate };
     if (!best || distance < best.distance) best = { point, index: segment.index, distance };
   }

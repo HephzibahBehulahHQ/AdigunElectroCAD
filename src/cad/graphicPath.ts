@@ -1,4 +1,5 @@
 import type { SchematicGraphicPoint } from "../types/electrical";
+import { snapDrawingCoordinate } from "./drawingGrid";
 
 export type GraphicPathKind = "polyline" | "polygon";
 
@@ -9,7 +10,7 @@ export function graphicPathBounds(points: SchematicGraphicPoint[]) {
   return { x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
 }
 
-export function insertGraphicPathVertex(points: SchematicGraphicPoint[], kind: GraphicPathKind, x: number, y: number, tolerance = 28): SchematicGraphicPoint[] | null {
+export function insertGraphicPathVertex(points: SchematicGraphicPoint[], kind: GraphicPathKind, x: number, y: number, tolerance = 28, spacing: number | null = 20): SchematicGraphicPoint[] | null {
   const segmentCount = kind === "polygon" ? points.length : points.length - 1;
   let closest = { segment: -1, distance: Number.POSITIVE_INFINITY, x: 0, y: 0 };
   for (let index = 0; index < segmentCount; index += 1) {
@@ -21,7 +22,7 @@ export function insertGraphicPathVertex(points: SchematicGraphicPoint[], kind: G
     if (distance < closest.distance) closest = { segment: index, distance, x: projectedX, y: projectedY };
   }
   if (closest.distance > tolerance) return null;
-  const vertex = { x: Math.round(closest.x / 20) * 20, y: Math.round(closest.y / 20) * 20 };
+  const vertex = { x: snapDrawingCoordinate(closest.x, spacing), y: snapDrawingCoordinate(closest.y, spacing) };
   const insertAt = closest.segment + 1;
   const previous = points[closest.segment]; const next = points[insertAt % points.length];
   if ((previous.x === vertex.x && previous.y === vertex.y) || (next.x === vertex.x && next.y === vertex.y)) return null;
@@ -36,9 +37,9 @@ export function deleteGraphicPathVertex(points: SchematicGraphicPoint[], kind: G
   return next;
 }
 
-export function moveGraphicPathVertex(points: SchematicGraphicPoint[], kind: GraphicPathKind, index: number, x: number, y: number): SchematicGraphicPoint[] | null {
+export function moveGraphicPathVertex(points: SchematicGraphicPoint[], kind: GraphicPathKind, index: number, x: number, y: number, spacing: number | null = 20): SchematicGraphicPoint[] | null {
   if (!points[index]) return null;
-  const next = points.map((point, pointIndex) => pointIndex === index ? { x: Math.round(x / 20) * 20, y: Math.round(y / 20) * 20 } : point);
+  const next = points.map((point, pointIndex) => pointIndex === index ? { x: snapDrawingCoordinate(x, spacing), y: snapDrawingCoordinate(y, spacing) } : point);
   if (next.some((point, pointIndex) => pointIndex > 0 && point.x === next[pointIndex - 1].x && point.y === next[pointIndex - 1].y)) return null;
   if (kind === "polygon" && (next[0].x === next.at(-1)?.x && next[0].y === next.at(-1)?.y || !polygonHasArea(next))) return null;
   return next;
