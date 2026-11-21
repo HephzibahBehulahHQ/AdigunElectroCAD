@@ -599,3 +599,12 @@ This increment extends the steady-state equivalent-circuit boundary. The separat
 - [x] Merge PR #221 as `ffd169e` and complete full-test/build/Pages deployment run `43416495533`.
 
 The model is a first-order rigid-rotor approximation with piecewise-constant electrical current. Flux transients, multi-mass mechanics, motor heating and certified protection curves remain unmodeled.
+
+## Completed increment: M05 — PLC analog and ladder diagnostics
+
+- [x] Required ADC and PLC analog connections invalidate the PLC input when a wire or cross-sheet continuation is removed. PR #332 merged as `3292f91`, with Verify run `44921927027` and Pages run `44921998583`.
+- [x] Optional 4–20 mA range diagnostics inhibit the PLC on underrange or overrange. PR #333 merged as `4679577`, with Verify run `44922276320` and Pages run `44922349392`.
+- [x] Graphical arithmetic rows support MOV, ADD, SUB, MUL and DIV between Boolean rungs. PR #334 merged as `54ed45b`, with Verify run `44922828205`, Pages run `44922899927` and 638 passing tests.
+- [x] Production browser on `54ed45b` executed a graphically authored `ADD 40 20 D0; GT D0 50; OUT Q0` with D0 = 60 and Q0 on. Changing the row to `DIV 40 0 D0` showed the fault and Q0 off. Undo restored the ADD program and then the original blank canvas. No cloud save was made.
+
+M05 remains partial. Arithmetic embedded inside a Boolean expression still uses the text editor. Complete instrumentation, broader PLC execution and full browser acceptance remain open.
