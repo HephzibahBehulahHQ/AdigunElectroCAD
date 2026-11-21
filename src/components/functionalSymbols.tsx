@@ -1,4 +1,4 @@
-import { controlTerminalOffset } from "../cad/componentGeometry";
+import { controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
 
 const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
@@ -111,7 +111,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   }
   if (symbolId === "vfd" || symbolId.startsWith("vfd-")) return <g className={mark} aria-label="Variable-frequency drive with three-phase input and U/V/W output">
     <rect x={x - 30} y={y - 22} width="60" height="44" rx="2" />
-    <path d={`M ${x} ${y - 22} V ${y + 22}`} />
+    {["l1-in", "l2-in", "l3-in", "u1", "v1", "w1", "pe"].map((terminalId) => {
+      const offset = powerTerminalOffset("catalog-variable-frequency-drive", terminalId)!;
+      const lead = terminalId === "pe" ? `V ${y + 22}` : `H ${x + Math.sign(offset.x) * 30}`;
+      return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} ${lead}`} />;
+    })}
+    <path d={`M ${x} ${y - 17} V ${y + 17}`} />
     <text x={x - 15} y={y + 5} textAnchor="middle" className={text}>~</text>
     <text x={x + 15} y={y + 5} textAnchor="middle" className={text}>f</text>
   </g>;

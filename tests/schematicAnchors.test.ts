@@ -504,7 +504,7 @@ it("draws and anchors the on-delay relay coil and 15/16/18 changeover contact", 
   expect(timingSvg).toContain('M 428 305 L 444 288');
 });
 
-it("positions VFD line, motor, and earth terminals beside its dedicated symbol", () => {
+it("draws all VFD line, motor, and earth leads at their wiring anchors", () => {
   const definition = catalogById.get("iec.variable-frequency-drive.01")!;
   const document = { id: "drive-sheet", name: "Drive", description: "", revision: 0, wires: [], components: [
     { id: "u1", definitionId: definition.id, reference: "U1", x: 450, y: 320, rotation: 0 as const, properties: {} },
@@ -522,6 +522,10 @@ it("positions VFD line, motor, and earth terminals beside its dedicated symbol",
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 450, y: 320 }));
   expect(svg).toContain('aria-label="Variable-frequency drive with three-phase input and U/V/W output"');
+  for (const anchor of anchors) {
+    const leadEnd = anchor.endpoint.terminalId === "pe" ? "V 342" : `H ${anchor.x < 450 ? 420 : 480}`;
+    expect(svg).toContain(`d="M ${anchor.x} ${anchor.y} ${leadEnd}"`);
+  }
 });
 
 it("positions all PLC I/O terminals around a dedicated module symbol", () => {
