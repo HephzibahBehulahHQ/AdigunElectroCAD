@@ -36,4 +36,6 @@ The synthetic performance check indexes 100,000 generated records in test code. 
 
 Remaining acceptance includes visual and terminal geometry verification family by family, manufacturer provenance by order number, and browser checks for rotation, simulation states and export.
 
+The deployed analog loopback on `968c7bc` loaded in the editor. With simulation running, PLC1 displayed `AI0 0` and `Q0 ON` for `EQ AI0 0; OUT Q0`. Stop and Undo restored the blank test canvas.
+
 Production browser checks on release `26e070c` verified the wired pilot circuit. START closed its blade and lit the lamp; STOP opened its blade and extinguished the lamp; releasing STOP relit it with START held. Stop restored both default blades. Exact order-number search opened the Siemens contactor preview with coil and auxiliary terminal designations, and the wired Siemens DOL example changed KM1 from de-energized to energized on START. The browser check also exposed crowded vertical pole designations, addressed by fitting their labels to the pole pitch in the preview and canvas.
