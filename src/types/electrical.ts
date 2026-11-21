@@ -149,6 +149,7 @@ export interface CircuitDocument {
   /** Optional named layers shared by wire and component drafting styles. */
   draftingLayers?: DraftingLayer[];
   guides?: DrawingGuide[];
+  printLayout?: import("../cad/printLayout").PrintLayout;
   revision: number;
 }
 

@@ -9,6 +9,7 @@ import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymb
 import { transformComponent, type ComponentTransform } from "../cad/documentOps";
 import { ComponentTransformHandles } from "./ComponentTransformHandles";
 import { DrawingRulers } from "./DrawingRulers";
+import { PrintFrame } from "./PrintFrame";
 import { snapToDrawingGuides } from "../cad/drawingGuides";
 import { componentLabelOffsets } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
@@ -474,6 +475,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
           ? <line key={id} x1={coordinate} x2={coordinate} y1={drawingBounds.y} y2={drawingBounds.y + drawingBounds.height} vectorEffect="non-scaling-stroke" />
           : <line key={id} y1={coordinate} y2={coordinate} x1={drawingBounds.x} x2={drawingBounds.x + drawingBounds.width} vectorEffect="non-scaling-stroke" />)}
       </g>
+      {document.printLayout && <PrintFrame layout={document.printLayout} />}
       <g data-drawing-content="">
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));

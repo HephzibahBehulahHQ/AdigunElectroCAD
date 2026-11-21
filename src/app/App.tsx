@@ -12,6 +12,8 @@ import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { cameraBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
 import { DrawingGuideEditor } from "../components/DrawingGuideEditor";
+import { PrintLayoutEditor } from "../components/PrintLayoutEditor";
+import { printFrameBounds, validPrintLayout, type PrintLayout } from "../cad/printLayout";
 import { MAX_DRAWING_GUIDES } from "../cad/drawingGuides";
 import type { DrawingGuide } from "../types/electrical";
 import { applyGenericTopologyTerminals, genericTopologyChoices, genericTopologyTerminalsForChange } from "../cad/componentTopology";
@@ -96,6 +98,7 @@ export function App() {
   const drawingAreaRef = useRef<HTMLElement>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showGuideEditor, setShowGuideEditor] = useState(false);
+  const [showPrintLayout, setShowPrintLayout] = useState(false);
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("");
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
@@ -852,11 +855,11 @@ export function App() {
       setNotice("No schematic drawing is available for export.");
       return null;
     }
-    const { svg, clipsContent } = snapshotSchematicSvg(drawing, scope);
-    if (scope === "frame" && clipsContent && !window.confirm("The 1100 × 780 frame clips part of this drawing. Export the frame anyway?")) return null;
+    const { svg, clipsContent } = snapshotSchematicSvg(drawing, scope, isReferenceSheet ? undefined : document.printLayout);
+    if (scope === "frame" && clipsContent && !window.confirm("The print frame clips part of this drawing. Export the frame anyway?")) return null;
     return {
       markup: prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(svg)),
-      width: Number(svg.getAttribute("width")), height: Number(svg.getAttribute("height")),
+      width: parseFloat(svg.getAttribute("width") ?? "0"), height: parseFloat(svg.getAttribute("height") ?? "0"),
     };
   };
 
@@ -1693,6 +1696,27 @@ export function App() {
     setNotice(`${copy.reference} duplicated from ${selectedComponent.reference}. No wires were copied; connect the terminals you choose.`);
   };
 
+  const savePrintLayout = (layout: PrintLayout) => {
+    if (isReferenceSheet) return;
+    if (!validPrintLayout(layout)) { setNotice("Enter valid paper dimensions, margin and drawing scale."); return; }
+    if (JSON.stringify(layout) === JSON.stringify(document.printLayout)) return;
+    updateDocument({ ...document, printLayout: layout, revision: document.revision + 1 });
+    setNotice("Print layout updated.");
+  };
+
+  const removePrintLayout = () => {
+    if (isReferenceSheet || !document.printLayout) return;
+    const { printLayout: _layout, ...drawing } = document;
+    updateDocument({ ...drawing, revision: document.revision + 1 });
+  };
+
+  const fitPrintFrame = () => {
+    if (!document.printLayout || !drawingViewport.width || !drawingViewport.height) return;
+    const frame = printFrameBounds(document.printLayout);
+    const zoom = Math.max(.05, Math.min(2, (drawingViewport.width - 128) / frame.width, (drawingViewport.height - 72) / frame.height));
+    setFreeCamera({ zoom, center: { x: frame.x + frame.width / 2, y: frame.y + frame.height / 2 } });
+  };
+
   const saveGuides = (guides: DrawingGuide[]) => {
     updateDocument({ ...document, guides, revision: document.revision + 1 });
   };
@@ -1849,7 +1873,7 @@ export function App() {
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
-        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}</div></details>
+        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}</div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={addSelectedComponent}>Component</button></div></details>
         <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
@@ -1931,6 +1955,7 @@ export function App() {
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Autosave is paused until an explicit save.</p>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === `${activeSheet.id}::${selectedComponent.id}`)} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, property, value))} />}
           {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(document.components), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} selectionCount={selectedGraphicIds.length} stackCapabilities={canReorderSchematicGraphics(document.graphics ?? [], selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id])} onStackChange={(order) => updateGraphicStackOrder(selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id], order)} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <section className="catalog-properties-preview"><strong>{selectedDefinition.name}</strong><p>{selectedDefinition.description}</p><dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Simulation</dt><dd>{selectedDefinition.simulationSupport}</dd></dl><button type="button" className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button></section>}
+            {!isReferenceSheet && showPrintLayout && <PrintLayoutEditor layout={document.printLayout} onSave={savePrintLayout} onRemove={removePrintLayout} />}
             {!isReferenceSheet && showGuideEditor && <DrawingGuideEditor guides={document.guides ?? []} onAdd={addDrawingGuide} onChange={updateDrawingGuide} onRemove={removeDrawingGuide} />}
             {draftingEntity && draftingTarget && <DraftingLayerFields key={draftingTarget.kind + ":" + draftingTarget.id} entity={draftingEntity} layers={document.draftingLayers ?? []} onChange={(patch) => applyDraftingEdit(updateEntityDrafting(document, draftingTarget, patch))} onCreateLayer={(name) => applyDraftingEdit(createEntityLayer(document, draftingTarget, name))} onLayerChange={(id, patch) => applyDraftingEdit(updateDraftingLayer(document, id, patch))} />}
             {isReferenceSheet ? <><section className="state-card"><strong>Simulation state</strong><div><span className={simulation.contactorEnergized ? "state-dot on" : "state-dot"} /> KM1 coil {simulation.contactorEnergized ? "energized" : "de-energized"}</div><div><span className={simulation.overloadTripped ? "state-dot fault" : "state-dot"} /> F1 {simulation.overloadTripped ? "tripped" : "healthy"}</div><div><span className={simulation.motorState === "running" ? "state-dot on" : "state-dot"} /> M1 {simulation.motorState}</div></section><section className="control-card"><strong>Operate DOL circuit</strong><button onClick={() => runAction(simulation.breakerClosed ? "open-breaker" : "close-breaker")}>{simulation.breakerClosed ? "Open Q1" : "Close Q1"}</button><button className="start" onMouseDown={() => runAction("press-start")} onMouseUp={() => runAction("release-start")} onMouseLeave={() => simulation.startPressed && runAction("release-start")}>START S1</button><button className="stop" onClick={() => runAction("press-stop")}>STOP S0</button><button onClick={() => runAction("reset-overload")} disabled={!simulation.overloadTripped}>Reset F1</button></section></> : <section className="state-card"><strong>Free sheet</strong><div>{isRunning ? "Simulation clock running." : runtimeDocument ? "Simulation clock paused or reset." : "Ready for runtime simulation."}</div><div>Run advances timers, thermal protection and other runtime models; Pause retains their state; Stop restores the design.</div></section>}
