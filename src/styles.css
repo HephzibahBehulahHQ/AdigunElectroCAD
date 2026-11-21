@@ -417,3 +417,5 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .component-placement-preview.blocked .component-placement-outline { fill: #b91c1c19; stroke: #b91c1c; }
 .free-drawing-viewport .terminal-anchors g { cursor: crosshair; }
 .free-drawing-viewport .terminal-anchors g:is(:hover, :focus-visible) .terminal-anchor:not(.active) { fill: #22d3ee; stroke: #075985; }
+.free-drawing-viewport.pan-ready .schematic, .free-drawing-viewport.pan-ready .schematic * { cursor: grab !important; }
+.free-drawing-viewport.panning .schematic, .free-drawing-viewport.panning .schematic * { cursor: grabbing !important; }

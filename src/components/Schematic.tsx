@@ -104,7 +104,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  return <g data-annotation-id={annotation.id} transform={`translate(${annotation.x} ${annotation.y}) rotate(${annotation.rotation ?? 0})`} onClick={(event) => { event.stopPropagation(); onSelect(annotation.id); }} onPointerDown={(event) => {
+  return <g data-drawing-selected={selected || undefined} data-annotation-id={annotation.id} transform={`translate(${annotation.x} ${annotation.y}) rotate(${annotation.rotation ?? 0})`} onClick={(event) => { event.stopPropagation(); onSelect(annotation.id); }} onPointerDown={(event) => {
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(annotation.id); origin.current = point(event) ?? null;
     if (origin.current) event.currentTarget.setPointerCapture(event.pointerId);
@@ -141,7 +141,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const handles = graphic.kind === "line"
     ? [{ id: "start", x: graphic.x1, y: graphic.y1 }, { id: "end", x: graphic.x2, y: graphic.y2 }]
     : [{ id: "nw", x, y }, { id: "ne", x: x + width, y }, { id: "sw", x, y: y + height }, { id: "se", x: x + width, y: y + height }];
-  return <g data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id, event.shiftKey); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
+  return <g data-drawing-selected={selected || undefined} data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id, event.shiftKey); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
     if (event.shiftKey) return;
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(graphic.id); const start = point(event);
