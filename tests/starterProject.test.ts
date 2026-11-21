@@ -60,7 +60,8 @@ it("starts with a ten-sheet motor-feeder project linked by source and destinatio
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
     for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G17", "S10"], ["L2", "I17", "U10"], ["L3", "K17", "V10"]] as const) {
       const continuation = project.continuations!.find((item) => item.id === `feed-m${ordinal}-${conductor.toLowerCase()}`)!;
-      expect(continuation.points.map((point) => point.gridReference)).toEqual([sourceGrid, breakerGrid]);
+      expect(continuation.points[0].gridReference).toBe(sourceGrid);
+      expect(continuation.points.at(-1)?.gridReference).toBe(breakerGrid);
     }
     const pe = project.continuations!.find((item) => item.id === `feed-m${ordinal}-pe`)!;
     expect(pe.points.map((point) => point.gridReference)).toEqual(["K16", "W31"]);

@@ -153,6 +153,8 @@ export interface ProjectContinuation {
   id: string;
   label: string;
   conductorColor: string;
+  /** Physical core assignment, independent of the editable net label. */
+  cableCore?: { cableId: string; coreId: string };
   points: ProjectContinuationPoint[];
 }
 

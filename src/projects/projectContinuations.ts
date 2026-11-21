@@ -8,10 +8,17 @@ export function validateProjectContinuations(project: ElectricalProject): string
   const issues: string[] = [];
   const sheetIds = new Set(project.sheets.map((sheet) => sheet.id));
   const seenIds = new Set<string>();
+  const seenCableCores = new Set<string>();
 
   for (const continuation of project.continuations ?? []) {
     if (seenIds.has(continuation.id)) issues.push(`Duplicate project continuation id: ${continuation.id}`);
     seenIds.add(continuation.id);
+    if (continuation.cableCore) {
+      const { cableId, coreId } = continuation.cableCore;
+      const key = JSON.stringify([cableId, coreId]);
+      if (seenCableCores.has(key)) issues.push(`Duplicate cable core: ${cableId} / ${coreId}.`);
+      seenCableCores.add(key);
+    }
     if (!continuation.label.trim() || continuation.label.length > 64) issues.push(`Continuation ${continuation.id} must have a label of 1–64 characters.`);
     if (!/^#[0-9a-fA-F]{6}$/.test(continuation.conductorColor)) issues.push(`Continuation ${continuation.id} has an invalid conductor color.`);
     const points = continuation.points;

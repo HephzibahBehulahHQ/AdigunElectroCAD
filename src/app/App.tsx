@@ -1939,6 +1939,7 @@ function ContinuationProperties({ continuation, sheets, onLabelChange, onColorCh
   useEffect(() => setLabelDraft(continuation.label), [continuation.id, continuation.label]);
   return <section className="properties-form continuation-properties" aria-label="Project continuation properties">
     <strong>Cross-sheet net</strong>
+    {continuation.cableCore && <p>Cable {continuation.cableCore.cableId} · core {continuation.cableCore.coreId}</p>}
     <label>Net label<input value={labelDraft} maxLength={64} onChange={(event) => setLabelDraft(event.currentTarget.value)} onBlur={() => { const label = labelDraft.trim(); if (label) { setLabelDraft(label); onLabelChange(label); } else setLabelDraft(continuation.label); }} /></label>
     <label>Conductor color<input aria-label="Conductor color" type="color" value={continuation.conductorColor} onChange={(event) => onColorChange(event.currentTarget.value)} /></label>
     <div className="continuation-points"><strong>Connected terminals</strong><ol>{continuation.points.map((point) => {
