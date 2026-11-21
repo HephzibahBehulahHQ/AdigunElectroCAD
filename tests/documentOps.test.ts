@@ -4,9 +4,26 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
 import { moveComponentToGrid } from "../src/cad/documentOps";
-import { moveComponentsByOffset } from "../src/cad/documentOps";
+import { moveComponentsByOffset, transformComponent } from "../src/cad/documentOps";
+import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { parseProjectJson } from "../src/projects/projectSerialization";
-import { createStarterProject } from "../src/projects/starterProject";
+import { createBlankProject, createStarterProject } from "../src/projects/starterProject";
+
+it("saves and reopens a rotated wired device at negative drawing coordinates", () => {
+  const document = createAnalogLevelProject().document;
+  const moved = moveComponentsByOffset(document, ["level"], -325.5, -500);
+  expect(moved.ok).toBe(true);
+  const rotated = transformComponent(moved.document, "level", { kind: "rotate", rotation: 90 });
+  expect(rotated.ok).toBe(true);
+  const project = createBlankProject();
+  project.sheets[0].document = rotated.document;
+  const reopened = parseProjectJson(JSON.stringify(project)).sheets[0].document;
+  expect(reopened.components.find(component => component.id === "level")).toMatchObject({ x: -185.5, y: -200, rotation: 90 });
+  expect(reopened.wires).toEqual(document.wires);
+  const isSignal = (item: ReturnType<typeof terminalAnchors>[number]) => item.endpoint.componentId === "level" && item.endpoint.terminalId === "signal";
+  const originalAnchor = terminalAnchors(document).find(isSignal)!;
+  expect(terminalAnchors(reopened).find(isSignal)).toMatchObject({ x: -185.5 - (originalAnchor.y - 300), y: -200 + (originalAnchor.x - 140) });
+});
 
 it("preserves off-grid coordinates and attached wires during a free move", () => {
   const document = createAnalogLevelProject().document;
@@ -100,15 +117,22 @@ describe("component movement", () => {
     expect(canPlaceComponent([motor], "new", 180, 320)).toBe(true);
     expect(findOpenPlacement([], "free", "motor.six-terminal")).toEqual({ x: 180, y: 160 });
     const document = createStarDeltaCircuit();
-    expect(moveComponentToGrid(document, "motor", 620, 680).ok).toBe(false);
+    expect(moveComponentToGrid(document, "motor", 620, 680).ok).toBe(true);
   });
 
-  it("keeps arrow movement and rotated labels inside the sheet", () => {
+  it("keeps reference-sheet symbols inside the frame and permits placement beyond it on free sheets", () => {
     const component = { id: "one", definitionId: "motor.three-phase", reference: "M1", x: 200, y: 680, rotation: 0 as const, properties: {} };
     expect(canPlaceComponent([component], component.id, 200, 680)).toBe(true);
-    expect(canPlaceComponent([{ ...component, rotation: 90 }], component.id, 200, 680)).toBe(false);
-    expect(canPlaceComponent([component], component.id, 1100, 300)).toBe(false);
-    expect(canPlaceComponent([component], component.id, 200, -20)).toBe(false);
+    expect(canPlaceComponent([{ ...component, rotation: 90 }], component.id, 200, 680, undefined, undefined, "reference")).toBe(false);
+    expect(canPlaceComponent([component], component.id, 1100, 300, undefined, undefined, "reference")).toBe(false);
+    expect(canPlaceComponent([component], component.id, -200, -20)).toBe(true);
+    const view = { x: -600, y: -400, width: 460, height: 400 };
+    const position = findOpenPlacement([], "free", component.definitionId, view)!;
+    expect(position.x).toBeLessThan(0);
+    expect(position.y).toBeLessThan(0);
+    const next = findOpenPlacement([{ ...component, ...position }], "free", component.definitionId, view);
+    expect(next).not.toBeNull();
+    expect(next).not.toEqual(position);
   });
   it("snaps a drag to the grid, preserves wired endpoints and rejects unsafe drops", () => {
     const document = createAnalogLevelProject().document;
@@ -117,7 +141,7 @@ describe("component movement", () => {
     expect(moved.document.components[0]).toMatchObject({ x: 160, y: 280 });
     expect(moved.document.wires).toEqual(document.wires);
     expect(document.components[0]).toMatchObject({ x: 140, y: 300 });
-    for (const [x, y] of [[340, 300], [-20, 300], [140, 800], [NaN, 300]]) {
+    for (const [x, y] of [[340, 300], [NaN, 300]]) {
       const rejected = moveComponentToGrid(document, "level", x, y);
       expect(rejected.ok).toBe(false);
       expect(rejected.document).toBe(document);

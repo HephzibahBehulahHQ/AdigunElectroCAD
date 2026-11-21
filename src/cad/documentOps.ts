@@ -2,6 +2,8 @@ import type { CircuitDocument, ComponentInstance, TerminalEndpoint, Wire } from 
 import { componentFootprint, componentFitsSheet } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
+type PlacementView = { x: number; y: number; width: number; height: number };
+const placementLayout = (document: CircuitDocument): PlacementLayout => document.id === "reference-dol-motor-starter" ? "reference" : "free";
 
 export function createManualWire(document: CircuitDocument, from: TerminalEndpoint, to: TerminalEndpoint, branch?: { wireId: string; source: "from" | "to"; position: number }): Wire {
   let index = 1;
@@ -13,8 +15,7 @@ export function moveComponentToGrid(document: CircuitDocument, componentId: stri
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(x) || !Number.isFinite(y)) return { document, ok: false, reason: "Invalid component position." };
   const snappedX = Math.round(x / 20) * 20; const snappedY = Math.round(y / 20) * 20;
-  if (!componentFitsSheet(snappedX, snappedY, component.rotation, component.definitionId, component.size ?? 1)) return { document, ok: false, reason: "Keep the symbol and its labels inside the drawing area." };
-  if (!canPlaceComponent(document.components, componentId, snappedX, snappedY)) return { document, ok: false, reason: "Move blocked: symbol or label clearance overlaps another component." };
+  if (!canPlaceComponent(document.components, componentId, snappedX, snappedY, undefined, undefined, placementLayout(document))) return { document, ok: false, reason: "Move blocked: symbol or label clearance is unavailable." };
   if (component.x === snappedX && component.y === snappedY) return { document, ok: true };
   return { document: moveComponent(document, componentId, snappedX - component.x, snappedY - component.y), ok: true };
 }
@@ -45,8 +46,8 @@ export function moveComponentsByOffset(document: CircuitDocument, componentIds: 
     return position?.x === component.x && position?.y === component.y;
   })) return { document, ok: true };
   for (const component of moved.values()) {
-    if (!canPlaceComponent([...stationary, component], component.id, component.x, component.y)) {
-      return { document, ok: false, reason: "Move blocked: keep selected symbols and labels inside the sheet and clear of neighbors." };
+    if (!canPlaceComponent([...stationary, component], component.id, component.x, component.y, undefined, undefined, placementLayout(document))) {
+      return { document, ok: false, reason: "Move blocked: selected symbols need clear space at the destination." };
     }
   }
   return {
@@ -84,7 +85,7 @@ export function transformComponent(document: CircuitDocument, componentId: strin
   if (!component || ![0, 90, 180, 270].includes(transform.rotation)) return { document, ok: false, reason: "Choose a valid right-angle rotation." };
   const candidate = { ...component, rotation: transform.rotation };
   const clearance = clearanceComponents.map((item) => item.id === componentId ? candidate : item);
-  if (!canPlaceComponent(clearance, componentId, component.x, component.y)) return { document, ok: false, reason: "Rotation blocked by sheet bounds or symbol/label clearance." };
+  if (!canPlaceComponent(clearance, componentId, component.x, component.y, undefined, undefined, placementLayout(document))) return { document, ok: false, reason: "Rotation blocked by symbol or label clearance." };
   return { document: rotateComponent(document, componentId, transform.rotation), ok: true };
 }
 
@@ -152,23 +153,39 @@ export function removeWire(document: CircuitDocument, wireId: string): CircuitDo
   return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => !removed.has(wire.id)) };
 }
 
-export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string): { x: number; y: number } | null {
+export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string, view?: PlacementView): { x: number; y: number } | null {
+  if (layout === "free" && view) {
+    const footprint = componentFootprint(0, 0, 0, definitionId);
+    const firstX = Math.ceil((view.x - footprint.left + 12) / 20) * 20;
+    const firstY = Math.ceil((view.y - footprint.top + 12) / 20) * 20;
+    const lastX = view.x + view.width - footprint.right - 12;
+    const lastY = view.y + view.height - footprint.bottom - 12;
+    const stepX = Math.ceil((footprint.right - footprint.left + 20) / 20) * 20;
+    const stepY = Math.ceil((footprint.bottom - footprint.top + 20) / 20) * 20;
+    for (let y = firstY; y <= lastY; y += stepY) {
+      for (let x = firstX; x <= lastX; x += stepX) {
+        if (canPlaceComponent(components, "", x, y, definitionId)) return { x, y };
+      }
+    }
+    return null;
+  }
   const columns = layout === "reference" ? [940, 800, 660] : [180, 360, 540, 720, 900];
   const rows = layout === "reference" ? [140, 260, 380, 500] : [160, 280, 400, 520, 640];
   for (const x of columns) {
     for (const y of rows) {
-      if (canPlaceComponent(components, "", x, y, definitionId)) return { x, y };
+      if (canPlaceComponent(components, "", x, y, definitionId, undefined, layout)) return { x, y };
     }
   }
   return null;
 }
 
-export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string, size?: number): boolean {
+export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string, size?: number, layout: PlacementLayout = "free"): boolean {
   const moving = components.find((component) => component.id === componentId);
   const rotation = moving?.rotation ?? 0;
   const movingDefinitionId = definitionId ?? moving?.definitionId;
   const movingSize = size ?? moving?.size ?? 1;
-  if (!componentFitsSheet(x, y, rotation, movingDefinitionId, movingSize)) return false;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(movingSize) || movingSize < .5 || movingSize > 2) return false;
+  if (layout === "reference" && !componentFitsSheet(x, y, rotation, movingDefinitionId, movingSize)) return false;
   return components.every((component) => component.id === componentId || !overlaps(x, y, rotation, movingDefinitionId, movingSize, component));
 }
 
@@ -179,7 +196,7 @@ export function nextComponentReference(components: ComponentInstance[], referenc
   return `${referencePrefix}${suffix}`;
 }
 
-export function duplicateComponentInstance(components: ComponentInstance[], source: ComponentInstance, id: string, referencePrefix: string): ComponentInstance | null {
+export function duplicateComponentInstance(components: ComponentInstance[], source: ComponentInstance, id: string, referencePrefix: string, layout: PlacementLayout = "free"): ComponentInstance | null {
   if (components.some((component) => component.id === id) || !components.some((component) => component.id === source.id)) return null;
   const reference = nextComponentReference(components, referencePrefix);
   const candidateId = `__duplicate_candidate__${id}`;
@@ -188,7 +205,7 @@ export function duplicateComponentInstance(components: ComponentInstance[], sour
   const positions = duplicatePlacementOffsets();
   for (const [dx, dy] of positions) {
     const x = source.x + dx; const y = source.y + dy;
-    if (canPlaceComponent(augmented, candidateId, x, y)) {
+    if (canPlaceComponent(augmented, candidateId, x, y, undefined, undefined, layout)) {
       return { ...source, id, reference, x, y, properties: { ...source.properties }, ...(source.terminalLabels ? { terminalLabels: { ...source.terminalLabels } } : {}), ...(source.customTerminals ? { customTerminals: source.customTerminals.map((terminal) => ({ ...terminal })) } : {}), ...(source.customTerminalOffsets ? { customTerminalOffsets: Object.fromEntries(Object.entries(source.customTerminalOffsets).map(([terminalId, point]) => [terminalId, { ...point }])) } : {}), ...(source.customSymbolGraphics ? { customSymbolGraphics: source.customSymbolGraphics.map((graphic) => ({ ...graphic, ...(graphic.points ? { points: graphic.points.map((point) => ({ ...point })) } : {}) })) } : {}), ...(source.customProperties ? { customProperties: { ...source.customProperties } } : {}) };
     }
   }
@@ -206,7 +223,7 @@ function duplicatePlacementOffsets() {
 export function resizeComponent(document: CircuitDocument, componentId: string, size: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(size) || size < .5 || size > 2) return { document, ok: false, reason: "Symbol size must be between 50% and 200%." };
-  if (!canPlaceComponent(document.components, componentId, component.x, component.y, component.definitionId, size)) return { document, ok: false, reason: "Resize blocked: keep the symbol, terminals and labels clear of other components and the sheet edge." };
+  if (!canPlaceComponent(document.components, componentId, component.x, component.y, component.definitionId, size, placementLayout(document))) return { document, ok: false, reason: "Resize blocked: the symbol, terminals and labels need more clear space." };
   if ((component.size ?? 1) === size) return { document, ok: true };
   return { document: { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, size } : item) }, ok: true };
 }
