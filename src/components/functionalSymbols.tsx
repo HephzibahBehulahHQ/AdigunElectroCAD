@@ -52,6 +52,11 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     const angle = (-140 + ratio * 100) * Math.PI / 180;
     const needleX = x + Math.cos(angle) * 11, needleY = y + Math.sin(angle) * 11;
     return <g className={mark} aria-label={`Digital panel meter, ${kind}, ${Number.isFinite(reading) ? reading.toFixed(1) : "invalid"} ${unit}`}>
+      {["supply", "common", "signal"].map((terminalId) => {
+        const offset = controlTerminalOffset("catalog-panel-meter", terminalId)!;
+        const rimX = Math.sqrt(22 ** 2 - offset.y ** 2) * Math.sign(offset.x);
+        return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x + rimX}`} />;
+      })}
       <circle cx={x} cy={y} r="22" />
       <path d={`M ${x - 13} ${y + 9} A 16 16 0 0 1 ${x + 13} ${y + 9} M ${x} ${y + 5} L ${needleX} ${needleY}`} />
       <circle cx={x} cy={y + 5} r="2" />
@@ -59,9 +64,13 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     </g>;
   }
   if (symbolId === "sensor" || /^sensor-\d+$/.test(symbolId)) return <g className={mark} aria-label="Inductive proximity sensor with +24V, SIG and 0V terminals">
-    <rect x={x - 24} y={cy - 14} width="38" height="28" rx="3" />
-    <path d={`M ${x + 14} ${cy - 9} Q ${x + 24} ${cy} ${x + 14} ${cy + 9} M ${x + 19} ${cy - 14} Q ${x + 34} ${cy} ${x + 19} ${cy + 14}`} />
-    <circle cx={x - 13} cy={cy} r="3" />
+    <rect x={x - 24} y={y - 18} width="48" height="36" rx="3" />
+    {["supply", "common", "signal"].map((terminalId) => {
+      const offset = controlTerminalOffset("catalog-proximity-sensor", terminalId)!;
+      return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x + Math.sign(offset.x) * 24}`} />;
+    })}
+    <path d={`M ${x - 4} ${y - 6} Q ${x + 5} ${y} ${x - 4} ${y + 6} M ${x + 3} ${y - 10} Q ${x + 17} ${y} ${x + 3} ${y + 10}`} />
+    <circle cx={x - 13} cy={y} r="3" />
   </g>;
   if (symbolId === "actuator" || symbolId.startsWith("actuator-")) {
     const energized = properties.energized === true;

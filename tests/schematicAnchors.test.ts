@@ -127,6 +127,9 @@ it("renders modeled proximity sensors with reachable power, signal and common pi
   expect(relative("common")).toEqual([-47, 14]);
   const symbol = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: component.x, y: component.y }));
   expect(symbol).toContain("Inductive proximity sensor with +24V, SIG and 0V terminals");
+  for (const anchor of anchors) {
+    expect(symbol).toContain(`d="M ${anchor.x} ${anchor.y} H ${anchor.x < component.x ? 276 : 324}"`);
+  }
 });
 
 it("keeps connection pins visible on the sheet and larger in wire mode", () => {
@@ -419,6 +422,10 @@ it("draws a scaled panel meter with separate supply, measurement, and common pin
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { measurementKind: "Voltage", measuredValue: 48, scaleMaximum: 100 } }));
   expect(svg).toContain('aria-label="Digital panel meter, Voltage, 48.0 V"');
+  for (const anchor of anchors) {
+    expect(svg).toContain(`d="M ${anchor.x} ${anchor.y} H `);
+  }
+  expect(svg).toContain('M 467 300 H 442');
 });
 
 it("draws the solenoid actuator and positions its coil terminals", () => {
