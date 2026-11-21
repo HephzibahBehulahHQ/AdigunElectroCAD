@@ -2,6 +2,8 @@ import { catalogById } from "../catalog/dolCatalog";
 import { validateCircuit } from "../electrical/topology";
 import { validateProjectContinuations } from "./projectContinuations";
 import { terminalGridReference } from "../cad/terminalAnchors";
+import { draftingLineTypes, MAX_DRAFTING_LAYERS, validLineWeight } from "../cad/draftingLayers";
+import type { DraftingStyle, DraftingLayer } from "../types/electrical";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 
@@ -102,11 +104,47 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     wires: wiresValue.map((wire, wireIndex) => parseWire(wire, sheetIndex, wireIndex)),
     ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
     ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
+    ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
   };
+  const ids = new Set(parsed.draftingLayers?.map((layer) => layer.id));
+  if ([...parsed.components, ...parsed.wires].some((entity) => entity.layerId !== undefined && !ids.has(entity.layerId))) {
+    throw new Error(`Sheet ${sheetIndex + 1} contains a component or wire with an unknown drafting layer.`);
+  }
   if (parsed.annotations && new Set(parsed.annotations.map((annotation) => annotation.id)).size !== parsed.annotations.length) throw new Error(`Sheet ${sheetIndex + 1} annotations must have unique ids.`);
   if (parsed.graphics && new Set(parsed.graphics.map((graphic) => graphic.id)).size !== parsed.graphics.length) throw new Error(`Sheet ${sheetIndex + 1} graphics must have unique ids.`);
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
+  return parsed;
+}
+
+function parseDraftingStyle(value: Record<string, unknown>, kind: string): DraftingStyle {
+  const color = value.draftingColor === undefined ? undefined : textValue(value.draftingColor, `${kind} drafting color`, 7);
+  if (color !== undefined && !/^#[0-9a-f]{6}$/i.test(color)) throw new Error(`${kind} drafting color must be a six-digit hex color.`);
+  const lineWeight = value.lineWeight;
+  if (lineWeight !== undefined && !validLineWeight(lineWeight)) throw new Error(`${kind} lineweight must be between 0.5 and 12 drawing units.`);
+  const lineType = draftingLineTypes.find((type) => value.lineType === type);
+  if (value.lineType !== undefined && !lineType) throw new Error(`${kind} line type is invalid.`);
+  return {
+    ...(color !== undefined && { draftingColor: color }),
+    ...(lineWeight !== undefined && { lineWeight }),
+    ...(lineType && { lineType }),
+  };
+}
+
+function parseDraftingLayers(value: unknown): DraftingLayer[] {
+  const layers = array(value, "Drafting layers must be an array.");
+  if (layers.length > MAX_DRAFTING_LAYERS) throw new Error("A sheet cannot have more than 64 named drafting layers.");
+  const parsed = layers.map((item) => {
+    const layer = object(item, "Drafting layer is invalid.");
+    return {
+      id: textValue(layer.id, "drafting layer id", 64),
+      name: textValue(layer.name, "drafting layer name", 64),
+      ...parseDraftingStyle(layer, "Layer"),
+    };
+  });
+  if (new Set(parsed.map((layer) => layer.id)).size !== parsed.length || new Set(parsed.map((layer) => layer.name.toLowerCase())).size !== parsed.length) {
+    throw new Error("Drafting layers must have unique IDs and names.");
+  }
   return parsed;
 }
 
@@ -184,15 +222,15 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) throw new Error("Component rotation is invalid.");
   const size = component.size === undefined ? undefined : finiteNumber(component.size, "component size");
   if (size !== undefined && (size < .5 || size > 2)) throw new Error("Component size must be between 0.5 and 2.");
-  const draftingColor = component.draftingColor === undefined ? undefined : textValue(component.draftingColor, "component drafting color", 7);
-  if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Component drafting color must be a six-digit hex color.");
   const customTerminals = component.customTerminals === undefined ? undefined : customTerminalDefinitions(component.customTerminals, definitionId);
   const customTerminalOffsets = component.customTerminalOffsets === undefined ? undefined : customTerminalOffsetsValue(component.customTerminalOffsets, definitionId, customTerminals);
   const customSymbolGraphics = component.customSymbolGraphics === undefined ? undefined : userSymbolGraphics(component.customSymbolGraphics, definitionId);
   return {
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
-    x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size, draftingColor,
+    x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size,
+    ...parseDraftingStyle(component, "Component"),
+    ...(component.layerId !== undefined && { layerId: textValue(component.layerId, "component drafting layer id", 64) }),
     ...(component.zIndex === undefined ? {} : { zIndex: integer(component.zIndex, "component stacking index") }),
     ...(customTerminals === undefined ? {} : { customTerminals }),
     ...(customTerminalOffsets === undefined ? {} : { customTerminalOffsets }),
@@ -209,8 +247,6 @@ function parseWire(value: unknown, sheetIndex: number, wireIndex: number): Wire 
     const value = object(point, "Wire routing point is invalid.");
     return { x: finiteNumber(value.x, "wire point x"), y: finiteNumber(value.y, "wire point y") };
   });
-  const draftingColor = wire.draftingColor === undefined ? undefined : textValue(wire.draftingColor, "wire drafting color", 7);
-  if (draftingColor !== undefined && !/^#[0-9a-f]{6}$/i.test(draftingColor)) throw new Error("Wire drafting color must be a six-digit hex color.");
   const branchOfWireId = wire.branchOfWireId === undefined ? undefined : textValue(wire.branchOfWireId, "branch parent wire id", 120);
   const branchSource = wire.branchSource === undefined ? undefined : wire.branchSource;
   const branchPosition = wire.branchPosition === undefined ? undefined : finiteNumber(wire.branchPosition, "branch position");
@@ -218,7 +254,7 @@ function parseWire(value: unknown, sheetIndex: number, wireIndex: number): Wire 
   if (branchFields !== 0 && branchFields !== 3) throw new Error("Wire branch reference is incomplete.");
   if (branchSource !== undefined && branchSource !== "from" && branchSource !== "to") throw new Error("Wire branch source must be from or to.");
   if (branchPosition !== undefined && (branchPosition <= 0 || branchPosition >= 1)) throw new Error("Wire branch position must be between 0 and 1.");
-  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), draftingColor, ...(branchOfWireId ? { branchOfWireId, branchSource: branchSource as "from" | "to", branchPosition } : {}) };
+  return { id: textValue(wire.id, "wire id", 120), from: endpoint(wire.from, "wire source"), to: endpoint(wire.to, "wire target"), points, netName: optionalText(wire.netName, "wire net name", 80), ...parseDraftingStyle(wire, "Wire"), ...(wire.layerId !== undefined && { layerId: textValue(wire.layerId, "wire drafting layer id", 64) }), ...(branchOfWireId ? { branchOfWireId, branchSource: branchSource as "from" | "to", branchPosition } : {}) };
 }
 
 function endpoint(value: unknown, label: string): TerminalEndpoint {

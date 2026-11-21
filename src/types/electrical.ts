@@ -23,7 +23,24 @@ export interface ElectricalComponentDefinition {
   standardsReferences: string[];
 }
 
-export interface ComponentInstance {
+export type DraftingLineType = "solid" | "dashed" | "dotted";
+
+export interface DraftingStyle {
+  draftingColor?: string;
+  lineWeight?: number;
+  lineType?: DraftingLineType;
+}
+
+export interface DraftingLayer extends DraftingStyle {
+  id: string;
+  name: string;
+}
+
+export interface DraftingEntity extends DraftingStyle {
+  layerId?: string;
+}
+
+export interface ComponentInstance extends DraftingEntity {
   id: string;
   definitionId: string;
   reference: string;
@@ -36,8 +53,6 @@ export interface ComponentInstance {
   zIndex?: number;
   /** Relative symbol size. Missing values in older projects render at 100%. */
   size?: number;
-  /** User-selected schematic ink color; presentation only, with no electrical meaning. */
-  draftingColor?: string;
   properties: Record<string, string | number | boolean>;
   /** User-selected display labels keyed by stable catalog terminal ID; connectivity is unchanged. */
   terminalLabels?: Record<string, string>;
@@ -56,14 +71,12 @@ export interface TerminalEndpoint {
   terminalId: string;
 }
 
-export interface Wire {
+export interface Wire extends DraftingEntity {
   id: string;
   from: TerminalEndpoint;
   to: TerminalEndpoint;
   points: Array<{ x: number; y: number }>;
   netName?: string;
-  /** User-selected conductor stroke color; presentation only. */
-  draftingColor?: string;
   /** The wire this branch is attached to; absent on ordinary terminal-to-terminal wires. */
   branchOfWireId?: string;
   /** Parent endpoint from which the branch route begins. */
@@ -125,6 +138,8 @@ export interface CircuitDocument {
   wires: Wire[];
   annotations?: SchematicAnnotation[];
   graphics?: SchematicGraphic[];
+  /** Optional named layers shared by wire and component drafting styles. */
+  draftingLayers?: DraftingLayer[];
   revision: number;
 }
 
