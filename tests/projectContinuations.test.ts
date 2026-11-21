@@ -1,8 +1,45 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
+import { parseProjectJson } from "../src/projects/projectSerialization";
+import { recordProjectEdit, redoProject, undoProject } from "../src/cad/projectHistory";
 import { terminalGridReference } from "../src/cad/terminalAnchors";
+
+it("assigns and clears a cable core without changing the route, and survives history and serialization", () => {
+  const project = createMotorFeederWorkbook();
+  const id = "feed-m2-l1";
+  const findNet = (state: typeof project) => state.continuations!.find((item) => item.id === id)!;
+  const original = findNet(project);
+  const cleared = assignProjectCableCore(project, id, null);
+  if (!cleared.ok) throw new Error(cleared.reason);
+  expect(findNet(cleared.project)).not.toHaveProperty("cableCore");
+  expect(parseProjectJson(JSON.stringify(cleared.project))).toEqual(cleared.project);
+
+  const assigned = assignProjectCableCore(cleared.project, id, { cableId: " W2 ", coreId: " phase-A " });
+  if (!assigned.ok) throw new Error(assigned.reason);
+  expect(findNet(assigned.project)).toEqual({ ...original, cableCore: { cableId: "W2", coreId: "phase-A" } });
+  expect(findNet(assigned.project).points).toBe(original.points);
+  expect(assigned.project.sheets).toBe(project.sheets);
+  expect(parseProjectJson(JSON.stringify(assigned.project))).toEqual(assigned.project);
+  const history = recordProjectEdit({ undo: [], redo: [] }, cleared.project);
+  const undone = undoProject(history, assigned.project);
+  expect(undone.project).toBe(cleared.project);
+  expect(redoProject(undone.history, cleared.project).project).toBe(assigned.project);
+  expect(assignProjectCableCore(assigned.project, id, { cableId: "W2", coreId: "phase-A" })).toEqual({ ok: true, project: assigned.project });
+});
+
+it("rejects invalid or already assigned cable cores without changing the project", () => {
+  const project = createMotorFeederWorkbook();
+  const before = JSON.stringify(project);
+  expect(assignProjectCableCore(project, "feed-m2-l1", { cableId: " W1 ", coreId: " L1 " })).toMatchObject({ ok: false, reason: expect.stringContaining("already assigned") });
+  for (const assignment of [{ cableId: "W1", coreId: " " }, { cableId: "W".repeat(65), coreId: "L1" }]) {
+    expect(assignProjectCableCore(project, "feed-m2-l1", assignment)).toMatchObject({ ok: false });
+  }
+  expect(assignProjectCableCore(project, "missing-net", null)).toMatchObject({ ok: false });
+  expect(JSON.stringify(project)).toBe(before);
+});
 
 it("creates a real cross-sheet continuation and exposes both endpoints in the project net graph", () => {
   const project = addFreeSchematicSheet(createStarterProject());
