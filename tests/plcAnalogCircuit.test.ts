@@ -6,6 +6,29 @@ import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
 
+it("reports both required PLC channels when disconnected and clears each fault after reconnection", () => {
+  const design = createAnalogLevelProject().document;
+  const plc = design.components.find((component) => component.id === "plc")!;
+  plc.properties.requireWiredAi1 = true;
+  plc.properties.program = "GT AI0 0; OUT Q0; GT AI1 0; OUT Q1";
+  const ai0 = design.wires.find((wire) => wire.to.componentId === "plc" && wire.to.terminalId === "ai-0")!;
+  const ai1 = { ...ai0, id: "analog-channel-1", to: { ...ai0.to, terminalId: "ai-1" } };
+  const remaining = design.wires.filter((wire) => wire !== ai0);
+  const scan = (wires: CircuitDocument["wires"]) => {
+    const runtime = advanceCircuitClock({ ...design, wires }, catalogById, 0.1);
+    return executeCircuitModels(runtime, catalogById).find((run) => run.componentId === "plc")!.output;
+  };
+
+  const broken = scan(remaining);
+  expect(broken.error).toContain("PLC1.AI0 raw has no wire");
+  expect(broken.error).toContain("PLC1.AI1 raw has no wire");
+  expect(broken.value).toContain("Q0 OFF · Q1 OFF");
+  const partial = scan([...remaining, ai0]);
+  expect(partial.error).toContain("PLC1.AI1 raw has no wire");
+  expect(partial.error).not.toContain("PLC1.AI0");
+  expect(scan([...remaining, ai0, ai1]).error).toBeUndefined();
+});
+
 it("inhibits the PLC on ADC overrange and underrange, then recovers at the modeled limits", () => {
   const runtime = createAnalogLevelProject().document;
   runtime.wires = runtime.wires.filter((wire) => wire.id !== "level-current");

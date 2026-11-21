@@ -119,6 +119,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const definition = definitionsByComponent.get(component.id);
         const activeProperties = properties.get(component.id);
         if (!definition || !activeProperties) continue;
+        const plcInputErrors = definition.simulationModelId === "catalog-plc-digital-io" ? new Set<string>() : undefined;
         for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
           const key = endpointKey(component.id, terminal.id);
           const incoming = signals.get(key);
@@ -131,7 +132,8 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           }
           const inputError = missingWire ? `Required analog terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
           if (inputError && binding) {
-            if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
+            if (plcInputErrors) plcInputErrors.add(inputError);
+            else if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
             if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
             if (binding.property === "analogInput1") activeProperties.runtimeInvalidAi1 = true;
             if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
@@ -144,6 +146,14 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
             activeProperties[binding.property] = incoming.value;
             if (binding.boundProperty) activeProperties[binding.boundProperty] = true;
             inputUnits.set(inputUnitKey, incoming.unit);
+            changed = true;
+          }
+        }
+        if (plcInputErrors) {
+          const message = [...plcInputErrors].join(" · ");
+          if (message !== (activeProperties.runtimeSignalError ?? "")) {
+            if (message) activeProperties.runtimeSignalError = message;
+            else delete activeProperties.runtimeSignalError;
             changed = true;
           }
         }
