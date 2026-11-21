@@ -193,8 +193,18 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       <rect x={x - 51} y={y - 9} width="8" height="18" />
     </g>;
   }
-  if (symbolId === "pushbutton-no" || symbolId === "pushbutton-nc") return <g className={mark} aria-label={symbolId === "pushbutton-no" ? "Normally open pushbutton" : "Normally closed pushbutton"}><path d={`M ${x - 28} ${cy} H ${x - 9} M ${x + 9} ${cy} H ${x + 28} M ${x} ${cy - 6} V ${cy - 14} M ${x - 8} ${cy - 14} H ${x + 8}`} /><path d={symbolId === "pushbutton-no" ? `M ${x - 9} ${cy - 6} H ${x + 9}` : `M ${x - 9} ${cy} H ${x + 9} M ${x - 10} ${cy + 8} L ${x + 10} ${cy - 8}`} /></g>;
-  if (symbolId === "logic-no" || symbolId === "logic-nc") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 7} M ${x + 7} ${cy} H ${x + 28}`} /><path d={symbolId === "logic-no" ? `M ${x - 6} ${cy + 10} L ${x + 6} ${cy - 10}` : `M ${x - 7} ${cy} H ${x + 7} M ${x - 8} ${cy + 11} L ${x + 8} ${cy - 11}`} /></g>;
+  if (["pushbutton-no", "pushbutton-nc", "logic-no", "logic-nc"].includes(symbolId)) {
+    const button = symbolId.startsWith("pushbutton-");
+    const normallyClosed = symbolId.endsWith("-nc");
+    const actuated = (button ? properties.pressed : properties.input) === true;
+    const closed = normallyClosed !== actuated;
+    const state = closed ? "closed" : "open";
+    return <g className={mark} data-state={state} aria-label={`${normallyClosed ? "Normally closed" : "Normally open"} ${button ? "pushbutton" : "contact"}, ${state}`}>
+      <path d={`M ${x - 47} ${y} H ${x - 11} L ${x + 11} ${y - (closed ? 0 : 13)} M ${x + 11} ${y} H ${x + 47}`} />
+      {button ? <path d={`M ${x} ${y - 23} V ${y - 15} M ${x - 8} ${y - 23} H ${x + 8}`} />
+        : <path d={`M ${x} ${y + 27} V ${y + 20} M ${x - 4} ${y + 20} H ${x + 4}`} />}
+    </g>;
+  }
   if (symbolId === "logic-coil" || symbolId === "logic-set" || symbolId === "logic-reset") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 15} M ${x + 15} ${cy} H ${x + 28}`} /><path d={`M ${x - 15} ${cy - 12} Q ${x} ${cy} ${x - 15} ${cy + 12} M ${x + 15} ${cy - 12} Q ${x} ${cy} ${x + 15} ${cy + 12}`} />{symbolId !== "logic-coil" && <text x={x} y={cy + 4} textAnchor="middle" className={text}>{symbolId === "logic-set" ? "S" : "R"}</text>}</g>;
   if (symbolId.startsWith("logic-edge-")) return <g className={mark}><path d={`M ${x - 27} ${cy + 8} H ${x - 6} V ${cy - 9} H ${x + 27}`} />{symbolId.endsWith("positive") ? <path d={`M ${x + 7} ${cy - 18} V ${cy - 5} M ${x + 2} ${cy - 10} L ${x + 7} ${cy - 5} L ${x + 12} ${cy - 10}`} /> : <path d={`M ${x + 7} ${cy + 18} V ${cy + 5} M ${x + 2} ${cy + 10} L ${x + 7} ${cy + 5} L ${x + 12} ${cy + 10}`} />}</g>;
   const gates: Record<string, { label: string; inverted: boolean }> = {
