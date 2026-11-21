@@ -52,6 +52,12 @@ export interface ProjectTerminalReference {
   endpoint: TerminalEndpoint;
 }
 
+export function findTerminalContinuation(project: ElectricalProject, { sheetId, endpoint }: ProjectTerminalReference): ProjectContinuation | undefined {
+  return project.continuations?.find((continuation) => continuation.points.some((point) =>
+    point.sheetId === sheetId && point.endpoint.componentId === endpoint.componentId && point.endpoint.terminalId === endpoint.terminalId,
+  ));
+}
+
 /**
  * Resolve the project-wide wire net containing a terminal. Local document wires
  * and project continuation points are treated as conductor edges; device

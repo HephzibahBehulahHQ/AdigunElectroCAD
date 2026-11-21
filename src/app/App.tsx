@@ -44,7 +44,7 @@ import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn,
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
-import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
+import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml } from "../projects/schematicPrint";
 import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
@@ -1556,6 +1556,8 @@ export function App() {
     const terminals = selectedComponent.customTerminals ?? catalogById.get(selectedComponent.definitionId)?.terminals ?? [];
     if (terminals.length <= 2 || terminalId === "t1" || terminalId === "t2") { setNotice("Keep the base T1 and T2 identities; remove added terminals when no longer needed."); return; }
     if (document.wires.some((wire) => [wire.from, wire.to].some((endpoint) => endpoint.componentId === selectedComponent.id && endpoint.terminalId === terminalId))) { setNotice("Disconnect this terminal before removing it."); return; }
+    const continuation = findTerminalContinuation(project, { sheetId: activeSheet.id, endpoint: { componentId: selectedComponent.id, terminalId } });
+    if (continuation) { setNotice(`Disconnect ${selectedComponent.reference}.${terminalId.toUpperCase()} from continuation ${continuation.label} before removing it.`); return; }
     const customTerminals = terminals.filter((terminal) => terminal.id !== terminalId);
     const terminalLabels = { ...(selectedComponent.terminalLabels ?? {}) }; delete terminalLabels[terminalId];
     updateDocument({ ...document, components: document.components.map((component) => { if (component.id !== selectedComponent.id) return component; const next = { ...component, customTerminals } as ComponentInstance; if (Object.keys(terminalLabels).length) next.terminalLabels = terminalLabels; else delete next.terminalLabels; const customTerminalOffsets = { ...(component.customTerminalOffsets ?? {}) }; delete customTerminalOffsets[terminalId]; if (Object.keys(customTerminalOffsets).length) next.customTerminalOffsets = customTerminalOffsets; else delete next.customTerminalOffsets; return next; }), revision: document.revision + 1 });
