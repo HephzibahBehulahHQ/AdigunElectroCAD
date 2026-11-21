@@ -34,7 +34,9 @@ it("uses the validated component commands for handle transforms and keeps wire e
   expect(locate(rotated.document)).not.toEqual(locate(document));
   expect(transformComponent(rotated.document, component.id, rotate).document).toBe(rotated.document);
   const nearEdge = { ...document, components: document.components.map((item) => item.id === component.id ? { ...item, y: 705 } : item) };
-  expect(transformComponent(nearEdge, component.id, rotate)).toMatchObject({ ok: false, document: nearEdge });
+  expect(transformComponent(nearEdge, component.id, rotate).ok).toBe(true);
+  const framed = { ...nearEdge, id: "reference-dol-motor-starter" };
+  expect(transformComponent(framed, component.id, rotate)).toMatchObject({ ok: false, document: framed });
 
   const props = {
     document: rotated.document, selectedComponentId: component.id, selectedWireId: "",
