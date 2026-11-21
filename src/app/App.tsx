@@ -619,7 +619,7 @@ export function App() {
       properties: { ...definition.propertiesSchema },
       customSymbolGraphics: schematicGraphicsToSymbolGraphics(selectedGraphics),
     };
-    if (!canPlaceComponent(document.components, instance.id, x, y, definition.id)) {
+    if (!canPlaceComponent([...document.components, instance], instance.id, x, y)) {
       setNotice("Move this drawing to clear symbol space before converting it into a component.");
       return;
     }

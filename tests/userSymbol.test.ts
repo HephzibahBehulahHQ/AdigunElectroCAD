@@ -3,13 +3,28 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { schematicGraphicToSymbolGraphic, schematicGraphicsToSymbolGraphics } from "../src/cad/userSymbol";
 import { Schematic } from "../src/components/Schematic";
-import type { SchematicGraphic } from "../src/types/electrical";
+import { canPlaceComponent, transformComponent } from "../src/cad/documentOps";
+import type { ComponentInstance, SchematicGraphic } from "../src/types/electrical";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 
 const shape: SchematicGraphic = { id: "graphic-1", name: "Fan blade", kind: "polyline", x1: 300, y1: 200, x2: 360, y2: 240, points: [{ x: 300, y: 220 }, { x: 330, y: 200 }, { x: 360, y: 220 }, { x: 330, y: 240 }], color: "#c62828", strokeWidth: 3 };
 
 describe("user-drawn component symbols", () => {
+  it("checks custom geometry and displaced pins on both sides of placement and rotation", () => {
+    const document = addFreeSchematicSheet(createStarterProject()).sheets[1].document;
+    const custom: ComponentInstance = {
+      id: "custom", definitionId: "user.drawn-symbol", reference: "U1", x: -300, y: -300, rotation: 0, properties: {},
+      customSymbolGraphics: [{ kind: "line", x1: 0, y1: 0, x2: 180, y2: 0, color: "#000000", strokeWidth: 2 }],
+      customTerminalOffsets: { t1: { x: -180, y: 0 } },
+    };
+    const peer: ComponentInstance = { ...custom, id: "peer", x: -130, customSymbolGraphics: undefined, customTerminalOffsets: undefined };
+    expect(canPlaceComponent([custom], "", peer.x, peer.y, peer.definitionId)).toBe(false);
+    expect(canPlaceComponent([custom, { ...peer, x: -470 }], custom.id, custom.x, custom.y)).toBe(false);
+    expect(transformComponent({ ...document, components: [custom, peer] }, custom.id, { kind: "rotate", rotation: 90 }).ok).toBe(true);
+    expect(transformComponent({ ...document, components: [custom, { ...peer, x: -300, y: -130 }] }, custom.id, { kind: "rotate", rotation: 90 }).ok).toBe(false);
+  });
+
   it("centers and fits drafted geometry into reusable component-local coordinates", () => {
     expect(schematicGraphicToSymbolGraphic(shape)).toMatchObject({
       kind: "polyline", x1: -30, y1: -20, x2: 30, y2: 20, color: "#c62828", strokeWidth: 3,
