@@ -43,6 +43,7 @@ import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
+import { schematicPrintHtml } from "../projects/schematicPrint";
 import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
@@ -915,8 +916,26 @@ export function App() {
   };
 
   const printSchematic = () => {
-    setNotice("Opening the browser print dialog for the active schematic.");
-    window.print();
+    try {
+      const capture = captureSchematicSvg("frame");
+      if (!capture) return;
+      const frame = window.document.createElement("iframe");
+      frame.title = "Schematic print document";
+      frame.setAttribute("sandbox", "allow-same-origin allow-modals");
+      frame.style.cssText = "position:fixed; left:0; top:0; width:1px; height:1px; border:0; opacity:0; pointer-events:none";
+      frame.addEventListener("load", () => {
+        const view = frame.contentWindow;
+        if (!view) { frame.remove(); setNotice("The schematic print document could not be opened."); return; }
+        view.addEventListener("afterprint", () => frame.remove(), { once: true });
+        view.focus();
+        view.print();
+      }, { once: true });
+      frame.srcdoc = schematicPrintHtml(capture.markup, isReferenceSheet ? undefined : document.printLayout);
+      window.document.body.append(frame);
+      setNotice("Print the frame or choose Save as PDF at actual size in the browser dialog.");
+    } catch {
+      setNotice("The schematic could not be prepared for printing.");
+    }
   };
 
   const importProject = async (event: ChangeEvent<HTMLInputElement>) => {

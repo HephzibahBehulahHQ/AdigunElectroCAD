@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { defaultPrintLayout, paperDimensions, printFrameBounds, validPrintLayout } from "../src/cad/printLayout";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createBlankProject } from "../src/projects/starterProject";
+import { schematicPrintHtml } from "../src/projects/schematicPrint";
 
 it("uses physical paper sizes with independent drawing origin and scale", () => {
   expect(paperDimensions(defaultPrintLayout)).toEqual({ width: 297, height: 210 });
@@ -9,6 +10,14 @@ it("uses physical paper sizes with independent drawing origin and scale", () => 
   const custom = { ...defaultPrintLayout, format: "custom" as const, customWidthMm: 250, customHeightMm: 160, x: -400, y: -250, unitsPerMm: 2 };
   expect(printFrameBounds(custom)).toEqual({ x: -400, y: -250, width: 500, height: 320 });
   expect(validPrintLayout({ ...custom, marginMm: 80 })).toBe(false);
+});
+
+it("sets matching physical page and SVG sizes for browser PDF printing", () => {
+  const svg = '<svg viewBox="-100 0 1680 1188"><text>Motor feeder</text></svg>';
+  const html = schematicPrintHtml(svg, { ...defaultPrintLayout, format: "A3" });
+  expect(html).toContain("@page { size: 420mm 297mm; margin: 0; }");
+  expect(html).toContain("width: 420mm; height: 297mm;");
+  expect(html).toContain(svg);
 });
 
 it("reopens a saved layout and accepts older sheets without it", () => {
