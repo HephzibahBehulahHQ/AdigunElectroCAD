@@ -42,4 +42,10 @@ On production release `e0eedd9`, the existing Insert command placed a three-phas
 
 On production release `ae8edae` (bundle `index-DAUfie8n.js`), the editable three-phase VFD feeder ran at a 25 Hz command and showed 750 rpm at M1. Removing `L2_VFD` and restarting produced `INPUT SUPPLY INCOMPLETE` at U1 and `STANDBY` at M1. Undo restored the conductor and the motor returned to 750 rpm. Stop and Undo restored the blank workspace. This verifies the generic feeder's simulated frequency and phase continuity through the deployed editor.
 
+Production browser checks continued with the wired examples:
+
+- `cd5104a`: Sensor detection energized the solenoid through the scanned PLC. Clearing detection retained the output. The stop input retracted the solenoid, and releasing stop did not re-energize it.
+- `ab07a3f`: The timed interface relay example held Y1 during the timer delay, transferred to Y2 when K1 energized, and returned to Y1 when S1 opened.
+- `2149013` (`index-BNeYhr_o.js`): Closing the transformer example's primary switch lit H1 at 24 V AC. Changing the secondary setting to 12 V in Properties turned H1 off with the voltage-rating mismatch diagnostic. Restoring 24 V relit H1. Stop and Undo restored the blank workspace.
+
 Production browser checks on release `26e070c` verified the wired pilot circuit. START closed its blade and lit the lamp; STOP opened its blade and extinguished the lamp; releasing STOP relit it with START held. Stop restored both default blades. Exact order-number search opened the Siemens contactor preview with coil and auxiliary terminal designations, and the wired Siemens DOL example changed KM1 from de-energized to energized on START. The browser check also exposed crowded vertical pole designations, addressed by fitting their labels to the pole pitch in the preview and canvas.
