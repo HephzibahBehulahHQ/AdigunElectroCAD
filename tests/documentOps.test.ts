@@ -189,6 +189,7 @@ describe("component movement", () => {
     const project = createDolMotorStarter();
     project.components.push({ id: "motor-2", definitionId: "motor.three-phase", reference: "M2", x: 900, y: 180, rotation: 0, properties: { ratedCurrentA: 12.5 } });
     const updated = updateComponentProperty(project, "motor-2", "ratedCurrentA", 16);
+    expect(updateComponentProperty(updated, "motor-2", "ratedCurrentA", 16)).toBe(updated);
     expect(updated.revision).toBe(project.revision + 1);
     expect(updated.components.find((component) => component.id === "motor-2")?.properties).toEqual({ ratedCurrentA: 16 });
     expect(updated.components.find((component) => component.id === "motor")?.properties).toEqual(project.components.find((component) => component.id === "motor")?.properties);

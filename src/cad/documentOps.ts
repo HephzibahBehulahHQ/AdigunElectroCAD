@@ -89,7 +89,8 @@ export function transformComponent(document: CircuitDocument, componentId: strin
 }
 
 export function updateComponentProperty(document: CircuitDocument, componentId: string, property: string, value: string | number | boolean): CircuitDocument {
-  if (!document.components.some((component) => component.id === componentId)) return document;
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component || component.properties[property] === value) return document;
   return {
     ...document,
     revision: document.revision + 1,

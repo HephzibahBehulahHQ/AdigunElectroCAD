@@ -1471,7 +1471,7 @@ export function App() {
     }
     let value: string | number | boolean;
     if (typeof schemaValue === "number") {
-      const parsed = typeof rawValue === "string" ? Number(rawValue) : Number.NaN;
+      const parsed = typeof rawValue === "string" && rawValue.trim() ? Number(rawValue) : Number.NaN;
       if (!Number.isFinite(parsed)) {
         setNotice("Enter a finite numeric parameter value.");
         return;
@@ -1491,6 +1491,7 @@ export function App() {
       }
       value = rawValue.trim();
     }
+    if (value === (selectedComponent.properties[property] ?? schemaValue)) return;
     const nextTerminals = genericTopologyTerminalsForChange(definition.id, property, value);
     if (nextTerminals === null) {
       setNotice("That terminal configuration is unavailable for this generic component profile.");
