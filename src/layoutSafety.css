@@ -3,6 +3,8 @@
 .tool-row { overflow-x: auto; }
 .functional-symbol { opacity: 1; }
 .functional-symbol-text { stroke: none; fill: #17649c; font-size: 10px; font-weight: 900; pointer-events: none; }
+.component-symbol-thumbnail { width: 30px; height: 28px; align-self: center; --component-ink: var(--text); }
+.component-symbol-preview { display: block; width: 100%; height: 112px; margin-top: 8px; background: #f5f9ff; border: 1px solid #b7c9df; border-radius: 4px; --component-ink: #152d45; }
 
 @media (max-width: 1180px) {
   .project-status { padding-left: 0; }
@@ -15,3 +17,4 @@
     overflow-wrap: anywhere;
   }
 }
+.component-symbol-thumbnail { flex: 0 0 30px; }

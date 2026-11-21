@@ -247,7 +247,9 @@ it("renders the source-backed Siemens starter as three power poles, a coil and t
   expect(open).toContain("Siemens SIRIUS 3RT2025-1BB40 contactor, three main poles, one NO auxiliary and one NC auxiliary, de-energized");
   expect(open).toContain('data-state="de-energized"');
   expect(closed).toContain('data-state="energized"');
-  expect(closed).toContain("M 74 88 L 78 109");
+  expect(closed).toContain("M 76 73 V 88 L 76 108");
+  expect(closed).toContain("M 76 108 V 127");
+  expect(open).toContain("M 76 73 V 88 L 85 102");
   expect(open).not.toContain("<rect");
   expect(open.match(/<path/g)?.length).toBeGreaterThanOrEqual(5);
   expect(open).not.toEqual(closed);
@@ -264,8 +266,8 @@ it("renders the source-backed Siemens starter as three power poles, a coil and t
 it("keeps the three-phase source mark inside its symbol and every DOL wire on a real terminal", () => {
   const sourceSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "supply-ac-01", x: 100, y: 100 }));
   expect(sourceSvg).toContain('aria-label="Three-phase AC supply"');
-  expect(sourceSvg).toContain('cy="100" r="19"');
-  expect(sourceSvg).toContain('y="114"');
+  expect(sourceSvg).toContain('M 68 127 V 112');
+  expect(sourceSvg).toContain('M 147 100 H 138');
 
   const document = createSourcedDolMotorStarter();
   const anchors = terminalAnchors(document);

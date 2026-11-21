@@ -4,6 +4,7 @@ import { DraftingLayerFields } from "../components/DraftingLayerFields";
 import { createEntityLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting, type DraftingSelection } from "../cad/draftingLayers";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { User } from "@supabase/supabase-js";
+import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
 import { controlTerminalOffset } from "../cad/componentGeometry";
@@ -45,6 +46,7 @@ import { createProjectRuntimeDocument, executeProjectCircuitModels } from "../si
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitLevelInput } from "../simulation/circuitClock";
 import { RuntimeControls } from "../components/RuntimeControls";
 import { CatalogTree } from "../components/CatalogTree";
+import { ComponentSymbolPreview } from "../components/ComponentSymbolPreview";
 import { LadderEditor } from "../components/LadderEditor";
 import { LiveCopilot } from "../components/LiveCopilot";
 import { HeaderUtilities } from "../components/HeaderUtilities";
@@ -233,7 +235,8 @@ export function App() {
       valve, cylinder: cylinderPosition(50, valve, 1, 4), pumpLpm: pumpFlowLpm(10, 1000), forceN: hydraulicCylinderForceN(industrialPressureBar, 50), reliefOpen: reliefValveOpen(industrialPressureBar, 180), frlBar: frlOutletPressureBar(8, 6, 0.4), compressorLpm: compressorDeliveryLpm(120, extend || retract), temperatureNext, thermostat: thermostatOn(industrialTemperatureC, 21, 2, false), humidistat: humidistatOn(65, 60, 4, false), damper: damperPosition(30, industrialTemperatureC > 23 ? 100 : 20, 1, 10), solarW, batterySoc: batteryStateOfCharge(60, solarW / 48, 100, 1 / 60), inverterW: inverterAcPowerW(solarW, 0.93, 1000), gridTie: gridTieClosed(true, 0.05), safety: safetyRelayEnergized(industrialSafetyA, industrialSafetyB, true), curtainClear: lightCurtainClear(false), phaseHealthy: phaseHealthy(true, true, true), leakageTrip: earthLeakageTripped(12, 30), voltageDrop: threePhaseVoltageDropV(industrialCableCurrentA, 100, 1.5), cableLoss: threePhaseCableLossW(industrialCableCurrentA, 100, 1.5),
     };
   }, [industrialCableCurrentA, industrialDirection, industrialPressureBar, industrialSafetyA, industrialSafetyB, industrialSolarIrradiance, industrialTemperatureC]);
-  const filteredCatalog = componentLibraryCatalog.filter((definition) => `${definition.name} ${definition.category} ${definition.referencePrefix}`.toLowerCase().includes(search.toLowerCase()));
+  const searchCatalog = useMemo(() => indexComponentCatalog(componentLibraryCatalog), []);
+  const filteredCatalog = useMemo(() => searchCatalog(search), [searchCatalog, search]);
 
   useEffect(() => {
     window.document.documentElement.dataset.theme = theme;
@@ -1814,9 +1817,10 @@ export function App() {
           <div className="panel-title"><strong hidden={!componentPanelOpen}>Component Library</strong><span hidden={!componentPanelOpen}>{componentLibraryCatalog.length} selectable models · source-backed and generic</span><button type="button" className="panel-toggle" aria-expanded={componentPanelOpen} aria-label={componentPanelOpen ? "Close component library" : "Open component library"} title={componentPanelOpen ? "Close component library" : "Open component library"} onClick={() => setComponentPanelOpen((open) => !open)}>{componentPanelOpen ? "‹" : "›"}</button></div>
           <div className="component-panel-content" hidden={!componentPanelOpen}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
-          <CatalogTree definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { activateSelectTool(); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedContinuationId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); if (!isReferenceSheet) { setPlacementDefinitionId(id); setNotice("Click a clear canvas position to place the component, or press Escape to cancel."); } }} />
+          <CatalogTree key={search} definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { activateSelectTool(); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedContinuationId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); if (!isReferenceSheet) { setPlacementDefinitionId(id); setNotice("Click a clear canvas position to place the component, or press Escape to cancel."); } }} />
           <section className="component-card">
             <div className="card-heading"><strong>{selectedDefinition.name}</strong><button className={favorites.includes(selectedDefinition.id) ? "favorite active" : "favorite"} onClick={() => setFavorites((items) => items.includes(selectedDefinition.id) ? items.filter((id) => id !== selectedDefinition.id) : [...items, selectedDefinition.id])} aria-label="Toggle component favorite">★</button></div>
+            <ComponentSymbolPreview definition={selectedDefinition} />
             <p>{selectedDefinition.description}</p>
             <dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Support</dt><dd>{selectedDefinition.simulationSupport}</dd></dl>
             <button className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button>
