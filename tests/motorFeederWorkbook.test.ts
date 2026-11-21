@@ -1,6 +1,11 @@
 import { expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Schematic } from "../src/components/Schematic";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
-import { resolveProjectNet, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { parseProjectJson } from "../src/projects/projectSerialization";
+import { initialDolState } from "../src/simulation/dolSimulator";
 import { createMotorStarterWorkbook } from "../src/projects/starterProject";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { validateCircuit } from "../src/electrical/topology";
@@ -26,7 +31,7 @@ it("builds a ten-sheet motor-feeder project with real wired branches and termina
     expect(references.some((reference) => reference.startsWith("H"))).toBe(false);
     expect(sheet.document.wires.length).toBeGreaterThanOrEqual(16);
     for (const phase of ["l1", "l2", "l3"]) {
-      expect(project.continuations?.some((net) => net.points[1].sheetId === sheet.id && net.points[1].endpoint.terminalId === `${phase}-in`)).toBe(true);
+      expect(project.continuations?.some((net) => net.points.at(-1)?.sheetId === sheet.id && net.points.at(-1)?.endpoint.terminalId === `${phase}-in`)).toBe(true);
     }
     expect(project.continuations?.some((net) => net.points[1].sheetId === sheet.id && net.points[1].endpoint.terminalId === "pe")).toBe(true);
   }
@@ -49,13 +54,49 @@ it("resolves each source conductor to only its nine matching feeder terminals", 
     const terminalId = conductor === "pe" ? "pe" : `${conductor}-out`;
     const destinationTerminalId = conductor === "pe" ? "pe" : `${conductor}-in`;
     const net = resolveProjectNet(project, { sheetId: "sheet-source", endpoint: { componentId: "distribution-source", terminalId } });
-    const destinations = net.filter((item) => item.sheetId !== "sheet-source");
+    const destinations = net.filter((item) => item.endpoint.terminalId === destinationTerminalId && item.sheetId !== "sheet-source");
 
-    expect(net).toHaveLength(10);
+    expect(net).toHaveLength(conductor === "pe" ? 10 : 11);
     expect(destinations).toHaveLength(9);
     expect(destinations.map((item) => item.endpoint.terminalId)).toEqual(Array(9).fill(destinationTerminalId));
     expect(new Set(destinations.map((item) => item.sheetId)).size).toBe(9);
   }
+});
+
+it("persists distinct cable cores and reciprocal references through the W2 junction sheet", () => {
+  const initial = createMotorFeederWorkbook();
+  const edited = updateProjectContinuation(initial, "feed-m2-l1", { label: "Feeder 2 phase A" });
+  const project = parseProjectJson(JSON.stringify(edited));
+  const nets = project.continuations!;
+  expect(new Set(nets.map((net) => `${net.cableCore?.cableId}/${net.cableCore?.coreId}`)).size).toBe(36);
+
+  const net = nets.find((item) => item.id === "feed-m2-l1")!;
+  expect(net.cableCore).toEqual({ cableId: "W2", coreId: "L1" });
+  expect(net.points.map((point) => point.role)).toEqual(["source", "continuation", "destination"]);
+  const [origin, junction, destination] = net.points;
+  expect(junction.endpoint).toEqual({ componentId: "w2-junction-l1", terminalId: "node" });
+  expect(resolveProjectNet(project, destination)).toContainEqual({ sheetId: origin.sheetId, endpoint: origin.endpoint });
+  const renderSheet = (index: number) => renderToStaticMarkup(createElement(Schematic, {
+    document: project.sheets[index].document,
+    activeSheetId: project.sheets[index].id,
+    projectSheets: project.sheets,
+    continuations: [net],
+    selectedComponentId: "",
+    selectedWireId: "",
+    simulation: initialDolState(),
+    wireMode: false,
+    wireStart: null,
+    onSelect: () => {},
+    onWireSelect: () => {},
+    onTerminalSelect: () => {},
+  }));
+  expect(renderSheet(0)).toContain(`Feeder 2 phase A → S2 · ${junction.gridReference}`);
+  expect(renderSheet(1)).toContain(`Feeder 2 phase A ← S1 · ${origin.gridReference} → S3 · ${destination.gridReference}`);
+  expect(renderSheet(2)).toContain(`Feeder 2 phase A ← S2 · ${junction.gridReference} (src S1 · ${origin.gridReference})`);
+
+  const duplicate = { ...nets[0], cableCore: net.cableCore };
+  expect(() => parseProjectJson(JSON.stringify({ ...project, continuations: [duplicate, ...nets.slice(1)] })))
+    .toThrow("Duplicate cable core: W2 / L1.");
 });
 
 it("uses terminal-derived grid references and distinct phase colors across all 36 continuations", () => {

@@ -468,10 +468,14 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
     const next = continuation.points[pointIndex + 1];
     const source = continuation.points[0];
     const sourceRef = `S${sheetNumbers.get(source.sheetId) ?? "?"} · ${source.gridReference}`;
-    const target = point.role === "source" ? next : point.role === "destination" ? previous : next;
-    const direction = point.role === "source" ? "→" : point.role === "destination" ? "←" : "↔";
-    const targetRef = target ? `S${sheetNumbers.get(target.sheetId) ?? "?"} · ${target.gridReference}` : sourceRef;
-    const label = point.role === "source" ? `${continuation.label} ${direction} ${targetRef}` : point.role === "destination" ? `${continuation.label} ${direction} ${sourceRef}` : `${continuation.label} ${direction} ${sourceRef} / ${targetRef}`;
+    const target = next ?? previous;
+    const formatReference = (reference: typeof point) => `S${sheetNumbers.get(reference.sheetId) ?? "?"} · ${reference.gridReference}`;
+    const links = [
+      previous && `← ${formatReference(previous)}`,
+      next && `→ ${formatReference(next)}`,
+      previous && previous !== source && `(src ${sourceRef})`,
+    ].filter(Boolean).join(" ");
+    const label = `${continuation.label} ${links}`;
     const navigateTo = target?.sheetId;
     return [<g key={continuation.id + ":" + activeSheetId} className={continuation.id === selectedContinuationId ? "project-continuation-marker selected" : "project-continuation-marker"} transform={`translate(${anchor.x + 12} ${anchor.y - 12 - stackIndex * 20})`} role={onSelect || (navigateTo && onNavigate) ? "button" : undefined} tabIndex={onSelect || (navigateTo && onNavigate) ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); onSelect?.(continuation.id); if (navigateTo) onNavigate?.(navigateTo); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && (navigateTo || onSelect)) { event.preventDefault(); event.stopPropagation(); onSelect?.(continuation.id); if (navigateTo) onNavigate?.(navigateTo); } }}><rect x="-3" y="-15" width={Math.max(82, label.length * 5.6)} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}`}</title></g>];
   })}</g>;

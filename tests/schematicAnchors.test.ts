@@ -264,8 +264,8 @@ it("renders source, intermediate, and destination continuation references with s
   };
   expect(render(source.id)).toContain("L1 → S2 · 2.1");
   expect(render(source.id)).toContain("project-continuation-marker selected");
-  expect(render(middle.id)).toContain("L1 ↔ S1 · 1.1 / S3 · 3.1");
-  expect(render(destination.id)).toContain("L1 ← S1 · 1.1");
+  expect(render(middle.id)).toContain("L1 ← S1 · 1.1 → S3 · 3.1");
+  expect(render(destination.id)).toContain("L1 ← S2 · 2.1 (src S1 · 1.1)");
 });
 
 it("shows real pins and labels on free-sheet three-phase source and motor symbols", () => {

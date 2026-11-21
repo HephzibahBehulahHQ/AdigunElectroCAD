@@ -46,10 +46,15 @@ function parseProjectContinuation(value: unknown): ProjectContinuation {
   if (points.length < 2 || points.length > MAX_PROJECT_SHEETS) throw new Error("A project continuation must reference between 2 and 100 sheet points.");
   const conductorColor = textValue(continuation.conductorColor, "continuation conductor color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(conductorColor)) throw new Error("Continuation conductor color must be a six-digit hex color.");
+  const cableCore = continuation.cableCore === undefined ? undefined : object(continuation.cableCore, "Continuation cable core is invalid.");
   return {
     id: textValue(continuation.id, "continuation id", 120),
     label: textValue(continuation.label, "continuation label", 40),
     conductorColor,
+    ...(cableCore && { cableCore: {
+      cableId: textValue(cableCore.cableId, "continuation cable id", 64),
+      coreId: textValue(cableCore.coreId, "continuation core id", 64),
+    } }),
     points: points.map((value, index) => {
       const point = object(value, `Continuation point ${index + 1} is invalid.`);
       const role = point.role;
