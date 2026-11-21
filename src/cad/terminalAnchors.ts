@@ -13,6 +13,11 @@ export interface TerminalAnchor {
 }
 
 export const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
+
+export function terminalHitRadius(anchor: TerminalAnchor, siblings: readonly TerminalAnchor[], zoom: number): number {
+  const nearest = siblings.reduce((distance, other) => other === anchor ? distance : Math.min(distance, Math.hypot(other.x - anchor.x, other.y - anchor.y)), Infinity);
+  return Math.max(1, Math.min(9 / zoom, nearest / 2 - .25));
+}
 export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   const anchors: TerminalAnchor[] = document.id === "reference-dol-motor-starter" ? [
     anchor("supply", "l1", 165, 100), anchor("supply", "l2", 255, 100), anchor("supply", "l3", 345, 100), anchor("supply", "pe", 445, 100),
