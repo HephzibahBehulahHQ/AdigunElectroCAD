@@ -6,6 +6,13 @@ export const SOURCE_BACKED_DOL_TEMPLATE_ID = "source-backed-dol-starter";
 /** A loadable library entry for the existing, source-identified and terminal-wired Siemens DOL example. */
 export function createSourcedDolTemplate(): ProjectTemplate {
   const document = { ...createSourcedDolMotorStarter(), id: SOURCE_BACKED_DOL_TEMPLATE_ID };
+  // The library's free sheet uses the normal symbol clearance rules.
+  const positions: Record<string, [number, number]> = {
+    supply: [390, 140], breaker: [390, 265], contactor: [390, 390],
+    overload: [390, 515], motor: [390, 650], control: [800, 140],
+    "control-psu": [1010, 220], stop: [760, 480], start: [1020, 480],
+  };
+  for (const component of document.components) [component.x, component.y] = positions[component.id];
   const running = [
     { reference: "KM1", label: "Starter contacts", exact: "CLOSED · 24 V coil" },
     { reference: "M1", label: "Nominal motor point", exact: "1470 rpm / 7.5 kW" },
