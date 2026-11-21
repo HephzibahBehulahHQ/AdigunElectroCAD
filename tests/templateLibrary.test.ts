@@ -4,6 +4,15 @@ import { validateCircuit } from "../src/electrical/topology";
 import { addFreeSchematicSheet, createStarterProject, loadTemplateIntoSheet } from "../src/projects/starterProject";
 import { templateFixtures, templateLibrary } from "../src/projects/templateLibrary";
 import { verifyCircuitSequence, verifyProjectTemplate } from "../src/projects/templateVerification";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Schematic } from "../src/components/Schematic";
+import { initialDolState } from "../src/simulation/dolSimulator";
+import { parseProjectJson } from "../src/projects/projectSerialization";
+import { createFourSheetAnalogLevelWorkbook } from "../src/projects/fourSheetAnalogLevelWorkbook";
+import { createManualWire, moveComponentToGrid, removeWire } from "../src/cad/documentOps";
+import { terminalAnchors } from "../src/cad/terminalAnchors";
+import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("project template library", () => {
   it("rejects a dedicated analog project with reversed threshold logic", () => {
@@ -62,8 +71,8 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(12);
-    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(12);
+    expect(templateLibrary).toHaveLength(13);
+    expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });
 
@@ -82,6 +91,54 @@ describe("project template library", () => {
       expect(template.testSequence.length).toBeGreaterThanOrEqual(3);
       expect(template.expectedOutputs.length).toBeGreaterThanOrEqual(3);
       expect(verifyProjectTemplate(template, catalogById)).toMatchObject({ passed: true, topologyIssues: [], failedExpectations: [] });
+  });
+
+  it.each(templateLibrary)("loads, saves, renders, and reruns $id through the editable sheet", (template) => {
+    const blank = addFreeSchematicSheet(createStarterProject());
+    const sheetId = blank.sheets.at(-1)!.id;
+    const loaded = loadTemplateIntoSheet(blank, sheetId, template);
+    const document = parseProjectJson(JSON.stringify(loaded)).sheets.find((sheet) => sheet.id === sheetId)!.document;
+    expect(document.components.map(({ id }) => id)).toEqual(template.document.components.map(({ id }) => id));
+    expect(document.wires.map(({ from, to }) => ({ from, to }))).toEqual(template.document.wires.map(({ from, to }) => ({ from, to })));
+    expect(verifyProjectTemplate({ ...template, document }, catalogById).passed).toBe(true);
+    const svg = renderToStaticMarkup(createElement(Schematic, {
+      document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+      onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+    }));
+    expect(svg).toContain("<svg");
+    expect(terminalAnchors(document).length).toBeGreaterThan(0);
+  });
+
+  it("drops links belonging to a replaced sheet without changing the rest of the workbook", () => {
+    const project = createFourSheetAnalogLevelWorkbook();
+    const sheetId = project.sheets[0].id;
+    const before = JSON.stringify(project);
+    const replaced = loadTemplateIntoSheet(project, sheetId, templateLibrary[0]);
+    expect(replaced.continuations).toHaveLength(project.continuations.length - 1);
+    expect(replaced.continuations?.every((net) => net.points.every((point) => point.sheetId !== sheetId))).toBe(true);
+    expect(replaced.sheets.slice(1)).toEqual(project.sheets.slice(1));
+    expect(() => parseProjectJson(JSON.stringify(replaced))).not.toThrow();
+    expect(JSON.stringify(project)).toBe(before);
+  });
+
+  it("moves and rewires the PT100 high alarm and restores its outcome after reload", () => {
+    const template = templateLibrary.find((item) => item.id === "pt100-temperature-window-alarm")!;
+    const blank = addFreeSchematicSheet(createStarterProject());
+    const loaded = loadTemplateIntoSheet(blank, blank.sheets[1].id, template);
+    const sheet = loaded.sheets[1];
+    const moved = moveComponentToGrid(sheet.document, "high-alarm", 840, 540);
+    if (!moved.ok) throw new Error(moved.reason);
+    const original = moved.document.wires.find((wire) => wire.id === "alarm-high")!;
+    const broken = removeWire(moved.document, original.id);
+    const restoredWire = createManualWire(broken, original.from, original.to);
+    const hot = (document: typeof broken) => executeCircuitModels({
+      ...document, components: document.components.map((item) => item.id === "sensor" ? { ...item, properties: { temperatureC: 110 } } : item),
+    }, catalogById).find((item) => item.reference === "Q2")?.output.value;
+    expect(hot(broken)).toBe("OFF");
+    const rewired = { ...broken, wires: [...broken.wires, restoredWire] };
+    const document = parseProjectJson(JSON.stringify({ ...loaded, sheets: [loaded.sheets[0], { ...sheet, document: rewired }] })).sheets[1].document;
+    expect(document.components.find((item) => item.id === "high-alarm")).toMatchObject({ x: 840, y: 540 });
+    expect(hot(document)).toBe("ON");
   });
 
   it("loads a template into a free sheet without mutating the DOL reference sheet", () => {

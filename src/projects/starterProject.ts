@@ -43,12 +43,14 @@ export function replaceSheetDocument(project: ElectricalProject, sheetId: string
 }
 
 export function loadTemplateIntoSheet(project: ElectricalProject, sheetId: string, template: ProjectTemplate): ElectricalProject {
-  const document: CircuitDocument = {
-    ...template.document,
-    components: template.document.components.map((component) => ({ ...component, properties: { ...component.properties } })),
-    wires: template.document.wires.map((wire) => ({ ...wire, from: { ...wire.from }, to: { ...wire.to }, points: wire.points.map((point) => ({ ...point })) })),
+  if (!project.sheets.some((sheet) => sheet.id === sheetId)) return project;
+  const document = structuredClone(template.document);
+  return {
+    ...project,
+    revision: project.revision + 1,
+    sheets: project.sheets.map((sheet) => sheet.id === sheetId ? { ...sheet, name: template.name, kind: "free-schematic", document } : sheet),
+    ...(project.continuations && { continuations: project.continuations.filter((continuation) => continuation.points.every((point) => point.sheetId !== sheetId)) }),
   };
-  return { ...project, revision: project.revision + 1, sheets: project.sheets.map((sheet) => sheet.id === sheetId ? { ...sheet, name: template.name, kind: "free-schematic", document } : sheet) };
 }
 
 function blankDocument(id: string, name: string): CircuitDocument {
