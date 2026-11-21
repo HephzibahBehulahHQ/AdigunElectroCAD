@@ -1,11 +1,11 @@
 import { expect, it } from "vitest";
 import { appendFreehandPoint, freehandPathBounds, MAX_FREEHAND_POINTS } from "../src/cad/freehandPath";
 
-it("samples editable freehand points inside the sheet", () => {
+it("samples editable freehand points in signed drawing coordinates", () => {
   const points = appendFreehandPoint(appendFreehandPoint([{ x: 10, y: 20 }], { x: 12, y: 20 }), { x: 30, y: 50 });
   expect(points).toEqual([{ x: 10, y: 20 }, { x: 30, y: 50 }]);
   expect(freehandPathBounds(points)).toEqual({ x1: 10, y1: 20, x2: 30, y2: 50 });
-  expect(appendFreehandPoint(points, { x: -10, y: 900 }).at(-1)).toEqual({ x: 0, y: 780 });
+  expect(appendFreehandPoint(points, { x: -10, y: 900 }).at(-1)).toEqual({ x: -10, y: 900 });
 });
 
 it("keeps freehand path storage bounded while preserving the current endpoint", () => {

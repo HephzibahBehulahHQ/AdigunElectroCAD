@@ -2,9 +2,10 @@ import type { SchematicGraphicPoint } from "../types/electrical";
 
 export const MAX_FREEHAND_POINTS = 1200;
 
-/** Keep freehand paths inside the sheet and limit dense pointer samples. */
+/** Keep finite freehand coordinates and limit dense pointer samples. */
 export function appendFreehandPoint(points: readonly SchematicGraphicPoint[], point: SchematicGraphicPoint): SchematicGraphicPoint[] {
-  const next = { x: Math.max(0, Math.min(1100, point.x)), y: Math.max(0, Math.min(780, point.y)) };
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return [...points];
+  const next = { x: point.x, y: point.y };
   const last = points.at(-1);
   if (last && Math.hypot(next.x - last.x, next.y - last.y) < 4) return [...points];
   if (points.length < MAX_FREEHAND_POINTS) return [...points, next];

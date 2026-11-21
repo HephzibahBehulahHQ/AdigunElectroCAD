@@ -160,7 +160,6 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number):
     points = pointsValue.map((item, index) => {
       const point = object(item, `Graphic vertex ${index + 1} is invalid.`);
       const x = finiteNumber(point.x, "graphic vertex x"); const y = finiteNumber(point.y, "graphic vertex y");
-      if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Graphic coordinates must be inside the schematic sheet.");
       return { x, y };
     });
     if (kind === "polygon" && points.length > 1 && points[0].x === points.at(-1)?.x && points[0].y === points.at(-1)?.y) points.pop();
@@ -174,7 +173,6 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number):
   } else {
     x1 = finiteNumber(graphic.x1, "graphic x1"); y1 = finiteNumber(graphic.y1, "graphic y1");
     x2 = finiteNumber(graphic.x2, "graphic x2"); y2 = finiteNumber(graphic.y2, "graphic y2");
-    if ([x1, x2].some((x) => x < 0 || x > 1100) || [y1, y2].some((y) => y < 0 || y > 780)) throw new Error("Graphic coordinates must be inside the schematic sheet.");
     if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
   }
   const color = textValue(graphic.color, "graphic color", 7);
@@ -191,7 +189,6 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   const annotation = object(value, `Sheet ${sheetIndex + 1} annotation ${annotationIndex + 1} is invalid.`);
   const x = finiteNumber(annotation.x, "annotation x");
   const y = finiteNumber(annotation.y, "annotation y");
-  if (x < 0 || x > 1100 || y < 0 || y > 780) throw new Error("Annotation position must be inside the schematic sheet.");
   const color = textValue(annotation.color, "annotation color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Annotation color must be a six-digit hex color.");
   const fontSize = annotation.fontSize === undefined ? undefined : finiteNumber(annotation.fontSize, "annotation text size");

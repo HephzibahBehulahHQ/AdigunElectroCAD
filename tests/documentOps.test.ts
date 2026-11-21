@@ -15,11 +15,14 @@ it("saves and reopens a rotated wired device at negative drawing coordinates", (
   expect(moved.ok).toBe(true);
   const rotated = transformComponent(moved.document, "level", { kind: "rotate", rotation: 90 });
   expect(rotated.ok).toBe(true);
+  const route = [{ x: -120, y: -260 }, { x: 280, y: -260 }];
+  const routed = rotated.document.wires.map(wire => wire.id === "level-current" ? { ...wire, points: route } : wire);
   const project = createBlankProject();
-  project.sheets[0].document = rotated.document;
+  project.sheets[0].document = { ...rotated.document, wires: routed };
   const reopened = parseProjectJson(JSON.stringify(project)).sheets[0].document;
   expect(reopened.components.find(component => component.id === "level")).toMatchObject({ x: -185.5, y: -200, rotation: 90 });
-  expect(reopened.wires).toEqual(document.wires);
+  expect(reopened.wires).toEqual(routed);
+  expect(reopened.wires.map(({ from, to }) => ({ from, to }))).toEqual(document.wires.map(({ from, to }) => ({ from, to })));
   const isSignal = (item: ReturnType<typeof terminalAnchors>[number]) => item.endpoint.componentId === "level" && item.endpoint.terminalId === "signal";
   const originalAnchor = terminalAnchors(document).find(isSignal)!;
   expect(terminalAnchors(reopened).find(isSignal)).toMatchObject({ x: -185.5 - (originalAnchor.y - 300), y: -200 + (originalAnchor.x - 140) });

@@ -232,11 +232,11 @@ describe("project JSON import validation", () => {
     expect(() => parseProjectJson(JSON.stringify(input))).not.toThrow();
   });
 
-  it("rejects annotations outside the sheet or with invalid colors", () => {
+  it("reopens off-frame annotations and rejects invalid colors", () => {
     const input = addFreeSchematicSheet(createStarterProject());
-    input.sheets[1].document.annotations = [{ id: "note-1", text: "Note", x: 1200, y: 100, color: "red" }];
-    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("inside the schematic sheet");
-    input.sheets[1].document.annotations![0].x = 100;
+    input.sheets[1].document.annotations = [{ id: "note-1", text: "Note", x: 1200, y: -100, color: "#1565c0" }];
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.annotations?.[0]).toMatchObject({ x: 1200, y: -100 });
+    input.sheets[1].document.annotations![0].color = "red";
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("six-digit hex color");
     input.sheets[1].document.annotations![0].color = "#1565c0";
     input.sheets[1].document.annotations![0].fontSize = 49;
@@ -308,12 +308,13 @@ describe("project JSON import validation", () => {
     expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics).toEqual(input.sheets[1].document.graphics);
   });
 
-  it("rejects paths with too few vertices, invalid bounds or zero-area polygons", () => {
+  it("reopens off-frame paths and rejects too few vertices or zero-area polygons", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     input.sheets[1].document.graphics = [{ id: "path-1", name: "Bad path", kind: "polyline", x1: 0, y1: 0, x2: 100, y2: 100, points: [{ x: 0, y: 0 }], color: "#1565c0", strokeWidth: 2 }];
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("at least 2 distinct");
-    input.sheets[1].document.graphics[0].points = [{ x: 0, y: 0 }, { x: 1200, y: 100 }];
-    expect(() => parseProjectJson(JSON.stringify(input))).toThrow("inside the schematic sheet");
+    const offFrame = [{ x: -80, y: -120 }, { x: 1200, y: 860 }];
+    input.sheets[1].document.graphics[0].points = offFrame;
+    expect(parseProjectJson(JSON.stringify(input)).sheets[1].document.graphics?.[0].points).toEqual(offFrame);
     input.sheets[1].document.graphics[0] = { id: "polygon-1", name: "Bad polygon", kind: "polygon", x1: 0, y1: 0, x2: 100, y2: 100, points: [{ x: 0, y: 0 }, { x: 40, y: 40 }, { x: 100, y: 100 }], color: "#1565c0", strokeWidth: 2 };
     expect(() => parseProjectJson(JSON.stringify(input))).toThrow("polygons must enclose an area");
   });

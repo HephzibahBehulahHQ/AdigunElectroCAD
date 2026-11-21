@@ -146,8 +146,8 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       if (active.mode === "move") onMove?.(graphic.id, current.x - active.start.x, current.y - active.start.y);
       else if (active.mode === "vertex" && active.index !== undefined) onVertexMove?.(graphic.id, active.index, current.x, current.y);
       else {
-        const snappedX = Math.max(0, Math.min(1100, Math.round(current.x / 20) * 20));
-        const snappedY = Math.max(0, Math.min(780, Math.round(current.y / 20) * 20));
+        const snappedX = Math.round(current.x / 20) * 20;
+        const snappedY = Math.round(current.y / 20) * 20;
         if (graphic.kind === "line") onResize?.(graphic.id, active.handle === "start" ? snappedX : graphic.x1, active.handle === "start" ? snappedY : graphic.y1, active.handle === "end" ? snappedX : graphic.x2, active.handle === "end" ? snappedY : graphic.y2);
         else {
           const opposite = { x: active.handle?.includes("w") ? x + width : x, y: active.handle?.includes("n") ? y + height : y };
@@ -172,7 +172,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, index } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
-    <text x={x + width / 2} y={y + height + 17 > 780 ? Math.max(14, y - 7) : y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{graphic.name}</text>
+    <text x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{graphic.name}</text>
     <title>{`${graphic.name} · drafting geometry; not an electrical connection`}</title>
   </g>;
 }
@@ -321,12 +321,12 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  const grid = (value: number) => Math.max(0, Math.min(1100, Math.round(value / 20) * 20));
+  const grid = (value: number) => Math.round(value / 20) * 20;
   const svgPoint = (event: PointerEvent<SVGSVGElement>) => {
     const matrix = event.currentTarget.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
-  const snappedPathPoint = (x: number, y: number) => ({ x: grid(x), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) });
+  const snappedPathPoint = (x: number, y: number) => ({ x: grid(x), y: Math.round(y / 20) * 20 });
   const routePointFromEvent = (event: PointerEvent<SVGCircleElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -379,8 +379,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
     const point = graphicPoint(event); if (!point) return;
     event.preventDefault(); graphicStart.current = point;
     const start = graphicMode === "freehand"
-      ? { x: Math.max(0, Math.min(1100, point.x)), y: Math.max(0, Math.min(780, point.y)) }
-      : { x: grid(point.x), y: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) };
+      ? { x: point.x, y: point.y }
+      : { x: grid(point.x), y: Math.round(point.y / 20) * 20 };
     if (graphicMode === "freehand") {
       pathVertices.current = appendFreehandPoint([], start);
       setGraphicPreview({ kind: "polyline", x1: start.x, y1: start.y, x2: start.x, y2: start.y, points: [...pathVertices.current] });
@@ -396,7 +396,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
       if (bounds) setGraphicPreview({ kind: "polyline", ...bounds, points: [...pathVertices.current] });
       return;
     }
-    setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: Math.max(0, Math.min(780, Math.round(point.y / 20) * 20)) } : null);
+    setGraphicPreview((preview) => preview ? { ...preview, x2: grid(point.x), y2: Math.round(point.y / 20) * 20 } : null);
   };
   const drawEnd = (event: PointerEvent<SVGRectElement>) => {
     const point = graphicPoint(event); const start = graphicStart.current; const kind = graphicMode;
@@ -408,8 +408,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
       if (bounds && length >= 4) onGraphicCreate("polyline", bounds.x1, bounds.y1, bounds.x2, bounds.y2, points);
       pathVertices.current = [];
     } else if (start && point && kind && kind !== "freehand") {
-      const x1 = grid(start.x); const y1 = Math.max(0, Math.min(780, Math.round(start.y / 20) * 20));
-      const x2 = grid(point.x); const y2 = Math.max(0, Math.min(780, Math.round(point.y / 20) * 20));
+      const x1 = grid(start.x); const y1 = Math.round(start.y / 20) * 20;
+      const x2 = grid(point.x); const y2 = Math.round(point.y / 20) * 20;
       if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) >= 4 : Math.abs(x2 - x1) >= 4 && Math.abs(y2 - y1) >= 4) onGraphicCreate(kind, x1, y1, x2, y2);
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -443,7 +443,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
     <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} data-export-view-box="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); onComponentDrop(definitionId, Math.round(point.x * 100) / 100, Math.round(point.y * 100) / 100); }} onPointerDownCapture={(event) => { if (isPathMode) { event.stopPropagation(); addPathVertex(event); event.currentTarget.focus(); } }} onPointerMoveCapture={(event) => { if (isPathMode) { event.stopPropagation(); previewPathVertex(event); } }} onDoubleClickCapture={(event) => { if (isPathMode) { event.stopPropagation(); finishPath(); } }} onKeyDown={(event) => { if (isPathMode && event.key === "Enter") { event.preventDefault(); finishPath(); } else if (isPathMode && event.key === "Escape") { event.preventDefault(); pathVertices.current = []; setGraphicPreview(null); } }} onClick={(event) => {
       if (!annotationMode) return;
       const matrix = event.currentTarget.getScreenCTM();
-      if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); onAnnotationPlace(Math.max(0, Math.min(1100, Math.round(point.x / 20) * 20)), Math.max(0, Math.min(780, Math.round(point.y / 20) * 20))); }
+      if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); onAnnotationPlace(Math.round(point.x / 20) * 20, Math.round(point.y / 20) * 20); }
     }}>
       <style>{componentDraftingStyles}</style>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>

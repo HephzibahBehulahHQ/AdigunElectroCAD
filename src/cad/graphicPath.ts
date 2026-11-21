@@ -21,7 +21,7 @@ export function insertGraphicPathVertex(points: SchematicGraphicPoint[], kind: G
     if (distance < closest.distance) closest = { segment: index, distance, x: projectedX, y: projectedY };
   }
   if (closest.distance > tolerance) return null;
-  const vertex = { x: Math.max(0, Math.min(1100, Math.round(closest.x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(closest.y / 20) * 20)) };
+  const vertex = { x: Math.round(closest.x / 20) * 20, y: Math.round(closest.y / 20) * 20 };
   const insertAt = closest.segment + 1;
   const previous = points[closest.segment]; const next = points[insertAt % points.length];
   if ((previous.x === vertex.x && previous.y === vertex.y) || (next.x === vertex.x && next.y === vertex.y)) return null;
@@ -38,7 +38,7 @@ export function deleteGraphicPathVertex(points: SchematicGraphicPoint[], kind: G
 
 export function moveGraphicPathVertex(points: SchematicGraphicPoint[], kind: GraphicPathKind, index: number, x: number, y: number): SchematicGraphicPoint[] | null {
   if (!points[index]) return null;
-  const next = points.map((point, pointIndex) => pointIndex === index ? { x: Math.max(0, Math.min(1100, Math.round(x / 20) * 20)), y: Math.max(0, Math.min(780, Math.round(y / 20) * 20)) } : point);
+  const next = points.map((point, pointIndex) => pointIndex === index ? { x: Math.round(x / 20) * 20, y: Math.round(y / 20) * 20 } : point);
   if (next.some((point, pointIndex) => pointIndex > 0 && point.x === next[pointIndex - 1].x && point.y === next[pointIndex - 1].y)) return null;
   if (kind === "polygon" && (next[0].x === next.at(-1)?.x && next[0].y === next.at(-1)?.y || !polygonHasArea(next))) return null;
   return next;
