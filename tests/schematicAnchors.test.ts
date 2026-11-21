@@ -493,6 +493,15 @@ it("draws and anchors the on-delay relay coil and 15/16/18 changeover contact", 
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 420, y: 300, properties: { energized: true, elapsedSeconds: 2, delaySeconds: 2 } }));
   expect(svg).toContain('aria-label="On-delay timer, timed contact made"');
   expect(svg).toContain('data-state="timed"');
+  expect(svg).toContain('M 373 288 H 382 M 373 312 H 382');
+  expect(svg).toContain('M 420 327 V 305 H 428 M 467 288 H 444 M 467 312 H 444');
+  expect(svg).toContain('M 428 305 L 444 312');
+  const timingSvg = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: definition.symbolId, x: 420, y: 300,
+    properties: { energized: true, elapsedSeconds: 1, delaySeconds: 2 },
+  }));
+  expect(timingSvg).toContain('data-state="timing"');
+  expect(timingSvg).toContain('M 428 305 L 444 288');
 });
 
 it("positions VFD line, motor, and earth terminals beside its dedicated symbol", () => {

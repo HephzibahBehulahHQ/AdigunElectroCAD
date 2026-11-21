@@ -100,10 +100,13 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     const energized = properties.energized === true;
     const timingComplete = energized && Number(properties.elapsedSeconds ?? 0) >= Number(properties.delaySeconds ?? Infinity);
     return <g className={mark} aria-label={`On-delay timer, ${timingComplete ? "timed contact made" : energized ? "timing" : "de-energized"}`} data-state={timingComplete ? "timed" : energized ? "timing" : "idle"}>
+      <path d={`M ${x - 47} ${y - 12} H ${x - 38} M ${x - 47} ${y + 12} H ${x - 38}`} />
       <rect x={x - 38} y={y - 15} width="16" height="30" rx="2" />
       <path d={`M ${x - 35} ${y - 9} q 10 4 0 8 q -10 4 0 8`} />
       <circle cx={x - 1} cy={y - 10} r="11" />
-      <path d={`M ${x - 1} ${y - 10} V ${y - 16} M ${x - 1} ${y - 10} L ${x + 5} ${y - 7} M ${x} ${y + 27} V ${y + 3} M ${x + 23} ${y - 12} H ${x + 14} M ${x + 23} ${y + 12} H ${x + 14} M ${x} ${y + 3} L ${x + (timingComplete ? 9 : -9)} ${y + 10}`} />
+      <path d={`M ${x - 1} ${y - 10} V ${y - 16} M ${x - 1} ${y - 10} L ${x + 5} ${y - 7}`} />
+      <path d={`M ${x} ${y + 27} V ${y + 5} H ${x + 8} M ${x + 47} ${y - 12} H ${x + 24} M ${x + 47} ${y + 12} H ${x + 24}`} />
+      <path d={`M ${x + 8} ${y + 5} L ${x + 24} ${y + (timingComplete ? 12 : -12)}`} />
     </g>;
   }
   if (symbolId === "vfd" || symbolId.startsWith("vfd-")) return <g className={mark} aria-label="Variable-frequency drive with three-phase input and U/V/W output">
