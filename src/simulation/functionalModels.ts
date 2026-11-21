@@ -14,6 +14,14 @@ const binary = (value: boolean) => value ? "ON" : "OFF";
 const signal = (unit: SignalUnit, value: FunctionalSignal["value"]): FunctionalSignal => ({ unit, value });
 const fault = (error: string): FunctionalSignal => ({ unit: "boolean", value: false, error });
 const levelLoopOpenError = "4–20 mA level-transmitter loop is open; PLC input is invalid.";
+function adcSignal(properties: Properties): FunctionalSignal {
+  const current = properties.milliamp;
+  if (bool(properties, "faultOnOutOfRange") && (typeof current !== "number" || !Number.isFinite(current) || current < 4 || current > 20)) {
+    return fault("ADC current is outside the configured 4–20 mA range.");
+  }
+  return signal("plc-raw", milliampToPlcRaw(number(properties, "milliamp", 4)));
+}
+
 const mathInput = (properties: Properties, key: string) => properties[key] === undefined ? 0 : typeof properties[key] === "number" ? properties[key] : NaN;
 
 export function timerParameterError(properties: Properties): string | undefined {
@@ -74,7 +82,12 @@ const models: Record<string, Model> = {
   "sensor-encoder": (p) => ({ label: "Encoder pulses", value: String(encoderPulses(number(p, "revolutions"), number(p, "pulsesPerRevolution", 1024))) }),
   "sensor-load-cell": (p) => ({ label: "Load-cell output", value: `${loadCellMillivolt(number(p, "forceN"), number(p, "capacityN", 1000)).toFixed(3)} mV` }),
   "sensor-current-transformer": (p) => ({ label: "CT secondary", value: `${currentTransformerSecondaryAmp(number(p, "primaryA"), number(p, "ratedPrimaryA", 100)).toFixed(3)} A` }),
-  "signal-adc": (p) => ({ label: "PLC raw value", value: String(milliampToPlcRaw(number(p, "milliamp", 4))) }),
+  "signal-adc": (p) => {
+    const converted = adcSignal(p);
+    return converted.error
+      ? { label: "PLC raw value", value: "INVALID", error: converted.error }
+      : { label: "PLC raw value", value: String(converted.value) };
+  },
   "signal-dac": (p) => ({ label: "DAC output", value: `${dacMilliamp(number(p, "raw")).toFixed(2)} mA` }),
   "pneumatic-valve-5-2": (p) => pneumaticDisplay("pneumatic-valve-5-2", p),
   "pneumatic-valve-3-2": (p) => pneumaticDisplay("pneumatic-valve-3-2", p),
@@ -233,7 +246,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
   if (modelId === "sensor-load-cell") return signal("millivolt", loadCellMillivolt(number(properties, "forceN"), number(properties, "capacityN", 1000)));
   if (modelId === "sensor-current-transformer") return signal("ampere", currentTransformerSecondaryAmp(number(properties, "primaryA"), number(properties, "ratedPrimaryA", 100)));
-  if (modelId === "signal-adc") return signal("plc-raw", milliampToPlcRaw(number(properties, "milliamp", 4)));
+  if (modelId === "signal-adc") return adcSignal(properties);
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   return undefined;
 }
