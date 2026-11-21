@@ -8,6 +8,7 @@ import { componentsInMarquee, previewComponentMove } from "../cad/componentSelec
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
 import { transformComponent, type ComponentTransform } from "../cad/documentOps";
 import { ComponentTransformHandles } from "./ComponentTransformHandles";
+import { DrawingRulers } from "./DrawingRulers";
 import { componentLabelOffsets } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
@@ -439,7 +440,18 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
   };
 
   const drawingBounds = freeView ?? { x: 0, y: 0, width: 1100, height: 780 };
-  return <div className="schematic-wrap free-drawing-viewport">
+  const cursorReadout = useRef<HTMLOutputElement>(null);
+  return <div className="schematic-wrap free-drawing-viewport" onPointerMoveCapture={(event) => {
+    const svg = event.currentTarget.querySelector("svg.schematic");
+    const matrix = svg instanceof SVGSVGElement ? svg.getScreenCTM() : null;
+    const readout = cursorReadout.current;
+    if (!matrix || !readout) return;
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const snapped = annotationMode || (graphicMode && graphicMode !== "freehand");
+    const x = snapped ? Math.round(point.x / 20) * 20 : Math.round(point.x * 100) / 100;
+    const y = snapped ? Math.round(point.y / 20) * 20 : Math.round(point.y * 100) / 100;
+    readout.textContent = `X ${x}  Y ${y}  du${snapped ? " · Grid snap" : ""}`;
+  }} onPointerLeave={() => { if (cursorReadout.current) cursorReadout.current.textContent = "X —  Y —  du"; }}>
     <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); onComponentDrop(definitionId, Math.round(point.x * 100) / 100, Math.round(point.y * 100) / 100); }} onPointerDownCapture={(event) => { if (isPathMode) { event.stopPropagation(); addPathVertex(event); event.currentTarget.focus(); } }} onPointerMoveCapture={(event) => { if (isPathMode) { event.stopPropagation(); previewPathVertex(event); } }} onDoubleClickCapture={(event) => { if (isPathMode) { event.stopPropagation(); finishPath(); } }} onKeyDown={(event) => { if (isPathMode && event.key === "Enter") { event.preventDefault(); finishPath(); } else if (isPathMode && event.key === "Escape") { event.preventDefault(); pathVertices.current = []; setGraphicPreview(null); } }} onClick={(event) => {
       if (!annotationMode) return;
       const matrix = event.currentTarget.getScreenCTM();
@@ -498,6 +510,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
       </g>
     </svg>
+    {freeView && <><DrawingRulers bounds={drawingBounds} zoom={zoom} /><output ref={cursorReadout} aria-label="Drawing cursor coordinates" aria-live="off" className="drawing-cursor-readout">X —  Y —  du</output></>}
   </div>;
 }
 
