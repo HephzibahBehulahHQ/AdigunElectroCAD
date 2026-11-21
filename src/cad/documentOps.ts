@@ -23,7 +23,7 @@ export function moveComponentsByGrid(document: CircuitDocument, componentIds: st
   return moveComponentsByOffset(document, componentIds, Math.round(deltaX / 20) * 20, Math.round(deltaY / 20) * 20);
 }
 
-export function moveComponentsByOffset(document: CircuitDocument, componentIds: string[], dx: number, dy: number): { document: CircuitDocument; ok: boolean; reason?: string } {
+export function moveComponentsByOffset(document: CircuitDocument, componentIds: string[], dx: number, dy: number, dragPrecision?: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const ids = [...new Set(componentIds)];
   if (!ids.length || !Number.isFinite(dx) || !Number.isFinite(dy)) return { document, ok: false, reason: "Select components and enter a finite movement." };
   const selected = document.components.filter((component) => ids.includes(component.id));
@@ -31,13 +31,26 @@ export function moveComponentsByOffset(document: CircuitDocument, componentIds: 
   if (dx === 0 && dy === 0) return { document, ok: true };
   const selectedIds = new Set(ids);
   const stationary = document.components.filter((component) => !selectedIds.has(component.id));
-  for (const component of selected) {
-    if (!canPlaceComponent([...stationary, component], component.id, component.x + dx, component.y + dy)) {
+  const moved = new Map(selected.map((component) => {
+    const x = component.x + dx;
+    const y = component.y + dy;
+    return [component.id, {
+      ...component,
+      x: dx === 0 || dragPrecision === undefined ? x : Number(x.toFixed(dragPrecision)),
+      y: dy === 0 || dragPrecision === undefined ? y : Number(y.toFixed(dragPrecision)),
+    }];
+  }));
+  if (selected.every((component) => {
+    const position = moved.get(component.id);
+    return position?.x === component.x && position?.y === component.y;
+  })) return { document, ok: true };
+  for (const component of moved.values()) {
+    if (!canPlaceComponent([...stationary, component], component.id, component.x, component.y)) {
       return { document, ok: false, reason: "Move blocked: keep selected symbols and labels inside the sheet and clear of neighbors." };
     }
   }
   return {
-    document: { ...document, revision: document.revision + 1, components: document.components.map((component) => selectedIds.has(component.id) ? { ...component, x: component.x + dx, y: component.y + dy } : component) },
+    document: { ...document, revision: document.revision + 1, components: document.components.map((component) => moved.get(component.id) ?? component) },
     ok: true,
   };
 }

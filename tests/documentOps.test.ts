@@ -17,6 +17,16 @@ it("preserves off-grid coordinates and attached wires during a free move", () =>
   expect(moveComponentsByOffset(document, ["level"], 200, 0)).toMatchObject({ ok: false, document });
 });
 
+it("stores clean drag coordinates and preserves the original precision on the unmoved axis", () => {
+  const document = createAnalogLevelProject().document;
+  const level = document.components.find((item) => item.id === "level")!;
+  level.x = 140.29;
+  level.y = 300.12345;
+  const moved = moveComponentsByOffset(document, ["level"], 0.63, 0, 2);
+  expect(moved.document.components.find((item) => item.id === "level")).toMatchObject({ x: 140.92, y: 300.12345 });
+  expect(moveComponentsByOffset(moved.document, ["level"], 0.001, 0, 2).document).toBe(moved.document);
+});
+
 it("reconnects the source and carries dependent taps while retaining wire appearance", () => {
   const document = createAnalogLevelProject().document;
   const parent = document.wires.find((item) => item.id === "plc-output")!;
