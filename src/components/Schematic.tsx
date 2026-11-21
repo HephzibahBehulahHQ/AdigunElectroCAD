@@ -1,7 +1,8 @@
-import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire } from "../types/electrical";
+import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint, CircuitSheet, ProjectContinuation } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
+import { draftingDashArray, resolveDraftingStyle } from "../cad/draftingLayers";
 import { componentsInStackOrder } from "../cad/componentStack";
 import { componentsInMarquee, previewComponentMove } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
@@ -15,6 +16,20 @@ import { appendFreehandPoint, freehandPathBounds } from "../cad/freehandPath";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent } from "react";
 
 type SchematicGraphicMode = SchematicGraphicKind | "freehand";
+
+// Inline so standalone SVG and PNG exports retain the same authored strokes.
+const componentDraftingStyles = `
+  [data-component-lineweight] :is(.free-symbol, .generic-symbol-mark, .functional-symbol),
+  [data-component-lineweight] :is(.generic-symbol-mark, .functional-symbol) :is(path, line, circle, ellipse, rect, polygon, polyline) {
+    stroke-width: var(--component-lineweight);
+  }
+  [data-component-linetype] :is(.free-symbol, .generic-symbol-mark, .functional-symbol) {
+    stroke-dasharray: var(--component-linetype);
+  }
+  [data-component-ink] :is(.free-symbol, .generic-symbol-mark, .functional-symbol) {
+    stroke: var(--component-ink);
+  }
+`;
 
 interface Props {
   onComponentDrop?: (definitionId: string, x: number, y: number) => void;
@@ -184,7 +199,7 @@ function SixTerminalWindings({ x, y, productName }: { x: number; y: number; prod
   </g>;
 }
 
-function PlacedSymbol({ component, indicatorLit, selectedComponentId, selectedComponentIds = [], onSelect, onMove, onMovePreview, onOpenContextMenu, previewDelta, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; indicatorLit?: boolean; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; onMovePreview?: Props["onMovePreview"]; onOpenContextMenu?: Props["onComponentContextMenu"]; previewDelta?: { x: number; y: number }; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
+function PlacedSymbol({ component, indicatorLit, draftingStyle, selectedComponentId, selectedComponentIds = [], onSelect, onMove, onMovePreview, onOpenContextMenu, previewDelta, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; indicatorLit?: boolean; draftingStyle: DraftingStyle; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; onMovePreview?: Props["onMovePreview"]; onOpenContextMenu?: Props["onComponentContextMenu"]; previewDelta?: { x: number; y: number }; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
   const definition = catalogById.get(component.definitionId);
   const labels = componentLabelOffsets(component.rotation, component.definitionId);
   const typeLabel = typeof component.properties.indication === "string" && component.properties.indication.trim() ? component.properties.indication.trim() : definition?.referencePrefix ?? "?";
@@ -223,22 +238,29 @@ function PlacedSymbol({ component, indicatorLit, selectedComponentId, selectedCo
     onPointerCancel={() => { origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null); }}
     onLostPointerCapture={() => { origin.current = null; setDelta({ x: 0, y: 0 }); onMovePreview?.(component.id, null); }}
     className={(selectedComponentIds.length ? selectedComponentIds.includes(component.id) : component.id === selectedComponentId) ? "schematic-component selected" : "schematic-component"}>
-    <g transform={`translate(${component.x} ${component.y}) scale(${component.size ?? 1}) translate(${-component.x} ${-component.y})`}><g transform={`rotate(${component.rotation} ${component.x} ${component.y})`} style={component.draftingColor ? { "--component-ink": component.draftingColor } as CSSProperties : undefined}><rect x={component.x - componentFrame.selectX} y={component.y - componentFrame.selectY} width={componentFrame.selectWidth} height={componentFrame.selectHeight} rx="6" className="selection-boundary" />{(!definition || !hasDedicatedFunctionalSymbol(definition.symbolId)) && <rect x={component.x - componentFrame.symbolX} y={component.y - componentFrame.symbolY} width={componentFrame.symbolWidth} height={componentFrame.symbolHeight} rx="4" className="free-symbol" />}{component.customSymbolGraphics?.length ? component.customSymbolGraphics.map((graphic, index) => <UserSymbolGraphicMark key={`${component.id}-symbol-${index}`} graphic={graphic} x={component.x} y={component.y} color={component.draftingColor} />) : definition?.simulationModelId === "six-terminal-windings" ? <SixTerminalWindings x={component.x} y={component.y} productName={definition.name} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} properties={symbolProperties} componentName={definition.name} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g></g>
+    <g transform={`translate(${component.x} ${component.y}) scale(${component.size ?? 1}) translate(${-component.x} ${-component.y})`}><g transform={`rotate(${component.rotation} ${component.x} ${component.y})`} style={{ "--component-ink": draftingStyle.draftingColor, "--component-lineweight": draftingStyle.lineWeight, "--component-linetype": draftingDashArray(draftingStyle.lineType) } as CSSProperties} data-component-ink={draftingStyle.draftingColor} data-component-lineweight={draftingStyle.lineWeight} data-component-linetype={draftingStyle.lineType}><rect x={component.x - componentFrame.selectX} y={component.y - componentFrame.selectY} width={componentFrame.selectWidth} height={componentFrame.selectHeight} rx="6" className="selection-boundary" />{(!definition || !hasDedicatedFunctionalSymbol(definition.symbolId)) && <rect x={component.x - componentFrame.symbolX} y={component.y - componentFrame.symbolY} width={componentFrame.symbolWidth} height={componentFrame.symbolHeight} rx="4" className="free-symbol" />}{component.customSymbolGraphics?.length ? component.customSymbolGraphics.map((graphic, index) => <UserSymbolGraphicMark key={`${component.id}-symbol-${index}`} graphic={graphic} x={component.x} y={component.y} draftingStyle={draftingStyle} />) : definition?.simulationModelId === "six-terminal-windings" ? <SixTerminalWindings x={component.x} y={component.y} productName={definition.name} /> : <>{definition && <FunctionalSymbol symbolId={definition.symbolId} x={component.x} y={component.y} properties={symbolProperties} componentName={definition.name} />}{definition && !hasDedicatedFunctionalSymbol(definition.symbolId) && <GenericSymbol symbolId={definition.symbolId} x={component.x} y={component.y} />}</>}</g></g>
     {terminalAnchorsForComponent.map(({ endpoint, x: anchorX, y: anchorY, vertical }) => { const x = anchorX - visualDelta.x, y = anchorY - visualDelta.y; if (definition?.symbolId === "user-indicator-lamp" && /^t[12]$/.test(endpoint.terminalId)) return null; const terminal = (component.customTerminals ?? definition?.terminals ?? []).find((item) => item.id === endpoint.terminalId); const label = component.terminalLabels?.[endpoint.terminalId] ?? terminal?.label; if (!label) return null; const left = x < component.x; return <text key={endpoint.terminalId} x={x + (vertical ? 0 : left ? -5 : 5)} y={y + (vertical || y < component.y ? -6 : 12)} textAnchor={vertical ? "middle" : left ? "end" : "start"} className="free-terminal-label">{label}</text>; })}
     <g transform={`translate(${component.x} ${component.y}) scale(${component.size ?? 1}) translate(${-component.x} ${-component.y})`}><text x={component.x} y={component.y + labels.reference} className="free-reference" textAnchor="middle" textLength={component.reference.length > 6 ? 78 : undefined} lengthAdjust="spacingAndGlyphs" paintOrder="stroke" stroke="#f4f8fc" strokeWidth="4" strokeLinejoin="round">{component.reference}</text>
     <text x={component.x} y={component.y + labels.kind} className="free-kind" textAnchor="middle" textLength={displayLabel.length > 12 ? 78 : undefined} lengthAdjust="spacingAndGlyphs">{displayLabel}</text></g>
   </g>;
 }
 
-function UserSymbolGraphicMark({ graphic, x, y, color }: { graphic: UserSymbolGraphic; x: number; y: number; color?: string }) {
-  const stroke = color ?? graphic.color;
+function wireDraftingStyle(wire: Wire, layers: CircuitDocument["draftingLayers"]): CSSProperties {
+  const style = resolveDraftingStyle(wire, layers);
+  return { stroke: style.draftingColor, strokeWidth: style.lineWeight, strokeDasharray: draftingDashArray(style.lineType) };
+}
+
+function UserSymbolGraphicMark({ graphic, x, y, draftingStyle }: { graphic: UserSymbolGraphic; x: number; y: number; draftingStyle: DraftingStyle }) {
+  const stroke = draftingStyle.draftingColor ?? graphic.color;
+  const strokeWidth = draftingStyle.lineWeight ?? graphic.strokeWidth;
+  const strokeDasharray = draftingDashArray(draftingStyle.lineType);
   const fill = graphic.fillColor ?? "none";
-  if (graphic.kind === "line") return <line x1={x + graphic.x1} y1={y + graphic.y1} x2={x + graphic.x2} y2={y + graphic.y2} stroke={stroke} strokeWidth={graphic.strokeWidth} />;
-  if (graphic.kind === "rectangle") return <rect x={x + Math.min(graphic.x1, graphic.x2)} y={y + Math.min(graphic.y1, graphic.y2)} width={Math.abs(graphic.x2 - graphic.x1)} height={Math.abs(graphic.y2 - graphic.y1)} stroke={stroke} strokeWidth={graphic.strokeWidth} fill={fill} />;
-  if (graphic.kind === "ellipse") return <ellipse cx={x + (graphic.x1 + graphic.x2) / 2} cy={y + (graphic.y1 + graphic.y2) / 2} rx={Math.abs(graphic.x2 - graphic.x1) / 2} ry={Math.abs(graphic.y2 - graphic.y1) / 2} stroke={stroke} strokeWidth={graphic.strokeWidth} fill={fill} />;
+  if (graphic.kind === "line") return <line x1={x + graphic.x1} y1={y + graphic.y1} x2={x + graphic.x2} y2={y + graphic.y2} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} />;
+  if (graphic.kind === "rectangle") return <rect x={x + Math.min(graphic.x1, graphic.x2)} y={y + Math.min(graphic.y1, graphic.y2)} width={Math.abs(graphic.x2 - graphic.x1)} height={Math.abs(graphic.y2 - graphic.y1)} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill={fill} />;
+  if (graphic.kind === "ellipse") return <ellipse cx={x + (graphic.x1 + graphic.x2) / 2} cy={y + (graphic.y1 + graphic.y2) / 2} rx={Math.abs(graphic.x2 - graphic.x1) / 2} ry={Math.abs(graphic.y2 - graphic.y1) / 2} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill={fill} />;
   const points = graphic.points ?? [];
   const svgPoints = points.map((point) => `${x + point.x},${y + point.y}`).join(" ");
-  return graphic.kind === "polygon" ? <polygon points={svgPoints} stroke={stroke} strokeWidth={graphic.strokeWidth} fill={fill} /> : <polyline points={svgPoints} stroke={stroke} strokeWidth={graphic.strokeWidth} fill="none" />;
+  return graphic.kind === "polygon" ? <polygon points={svgPoints} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill={fill} /> : <polyline points={svgPoints} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill="none" />;
 }
 
 function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
@@ -419,6 +441,7 @@ function FreeSchematic({ document, litIndicatorIds, onComponentTransform, select
       const matrix = event.currentTarget.getScreenCTM();
       if (matrix) { const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()); onAnnotationPlace(Math.max(0, Math.min(1100, Math.round(point.x / 20) * 20)), Math.max(0, Math.min(780, Math.round(point.y / 20) * 20))); }
     }}>
+      <style>{componentDraftingStyles}</style>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
       <rect width="1100" height="780" className="sheet-bg" onPointerDown={(event) => graphicMode ? drawStart(event) : selectionStart(event)} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
       {isPathMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
@@ -449,7 +472,7 @@ function FreeSchematic({ document, litIndicatorIds, onComponentTransform, select
           if (route) onWireBranchStart?.(wire.id, route.source, route.position);
         };
         return <g key={wire.id}>
-          <path d={path} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId) insertRoutePoint(event); else onWireSelect(wire.id); }} />
+          <path d={path} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId) insertRoutePoint(event); else onWireSelect(wire.id); }} />
           {wireRouteEditId === wire.id && !wire.branchOfWireId && <path d={path} className="wire-route-hit-target" aria-hidden="true" onClick={insertRoutePoint} />}
           {wireMode && onWireBranchStart && <path d={path} className="wire-branch-hit-target" role="button" tabIndex={0} aria-label={`Create a branch from ${wire.netName ?? wire.id}`} onClick={startBranch} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onWireBranchStart(wire.id, "from", .5); } }} />}
           {branch && <circle cx={branch.point.x} cy={branch.point.y} r="5" className="wire-junction" aria-label={`Electrical junction on ${wire.netName ?? wire.id}`} />}
@@ -458,7 +481,7 @@ function FreeSchematic({ document, litIndicatorIds, onComponentTransform, select
       })}
       {(document.graphics ?? []).map((graphic) => <PlacedGraphic key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
-      {paintOrder.map((component) => <PlacedSymbol key={component.id} component={component} indicatorLit={litIndicatorIds?.has(component.id)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
+      {paintOrder.map((component) => <PlacedSymbol key={component.id} component={component} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
       {!wireMode && <g className="terminal-pin-markers" pointerEvents="none">{anchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="7" className="terminal-pin" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}{wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)} · Shift-click target to continue branch</title></g>)}</g>}
       {transformTarget && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
@@ -507,12 +530,13 @@ export function Schematic({ document, litIndicatorIds, onComponentTransform, sel
 
   return <div className="schematic-wrap">
     <svg className="schematic" style={{ width: 1100 * zoom, height: 780 * zoom, minWidth: 0, minHeight: 0 }} viewBox="0 0 1100 780" role={wireMode ? "group" : "img"} aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Direct-on-line motor starter power and control schematic"}>
+      <style>{componentDraftingStyles}</style>
       <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
       <rect width="1100" height="780" className="sheet-bg" />{showGrid && <rect width="1100" height="780" fill="url(#grid)" />}
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wire.draftingColor ? { stroke: wire.draftingColor } : undefined} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>
@@ -558,7 +582,7 @@ export function Schematic({ document, litIndicatorIds, onComponentTransform, sel
         <path d="M 310 730 H 375" className={simulation.overloadTripped ? "wire fault" : lineClass(simulation.breakerClosed)} /><path d="M 330 720 L 355 740" className={simulation.overloadTripped ? "contact-blade open-fault" : "contact-blade closed"} /><text x="302" y="695" className="reference-label">F1 95–96</text>
       </g></g>
 
-      {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <PlacedSymbol key={component.id} component={component} indicatorLit={litIndicatorIds?.has(component.id)} selectedComponentId={selectedComponentId} onSelect={onSelect} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
+      {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <PlacedSymbol key={component.id} component={component} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} onSelect={onSelect} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
       {!wireMode && <g className="terminal-pin-markers" pointerEvents="none">{anchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="5" className="terminal-pin" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>}
       {wireMode && <g className="terminal-anchors">{anchors.map((item) => <g key={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} /><title>{endpointKey(item.endpoint)} · Shift-click target to continue branch</title></g>)}</g>}
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
