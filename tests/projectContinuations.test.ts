@@ -1,11 +1,20 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
-import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { recordProjectEdit, redoProject, undoProject } from "../src/cad/projectHistory";
 import { terminalGridReference } from "../src/cad/terminalAnchors";
+
+it("finds a continuation by the full terminal identity and releases it after disconnection", () => {
+  const project = createMotorFeederWorkbook();
+  const continuation = project.continuations!.find((item) => item.id === "feed-m2-l1")!;
+  const { sheetId, endpoint } = continuation.points.at(-1)!;
+  expect(findTerminalContinuation(project, { sheetId, endpoint })).toBe(continuation);
+  expect(findTerminalContinuation(project, { sheetId: "other-sheet", endpoint })).toBeUndefined();
+  expect(findTerminalContinuation(removeProjectContinuation(project, continuation.id), { sheetId, endpoint })).toBeUndefined();
+});
 
 it("assigns and clears a cable core without changing the route, and survives history and serialization", () => {
   const project = createMotorFeederWorkbook();
