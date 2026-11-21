@@ -166,14 +166,23 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "relay" || symbolId.startsWith("relay-")) {
     const contacts = Math.max(1, Math.min(3, Number(properties.changeoverContacts) || 1));
     const energized = properties.energized === true;
-    const columns = [-30, 0, 30].slice(0, contacts);
     return <g className={mark} aria-label={`Interface relay with ${contacts} changeover contact${contacts === 1 ? "" : "s"}, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "de-energized"}>
-      <rect x={x - 43} y={y - 15} width="16" height="30" rx="2" />
-      <path d={`M ${x - 39} ${y - 8} q 8 4 0 8 q -8 4 0 8`} />
-      {columns.map((column, index) => <g key={index}>
-        <path d={`M ${x + column} ${y - 27} V ${y - 2} M ${x + column - 8} ${y + 27} V ${y + 9} M ${x + column + 8} ${y + 27} V ${y + 9} M ${x + column} ${y - 2} L ${x + column + (energized ? 5 : -5)} ${y + 8}`} />
-        <path d={`M ${x + column - 8} ${y + 8} H ${x + column - 2} M ${x + column + 2} ${y + 8} H ${x + column + 8}`} />
-      </g>)}
+      <rect x={x - 43} y={y - 15} width="9" height="30" rx="2" />
+      <path d={`M ${x - 40} ${y - 8} q 5 4 0 8 q -5 4 0 8`} />
+      {["a1", "a2"].map((terminalId) => {
+        const offset = controlTerminalOffset("catalog-interface-relay", terminalId)!;
+        return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x - 43}`} />;
+      })}
+      {Array.from({ length: contacts }, (_, index) => {
+        const [common, nc, no] = [1, 2, 4].map(pin => controlTerminalOffset("catalog-interface-relay", `${index + 1}${pin}`)!);
+        const pivotX = x + common.x;
+        const ncTip = x + nc.x + 5;
+        const noTip = x + no.x - 5;
+        return <g key={index}>
+          <path d={`M ${pivotX} ${y + common.y} V ${y - 2} M ${x + nc.x} ${y + nc.y} V ${y + 17} H ${ncTip} M ${x + no.x} ${y + no.y} V ${y + 17} H ${noTip}`} />
+          <path d={`M ${pivotX} ${y - 2} L ${energized ? noTip : ncTip} ${y + 17}`} />
+        </g>;
+      })}
     </g>;
   }
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
