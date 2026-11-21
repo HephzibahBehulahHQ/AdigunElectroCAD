@@ -6,11 +6,18 @@ const standaloneStyles = `
   .phase-label, .terminal-label { font-size: 14px; }
   .wire { fill: none; stroke: #68788b; stroke-width: 4; }
   .wire.energized { stroke: #dc2e34; }
+  .wire.fault { stroke: #d84a3a; stroke-dasharray: 8 5; }
   .wire.neutral { stroke: #55799b; }
   .wire.manual-wire { stroke: #7c3aed; stroke-width: 3; stroke-dasharray: 7 4; }
+  .wire.manual-wire.power-wire { stroke: #991b1b; stroke-width: 2.4; stroke-dasharray: none; }
   .phase-l1 { fill: #d5242a; stroke: #d5242a; }
   .phase-l2 { fill: #d39700; stroke: #d39700; }
   .phase-l3 { fill: #59708f; stroke: #59708f; }
+  .wire.phase-l1 { stroke: #d5242a; }
+  .wire.phase-l2 { stroke: #d39700; }
+  .wire.phase-l3 { stroke: #59708f; }
+  .phase-label.pe { fill: #167a52; }
+  .wire.pe-wire { stroke: #167a52; }
   .contact-blade, .generic-symbol-mark { fill: none; stroke: #1d2d41; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .contact-blade.closed { stroke: #c71c2c; }
   .free-symbol, .coil, .overload { fill: #f7fbff; stroke: #24456b; stroke-width: 2; }

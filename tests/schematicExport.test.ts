@@ -9,6 +9,8 @@ describe("schematic SVG export", () => {
     expect(svg).toContain(".functional-symbol-text { stroke: none;");
     expect(svg).toContain(".free-terminal-label");
     expect(svg).toContain(".project-continuation-marker text");
+    expect(svg).toContain(".wire.manual-wire.power-wire { stroke: #991b1b; stroke-width: 2.4; stroke-dasharray: none; }");
+    expect(svg).toContain(".wire.pe-wire { stroke: #167a52; }");
     expect(svg).toContain('<path class="wire" d="M 0 0 H 10" />');
   });
 });
