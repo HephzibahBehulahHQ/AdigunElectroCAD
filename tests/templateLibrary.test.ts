@@ -22,6 +22,11 @@ describe("project template library", () => {
     template.document.components.find((component) => component.reference === "PLC1")!.properties.program = "LT AI0 13824; OUT Q0";
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
   });
+  it.each(["probe-emf", "high-alarm"])("detects a missing %s in the Type K alarm", (wireId) => {
+    const template = templateLibrary.find(({ id }) => id === "type-k-terminal-emf-alarm")!;
+    const document = removeWire(template.document, wireId);
+    expect(verifyProjectTemplate({ ...template, document }, catalogById).passed).toBe(false);
+  });
   it.each(["LD I0; OUT Q0", "LD I0; OR Q0; OUT Q0"])("rejects PLC templates that lose holding or STOP behavior: %s", (program) => {
     const template = structuredClone(templateFixtures[2]);
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(true);
@@ -71,7 +76,7 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(15);
+    expect(templateLibrary).toHaveLength(16);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });

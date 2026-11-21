@@ -7,7 +7,7 @@
 | Executable component catalog | 67 requested component records resolve to registered models and produce a live output using their editable defaults | Automated + build validation |
 | Placed schematic execution | Functional instances placed in a circuit document execute through the registered model engine | Automated + build validation |
 | Functional signal propagation | Level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil signals propagate through direct terminal wires; incompatible units are rejected | Automated + build validation |
-| Executable project library | All 15 selectable authored examples pass topology and recorded operating checks, render as editable schematics, and preserve a component move and redrawn wire through JSON save/reload | Automated |
+| Executable project library | All 16 selectable authored examples pass topology and recorded operating checks, render as editable schematics, and preserve a component move and redrawn wire through JSON save/reload | Automated |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |
 | Local autosave | Debounced browser-local persistence records dirty project edits; persistence failures expose an export fallback notice | Build validation |
