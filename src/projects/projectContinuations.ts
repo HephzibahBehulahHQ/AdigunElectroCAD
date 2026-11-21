@@ -243,6 +243,40 @@ export function extendProjectContinuation(
 
 export type ProjectContinuationEdit = Pick<ProjectContinuation, "label" | "conductorColor">;
 
+export function assignProjectCableCore(
+  project: ElectricalProject,
+  continuationId: string,
+  assignment: NonNullable<ProjectContinuation["cableCore"]> | null,
+): { ok: true; project: ElectricalProject } | { ok: false; reason: string } {
+  const continuations = project.continuations ?? [];
+  const existing = continuations.find((item) => item.id === continuationId);
+  if (!existing) return { ok: false, reason: "Select an existing continuation." };
+  const cableCore = assignment && { cableId: assignment.cableId.trim(), coreId: assignment.coreId.trim() };
+  if (cableCore) {
+    const { cableId, coreId } = cableCore;
+    if (!cableId || !coreId || cableId.length > 64 || coreId.length > 64) {
+      return { ok: false, reason: "Enter a cable ID and a core ID, each 1–64 characters." };
+    }
+    if (continuations.some((item) => item.id !== continuationId && item.cableCore?.cableId === cableId && item.cableCore.coreId === coreId)) {
+      return { ok: false, reason: `Cable ${cableId}, core ${coreId} is already assigned to another continuation.` };
+    }
+  }
+  if (existing.cableCore?.cableId === cableCore?.cableId && existing.cableCore?.coreId === cableCore?.coreId) {
+    return { ok: true, project };
+  }
+  const updated = { ...existing };
+  if (cableCore) updated.cableCore = cableCore;
+  else delete updated.cableCore;
+  return {
+    ok: true,
+    project: {
+      ...project,
+      revision: project.revision + 1,
+      continuations: continuations.map((item) => item === existing ? updated : item),
+    },
+  };
+}
+
 /** Update only user-editable continuation presentation fields. */
 export function updateProjectContinuation(project: ElectricalProject, continuationId: string, edit: Partial<ProjectContinuationEdit>): ElectricalProject {
   const existing = project.continuations?.find((item) => item.id === continuationId);
