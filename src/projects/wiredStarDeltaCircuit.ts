@@ -19,12 +19,12 @@ export function createWiredStarDeltaCircuit(): CircuitDocument {
   const delta = document.components.find(c => c.id === "delta")!;
   document.components.push(
     { id: "overload", definitionId: "overload.thermal", reference: "F1", x: 480, y: 340, rotation: 0, properties: { settingA: 14.3, settingMinA: 11, settingMaxA: 16, tripClass: 10, tripped: false, thermalEnabled: true, overloadFactor: 1, heatingTimeSeconds: 5, coolingTimeSeconds: 10, resetLevel: .5, reset: false } },
-    { id: "control", definitionId: "supply.control", reference: "X3", x: 100, y: 100, rotation: 0, properties: { voltageV: 230, frequencyHz: 50 } },
-    { id: "control-psu", definitionId: "iec.dc-control-supply.01", reference: "T1", x: 100, y: 200, rotation: 0, properties: { inputVoltageV: 230, nominalVoltageV: 24, ratedCurrentA: 4, outputEnabled: true } },
-    { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S0", x: 100, y: 300, rotation: 0, properties: { pressed: false } },
-    { id: "start", definitionId: "pushbutton.start-no", reference: "S1", x: 300, y: 300, rotation: 0, properties: { pressed: false } },
+    { id: "control", definitionId: "supply.control", reference: "X3", x: 120, y: 420, rotation: 0, properties: { voltageV: 230, frequencyHz: 50 } },
+    { id: "control-psu", definitionId: "iec.dc-control-supply.01", reference: "T1", x: 120, y: 550, rotation: 0, properties: { inputVoltageV: 230, nominalVoltageV: 24, ratedCurrentA: 4, outputEnabled: true } },
+    { id: "stop", definitionId: "pushbutton.stop-nc", reference: "S0", x: 120, y: 680, rotation: 0, properties: { pressed: false } },
+    { id: "start", definitionId: "pushbutton.start-no", reference: "S1", x: 870, y: 300, rotation: 0, properties: { pressed: false } },
     { id: "star-timer", definitionId: "iec.on-delay-timer.01", reference: "KT1", x: 480, y: 500, rotation: 0, properties: { coilVoltageV: 24, nominalVoltageV: 24, coilDc: true, energized: false, elapsedSeconds: 0, delaySeconds: 5 } },
-    { id: "transition-timer", definitionId: "iec.on-delay-timer.01", reference: "KT2", x: 700, y: 500, rotation: 0, properties: { coilVoltageV: 24, nominalVoltageV: 24, coilDc: true, energized: false, elapsedSeconds: 0, delaySeconds: .2 } },
+    { id: "transition-timer", definitionId: "iec.on-delay-timer.01", reference: "KT2", x: 870, y: 500, rotation: 0, properties: { coilVoltageV: 24, nominalVoltageV: 24, coilDc: true, energized: false, elapsedSeconds: 0, delaySeconds: .2 } },
   );
   const wires = document.wires;
   for (const phase of ["l1", "l2", "l3"]) {
