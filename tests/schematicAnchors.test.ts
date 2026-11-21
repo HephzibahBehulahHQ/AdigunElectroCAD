@@ -633,6 +633,14 @@ it("positions and draws interface relay coil and changeover contacts", () => {
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 300, y: 220, properties: { changeoverContacts: 3, energized: true } }));
   expect(svg).toContain('aria-label="Interface relay with 3 changeover contacts, energized"');
+  for (const anchor of anchors) {
+    expect(svg).toContain(`M ${anchor.x} ${anchor.y} `);
+  }
+  expect(svg).toContain('M 270 218 L 273 237');
+  const idleSvg = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: definition.symbolId, x: 300, y: 220, properties: { changeoverContacts: 3, energized: false },
+  }));
+  expect(idleSvg).toContain('M 270 218 L 267 237');
 });
 
 it("renders dedicated three-phase source and motor symbols for editable catalog devices", () => {
