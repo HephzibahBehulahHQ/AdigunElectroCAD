@@ -1036,7 +1036,7 @@ export function App() {
     const definition = componentLibraryById.get(definitionId);
     if (!definition) return;
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    if (!canPlaceComponent(movableComponents, "", x, y, definition.id)) {
+    if (!canPlaceComponent(movableComponents, "", x, y, definition.id, undefined, isReferenceSheet ? "reference" : "free")) {
       setNotice(`There is not enough clear space at that position for ${definition.name}. Drop it in another open area.`);
       return;
     }
@@ -1062,9 +1062,13 @@ export function App() {
 
   const addSelectedComponent = () => {
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id);
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id, freeView);
     if (!placement) {
-      setNotice("This sheet's placement grid is full. Add another free sheet to keep symbols clear and non-overlapping.");
+      if (!isReferenceSheet) {
+        activateSelectTool();
+        setPlacementDefinitionId(selectedDefinition.id);
+        setNotice("No clear quick-insert position is visible. Pan or zoom, then click a clear position to place the component.");
+      } else setNotice("No clear quick-insert position remains on the reference sheet.");
       return;
     }
     insertCatalogComponentAt(selectedDefinition.id, placement.x, placement.y);
@@ -1676,7 +1680,7 @@ export function App() {
     if (!selectedComponent || isReferenceSheet) return;
     const definition = catalogById.get(selectedComponent.definitionId);
     if (!definition) { setNotice("The selected catalog definition is unavailable."); return; }
-    const copy = duplicateComponentInstance(document.components, selectedComponent, `component-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, definition.referencePrefix);
+    const copy = duplicateComponentInstance(document.components, selectedComponent, `component-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, definition.referencePrefix, isReferenceSheet ? "reference" : "free");
     if (!copy) { setNotice("No clear position is available for another copy on this sheet."); return; }
     updateDocument({ ...document, components: [...document.components, copy], revision: document.revision + 1 });
     selectComponent(copy.id);
