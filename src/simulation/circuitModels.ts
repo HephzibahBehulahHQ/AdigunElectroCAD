@@ -89,9 +89,18 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       if (p.runtimeThermalError) p.runtimeSignalError = p.runtimeThermalError;
     }
   }
-  const wiredCoils = document.id !== "reference-dol-motor-starter" ? evaluateWiredControl(document, catalog) : new Map();
+  const fixedDrawing = document.id === "reference-dol-motor-starter";
+  const hasIndicator = [...definitionsByComponent.values()].some((definition) => definition.simulationModelId === "indicator-lamp-v1");
+  const wiredCoils = !fixedDrawing || hasIndicator ? evaluateWiredControl(document, catalog) : new Map();
   for (const [id, coil] of wiredCoils) {
     const active = properties.get(id)!;
+    if (definitionsByComponent.get(id)?.simulationModelId === "indicator-lamp-v1") {
+      active.runtimeLampLit = coil.energized;
+      active.runtimeLampVoltageV = coil.voltageV;
+      if (coil.error) active.runtimeSignalError = coil.error;
+      continue;
+    }
+    if (fixedDrawing) continue;
     active.energized = coil.energized;
     active.runtimeCoilVoltageV = coil.voltageV;
     active.runtimeCoilEnergized = coil.energized;
@@ -158,6 +167,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     return model === "control-supply-v1" || model === "catalog-dc-control-supply";
   });
   if (hasPhysicalControlSupply) for (const [id, coil] of wiredCoils) {
+    if (fixedDrawing || definitionsByComponent.get(id)?.simulationModelId === "indicator-lamp-v1") continue;
     const active = properties.get(id);
     if (!active) continue;
     // A1 Boolean feedback can loop through NC interlocks; when a real control

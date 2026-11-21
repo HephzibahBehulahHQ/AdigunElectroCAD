@@ -11,7 +11,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
-- 14 selectable, authored engineering examples with editable component state, recorded test steps, and automatic topology and output checks. The PT100 examples cover independent window alarms and a calibrated 4–20 mA transmitter feeding a PLC.
+- 15 selectable, authored engineering examples with editable component state, recorded test steps, and automatic topology and output checks. The PT100 examples cover window alarms and a calibrated transmitter feeding a PLC. The pilot indicator example demonstrates a switched line and return path.
 - Live PLC Control & Analog Lab covering NO/NC contacts, output and set/reset coils, edges, six logic gates, comparators, four math blocks, and a level-sensor → 4–20 mA → ADC → PLC/DAC signal path.
 - Live Industrial Device Lab for pneumatic/hydraulic actuation, HVAC thermal control, renewable energy, safety monitoring and three-phase cable calculations; these models are intentionally not represented as runnable catalog items until their symbol-level circuit integration is complete.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
@@ -28,7 +28,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Right-angle rotation for placed components, including rotated terminal anchors and upright reference labels.
 - Schema-bounded editable parameters for placed components; fixed DOL reference parameters remain read-only so the supported simulation stays consistent.
 - Category-aware schematic glyphs for placed catalog components, with uncluttered fitted reference labels positioned below the marks.
-- User-configurable indicator placeholders on the reference DOL sheet. Their colors, indication labels, terminal display labels and reference tags are editable; branch wiring is user-assigned and the generic symbols do not simulate lamp behavior.
+- Configurable wired pilot indicators. Users choose the color, terminal labels, voltage rating, AC/DC mode, and branch wiring. The lamp lights when a matching control supply reaches both terminals.
 
 The internal catalog also includes parameterized definitions used by existing projects and model tests. Selectable library entries and authored projects are the basis for editor acceptance. Project checks execute documented component abstractions. Manufacturer certification and final production acceptance remain outside the current verification. See [architecture](docs/ARCHITECTURE.md) and the [verification manifest](docs/VERIFICATION.md) for supported-model limits and executed checks.
 
