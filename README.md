@@ -5,13 +5,13 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 ## Current verified increment
 
 - Typed IEC-oriented DOL component definitions with terminals.
-- 67 executable PLC, instrumentation, pneumatic, hydraulic, HVAC, renewable, safety, panel and cable definitions with editable input parameters and per-instance live model output.
+- 68 executable PLC, instrumentation, pneumatic, hydraulic, HVAC, renewable, safety, panel and cable definitions with editable input parameters and per-instance live model output.
 - Placed executable components are evaluated from the active schematic document; unit-compatible functional terminal outputs propagate over direct wires, including level-sensor 4–20 mA → ADC, PT100 → comparator, and NO-contact → AND-gate → output-coil paths.
 - 563 parameterized, IEC-oriented engineering entries: 520 across the required catalog distribution, with additional variants needed by the supplied projects and 32 dual-channel safety entries. Each has terminals, editable engineering assumptions and an executable control, numerical or connectivity abstraction; none is manufacturer-certified.
 - Terminal-aware reference circuit with topology validation.
 - Selectable terminal-to-terminal wires with bounded net names, target reconnection and safe deletion; wire geometry remains separate from terminal topology.
 - A typed multi-sheet project model with free-form schematic sheets.
-- 13 selectable, authored engineering examples with editable component state, recorded test steps, and automatic topology and output checks. The PT100 temperature window alarm demonstrates independent low and high alarm paths.
+- 14 selectable, authored engineering examples with editable component state, recorded test steps, and automatic topology and output checks. The PT100 examples cover independent window alarms and a calibrated 4–20 mA transmitter feeding a PLC.
 - Live PLC Control & Analog Lab covering NO/NC contacts, output and set/reset coils, edges, six logic gates, comparators, four math blocks, and a level-sensor → 4–20 mA → ADC → PLC/DAC signal path.
 - Live Industrial Device Lab for pneumatic/hydraulic actuation, HVAC thermal control, renewable energy, safety monitoring and three-phase cable calculations; these models are intentionally not represented as runnable catalog items until their symbol-level circuit integration is complete.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.

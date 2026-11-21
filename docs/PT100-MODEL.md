@@ -6,6 +6,8 @@ For nonnegative temperature t, resistance is 100(1 + At + Bt²) Ω. Below zero i
 
 The displayed resistance and SIG output use the same calculation. The existing signal contract remains ohms. Numeric comparators can consume it; the 4–20 mA ADC is not an RTD input and must not receive an ohm signal directly. Finite numeric temperatures within the supported range are required. Invalid values show an error and use draft #65's signal-fault propagation to suppress downstream modeled outputs. Correcting the input clears the derived fault on the next evaluation. Saved design properties are unchanged by evaluation.
 
+The selectable resistance transmitter accepts an ohm signal and maps its calibrated lower and upper resistance to 4 and 20 mA. It faults outside that span or if the calibration is invalid. The **PT100 transmitter · PLC interlock** example wires the transmitter to an ADC and PLC and verifies both output inhibition and recovery. Scaling is linear in resistance, so the PLC midpoint is not exactly the Celsius midpoint of a PT100 probe.
+
 Tests compare eight rounded published checkpoints from −200 through 850 °C, check monotonic behavior and exact zero-temperature resistance, reject invalid/malformed inputs, and exercise a wired PT100 → comparator → coil chain. Its 285 Ω threshold distinguishes the corrected 500 °C curve from the previous approximation. The chain also covers fault suppression and recovery without saved-design mutation.
 
 The local workspace's 291 tests and production build passed; it also contains separate draft work. Browser checks displayed 107.79 Ω at 20 °C, 18.52 Ω at −200 °C, 280.98 Ω at 500 °C and 390.48 Ω at 850 °C. At −201 °C the panel showed a supported-range error. Undo and reload restored the original two-sheet project.

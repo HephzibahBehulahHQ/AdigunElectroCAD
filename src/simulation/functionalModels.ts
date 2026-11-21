@@ -23,6 +23,21 @@ function adcSignal(properties: Properties): FunctionalSignal {
 }
 
 const mathInput = (properties: Properties, key: string) => properties[key] === undefined ? 0 : typeof properties[key] === "number" ? properties[key] : NaN;
+const nominalMotorPoint: Model = (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" });
+const breakerPath: Model = (p) => ({ label: "Breaker path", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${number(p, "poles", 3)}P / ${number(p, "ratedCurrentA")} A` });
+
+function resistanceTransmitterSignal(properties: Properties): FunctionalSignal {
+  const lower = number(properties, "lowerOhm", NaN);
+  const upper = number(properties, "upperOhm", NaN);
+  const resistance = number(properties, "resistanceOhm", NaN);
+  if (!Number.isFinite(lower) || !Number.isFinite(upper) || lower < 0 || upper <= lower) {
+    return fault("Transmitter calibration requires 0 ≤ lower resistance < upper resistance.");
+  }
+  if (!Number.isFinite(resistance) || resistance < lower || resistance > upper) {
+    return fault("Transmitter resistance is outside its calibrated span.");
+  }
+  return signal("milliamp", 4 + 16 * ((resistance - lower) / (upper - lower)));
+}
 
 export function timerParameterError(properties: Properties): string | undefined {
   for (const key of ["delaySeconds", "elapsedSeconds"]) {
@@ -89,6 +104,10 @@ const models: Record<string, Model> = {
       : { label: "PLC raw value", value: String(converted.value) };
   },
   "signal-dac": (p) => ({ label: "DAC output", value: `${dacMilliamp(number(p, "raw")).toFixed(2)} mA` }),
+  "signal-resistance-transmitter": (p) => {
+    const result = resistanceTransmitterSignal(p);
+    return { label: "Transmitter current", value: result.error ? "INVALID" : `${Number(result.value).toFixed(2)} mA`, error: result.error };
+  },
   "pneumatic-valve-5-2": (p) => pneumaticDisplay("pneumatic-valve-5-2", p),
   "pneumatic-valve-3-2": (p) => pneumaticDisplay("pneumatic-valve-3-2", p),
   "pneumatic-cylinder-single": (p) => pneumaticDisplay("pneumatic-cylinder-single", p),
@@ -128,12 +147,18 @@ const models: Record<string, Model> = {
   "cable-tray": (p) => ({ label: "Tray fill", value: `${cableTrayFillPercent(number(p, "usedAreaMm2"), number(p, "availableAreaMm2")).toFixed(1)}%` }),
   "catalog-dc-control-supply": (p) => ({ label: "Control DC supply", value: bool(p, "outputEnabled") ? `${number(p, "nominalVoltageV", 24)} V DC / ${number(p, "ratedCurrentA", 4)} A nominal` : "OFF" }),
   "catalog-ac-supply": (p) => ({ label: "Nominal supply", value: bool(p, "outputEnabled") ? `${number(p, "nominalVoltageV")} V / ${number(p, "frequencyHz", 50)} Hz` : "OFF" }),
-  "catalog-circuit-breaker": (p) => ({ label: "Breaker path", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${number(p, "poles", 3)}P / ${number(p, "ratedCurrentA")} A` }),
+  "catalog-circuit-breaker": breakerPath,
+  "breaker-3p-v1": breakerPath,
+  "three-phase-source-v1": (p) => ({ label: "Nominal supply", value: `${number(p, "voltageV")} V / ${number(p, "frequencyHz")} Hz` }),
+  "control-supply-v1": (p) => ({ label: "Nominal AC control supply", value: `${number(p, "voltageV")} V / ${number(p, "frequencyHz")} Hz` }),
+  "pushbutton-start-v1": (p) => ({ label: "Dry contact 13–14", value: bool(p, "pressed") ? "CLOSED" : "OPEN" }),
+  "pushbutton-stop-v1": (p) => ({ label: "Dry contact 21–22", value: bool(p, "pressed") ? "OPEN" : "CLOSED" }),
   "catalog-fuse-switch": (p) => ({ label: "Fuse check", value: bool(p, "fuseHealthy") && number(p, "loadCurrentA") <= number(p, "ratedCurrentA") ? `${(number(p, "loadCurrentA") / number(p, "ratedCurrentA", 1) * 100).toFixed(1)}% load` : "TRIPPED / OVERRATING" }),
   "catalog-motor-starter": (p) => ({ label: "Starter contacts", value: bool(p, "energized") ? `CLOSED · ${number(p, "coilVoltageV")} V coil` : "OPEN" }),
   "catalog-interface-relay": (p) => ({ label: "Relay contacts", value: bool(p, "energized") ? `ENERGIZED · ${number(p, "changeoverContacts", 1)} CO` : "DE-ENERGIZED" }),
   "catalog-selector-switch": (p) => ({ label: "Switch state", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${text(p, "contactForm", "NO")}` }),
-  "catalog-induction-motor": (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" }),
+  "catalog-induction-motor": nominalMotorPoint,
+  "induction-motor-educational-v1": nominalMotorPoint,
   "catalog-control-transformer": (p) => ({ label: "Ideal ratio output", value: `${(number(p, "secondaryVoltageV") * (1 - number(p, "loadPercent") / 2000)).toFixed(1)} V from ${number(p, "primaryVoltageV")} V` }),
   "catalog-proximity-sensor": (p) => ({ label: "Sensor output", value: bool(p, "detected") ? `${text(p, "outputType", "PNP")} ON` : `${text(p, "outputType", "PNP")} OFF` }),
   "catalog-plc-digital-io": (p) => ({ label: "I/O state", error: text(p, "runtimeError") || undefined, value: `I0 ${binary(bool(p, "inputA"))} · I1 ${binary(bool(p, "inputB"))} · Q0 ${binary(plcOutput(p, "out-0"))}${(/\bQ1\b/.test(text(p, "program").toUpperCase()) || bool(p, "output1") || bool(p, "runtimeQ1")) ? ` · Q1 ${binary(plcOutput(p, "out-1"))}` : ""}${text(p, "program").toUpperCase().includes("AI0") ? ` · AI0 ${p.runtimeInvalidAi0 === true ? "INVALID" : number(p, "analogInput0")}` : ""}${text(p, "program").toUpperCase().includes("AI1") ? ` · AI1 ${p.runtimeInvalidAi1 === true ? "INVALID" : number(p, "analogInput1")}` : ""}${[...new Set(text(p, "program").toUpperCase().match(/\bD[0-7]\b/g) ?? [])].map((register) => ` · ${register} ${Number(number(p, `runtime${register}`).toPrecision(8))}`).join("")}${text(p, "runtimeError") ? ` · ERROR: ${text(p, "runtimeError")}` : ""}` }),
@@ -248,6 +273,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-current-transformer") return signal("ampere", currentTransformerSecondaryAmp(number(properties, "primaryA"), number(properties, "ratedPrimaryA", 100)));
   if (modelId === "signal-adc") return adcSignal(properties);
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
+  if (modelId === "signal-resistance-transmitter") return resistanceTransmitterSignal(properties);
   return undefined;
 }
 

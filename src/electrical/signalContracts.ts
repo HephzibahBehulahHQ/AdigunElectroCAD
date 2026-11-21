@@ -40,6 +40,7 @@ export function terminalSignalUnits(definition: ElectricalComponentDefinition, t
   }
   if (model === "signal-adc") return terminalId === "in" ? ["milliamp"] : terminalId === "out" ? ["plc-raw"] : undefined;
   if (model === "signal-dac") return terminalId === "in" ? ["plc-raw"] : terminalId === "out" ? ["milliamp"] : undefined;
+  if (model === "signal-resistance-transmitter") return terminalId === "in" ? ["ohm"] : terminalId === "out" ? ["milliamp"] : undefined;
   const sensors: Record<string, SignalUnit> = { "sensor-level-4-20": "milliamp", "sensor-pt100": "ohm", "sensor-thermocouple": "millivolt", "sensor-flow": "hertz", "sensor-vibration": "acceleration", "sensor-encoder": "pulse-count", "sensor-load-cell": "millivolt", "sensor-current-transformer": "ampere", "catalog-proximity-sensor": "boolean" };
   if (terminalId === "signal" && sensors[model]) return [sensors[model]];
   if (model.startsWith("logic-math-") || model.startsWith("logic-comparator-")) {

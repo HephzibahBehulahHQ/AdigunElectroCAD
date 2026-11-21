@@ -41,3 +41,4 @@
 | Schematic annotations | Control title and device labels are separated and fully visible | Manually verified in browser |
 
 This manifest only records checks that have been executed. Component and project models are documented engineering abstractions, not manufacturer-certified or physical commissioning results.
+The selectable bank acceptance suite iterates the live catalog list. It verifies initial placement, one compatible terminal connection per entry, move/rotate/resize, drafting-color and endpoint persistence, and model output availability for entries with simulation support. Existing glyph and anchor suites cover all selectable terminal positions. These checks are a baseline for individual acceptance. The intentional user-drawn symbols provide drafting and connectivity, and device-specific operating and fault tests remain tracked separately.

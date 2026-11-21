@@ -47,6 +47,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (terminalId === "in") {
     if (modelId === "signal-adc") return { property: "milliamp", acceptedUnits: ["milliamp"], requiresWire: "requireWiredInput" };
+    if (modelId === "signal-resistance-transmitter") return { property: "resistanceOhm", acceptedUnits: ["ohm"], requiresWire: "requireWiredInput" };
     if (modelId === "signal-dac") return { property: "raw", acceptedUnits: ["plc-raw"] };
     return { property: "input", acceptedUnits: ["boolean"] };
   }
@@ -179,17 +180,19 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   const frequencies = new Map<string, number>();
   const driveOutputs = new Map<string, number>();
   const queue: Array<[string, string, number]> = [];
+  const phaseOutput = (id: string, phase: string) => endpointKey(id, definitionsByComponent.get(id)?.simulationModelId === "three-phase-source-v1" ? phase : `${phase}-out`);
   for (const component of document.components) {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     const p = properties.get(component.id) ?? {};
-    if (model === "catalog-ac-supply" && p.outputEnabled === true) {
-      for (const phase of ["l1", "l2", "l3"]) queue.push([endpointKey(component.id, `${phase}-out`), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
+    if ((model === "catalog-ac-supply" && p.outputEnabled === true) ||
+        (model === "three-phase-source-v1" && Number.isFinite(p.voltageV) && Number(p.voltageV) > 0)) {
+      for (const phase of ["l1", "l2", "l3"]) queue.push([phaseOutput(component.id, phase), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
     }
     if (model === "catalog-variable-frequency-drive") for (const [index] of ["l1", "l2", "l3"].entries()) {
       const output = ["u1", "v1", "w1"][index];
       driveOutputs.set(endpointKey(component.id, output), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
     }
-    const conducting = model === "catalog-circuit-breaker" ? p.closed === true
+    const conducting = model === "catalog-circuit-breaker" || model === "breaker-3p-v1" ? p.closed === true
       : (model === "catalog-motor-starter" || model === "contactor-dol-v1" || model === "catalog-variable-frequency-drive") ? (model === "catalog-variable-frequency-drive" ? p.enabled === true : p.energized === true)
       : false;
     if (conducting) for (const [index, phase] of ["l1", "l2", "l3"].entries()) {
@@ -210,7 +213,8 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   }
   const currentLoads: NominalCurrentLoad[] = [];
   for (const component of document.components) {
-    if (definitionsByComponent.get(component.id)?.simulationModelId !== "catalog-induction-motor") continue;
+    const model = definitionsByComponent.get(component.id)?.simulationModelId;
+    if (model !== "catalog-induction-motor" && model !== "induction-motor-educational-v1") continue;
     const p = properties.get(component.id)!;
     const feeds = ["u1", "v1", "w1"].map((terminal) => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
     const uniqueFeeds = feeds.every((feed) => feed.length === 1) && new Set(feeds.map((feed) => feed[0])).size === 3;
@@ -218,17 +222,20 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
     const frequency = motorFrequencies[0];
     const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
-    p.energized = p.energized === true && uniqueFeeds && sameSource && validFrequency;
+    p.energized = (model === "induction-motor-educational-v1" || p.energized === true) && uniqueFeeds && sameSource && validFrequency;
     if (p.energized) {
       currentLoads.push({ reference: component.reference, currentA: Number(p.ratedCurrentA) > 0 ? Number(p.ratedCurrentA) : NaN, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
         const feed = feeds[index][0], separator = feed.lastIndexOf(":");
-        return { terminal: endpointKey(component.id, terminal), source: endpointKey(feed.slice(0, separator), `${feed.slice(separator + 1)}-out`) };
+        return { terminal: endpointKey(component.id, terminal), source: phaseOutput(feed.slice(0, separator), feed.slice(separator + 1)) };
       }) });
       const order = feeds.map((feed) => Number(feed[0].slice(-1)));
       let inversions = 0;
       for (let left = 0; left < order.length; left++) for (let right = left + 1; right < order.length; right++) if (order[left] > order[right]) inversions++;
       const direction = inversions % 2 ? -1 : 1;
-      p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / Number(p.ratedFrequencyHz ?? 50) * direction;
+      const ratedFrequency = Number(p.ratedFrequencyHz ?? (model === "induction-motor-educational-v1" ? p.frequencyHz : 50));
+      if (Number.isFinite(ratedFrequency) && ratedFrequency > 0) {
+        p.nominalSpeedRpm = Math.abs(Number(p.nominalSpeedRpm)) * frequency! / ratedFrequency * direction;
+      }
     }
   }
   for (const component of document.components) {
