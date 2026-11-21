@@ -9,7 +9,7 @@ import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymb
 import { transformComponent, type ComponentTransform } from "../cad/documentOps";
 import { ComponentTransformHandles } from "./ComponentTransformHandles";
 import { componentLabelOffsets } from "../cad/componentGeometry";
-import { staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
+import { endpointKey, staticComponentIds, terminalAnchors, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
 import { appendFreehandPoint, freehandPathBounds } from "../cad/freehandPath";
@@ -78,7 +78,6 @@ interface Props {
   onContinuationSelect?: (continuationId: string) => void;
 }
 
-const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${endpoint.terminalId}`;
 const isSameEndpoint = (left: TerminalEndpoint | null, right: TerminalEndpoint) => Boolean(left && left.componentId === right.componentId && left.terminalId === right.terminalId);
 
 function wirePath(from: TerminalAnchor, to: TerminalAnchor, points: readonly { x: number; y: number }[] = []): string { return orthogonalWirePath(from, to, points, from.vertical, to.vertical); }
@@ -182,7 +181,7 @@ const componentBox = (id: string, selected: string, onSelect: (componentId: stri
   children: <rect x={x} y={y} width={width} height={height} rx="6" className="selection-boundary" />,
 });
 
-function SixTerminalWindings({ x, y, productName }: { x: number; y: number; productName?: string }) {
+export function SixTerminalWindings({ x, y, productName }: { x: number; y: number; productName?: string }) {
   return <g aria-label={productName ? `${productName}, six winding terminals U1 V1 W1 U2 V2 W2 and PE` : "Three-phase induction motor with six accessible winding terminals U1 V1 W1 U2 V2 W2 and PE"}>
     <circle cx={x} cy={y} r="27" fill="#f7fbff" stroke="#24456b" strokeWidth="2.5" />
     {[-30, 0, 30].map((offset, index) => <g key={offset}>
@@ -264,7 +263,7 @@ function UserSymbolGraphicMark({ graphic, x, y, draftingStyle }: { graphic: User
   return graphic.kind === "polygon" ? <polygon points={svgPoints} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill={fill} /> : <polyline points={svgPoints} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} fill="none" />;
 }
 
-function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
+export function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number; y: number }) {
   if (symbolId.startsWith("motor-ac-") || /^motor-\d+$/.test(symbolId) || symbolId === "motor-3phase" || symbolId === "motor-3p") return <g className="generic-symbol-mark"><circle cx={x} cy={y} r="20" /><text x={x} y={y - 2} textAnchor="middle" className="functional-symbol-text">M</text><text x={x} y={y + 12} textAnchor="middle" className="functional-symbol-text">3~</text></g>;
   if (symbolId.includes("motor")) return <circle cx={x + 25} cy={y - 9} r="12" className="generic-symbol-mark" />;
   if (symbolId.includes("supply")) return <g className="generic-symbol-mark">{[-14, 0, 14].map((offset) => <path key={offset} d={`M ${x + offset} ${y - 20} V ${y - 5}`} />)}</g>;

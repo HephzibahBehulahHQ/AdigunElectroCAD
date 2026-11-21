@@ -3,22 +3,40 @@ import type { ProjectTemplate } from "../projects/templateLibrary";
 import type { TemplateVerification } from "../projects/templateVerification";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
 
+import { catalogById } from "../catalog/dolCatalog";
+import { componentFootprint, componentLabelOffsets } from "../cad/componentGeometry";
+import { endpointKey, terminalAnchors } from "../cad/terminalAnchors";
+import { orthogonalWirePath } from "../cad/wirePath";
+import { GenericSymbol, SixTerminalWindings } from "./Schematic";
+import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
+
 function ProjectPreview({ template }: { template: ProjectTemplate }) {
-  const components = template.document.components;
-  const positions = new Map(components.map((component) => [component.id, component]));
-  const left = Math.min(...components.map((component) => component.x)) - 65;
-  const top = Math.min(...components.map((component) => component.y)) - 45;
-  const width = Math.max(...components.map((component) => component.x)) - left + 65;
-  const height = Math.max(...components.map((component) => component.y)) - top + 45;
-  return <svg className="project-preview" viewBox={`${left} ${top} ${width} ${height}`} role="img" aria-label={`${template.name} topology preview`}>
-    {template.document.wires.map((wire) => {
-      const from = positions.get(wire.from.componentId); const to = positions.get(wire.to.componentId);
-      return from && to ? <path key={wire.id} d={`M${from.x} ${from.y}H${(from.x + to.x) / 2}V${to.y}H${to.x}`} fill="none" stroke="#c02c3a" strokeWidth="4" /> : null;
+  const { document } = template;
+  const anchors = terminalAnchors(document);
+  const byEndpoint = new Map(anchors.map((anchor) => [endpointKey(anchor.endpoint), anchor]));
+  const bounds = document.components.map(({ x, y, rotation, definitionId, size }) => componentFootprint(x, y, rotation, definitionId, size));
+  const routePoints = [...anchors, ...document.wires.flatMap(({ points }) => points)];
+  const left = Math.min(1100, ...bounds.map((item) => item.left), ...routePoints.map(({ x }) => x)) - 12;
+  const top = Math.min(780, ...bounds.map((item) => item.top), ...routePoints.map(({ y }) => y)) - 12;
+  const right = Math.max(left + 1, ...bounds.map((item) => item.right), ...routePoints.map(({ x }) => x)) + 12;
+  const bottom = Math.max(top + 1, ...bounds.map((item) => item.bottom), ...routePoints.map(({ y }) => y)) + 12;
+  return <svg className="project-preview" viewBox={`${left} ${top} ${right - left} ${bottom - top}`} role="img" aria-label={`${template.name} topology preview`}>
+    {document.wires.map((wire) => {
+      const from = byEndpoint.get(endpointKey(wire.from));
+      const to = byEndpoint.get(endpointKey(wire.to));
+      return from && to ? <path key={wire.id} d={orthogonalWirePath(from, to, wire.points, from.vertical, to.vertical)} fill="none" stroke={wire.draftingColor ?? "#c02c3a"} strokeWidth="4" /> : null;
     })}
-    {components.map((component) => <g key={component.id}>
-      <rect x={component.x - 38} y={component.y - 19} width="76" height="38" rx="4" fill="#edf5ff" stroke="#284e76" strokeWidth="3" />
-      <text x={component.x} y={component.y + 7} textAnchor="middle" fontSize="22" fontWeight="700" fill="#153755">{component.reference}</text>
-    </g>)}
+    {document.components.map(({ id, definitionId, x, y, rotation, size = 1, reference, properties }) => {
+      const definition = catalogById.get(definitionId);
+      return <g key={id}>
+        {definition && <g transform={`translate(${x} ${y}) scale(${size}) rotate(${rotation}) translate(${-x} ${-y})`}>
+          {definition.simulationModelId === "six-terminal-windings" ? <SixTerminalWindings x={x} y={y} productName={definition.name} />
+            : hasDedicatedFunctionalSymbol(definition.symbolId) ? <FunctionalSymbol x={x} y={y} symbolId={definition.symbolId} componentName={definition.name} properties={properties} />
+            : <GenericSymbol x={x} y={y} symbolId={definition.symbolId} />}
+        </g>}
+        <text x={x} y={y + componentLabelOffsets(rotation, definitionId).reference * size} textAnchor="middle" className="free-reference">{reference}</text>
+      </g>;
+    })}
   </svg>;
 }
 
