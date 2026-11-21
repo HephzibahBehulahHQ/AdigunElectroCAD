@@ -44,6 +44,7 @@ import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn,
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
+import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml } from "../projects/schematicPrint";
@@ -1523,9 +1524,9 @@ export function App() {
 
   const changeCustomTerminal = (terminalId: string, patch: Partial<Pick<TerminalDefinition, "kind" | "direction">>) => {
     if (!selectedComponent || !isUserSymbolDefinition(selectedComponent.definitionId) || (isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))) return;
-    const base = catalogById.get(selectedComponent.definitionId)?.terminals ?? [];
-    const terminals = (selectedComponent.customTerminals ?? base).map((terminal) => terminal.id === terminalId ? { ...terminal, ...patch } : terminal);
-    updateDocument({ ...document, components: document.components.map((component) => component.id === selectedComponent.id ? { ...component, customTerminals: terminals } : component), revision: document.revision + 1 });
+    const result = editCustomTerminalContract(project, activeSheet.id, selectedComponent.id, terminalId, patch);
+    if (!result.document) { setNotice(result.reason); return; }
+    if (result.document !== document) updateDocument(result.document);
   };
 
   const changeCustomTerminalOffset = (terminalId: string, axis: "x" | "y", input: HTMLInputElement) => {
