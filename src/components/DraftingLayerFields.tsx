@@ -21,7 +21,7 @@ export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, o
     <button type="button" disabled={!name.trim()} onClick={() => { if (onCreateLayer(name)) setName(""); }}>Create and assign layer</button>
     {layer && <fieldset className="graphic-geometry" key={layer.id}>
       <legend>{layer.name} defaults</legend>
-      <label>Layer color<input type="color" value={layer.draftingColor ?? "#68788b"} onChange={(event) => onLayerChange(layer.id, { draftingColor: event.target.value })} /></label>
+      <label>Layer color<input type="color" value={layer.draftingColor ?? "#68788b"} onInput={(event) => onLayerChange(layer.id, { draftingColor: event.currentTarget.value })} /></label>
       {layer.draftingColor && <button type="button" onClick={() => onLayerChange(layer.id, { draftingColor: undefined })}>Reset layer color</button>}
       <StrokeFields prefix="Layer" style={layer} onChange={(patch) => onLayerChange(layer.id, patch)} />
     </fieldset>}
