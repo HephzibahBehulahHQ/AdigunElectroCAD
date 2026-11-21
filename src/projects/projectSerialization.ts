@@ -7,6 +7,7 @@ import type { DraftingStyle, DraftingLayer } from "../types/electrical";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 import { MAX_DRAWING_GUIDES } from "../cad/drawingGuides";
+import { validPrintLayout, type PrintLayout } from "../cad/printLayout";
 import type { DrawingGuide } from "../types/electrical";
 
 export function parseProjectJson(text: string): ElectricalProject {
@@ -108,6 +109,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
     ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
     ...(document.guides === undefined ? {} : { guides: parseDrawingGuides(document.guides) }),
+    ...(document.printLayout === undefined ? {} : { printLayout: parsePrintLayout(document.printLayout) }),
   };
   const ids = new Set(parsed.draftingLayers?.map((layer) => layer.id));
   if ([...parsed.components, ...parsed.wires].some((entity) => entity.layerId !== undefined && !ids.has(entity.layerId))) {
@@ -118,6 +120,17 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
+}
+
+function parsePrintLayout(value: unknown): PrintLayout {
+  const raw = object(value, "Invalid print layout.");
+  const layout = {
+    format: raw.format, orientation: raw.orientation, customWidthMm: raw.customWidthMm,
+    customHeightMm: raw.customHeightMm, marginMm: raw.marginMm, unitsPerMm: raw.unitsPerMm,
+    x: raw.x, y: raw.y, visible: raw.visible, title: raw.title,
+  } as PrintLayout;
+  if (!validPrintLayout(layout)) throw new Error("Invalid print layout dimensions, margin or scale.");
+  return layout;
 }
 
 function parseDrawingGuides(value: unknown): DrawingGuide[] {

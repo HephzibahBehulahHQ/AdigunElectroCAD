@@ -1,3 +1,5 @@
+import { paperDimensions, printFrameBounds, type PrintLayout } from "../cad/printLayout";
+
 const standaloneStyles = `
   svg { font-family: Inter, Arial, sans-serif; }
   .sheet-bg { fill: #f7f9fc; }
@@ -44,7 +46,7 @@ export function drawingFitsFrame(bounds: DrawingBounds, frame: DrawingBounds): b
   return bounds.x >= frame.x && bounds.y >= frame.y && bounds.x + bounds.width <= frame.x + frame.width && bounds.y + bounds.height <= frame.y + frame.height;
 }
 
-export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | "frame" = "drawing"): { svg: SVGSVGElement; clipsContent: boolean } {
+export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | "frame" = "drawing", layout?: PrintLayout): { svg: SVGSVGElement; clipsContent: boolean } {
   const copy = drawing.cloneNode(true) as SVGSVGElement;
   const editingAids = [
     "[data-export-exclude]", ".selection-boundary", ".selection-marquee", ".terminal-anchors",
@@ -54,8 +56,11 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | 
   copy.querySelectorAll(editingAids.join(", ")).forEach((node) => node.remove());
   copy.querySelectorAll(".selected, .selected-wire").forEach((node) => node.classList.remove("selected", "selected-wire"));
   copy.removeAttribute("style");
-  const frame = { x: 0, y: 0, width: 1100, height: 780 };
-  let bounds = frame;
+  const frame = layout ? printFrameBounds(layout) : { x: 0, y: 0, width: 1100, height: 780 };
+  const printOverlay = copy.querySelector("[data-print-frame]");
+  if (scope === "frame") printOverlay?.setAttribute("visibility", "visible");
+  else printOverlay?.remove();
+  let bounds = scope === "frame" ? frame : { x: 0, y: 0, width: 1100, height: 780 };
   let clipsContent = false;
   const content = copy.querySelector<SVGGElement>("[data-drawing-content]");
   if (content?.childElementCount) {
@@ -80,8 +85,9 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | 
     for (const [name, value] of Object.entries(bounds)) node.setAttribute(name, String(value));
     node.removeAttribute("data-viewport-fill");
   });
-  copy.setAttribute("width", String(width));
-  copy.setAttribute("height", String(height));
+  const physical = scope === "frame" && layout ? paperDimensions(layout) : undefined;
+  copy.setAttribute("width", physical ? `${physical.width}mm` : String(width));
+  copy.setAttribute("height", physical ? `${physical.height}mm` : String(height));
   return { svg: copy, clipsContent };
 }
 
