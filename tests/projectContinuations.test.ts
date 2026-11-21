@@ -1,11 +1,30 @@
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
-import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+import { addFreeSchematicSheet, createBlankProject, createStarterProject } from "../src/projects/starterProject";
+import { editCustomTerminalContract } from "../src/projects/customTerminalEdit";
+import type { ComponentInstance } from "../src/types/electrical";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { recordProjectEdit, redoProject, undoProject } from "../src/cad/projectHistory";
 import { terminalGridReference } from "../src/cad/terminalAnchors";
+
+it("rejects terminal type and direction edits that break a continuation and accepts compatible edits", () => {
+  const project = addFreeSchematicSheet(createBlankProject());
+  const [first, second] = project.sheets;
+  const source: ComponentInstance = { id: "symbol", definitionId: "user.drawn-symbol", reference: "U1", x: 180, y: 180, rotation: 0, properties: {}, customTerminals: [{ id: "t1", label: "T1", kind: "control", direction: "output" }] };
+  const destination: ComponentInstance = { ...source, reference: "U2", customTerminals: [{ id: "t1", label: "T1", kind: "control", direction: "input" }] };
+  first.document.components.push(source);
+  second.document.components.push(destination);
+  const endpoint = { componentId: source.id, terminalId: "t1" };
+  const connected = createProjectContinuation(project, { sheetId: first.id, endpoint }, { sheetId: second.id, endpoint });
+  if (!connected.ok) throw new Error(connected.reason);
+  expect(editCustomTerminalContract(connected.project, first.id, source.id, "t1", { kind: "power" }).reason).toContain("incompatible");
+  expect(editCustomTerminalContract(connected.project, first.id, source.id, "t1", { direction: "input" }).reason).toContain("two input terminals");
+  const compatible = editCustomTerminalContract(connected.project, first.id, source.id, "t1", { direction: "bidirectional" });
+  expect(compatible.document?.components[0].customTerminals?.[0].direction).toBe("bidirectional");
+  expect(source.customTerminals?.[0].direction).toBe("output");
+});
 
 it("finds a continuation by the full terminal identity and releases it after disconnection", () => {
   const project = createMotorFeederWorkbook();
