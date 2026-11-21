@@ -22,6 +22,11 @@ describe("project template library", () => {
     template.document.components.find((component) => component.reference === "PLC1")!.properties.program = "LT AI0 13824; OUT Q0";
     expect(verifyProjectTemplate(template, catalogById).passed).toBe(false);
   });
+  it.each(["inlet-frequency", "outlet-frequency", "flow-difference", "flow-alarm"])("detects the missing %s in flow balance verification", (wireId) => {
+    const template = templateLibrary.find(({ id }) => id === "pulse-flow-balance-alarm")!;
+    const document = removeWire(template.document, wireId);
+    expect(verifyProjectTemplate({ ...template, document }, catalogById).passed).toBe(false);
+  });
   it.each(["loop-current", "loop-counts", "loop-verdict"])("fails loopback verification when %s is open", (wireId) => {
     const template = templateLibrary.find(({ id }) => id === "analog-output-loopback")!;
     const document = removeWire(template.document, wireId);
@@ -81,7 +86,7 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(17);
+    expect(templateLibrary).toHaveLength(18);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });
