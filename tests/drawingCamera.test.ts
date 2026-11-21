@@ -1,5 +1,19 @@
 import { expect, it } from "vitest";
-import { cameraBounds, drawingRulerTicks, fitDrawingCamera, viewportToDrawing, zoomDrawingAt } from "../src/cad/drawingCamera";
+import { cameraBounds, drawingRulerTicks, fitDrawingCamera, unobstructedDrawingBounds, viewportToDrawing, zoomDrawingAt } from "../src/cad/drawingCamera";
+import { componentFootprint } from "../src/cad/componentGeometry";
+import { findOpenPlacement } from "../src/cad/documentOps";
+
+it("keeps the first quick-insert footprint out from under both rulers at different zoom levels", () => {
+  for (const zoom of [0.4, 0.85, 2]) {
+    const camera = { center: { x: 0, y: 0 }, zoom };
+    const view = cameraBounds(camera, { width: 800, height: 500 });
+    const position = findOpenPlacement([], "free", "supply.three-phase", unobstructedDrawingBounds(view, zoom));
+    expect(position).not.toBeNull();
+    const footprint = componentFootprint(position!.x, position!.y, 0, "supply.three-phase");
+    expect((footprint.left - view.x) * zoom).toBeGreaterThan(55);
+    expect((footprint.top - view.y) * zoom).toBeGreaterThan(21);
+  }
+});
 
 it("keeps the same signed drawing point under the pointer through zoom", () => {
   const camera = { center: { x: -250, y: -170 }, zoom: 0.5 };

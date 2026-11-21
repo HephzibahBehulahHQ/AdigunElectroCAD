@@ -10,7 +10,7 @@ import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOp
 import { controlTerminalOffset } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
-import { cameraBounds, fitDrawingCamera, MAX_FREE_ZOOM, MIN_FREE_ZOOM, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
+import { cameraBounds, fitDrawingCamera, MAX_FREE_ZOOM, MIN_FREE_ZOOM, unobstructedDrawingBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
 import { svgDrawingBounds } from "../cad/svgDrawingBounds";
 import { DrawingGuideEditor } from "../components/DrawingGuideEditor";
 import { DrawingGridEditor } from "../components/DrawingGridEditor";
@@ -1123,7 +1123,8 @@ export function App() {
 
   const addSelectedComponent = () => {
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id, freeView);
+    const placementView = freeView && unobstructedDrawingBounds(freeView, currentZoom);
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id, placementView);
     if (!placement) {
       if (!isReferenceSheet) {
         activateSelectTool();

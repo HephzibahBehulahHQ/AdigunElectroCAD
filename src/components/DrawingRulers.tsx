@@ -1,5 +1,5 @@
-import { drawingRulerTicks } from "../cad/drawingCamera";
-import { useState, type PointerEvent } from "react";
+import { DRAWING_RULER_LEFT, DRAWING_RULER_TOP, drawingRulerTicks } from "../cad/drawingCamera";
+import { useState, type CSSProperties, type PointerEvent } from "react";
 
 export function DrawingRulers({ bounds, zoom, onAddGuide }: {
   bounds: { x: number; y: number; width: number; height: number };
@@ -15,7 +15,7 @@ export function DrawingRulers({ bounds, zoom, onAddGuide }: {
     { id: "x", start: bounds.x, span: bounds.width, style: "left" },
     { id: "y", start: bounds.y, span: bounds.height, style: "top" },
   ] as const;
-  return <div className="drawing-rulers" aria-hidden="true" data-export-exclude="">
+  return <div className="drawing-rulers" style={{ "--ruler-left": `${DRAWING_RULER_LEFT}px`, "--ruler-top": `${DRAWING_RULER_TOP}px` } as CSSProperties} aria-hidden="true" data-export-exclude="">
     {axes.map(({ id, start, span, style }) => <div className={`drawing-ruler drawing-ruler-${id}`} key={id} onPointerDown={event => {
       if (!onAddGuide || event.button !== 0) return;
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -29,7 +29,7 @@ export function DrawingRulers({ bounds, zoom, onAddGuide }: {
       const offset = pointerOffset(event, preview.axis);
       const min = preview.axis === "x" ? bounds.x : bounds.y;
       const length = preview.axis === "x" ? bounds.width : bounds.height;
-      const rulerEdge = (preview.axis === "x" ? 55 : 21) / (length * zoom);
+      const rulerEdge = (preview.axis === "x" ? DRAWING_RULER_LEFT : DRAWING_RULER_TOP) / (length * zoom);
       if (offset > rulerEdge && offset < 1) onAddGuide?.(preview.axis, Math.round((min + offset * length) * 100) / 100);
       setPreview(null);
     }} onLostPointerCapture={() => setPreview(null)}>

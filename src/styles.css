@@ -399,11 +399,11 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .drawing-ruler, .drawing-ruler-units, .drawing-cursor-readout { color: #243b53; background: #eff5fb; font: 600 10px ui-monospace, monospace; }
 .drawing-ruler { position: absolute; }
 .drawing-ruler span { position: absolute; white-space: nowrap; }
-.drawing-ruler-x { inset: 0 0 auto; height: 21px; border-bottom: 1px solid #829ab1; }
+.drawing-ruler-x { inset: 0 0 auto; height: var(--ruler-top); border-bottom: 1px solid #829ab1; }
 .drawing-ruler-x span { top: 0; padding-left: 3px; border-left: 1px solid #829ab1; height: 19px; }
-.drawing-ruler-y { inset: 0 auto 0 0; width: 55px; border-right: 1px solid #829ab1; }
+.drawing-ruler-y { inset: 0 auto 0 0; width: var(--ruler-left); border-right: 1px solid #829ab1; }
 .drawing-ruler-y span { right: 0; padding: 1px 4px 0 0; border-top: 1px solid #829ab1; }
-.drawing-ruler-units { position: absolute; top: 0; left: 0; width: 55px; height: 21px; text-align: center; line-height: 21px; border-bottom: 1px solid #829ab1; border-right: 1px solid #829ab1; }
+.drawing-ruler-units { position: absolute; top: 0; left: 0; width: 55px; height: 21px; text-align: center; line-height: var(--ruler-top); border-bottom: 1px solid #829ab1; border-right: 1px solid #829ab1; }
 .drawing-cursor-readout { position: absolute; bottom: 5px; right: 5px; padding: 3px 6px; border: 1px solid #829ab1; border-radius: 3px; pointer-events: none; white-space: pre; }
 .drawing-ruler { pointer-events: auto; touch-action: none; }
 .drawing-ruler-x { cursor: ns-resize; }
