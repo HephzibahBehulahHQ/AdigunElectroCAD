@@ -129,6 +129,11 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "common") return { x: -47, y: 14 };
     if (terminalId === "signal") return { x: 47, y: 0 };
   }
+  if (modelId === "signal-adc" || modelId === "signal-dac") {
+    if (terminalId === "in") return { x: -47, y: -18 };
+    if (terminalId === "out") return { x: 47, y: -18 };
+    if (terminalId === "common") return { x: -47, y: -6 };
+  }
   if (modelId === "catalog-plc-digital-io") {
     if (terminalId === "in-0") return { x: -47, y: -22 };
     if (terminalId === "in-1") return { x: -47, y: -7 };
