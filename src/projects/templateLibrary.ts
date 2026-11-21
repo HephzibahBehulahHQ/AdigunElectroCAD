@@ -4,6 +4,7 @@ import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
 import type { CircuitDocument, ComponentInstance, Wire } from "../types/electrical";
 import type { CircuitSequenceStep } from "./templateVerification";
 import { createAnalogLoopbackProject } from "./analogLoopbackProject";
+import { createVibrationVotingProject } from "./vibrationVotingProject";
 import { createFlowBalanceAlarmProject } from "./flowBalanceAlarmProject";
 import { createAnalogLevelProject } from "./analogLevelProject";
 import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
@@ -109,6 +110,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
+  createVibrationVotingProject(),
   createPt100TemperatureAlarmProject(),
   createPt100PlcTransmitterProject(),
   createTypeKThermocoupleAlarmProject(),
