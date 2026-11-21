@@ -231,6 +231,24 @@ export function resizeComponent(document: CircuitDocument, componentId: string, 
   return { document: { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, size } : item) }, ok: true };
 }
 
+export function positionCustomTerminal(document: CircuitDocument, componentId: string, terminalId: string, offset: { x: number; y: number }): { document: CircuitDocument; ok: true } | { document: CircuitDocument; ok: false; reason: string } {
+  const component = document.components.find((item) => item.id === componentId);
+  if (!component?.customTerminals?.some((terminal) => terminal.id === terminalId) || !/^t[3-8]$/.test(terminalId)) {
+    return { document, ok: false, reason: "Select an added terminal to position." };
+  }
+  if (![offset.x, offset.y].every((value) => Number.isFinite(value) && Math.abs(value) <= 60)) {
+    return { document, ok: false, reason: "Added terminal offsets must be between -60 and 60 units." };
+  }
+  const previous = component.customTerminalOffsets?.[terminalId];
+  if (previous?.x === offset.x && previous.y === offset.y) return { document, ok: true };
+  const candidate = { ...component, customTerminalOffsets: { ...component.customTerminalOffsets, [terminalId]: offset } };
+  const components = document.components.map((item) => item.id === componentId ? candidate : item);
+  if (!canPlaceComponent(components, componentId, candidate.x, candidate.y, undefined, undefined, placementLayout(document))) {
+    return { document, ok: false, reason: "Terminal move blocked: the new anchor needs clear space." };
+  }
+  return { document: { ...document, components, revision: document.revision + 1 }, ok: true };
+}
+
 export function removeComponent(document: CircuitDocument, componentId: string): { document: CircuitDocument; removedWireCount: number } {
   if (!document.components.some((component) => component.id === componentId)) return { document, removedWireCount: 0 };
   const removedRoots = document.wires.filter((wire) => wire.from.componentId === componentId || wire.to.componentId === componentId).map((wire) => wire.id);
