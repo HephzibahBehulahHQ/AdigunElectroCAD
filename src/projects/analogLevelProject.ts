@@ -7,7 +7,7 @@ export function createAnalogLevelProject(): ProjectTemplate {
     description: "A level transmitter feeds an ADC and PLC AI0; Q0 commands K1 above 50% level.",
     components: [
       { id: "level", definitionId: "sensor.level-4-20", reference: "B1", x: 140, y: 300, rotation: 0, properties: { levelPercent: 50 } },
-      { id: "adc", definitionId: "signal.adc", reference: "ADC1", x: 340, y: 300, rotation: 0, properties: { milliamp: 12, requireWiredInput: true } },
+      { id: "adc", definitionId: "signal.adc", reference: "ADC1", x: 340, y: 300, rotation: 0, properties: { milliamp: 12, requireWiredInput: true, faultOnOutOfRange: true } },
       { id: "plc", definitionId: "iec.plc-digital-io.01", reference: "PLC1", x: 540, y: 300, rotation: 0, properties: { program: "GT AI0 13824; OUT Q0", requireWiredAi0: true } },
       { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 740, y: 300, rotation: 0, properties: { input: false } },
     ],

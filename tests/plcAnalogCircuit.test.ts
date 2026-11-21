@@ -6,6 +6,35 @@ import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
 
+it("inhibits the PLC on ADC overrange and underrange, then recovers at the modeled limits", () => {
+  const runtime = createAnalogLevelProject().document;
+  runtime.wires = runtime.wires.filter((wire) => wire.id !== "level-current");
+  const adc = runtime.components.find((component) => component.id === "adc")!;
+  adc.properties.requireWiredInput = false;
+  let state = runtime;
+  const sample = (milliamp: number) => {
+    state = {
+      ...state,
+      components: state.components.map((component) => component.id === "adc"
+        ? { ...component, properties: { ...component.properties, milliamp } }
+        : component),
+    };
+    state = advanceCircuitClock(state, catalogById, 0.1);
+    return executeCircuitModels(state, catalogById);
+  };
+  const upperLimit = sample(20);
+  expect(upperLimit.find((run) => run.reference === "PLC1")?.output.value).toContain("AI0 27648");
+  expect(upperLimit.find((run) => run.reference === "K1")?.output.value).toBe("ON");
+  for (const current of [20.1, 3.9]) {
+    const results = sample(current);
+    expect(results.find((run) => run.reference === "ADC1")?.output).toMatchObject({ value: "INVALID", error: expect.stringContaining("4–20 mA") });
+    expect(results.find((run) => run.reference === "PLC1")?.output.value).toContain("AI0 INVALID");
+    expect(results.find((run) => run.reference === "PLC1")?.output.value).toContain("Q0 OFF");
+  }
+  expect(sample(4).find((run) => run.reference === "PLC1")?.output.value).toContain("AI0 0");
+  expect(sample(20).find((run) => run.reference === "K1")?.output.value).toBe("ON");
+});
+
 it("reads converted 4–20 mA levels in the PLC program and switches a wired output", () => {
   const design: CircuitDocument = {
     id: "analog-plc", name: "Level threshold control", description: "Two independent 4–20 mA inputs to raw PLC comparisons", revision: 1,
