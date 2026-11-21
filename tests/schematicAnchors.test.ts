@@ -5,6 +5,8 @@ import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog"
 import { Schematic } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference } from "../src/cad/terminalAnchors";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
+import { transformComponent } from "../src/cad/documentOps";
+import { transformFromHandle } from "../src/components/ComponentTransformHandles";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
 import type { ProjectContinuation } from "../src/types/electrical";
@@ -15,6 +17,35 @@ import { initialDolState } from "../src/simulation/dolSimulator";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createSourcedDolMotorStarter } from "../src/projects/sourcedDolMotorStarter";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
+
+it("uses the validated component commands for handle transforms and keeps wire endpoints attached", () => {
+  const document = createAnalogLevelProject().document;
+  const component = document.components.find((item) => item.id === "adc")!;
+  const resize = transformFromHandle("resize", component, { x: component.x + 55, y: component.y + 40 }, { x: component.x + 66, y: component.y + 48 });
+  expect(resize).toEqual({ kind: "resize", size: 1.2 });
+  const scaled = transformComponent(document, component.id, resize);
+  expect(scaled.ok).toBe(true);
+  const rotate = transformFromHandle("rotate", component, { x: component.x, y: component.y - 60 }, { x: component.x + 60, y: component.y });
+  expect(rotate).toEqual({ kind: "rotate", rotation: 90 });
+  const rotated = transformComponent(scaled.document, component.id, rotate);
+  expect(rotated.ok).toBe(true);
+  expect(rotated.document.wires).toBe(document.wires);
+  const locate = (input: typeof document) => terminalAnchors(input).find((anchor) => anchor.endpoint.componentId === component.id && anchor.endpoint.terminalId === "in");
+  expect(locate(rotated.document)).not.toEqual(locate(document));
+  expect(transformComponent(rotated.document, component.id, rotate).document).toBe(rotated.document);
+  const nearEdge = { ...document, components: document.components.map((item) => item.id === component.id ? { ...item, y: 705 } : item) };
+  expect(transformComponent(nearEdge, component.id, rotate)).toMatchObject({ ok: false, document: nearEdge });
+
+  const props = {
+    document: rotated.document, selectedComponentId: component.id, selectedWireId: "",
+    simulation: initialDolState(), wireMode: false, wireStart: null, onSelect: () => {},
+    onWireSelect: () => {}, onTerminalSelect: () => {}, onComponentTransform: () => {},
+  };
+  expect(renderToStaticMarkup(createElement(Schematic, props))).toContain('aria-label="Resize ADC1"');
+  expect(renderToStaticMarkup(createElement(Schematic, props))).toContain('aria-label="Rotate ADC1"');
+  expect(renderToStaticMarkup(createElement(Schematic, { ...props, wireMode: true }))).not.toContain('aria-label="Resize ADC1"');
+  expect(renderToStaticMarkup(createElement(Schematic, { ...props, selectedComponentIds: ["adc", "plc"] }))).not.toContain('aria-label="Rotate ADC1"');
+});
 
 it("persists component stacking and renders symbols and terminal hit targets in paint order", () => {
   const document = createAnalogLevelProject().document;
