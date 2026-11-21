@@ -166,7 +166,7 @@ const models: Record<string, Model> = {
   "catalog-on-delay-timer": (p) => ({ label: "Timer contact", value: bool(p, "energized") && number(p, "elapsedSeconds") >= number(p, "delaySeconds") ? "CLOSED" : `${number(p, "elapsedSeconds").toFixed(1)} / ${number(p, "delaySeconds").toFixed(1)} s` }),
   "catalog-feed-through-terminal": (p) => ({ label: "Terminal continuity", value: bool(p, "continuityClosed") ? `CONNECTED · ${number(p, "conductorAreaMm2")} mm²` : "OPEN" }),
   "catalog-panel-meter": (p) => ({ label: `${text(p, "measurementKind", "Value")} reading`, value: `${number(p, "measuredValue")} / ${number(p, "scaleMaximum")}` }),
-  "catalog-variable-frequency-drive": (p) => ({ label: "VFD output", value: bool(p, "enabled") ? `${Math.min(number(p, "commandHz"), number(p, "maximumFrequencyHz")).toFixed(1)} Hz` : "DISABLED" }),
+  "catalog-variable-frequency-drive": (p) => ({ label: "VFD output", value: !bool(p, "enabled") ? "DISABLED" : p.runtimeInputReady === false ? "INPUT SUPPLY INCOMPLETE" : `${Math.max(0, Math.min(number(p, "commandHz"), number(p, "maximumFrequencyHz"))).toFixed(1)} Hz` }),
   "catalog-solenoid-actuator": (p) => ({ label: "Actuator position", value: bool(p, "energized") ? number(p, "strokeMm") > 0 ? `EXTENDED ${number(p, "strokeMm")} mm` : "EXTENDED · stroke unset" : bool(p, "returnSpring") ? "RETRACTED" : "HOLD" }),
   "catalog-safety-relay": (p) => ({ label: "Safety enable", value: safetyOutput(p) ? "ENABLED · educational reset model" : "INHIBITED" }),
 };

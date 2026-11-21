@@ -188,7 +188,6 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   }
   const powered = new Map<string, Set<string>>();
   const frequencies = new Map<string, number>();
-  const driveOutputs = new Map<string, number>();
   const queue: Array<[string, string, number]> = [];
   const phaseOutput = (id: string, phase: string) => endpointKey(id, definitionsByComponent.get(id)?.simulationModelId === "three-phase-source-v1" ? phase : `${phase}-out`);
   for (const component of document.components) {
@@ -198,29 +197,44 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         (model === "three-phase-source-v1" && Number.isFinite(p.voltageV) && Number(p.voltageV) > 0)) {
       for (const phase of ["l1", "l2", "l3"]) queue.push([phaseOutput(component.id, phase), `${component.id}:${phase}`, Number(p.frequencyHz ?? 50)]);
     }
-    if (model === "catalog-variable-frequency-drive") for (const [index] of ["l1", "l2", "l3"].entries()) {
-      const output = ["u1", "v1", "w1"][index];
-      driveOutputs.set(endpointKey(component.id, output), Math.max(0, Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 50))));
-    }
     const conducting = model === "catalog-circuit-breaker" || model === "breaker-3p-v1" ? p.closed === true
-      : (model === "catalog-motor-starter" || model === "contactor-dol-v1" || model === "catalog-variable-frequency-drive") ? (model === "catalog-variable-frequency-drive" ? p.enabled === true : p.energized === true)
+      : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
       : false;
-    if (conducting) for (const [index, phase] of ["l1", "l2", "l3"].entries()) {
-      const output = model === "catalog-variable-frequency-drive" ? ["u1", "v1", "w1"][index] : `${phase}-out`;
-      link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, output));
+    if (conducting) for (const phase of ["l1", "l2", "l3"]) {
+      link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
     }
     if (model === "thermal-overload-dol-v1") for (let phase = 1; phase <= 3; phase++) link(endpointKey(component.id, `l${phase}-in`), endpointKey(component.id, `t${phase}`));
   }
-  while (queue.length) {
-    const [terminal, phase, incomingFrequency] = queue.shift()!;
-    const frequency = driveOutputs.get(terminal) ?? incomingFrequency;
-    const phases = powered.get(terminal) ?? new Set<string>();
-    if (phases.has(phase)) continue;
-    phases.add(phase);
-    powered.set(terminal, phases);
-    frequencies.set(`${terminal}|${phase}`, frequency);
-    queue.push(...(powerEdges.get(terminal) ?? []).map((next): [string, string, number] => [next, phase, frequency]));
+  const propagatePower = () => {
+    for (let index = 0; index < queue.length; index++) {
+      const [terminal, phase, frequency] = queue[index];
+      const phases = powered.get(terminal) ?? new Set<string>();
+      if (phases.has(phase)) continue;
+      phases.add(phase);
+      powered.set(terminal, phases);
+      frequencies.set(`${terminal}|${phase}`, frequency);
+      for (const next of powerEdges.get(terminal) ?? []) queue.push([next, phase, frequency]);
+    }
+    queue.length = 0;
+  };
+  propagatePower();
+  for (const component of document.components) {
+    if (definitionsByComponent.get(component.id)?.simulationModelId !== "catalog-variable-frequency-drive") continue;
+    const p = properties.get(component.id)!;
+    const inputs = ["l1-in", "l2-in", "l3-in"].map(id => endpointKey(component.id, id));
+    const feeds = inputs.map(input => [...(powered.get(input) ?? [])]);
+    const supplyFrequency = frequencies.get(`${inputs[0]}|${feeds[0][0]}`);
+    const sources = feeds.flat().map(feed => feed.slice(0, feed.lastIndexOf(":")));
+    p.runtimeInputReady = feeds.every(feed => feed.length === 1) && new Set(feeds.flat()).size === 3
+      && new Set(sources).size === 1 && supplyFrequency !== undefined && Number.isFinite(supplyFrequency) && supplyFrequency > 0
+      && inputs.every((input, index) => frequencies.get(`${input}|${feeds[index][0]}`) === supplyFrequency);
+    const frequency = Math.min(Number(p.commandHz ?? 0), Number(p.maximumFrequencyHz ?? 0));
+    if (p.enabled !== true || !p.runtimeInputReady || !Number.isFinite(frequency) || frequency <= 0) continue;
+    for (const [index, terminalId] of ["u1", "v1", "w1"].entries()) {
+      queue.push([endpointKey(component.id, terminalId), feeds[index][0], frequency]);
+    }
   }
+  propagatePower();
   const currentLoads: NominalCurrentLoad[] = [];
   for (const component of document.components) {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
