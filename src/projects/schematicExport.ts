@@ -17,8 +17,29 @@ const standaloneStyles = `
   .free-reference, .reference-label { fill: #102a43; font-size: 15px; font-weight: 900; }
   .free-kind, .device-label, .sheet-note { fill: #35506e; font-size: 12px; font-weight: 700; }
   .motor { fill: #d9e8f5; stroke: #2261cf; stroke-width: 5; }
-  .generic-symbol-mark { stroke: #2272ad; stroke-width: 2.4; }
+  .generic-symbol-mark, .functional-symbol { stroke: var(--component-ink, #2272ad); stroke-width: 2.4; }
+  .functional-symbol-text { stroke: none; fill: #17649c; font-size: 10px; font-weight: 900; }
+  .terminal-pin { fill: #fff; stroke: #1e5f96; stroke-width: 2.5; }
+  .free-terminal-label { fill: #13233b; font-size: 10px; font-weight: 800; paint-order: stroke; stroke: #f4f8fc; stroke-width: 3px; stroke-linejoin: round; }
+  .wire-junction { fill: #7c3aed; }
+  .project-continuation-marker rect { fill: #f8fbff; stroke-width: 1.5; }
+  .project-continuation-marker text { font: 700 10px Inter, Arial, sans-serif; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
 `;
+
+export function snapshotSchematicSvg(drawing: SVGSVGElement): SVGSVGElement {
+  const copy = drawing.cloneNode(true) as SVGSVGElement;
+  const editingAids = [
+    "[data-export-exclude]", ".selection-boundary", ".selection-marquee", ".terminal-anchors",
+    ".wire-branch-hit-target", ".wire-route-hit-target", ".wire-route-handle",
+    "[data-resize-handle]", "[data-vertex-handle]", "[data-graphic-id=__preview__]",
+  ];
+  copy.querySelectorAll(editingAids.join(", ")).forEach((node) => node.remove());
+  copy.removeAttribute("style");
+  const { width, height } = drawing.viewBox.baseVal;
+  copy.setAttribute("width", String(width));
+  copy.setAttribute("height", String(height));
+  return copy;
+}
 
 export function prepareStandaloneSchematicSvg(markup: string): string {
   const openingTag = markup.match(/^<svg\b[^>]*>/);

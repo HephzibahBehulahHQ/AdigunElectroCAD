@@ -105,7 +105,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
     {annotation.backgroundColor && <rect x={outlineX} y={-size * 1.1} width={width} height={height} rx="2" fill={annotation.backgroundColor} />}
-    {selected && <rect x={outlineX} y={-size * 1.1} width={width} height={height} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
+    {selected && <rect data-export-exclude="" x={outlineX} y={-size * 1.1} width={width} height={height} rx="3" fill="none" stroke="#e0a526" strokeDasharray="4 3" />}
     <text x="0" y="0" textAnchor={textAnchor} fill={annotation.color} fontSize={size} fontWeight={annotation.fontWeight ?? 600} fontStyle={annotation.fontStyle ?? "normal"} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" strokeLinejoin="round">{lines.map((line, index) => <tspan key={index} x="0" dy={index === 0 ? 0 : size * lineSpacing}>{line || " "}</tspan>)}</text>
   </g>;
 }
@@ -444,9 +444,9 @@ function FreeSchematic({ document, onPlaceComponent, litIndicatorIds, onComponen
       <style>{componentDraftingStyles}</style>
       <defs><pattern id="free-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeOpacity=".075" strokeWidth="1" /></pattern></defs>
       <rect width="1100" height="780" className="sheet-bg" onClick={(event) => { if (onPlaceComponent) { const point = graphicPoint(event); if (point) onPlaceComponent(Math.round(point.x * 100) / 100, Math.round(point.y * 100) / 100); } }} onPointerDown={(event) => { if (onPlaceComponent) return; if (graphicMode) drawStart(event); else selectionStart(event); }} onPointerMove={(event) => graphicMode ? drawMove(event) : selectionMove(event)} onPointerUp={(event) => graphicMode ? drawEnd(event) : selectionEnd(event)} onPointerCancel={() => { graphicStart.current = null; pathVertices.current = []; setGraphicPreview(null); selectionGesture.current = null; setSelectionBox(null); }} />{showGrid && <rect width="1100" height="780" fill="url(#free-grid)" pointerEvents="none" />}
-      {isPathMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
-      {graphicMode === "freehand" && <text x="65" y="105" className="sheet-note" pointerEvents="none">Drag to sketch · select the path to edit its vertices, color, width and name</text>}
-      {wireMode && <text x="65" y="105" className="sheet-note" pointerEvents="none">Click a wire to place a junction, then choose a compatible terminal. Shift-click targets to continue branching.</text>}
+      {isPathMode && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Click vertices · double-click or Enter to finish · Escape cancels</text>}
+      {graphicMode === "freehand" && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Drag to sketch · select the path to edit its vertices, color, width and name</text>}
+      {wireMode && <text data-export-exclude="" x="65" y="105" className="sheet-note" pointerEvents="none">Click a wire to place a junction, then choose a compatible terminal. Shift-click targets to continue branching.</text>}
       {document.wires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
@@ -473,7 +473,7 @@ function FreeSchematic({ document, onPlaceComponent, litIndicatorIds, onComponen
         };
         return <g key={wire.id}>
           <path d={path} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} />
-          {!wireMode && <path d={path} fill="none" stroke="transparent" strokeWidth="14" pointerEvents="stroke" role="button" tabIndex={0}
+          {!wireMode && <path data-export-exclude="" d={path} fill="none" stroke="transparent" strokeWidth="14" pointerEvents="stroke" role="button" tabIndex={0}
             aria-label={`Select wire ${wire.netName ?? wire.id}`}
             onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId) insertRoutePoint(event); else onWireSelect(wire.id); }}
             onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onWireSelect(wire.id); } }} />}
