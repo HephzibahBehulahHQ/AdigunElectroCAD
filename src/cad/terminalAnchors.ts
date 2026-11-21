@@ -2,6 +2,8 @@ import type { CircuitDocument, TerminalEndpoint } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
 import { controlTerminalOffset, powerTerminalOffset } from "./componentGeometry";
 
+export const endpointKey = (endpoint: TerminalEndpoint) => `${endpoint.componentId}.${endpoint.terminalId}`;
+
 export interface TerminalAnchor {
   endpoint: TerminalEndpoint;
   x: number;

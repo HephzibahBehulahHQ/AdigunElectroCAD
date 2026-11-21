@@ -1,3 +1,5 @@
+import { endpointKey, terminalAnchors } from "../src/cad/terminalAnchors";
+import { orthogonalWirePath } from "../src/cad/wirePath";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -78,4 +80,20 @@ it("shows topology failures in project details", () => {
   expect(markup).toContain("Verification needs review");
   expect(verification.topologyIssues.length).toBeGreaterThan(0);
   expect(markup).toContain(verification.topologyIssues[0].message);
+});
+
+it("previews the authored pilot lamp symbol and its routed return", () => {
+  const selected = templateLibrary.find(({ id }) => id === "wired-pilot-indicator")!;
+  const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {
+    active: true, templates: [selected], selected, verification: verifyProjectTemplate(selected, catalogById),
+    onSelect: () => {}, onLoad: () => {}, onOpenWorkbook: () => {},
+    onOpenFourSheetWorkbook: () => {}, onOpenStarDeltaWorkbook: () => {},
+    onOpenReversingWorkbook: () => {}, onOpenTwoMotorWorkbook: () => {},
+  }));
+  const wire = selected.document.wires.find(({ id }) => id === "lamp-return")!;
+  const anchors = new Map(terminalAnchors(selected.document).map((anchor) => [endpointKey(anchor.endpoint), anchor]));
+  const from = anchors.get(endpointKey(wire.from))!;
+  const to = anchors.get(endpointKey(wire.to))!;
+  expect(markup).toContain("Indicator lamp off");
+  expect(markup).toContain(`d="${orthogonalWirePath(from, to, wire.points, from.vertical, to.vertical)}"`);
 });
