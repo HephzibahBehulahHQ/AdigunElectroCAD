@@ -42,7 +42,23 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement): SVGSVGElement {
   ];
   copy.querySelectorAll(editingAids.join(", ")).forEach((node) => node.remove());
   copy.removeAttribute("style");
+  const exportView = drawing.getAttribute("data-export-view-box");
   const { width, height } = drawing.viewBox.baseVal;
+  if (exportView) {
+    const [x, y, exportWidth, exportHeight] = exportView.split(" ");
+    copy.setAttribute("viewBox", exportView);
+    copy.removeAttribute("data-export-view-box");
+    copy.querySelectorAll("[data-viewport-fill]").forEach((node) => {
+      node.setAttribute("x", x);
+      node.setAttribute("y", y);
+      node.setAttribute("width", exportWidth);
+      node.setAttribute("height", exportHeight);
+      node.removeAttribute("data-viewport-fill");
+    });
+    copy.setAttribute("width", exportWidth);
+    copy.setAttribute("height", exportHeight);
+    return copy;
+  }
   copy.setAttribute("width", String(width));
   copy.setAttribute("height", String(height));
   return copy;

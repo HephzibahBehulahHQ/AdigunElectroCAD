@@ -393,3 +393,4 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .drafting-layer-defaults { grid-column: 1 / -1; }
 .drafting-layer-fields label { white-space: normal; }
 .drafting-layer-fields select { min-width: 0; }
+.schematic-wrap.free-drawing-viewport { overflow: hidden; }
