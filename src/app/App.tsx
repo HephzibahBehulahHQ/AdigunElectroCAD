@@ -1205,6 +1205,8 @@ export function App() {
     setSelectedAnnotationId(""); setSelectedGraphicId(""); setSelectedGraphicIds([]); setAnnotationMode(false); setGraphicMode(null);
     setWireMode(crossSheetContinuationMode);
     setWireStart(null);
+    setWireBranchStart(null);
+    setReconnectingWireId("");
     setNotice(crossSheetContinuationMode && crossSheetContinuationStart ? `${sheet.name} selected. Choose a compatible destination terminal.` : `${sheet.name} selected.`);
   };
 
@@ -1259,8 +1261,9 @@ export function App() {
     setWireBranchStart(null);
     setCrossSheetContinuationMode(false);
     setCrossSheetContinuationStart(null);
+    setCrossSheetContinuationExtendId("");
     setAnnotationMode(false); setGraphicMode(null); setSelectedGraphicId(""); setSelectedGraphicIds([]);
-    if (!next) setReconnectingWireId("");
+    setReconnectingWireId("");
     setNotice(next ? "Wiring mode: select a source terminal, then a compatible target. Shift-click targets to branch from the same source." : "Wiring mode closed.");
   };
 
