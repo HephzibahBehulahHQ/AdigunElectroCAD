@@ -24,15 +24,15 @@ Arrow movement and rotation use the same sheet-boundary and label-clearance rule
 
 Select one component on a free sheet to show its resize and rotation handles. Drag the lower-right handle to scale the symbol uniformly around its center in 5% steps, from 50% to 200%. Drag the upper handle to snap rotation to a right angle, or click it to turn 90° clockwise. With either handle focused, arrow keys step the transform. Properties offers the existing size field and Rotate 90° button, plus an exact rotation selector. During an accepted preview, terminal markers, labels, and connected routes follow the transformed symbol. Releasing the pointer commits one undoable edit if the proposed transform clears the sheet edges and neighboring symbols.
 
-Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. During a drag, the component previews its snapped position; wires retain their previous drawing paths until the drop is accepted. Design edits reset runtime simulation state.
+Dragging is disabled in Wiring mode and for the fixed DOL reference sheet. The free-sheet preview follows the pointer and recomputes wire endpoints from the preview position. Design edits reset runtime simulation state.
 
 Zoom changes display scale from 25% to 200% without changing drawing coordinates. Fit sizes the sheet to its viewport. Menu and toolbar Grid controls share one visibility state. Scroll within the schematic viewport to inspect enlarged drawings.
 
 In Wiring mode, select a source terminal and then compatible targets. Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The tap is a drawing attachment; the electrical model still connects the new wire to the selected parent endpoint rather than creating a separate junction node. Removing the parent wire also removes its dependent branches.
 
-This does not yet provide snapping to arbitrary wire segments, live wire rerouting during drag, or a full orthogonal routing editor.
-
 Select a wire to change its conductor color or replace either terminal in Properties. Reconnection validates the revised topology and carries dependent branch taps with their parent endpoint. Replacing a branch’s source detaches it from the old parent. For any direct wire on a free sheet, including example wires, use Edit route points and Add route point. Click the selected route to insert a waypoint, then drag it or use the arrow keys. Right-click a handle or press Delete to remove the point. Reset to automatic route clears waypoints. To reposition a branch tap, edit its parent route.
+
+When a waypoint moves, the preview recalculates attached taps and their branches from the preview route. Releasing the waypoint saves the route in one undoable edit.
 
 For selected line, rectangle, or ellipse drafting geometry, edit X1, Y1, X2, and Y2 numerically in Properties for exact placement and sizing. Coordinates stay within the 1100 × 780 sheet and the shape must span at least 4 units. Polyline and polygon geometry remains editable by its vertex handles.
 Use Freehand to sketch an unfilled path by dragging on a free sheet. The path is stored as editable polyline geometry, so users can rename it, choose its color and stroke width, and move or edit individual vertices later. Freehand drawings are visual drafting marks and do not create electrical connections.

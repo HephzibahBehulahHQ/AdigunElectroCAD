@@ -297,6 +297,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
   const paintOrder = componentsInStackOrder(transformed.components);
   const anchors = terminalAnchors({ ...previewDocument, components: previewMove ? componentsInStackOrder(previewDocument.components) : paintOrder });
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const [routePreview, setRoutePreview] = useState<{ wireId: string; points: SchematicGraphicPoint[] } | null>(null);
+  const currentRoutePoints = (wire: Wire) => routePreview?.wireId === wire.id ? routePreview.points : wire.points;
   const branchRouteForWire = (wire: Wire, seen = new Set<string>()): { point: { x: number; y: number }; points: { x: number; y: number }[] } | null => {
     if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
     const parent = document.wires.find((item) => item.id === wire.branchOfWireId);
@@ -304,7 +306,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
     if (!parent || !from || !to) return null;
     const nextSeen = new Set(seen); nextSeen.add(wire.id);
     const parentBranch = branchRouteForWire(parent, nextSeen);
-    return wireBranchRoute(from, to, parentBranch?.points ?? parent.points, from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
+    return wireBranchRoute(from, to, parentBranch?.points ?? currentRoutePoints(parent), from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
   };
   const graphicStart = useRef<{ x: number; y: number } | null>(null);
   const selectionGesture = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
@@ -312,7 +314,6 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
   const pathVertices = useRef<SchematicGraphicPoint[]>([]);
   const [graphicPreview, setGraphicPreview] = useState<{ kind: SchematicGraphicKind; x1: number; y1: number; x2: number; y2: number; points?: SchematicGraphicPoint[] } | null>(null);
   const routeGesture = useRef<{ wireId: string; index: number; points: SchematicGraphicPoint[] } | null>(null);
-  const [routePreview, setRoutePreview] = useState<{ wireId: string; points: SchematicGraphicPoint[] } | null>(null);
   const isPathMode = graphicMode === "polyline" || graphicMode === "polygon";
   useEffect(() => { pathVertices.current = []; graphicStart.current = null; setGraphicPreview(null); }, [graphicMode]);
   const graphicPoint = (event: ReactMouseEvent<SVGRectElement>) => {
@@ -453,7 +454,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, litIndicatorI
         const to = anchorIndex.get(endpointKey(wire.to));
         if (!from || !to) return null;
         const branch = branchRouteForWire(wire);
-        const routePoints = routePreview?.wireId === wire.id ? routePreview.points : wire.points;
+        const routePoints = currentRoutePoints(wire);
         const points = branch?.points ?? routePoints;
         const path = wirePath(from, to, points);
         const insertRoutePoint = (event: ReactMouseEvent<SVGPathElement>) => {
