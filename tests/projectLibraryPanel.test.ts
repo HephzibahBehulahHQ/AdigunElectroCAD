@@ -18,10 +18,13 @@ describe("Project Library full workbook entry", () => {
       onSelect: () => {},
       onLoad: () => {},
       onOpenWorkbook: () => {},
+      onOpenFourSheetWorkbook: () => {},
+      onOpenStarDeltaWorkbook: () => {},
+      onOpenReversingWorkbook: () => {},
       onOpenTwoMotorWorkbook: () => {},
     }));
     expect(markup).toContain("Open 10-sheet feeder workbook");
-    expect(markup).toContain("Load into free sheet");
+    expect(markup).toContain("Load into Free Sheet");
   });
 
   it("does not show the workbook action for unrelated single-sheet templates", () => {
@@ -34,6 +37,9 @@ describe("Project Library full workbook entry", () => {
       onSelect: () => {},
       onLoad: () => {},
       onOpenWorkbook: () => {},
+      onOpenFourSheetWorkbook: () => {},
+      onOpenStarDeltaWorkbook: () => {},
+      onOpenReversingWorkbook: () => {},
       onOpenTwoMotorWorkbook: () => {},
     }));
     expect(markup).not.toContain("Open 10-sheet feeder workbook");
@@ -51,7 +57,25 @@ it("offers the four-sheet sequence only for the two-motor project", () => {
     onSelect: () => {},
     onLoad: () => {},
     onOpenWorkbook: () => {},
+    onOpenFourSheetWorkbook: () => {},
+    onOpenStarDeltaWorkbook: () => {},
+    onOpenReversingWorkbook: () => {},
     onOpenTwoMotorWorkbook: () => {},
   }));
   expect(markup).toContain("Open 4-sheet two-motor project");
+});
+
+it("shows topology failures in project details", () => {
+  const selected = structuredClone(templateLibrary[0]);
+  selected.document.wires[0].from.componentId = "missing-source";
+  const verification = verifyProjectTemplate(selected, catalogById);
+  const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {
+    active: true, templates: templateLibrary, selected, verification,
+    onSelect: () => {}, onLoad: () => {}, onOpenWorkbook: () => {},
+    onOpenFourSheetWorkbook: () => {}, onOpenStarDeltaWorkbook: () => {},
+    onOpenReversingWorkbook: () => {}, onOpenTwoMotorWorkbook: () => {},
+  }));
+  expect(markup).toContain("Verification needs review");
+  expect(verification.topologyIssues.length).toBeGreaterThan(0);
+  expect(markup).toContain(verification.topologyIssues[0].message);
 });

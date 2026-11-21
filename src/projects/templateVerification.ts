@@ -32,6 +32,14 @@ export function verifyCircuitSequence(document: CircuitDocument, steps: CircuitS
       else working = advanceCircuitClock(working, catalog, step.durationSeconds);
     }
     const runs = executeCircuitModels(working, catalog);
+    const expectedFaults = new Set(runs.flatMap(({ reference, output }) =>
+      output.error && step.expectations.some((expected) =>
+        expected.reference === reference && expected.label === output.label && expected.exact === output.value,
+      ) ? [output.error] : [],
+    ));
+    for (const { reference, output } of runs) {
+      if (output.error && !expectedFaults.has(output.error)) failures.push(`Unexpected fault at ${reference}: ${output.error}`);
+    }
     for (const expected of step.expectations) {
       const value = runs.find((run) => run.reference === expected.reference && run.output.label === expected.label)?.output.value;
       const numeric = value === undefined ? NaN : Number.parseFloat(value);
@@ -51,7 +59,13 @@ export function verifyProjectTemplate(template: ProjectTemplate, catalog: Map<st
     const run = runs.find((candidate) => candidate.reference === expectation.reference && candidate.output.label === expectation.label);
     return run?.output.value.includes(expectation.valueIncludes) ? [] : [`${expectation.reference}: ${expectation.label} must include ${expectation.valueIncludes}`];
   });
-  if (template.operatingSequence) {
+  if (!template.expectedOutputs.length) failedExpectations.push("Project has no baseline output checks");
+  for (const { reference, output } of runs) {
+    if (output.error) failedExpectations.push(`Unexpected baseline fault at ${reference}: ${output.error}`);
+  }
+  if (!template.operatingSequence?.length) {
+    failedExpectations.push("Project has no checked operating sequence");
+  } else {
     for (const step of verifyCircuitSequence(template.document, template.operatingSequence, catalog)) {
       failedExpectations.push(...step.failures.map((failure) => `${step.name}: ${failure}`));
     }
