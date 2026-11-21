@@ -130,6 +130,14 @@ export interface SchematicGraphic {
 /** One user-drawn primitive stored relative to a reusable component symbol origin. */
 export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name">;
 
+export interface DrawingGuide {
+  id: string;
+  axis: "x" | "y";
+  coordinate: number;
+  locked: boolean;
+  hidden: boolean;
+}
+
 export interface CircuitDocument {
   id: string;
   name: string;
@@ -140,6 +148,7 @@ export interface CircuitDocument {
   graphics?: SchematicGraphic[];
   /** Optional named layers shared by wire and component drafting styles. */
   draftingLayers?: DraftingLayer[];
+  guides?: DrawingGuide[];
   revision: number;
 }
 

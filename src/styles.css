@@ -405,3 +405,10 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .drawing-ruler-y span { right: 0; padding: 1px 4px 0 0; border-top: 1px solid #829ab1; }
 .drawing-ruler-units { position: absolute; top: 0; left: 0; width: 55px; height: 21px; text-align: center; line-height: 21px; border-bottom: 1px solid #829ab1; border-right: 1px solid #829ab1; }
 .drawing-cursor-readout { position: absolute; bottom: 5px; right: 5px; padding: 3px 6px; border: 1px solid #829ab1; border-radius: 3px; pointer-events: none; white-space: pre; }
+.drawing-ruler { pointer-events: auto; touch-action: none; }
+.drawing-ruler-x { cursor: ns-resize; }
+.drawing-ruler-y { cursor: ew-resize; }
+.drawing-guide-preview { position: absolute; border: 0 dashed #007c91; }
+.drawing-guide-preview-x { inset: 0 auto 0 0; border-left-width: 1px; }
+.drawing-guide-preview-y { inset: 0 0 auto; border-top-width: 1px; }
+.drawing-guide-lines { stroke: #007c91; stroke-width: 1; stroke-dasharray: 6 4; }

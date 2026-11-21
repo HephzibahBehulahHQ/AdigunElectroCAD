@@ -6,6 +6,8 @@ import { draftingLineTypes, MAX_DRAFTING_LAYERS, validLineWeight } from "../cad/
 import type { DraftingStyle, DraftingLayer } from "../types/electrical";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
+import { MAX_DRAWING_GUIDES } from "../cad/drawingGuides";
+import type { DrawingGuide } from "../types/electrical";
 
 export function parseProjectJson(text: string): ElectricalProject {
   let value: unknown;
@@ -105,6 +107,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
     ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
     ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
+    ...(document.guides === undefined ? {} : { guides: parseDrawingGuides(document.guides) }),
   };
   const ids = new Set(parsed.draftingLayers?.map((layer) => layer.id));
   if ([...parsed.components, ...parsed.wires].some((entity) => entity.layerId !== undefined && !ids.has(entity.layerId))) {
@@ -115,6 +118,21 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const issues = validateCircuit(parsed, catalogById);
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
+}
+
+function parseDrawingGuides(value: unknown): DrawingGuide[] {
+  const guides = array(value, "Drawing guides must be an array.");
+  if (guides.length > MAX_DRAWING_GUIDES) throw new Error("Too many drawing guides.");
+  const ids = new Set<string>();
+  return guides.map(raw => {
+    const guide = object(raw, "Invalid drawing guide.");
+    const id = textValue(guide.id, "drawing guide id", 96);
+    if (ids.has(id)) throw new Error("Drawing guide ids must be unique.");
+    ids.add(id);
+    if (guide.axis !== "x" && guide.axis !== "y") throw new Error("Invalid drawing guide axis.");
+    if (typeof guide.hidden !== "boolean" || typeof guide.locked !== "boolean") throw new Error("Invalid drawing guide flags.");
+    return { id, axis: guide.axis, coordinate: finiteNumber(guide.coordinate, "drawing guide coordinate"), hidden: guide.hidden, locked: guide.locked };
+  });
 }
 
 function parseDraftingStyle(value: Record<string, unknown>, kind: string): DraftingStyle {
