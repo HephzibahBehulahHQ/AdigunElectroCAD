@@ -389,11 +389,15 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     setPreviewMove({ ids, delta });
   };
   const previewDocument = previewMove ? previewComponentMove(transformed, previewMove.ids, previewMove.delta.x, previewMove.delta.y) : transformed;
+  const hiddenLayers = new Set(document.draftingLayers?.filter(({ hidden }) => hidden).map(({ id }) => id));
   const paintOrder = componentsInStackOrder(transformed.components);
   const anchors = terminalAnchors({ ...previewDocument, components: previewMove ? componentsInStackOrder(previewDocument.components) : paintOrder });
+  const visibleComponents = paintOrder.filter(({ layerId }) => !hiddenLayers.has(layerId ?? ""));
+  const visibleIds = new Set(visibleComponents.map(({ id }) => id));
+  const visibleAnchors = anchors.filter(({ endpoint }) => visibleIds.has(endpoint.componentId));
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
   const componentsById = new Map(document.components.map((component) => [component.id, component]));
-  const routeStart = onWireBend && wireStart ? anchorIndex.get(endpointKey(wireStart)) : undefined;
+  const routeStart = onWireBend && wireStart && visibleIds.has(wireStart.componentId) ? anchorIndex.get(endpointKey(wireStart)) : undefined;
   const [wirePointer, setWirePointer] = useState<(SchematicGraphicPoint & { vertical?: boolean }) | null>(null);
   useEffect(() => { setWirePointer(null); }, [wireStart, document.id]);
   const pinsByComponent = new Map<string, TerminalAnchor[]>();
@@ -539,7 +543,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     const start = selectionGesture.current; const point = graphicPoint(event);
     selectionGesture.current = null; setSelectionBox(null);
     if (start && point) {
-      if (start.moved) onGroupSelect?.(componentsInMarquee(document.components, start.x, start.y, point.x, point.y), start.additive);
+      if (start.moved) onGroupSelect?.(componentsInMarquee(visibleComponents, start.x, start.y, point.x, point.y), start.additive);
       else if (!start.additive) onGroupSelect?.([], false);
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -595,6 +599,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       {document.printLayout && <PrintFrame layout={document.printLayout} />}
       <g data-drawing-content="">
       {document.wires.map((wire) => {
+        if (hiddenLayers.has(wire.layerId ?? "")) return null;
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
         if (!from || !to) return null;
@@ -632,14 +637,14 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       })}
       {(document.graphics ?? []).map((graphic) => <PlacedGraphic snapSpacing={snapSpacing} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
-      {paintOrder.map((component) => <PlacedSymbol key={component.id} component={component} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}
+      {visibleComponents.map((component) => <PlacedSymbol key={component.id} component={component} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
       {routeStart && (wirePointer || wireBends.length > 0) && <path data-export-exclude="" data-wire-draft="" d={orthogonalWirePath(routeStart, wirePointer ?? wireBends.at(-1)!, wireBends, routeStart.vertical, wirePointer?.vertical)} fill="none" stroke="#1976d2" strokeWidth="2" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
-      <g className="terminal-pin-markers" pointerEvents="none">{anchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="3" className="terminal-pin" vectorEffect="non-scaling-stroke" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>
-      {transformTarget && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
+      <g className="terminal-pin-markers" pointerEvents="none">{visibleAnchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="3" className="terminal-pin" vectorEffect="non-scaling-stroke" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>
+      {transformTarget && visibleIds.has(transformTarget.id) && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
-      <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} componentClearances={previewDocument.components.map(instanceFootprint)} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
-      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <TerminalHitTarget key={endpointKey(item.endpoint)} anchor={item} component={componentsById.get(item.endpoint.componentId)} radius={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom)} markerRadius={4} wireMode={wireMode} wireStart={wireStart} onSelect={onTerminalSelect} />)}</g>}
+      <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={visibleAnchors} componentClearances={previewDocument.components.map(instanceFootprint)} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
+      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{visibleAnchors.map((item) => <TerminalHitTarget key={endpointKey(item.endpoint)} anchor={item} component={componentsById.get(item.endpoint.componentId)} radius={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom)} markerRadius={4} wireMode={wireMode} wireStart={wireStart} onSelect={onTerminalSelect} />)}</g>}
       </g>
       {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>

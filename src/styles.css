@@ -463,3 +463,5 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
   stroke-width: 2px;
   vector-effect: non-scaling-stroke;
 }
+
+.view-menu-popover { max-height: calc(100dvh - 110px); overflow: auto; }

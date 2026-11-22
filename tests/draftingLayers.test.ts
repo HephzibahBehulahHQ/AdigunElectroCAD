@@ -59,3 +59,31 @@ it("rejects unknown layers, duplicate names and invalid stroke data", () => {
   document.wires[0].lineWeight = 13;
   expect(() => parseProjectJson(JSON.stringify(project))).toThrow("lineweight");
 });
+
+it("hides layer geometry and terminal targets while retaining wire topology through save and Undo", () => {
+  const project = createBlankProject();
+  const [sheet] = project.sheets;
+  const document = createAnalogLevelProject().document;
+  const layerId = "plc-signals";
+  const component = document.components.find(({ id }) => id === "adc")!;
+  const wire = document.wires.find(({ id }) => id === "adc-raw")!;
+  document.draftingLayers = [{ id: layerId, name: "PLC signals" }];
+  component.layerId = wire.layerId = layerId;
+  const before = replaceSheetDocument(project, sheet.id, document);
+  const result = updateDraftingLayer(document, layerId, { hidden: true });
+  if (!result.ok) throw Error(result.reason);
+  const after = replaceSheetDocument(before, sheet.id, result.document);
+  const restored = parseProjectJson(JSON.stringify(after)).sheets[0].document;
+  expect(restored.draftingLayers?.[0].hidden).toBe(true);
+  expect(restored.wires).toEqual(document.wires);
+  const render = (drawing: typeof restored) => renderToStaticMarkup(createElement(Schematic, {
+    document: drawing, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(),
+    wireMode: true, wireStart: null, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  const hidden = render(restored);
+  expect(hidden).not.toContain('data-wire-terminal="adc.');
+  expect(hidden).not.toContain('>ADC1</text>');
+  expect(hidden.match(/class="wire manual-wire/g)).toHaveLength(document.wires.length - 1);
+  const undone = undoProject(recordProjectEdit({ undo: [], redo: [] }, before), after).project;
+  expect(render(undone.sheets[0].document)).toContain('data-wire-terminal="adc.');
+});

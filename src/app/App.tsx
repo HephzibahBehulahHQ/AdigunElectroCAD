@@ -2,6 +2,7 @@ import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { DraftingLayerFields } from "../components/DraftingLayerFields";
+import type { DraftingLayer } from "../types/electrical";
 import { createEntityLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting, type DraftingSelection } from "../cad/draftingLayers";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
@@ -291,6 +292,19 @@ export function App() {
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
   const contextComponent = componentContextMenu ? document.components.find((component) => component.id === componentContextMenu.componentId) : undefined;
   const selectedWire = document.wires.find((wire) => wire.id === selectedWireId);
+  useEffect(() => {
+    if (isReferenceSheet) return;
+    const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map((layer) => layer.id));
+    if (hidden.size === 0) return;
+    if (document.components.some(({ id, layerId }) => hidden.has(layerId ?? "") && (id === selectedComponentId || selectedComponentIds.includes(id)))) {
+      setSelectedComponentId("");
+      setSelectedComponentIds([]);
+    }
+    if (selectedWire?.layerId && hidden.has(selectedWire.layerId)) {
+      setSelectedWireId("");
+      setWireRouteEditId("");
+    }
+  }, [document, isReferenceSheet, selectedComponentId, selectedComponentIds, selectedWire]);
   const selectedContinuation = project.continuations?.find((item) => item.id === selectedContinuationId);
   const selectedAnnotation = document.annotations?.find((annotation) => annotation.id === selectedAnnotationId);
   const selectedGraphic = document.graphics?.find((graphic) => graphic.id === selectedGraphicId);
@@ -1476,6 +1490,16 @@ export function App() {
     return true;
   };
 
+  const toggleDraftingLayerVisibility = (layer: DraftingLayer) => {
+    const hidden = !layer.hidden;
+    if (!applyDraftingEdit(updateDraftingLayer(document, layer.id, { hidden }))) return;
+    if (hidden) {
+      setSelectedContinuationId("");
+      activateSelectTool();
+    }
+    setNotice(layer.name + (hidden ? " hidden." : " visible."));
+  };
+
   const updateWireRoute = (wireId: string, points: SchematicGraphicPoint[]) => {
     if (!document.wires.some((wire) => wire.id === wireId && !wire.branchOfWireId)) return;
     updateDocument({ ...document, wires: document.wires.map((wire) => wire.id === wireId ? { ...wire, points } : wire), revision: document.revision + 1 });
@@ -1972,7 +1996,7 @@ export function App() {
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
-        <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <><button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
+        <details><summary>View</summary><div className="menu-popover view-menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <>{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={!layer.hidden} onClick={() => toggleDraftingLayerVisibility(layer)}>Layer visibility · {layer.name}</button>)}<button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={addSelectedComponent}>Component</button></div></details>
         <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
