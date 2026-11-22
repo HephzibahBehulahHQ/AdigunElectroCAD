@@ -33,6 +33,9 @@ describe("schematic SVG export", () => {
     expect(svg).toContain(".project-continuation-marker text");
     expect(svg).toContain(".wire.manual-wire.power-wire { stroke: #991b1b; stroke-width: 2.4; stroke-dasharray: none; }");
     expect(svg).toContain(".wire.pe-wire { stroke: #167a52; }");
+    expect(svg).toContain(".mechanical-link { fill: none; stroke: #667991;");
+    expect(svg).toContain(".overload.tripped { fill: #fbd0cd; stroke: #d84a3a; }");
+    expect(svg).toContain(".motor-mark { fill: #2454c4; font-size: 37px;");
     expect(svg).toContain('<path class="wire" d="M 0 0 H 10" />');
   });
 });
