@@ -2,7 +2,7 @@ import { resolveDraftingStyle } from "../cad/draftingLayers";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
-import { projectContinuationSignalWarnings, validateProjectContinuations } from "../projects/projectContinuations";
+import { projectContinuationSignalWarnings, projectSignalDriverConflicts, validateProjectContinuations } from "../projects/projectContinuations";
 import type { ProjectCircuitModelRun } from "../simulation/projectCircuitModels";
 
 export interface BomLine {
@@ -235,6 +235,6 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     bom: [...bomByDefinition.values()].sort((left, right) => left.category.localeCompare(right.category) || left.component.localeCompare(right.component)),
     wires,
     terminals,
-    validation: [...validation, ...projectContinuationSignalWarnings(project), ...validateProjectContinuations(project).map((message): TopologyIssue => ({ severity: "error", code: "invalid-project-continuation", message }))],
+    validation: [...validation, ...projectContinuationSignalWarnings(project), ...projectSignalDriverConflicts(project).map((message): TopologyIssue => ({ severity: "warning", code: "project-signal-driver-conflict", message })), ...validateProjectContinuations(project).map((message): TopologyIssue => ({ severity: "error", code: "invalid-project-continuation", message }))],
   };
 }

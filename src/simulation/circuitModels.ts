@@ -1,3 +1,4 @@
+import { conflictingSignalDrivers } from "../electrical/signalDrivers";
 import { evaluateWiredControl } from "./wiredControl";
 import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurrent";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
@@ -112,6 +113,9 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (coil.error) active.runtimeSignalError = coil.error;
   }
   const signals = new Map<string, FunctionalSignal>();
+  const conflictingOutputs = new Map(conflictingSignalDrivers(document, catalog).flatMap(({ endpoints, message }) =>
+    endpoints.map(({ componentId, terminalId }) => [endpointKey(componentId, terminalId), message] as const)));
+
   const wiredTerminals = new Set(document.wires.flatMap(({ from, to }) => [
     endpointKey(from.componentId, from.terminalId), endpointKey(to.componentId, to.terminalId),
   ]));
@@ -170,9 +174,12 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         }
         const outputs = functionalOutputTerminals(definition);
         for (const output of outputs) {
-          const signal = evaluateFunctionalSignal(definition.simulationModelId, activeProperties, output.id);
-          if (signal === undefined) continue;
           const key = endpointKey(component.id, output.id);
+          const conflict = conflictingOutputs.get(key);
+          const signal: FunctionalSignal | undefined = conflict
+            ? { unit: "boolean", value: false, error: conflict }
+            : evaluateFunctionalSignal(definition.simulationModelId, activeProperties, output.id);
+          if (signal === undefined) continue;
           if (!sameSignal(signals.get(key), signal)) { signals.set(key, signal); changed = true; }
         }
       }
