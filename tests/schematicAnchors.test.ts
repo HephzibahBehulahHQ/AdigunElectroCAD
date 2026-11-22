@@ -1130,3 +1130,13 @@ it("keeps Siemens 5SL3 pole-specific availability and numbered neutral terminals
   expect(part("5sl3314-7")).toBeUndefined();
   expect(part("5sl3406-6")).toBeUndefined();
 });
+
+
+it("uses the ABB S200M ordering codes, including the fractional-current suffixes", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M");
+  const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
+  expect(parts).toHaveLength(176);
+  expect(part("2cds271001r0984")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "C", icnKa: 10 });
+  expect(part("2cds274001r0971")?.propertiesSchema).toMatchObject({ ratedCurrentA: 1.6, curve: "D" });
+  expect(part("2cds274001r0971")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
