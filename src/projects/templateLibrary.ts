@@ -1,3 +1,4 @@
+import { createDualRtdDisagreementProject } from "./dualRtdDisagreementProject";
 import { createPneumaticStrokeWatchdogProject } from "./pneumaticStrokeWatchdogProject";
 import { createClampPositionPermitProject } from "./clampPositionPermitProject";
 import { createNetWeightCheckweigherProject } from "./netWeightCheckweigherProject";
@@ -140,6 +141,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createEncoderIndexInspectionProject(),
   createDualChannelResetProject(),
   createPt100TemperatureAlarmProject(),
+  createDualRtdDisagreementProject(),
   createPt100PlcTransmitterProject(),
   createTypeKThermocoupleAlarmProject(),
   createFreezerAlarmProject(),
