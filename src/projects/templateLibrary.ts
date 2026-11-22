@@ -1,3 +1,4 @@
+import { createDehumidifierLockoutProject } from "./dehumidifierLockoutProject";
 import { createDualRtdDisagreementProject } from "./dualRtdDisagreementProject";
 import { createPneumaticStrokeWatchdogProject } from "./pneumaticStrokeWatchdogProject";
 import { createClampPositionPermitProject } from "./clampPositionPermitProject";
@@ -134,6 +135,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
   createTankFillPermitProject(),
   createHumidityDamperProject(),
+  createDehumidifierLockoutProject(),
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
   createBlendRatioPermitProject(),
