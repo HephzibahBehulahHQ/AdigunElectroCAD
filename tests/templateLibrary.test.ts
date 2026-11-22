@@ -15,6 +15,18 @@ import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("project template library", () => {
+  it("runs ventilation wire faults and recovery without editing the template", () => {
+    const template = templateLibrary.find(({ id }) => id === "humidity-ventilation-damper")!;
+    const before = structuredClone(template.document);
+    const sequence = template.operatingSequence!;
+    const steps = verifyCircuitSequence(template.document, sequence, catalogById);
+    expect(steps.every(({ passed }) => passed)).toBe(true);
+    expect(template.document).toEqual(before);
+    const faultStep = sequence.find(({ wireChanges }) => wireChanges?.[0].connected === false)!;
+    const [unknown] = verifyCircuitSequence(template.document, [{ ...faultStep, wireChanges: [{ ...faultStep.wireChanges![0], from: { componentId: "typo", terminalId: "out" } }] }], catalogById);
+    expect(unknown.failures).toContain("Unknown wire typo.out to damper.in");
+  });
+
   it("requires every wire for the weigh-station acceptance sequence", () => {
     const template = templateLibrary.find(({ id }) => id === "weigh-station-acceptance-window")!;
     for (const wire of template.document.wires) {
