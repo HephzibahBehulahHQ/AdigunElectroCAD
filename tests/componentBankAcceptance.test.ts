@@ -82,3 +82,30 @@ it("runs the selectable educational supply, breaker and motor only when all thre
   expect(motorOutput(document)).toBe("1440 rpm / 7.5 kW");
   expect(motorOutput({ ...document, wires: document.wires.slice(0, -1) })).toContain("unbalanced winding current is unavailable");
 });
+
+it("keeps Festo fluid lines isolated from coil wires and switches the documented paths", () => {
+  const document = createBlankProject().sheets[0].document;
+  const ac = place(catalogById.get("supply.control")!, document, "ac", { x: 100, y: 140 });
+  const dc = place(catalogById.get("iec.dc-control-supply.01")!, document, "dc", { x: 280, y: 140 });
+  const nc = place(catalogById.get("festo.vovg.560697")!, document, "nc", { x: 480, y: 140 });
+  const no = place(catalogById.get("festo.vovg.560699")!, document, "no", { x: 720, y: 140 });
+  no.reference = "V2";
+  document.components = [ac, dc, nc, no];
+  const endpoint = (componentId: string, terminalId: string) => ({ componentId, terminalId });
+  const connect = (from: ReturnType<typeof endpoint>, to: ReturnType<typeof endpoint>) => {
+    expect(canConnectTerminals(document, catalogById, from, to).ok).toBe(true);
+    document.wires.push(createManualWire(document, from, to));
+  };
+  const paths = () => executeCircuitModels(document, catalogById).filter(run => run.output.label === "Open pneumatic path").map(run => run.output.value);
+  expect(paths()).toEqual(["2 ↔ 3", "1 ↔ 2"]);
+  expect(canConnectTerminals(document, catalogById, endpoint("nc", "port-2"), endpoint("no", "a1")).ok).toBe(false);
+  connect(endpoint("nc", "port-2"), endpoint("no", "port-1"));
+  connect(endpoint("ac", "line"), endpoint("dc", "line-in"));
+  connect(endpoint("ac", "neutral"), endpoint("dc", "neutral-in"));
+  for (const valve of [nc, no]) {
+    connect(endpoint("dc", "plus-out"), endpoint(valve.id, "a1"));
+    connect(endpoint("dc", "zero-out"), endpoint(valve.id, "a2"));
+  }
+  expect(paths()).toEqual(["1 ↔ 2", "2 ↔ 3"]);
+  expect(validateCircuit(document, catalogById)).toEqual([]);
+});

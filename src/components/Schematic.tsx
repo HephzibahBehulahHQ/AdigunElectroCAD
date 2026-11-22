@@ -632,7 +632,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
           if (route) onWireBranchStart?.(wire.id, route.source, route.position);
         };
         return <g key={wire.id}>
-          <path d={path} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} />
+          <path d={path} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : from.pneumatic && to.pneumatic ? " pneumatic-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} />
           {!wireMode && <path data-export-exclude="" d={path} fill="none" stroke="transparent" strokeWidth="14" pointerEvents="stroke" role="button" tabIndex={0}
             aria-label={`Select wire ${wire.netName ?? wire.id}${branch?.blockedBy.length ? " (route obstructed)" : ""}`}
             onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId && !lockedLayers.has(wire.layerId ?? "")) insertRoutePoint(event); else onWireSelect(wire.id); }}
@@ -746,7 +746,7 @@ export function Schematic({ document, symbolStates, onPlaceComponent, placementP
       {manualWires.map((wire) => {
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));
-        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
+        return from && to ? <path key={wire.id} d={wirePath(from, to, wire.points)} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : from.pneumatic && to.pneumatic ? " pneumatic-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} onClick={(event) => { event.stopPropagation(); onWireSelect(wire.id); }} /> : null;
       })}
       <text x="65" y="43" className="drawing-title">POWER CIRCUIT — DIRECT-ON-LINE MOTOR STARTER</text>
       <text x="500" y="640" className="drawing-title control-title">CONTROL CIRCUIT — START / STOP / HOLD</text>

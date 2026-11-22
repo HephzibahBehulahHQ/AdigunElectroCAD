@@ -11,6 +11,7 @@ const standaloneStyles = `
   .wire.fault { stroke: #d84a3a; stroke-dasharray: 8 5; }
   .wire.neutral { stroke: #55799b; }
   .wire.manual-wire { stroke: #7c3aed; stroke-width: 3; stroke-dasharray: 7 4; }
+  .wire.manual-wire.pneumatic-wire { stroke: #087e89; stroke-dasharray: 9 3 2 3; }
   .wire.manual-wire.power-wire { stroke: #991b1b; stroke-width: 2.4; stroke-dasharray: none; }
   .phase-l1 { fill: #d5242a; stroke: #d5242a; }
   .phase-l2 { fill: #d39700; stroke: #d39700; }

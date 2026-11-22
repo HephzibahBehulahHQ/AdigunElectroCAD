@@ -85,6 +85,10 @@ const plcOutput = (p: Properties, terminalId = "out-0") => {
 };
 const safetyOutput = (p: Properties) => safetyRelayEnergized(bool(p, "channelAClosed"), bool(p, "channelBClosed"), bool(p, "runtimeSafetyArmed"));
 
+function valvePortPair(properties: Properties, normallyOpen: boolean): FunctionalModelResult {
+  return { label: "Open pneumatic path", value: bool(properties, "runtimeCoilEnergized") !== normallyOpen ? "1 ↔ 2" : "2 ↔ 3" };
+}
+
 const models: Record<string, Model> = {
   "logic-no": (p) => ({ label: "NO output", value: binary(normallyOpen(bool(p, "input"))) }),
   "logic-nc": (p) => ({ label: "NC output", value: binary(normallyClosed(bool(p, "input"))) }),
@@ -101,6 +105,8 @@ const models: Record<string, Model> = {
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
   "sensor-level-4-20": (p) => bool(p, "simulateOpenLoop") ? { label: "Signal fault", error: levelLoopOpenError, value: `ERROR: ${levelLoopOpenError}` } : ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
+  "festo-vovg-nc": p => valvePortPair(p, false),
+  "festo-vovg-no": p => valvePortPair(p, true),
   "sensor-encoder-frequency": (p) => {
     const result = encoderFrequencySignal(p, "phase-a");
     return result.error ? { label: "Encoder channel frequency", value: "ERROR: " + result.error, error: result.error }
