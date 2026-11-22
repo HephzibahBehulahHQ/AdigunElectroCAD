@@ -95,7 +95,12 @@ const models: Record<string, Model> = {
   "sensor-level-4-20": (p) => bool(p, "simulateOpenLoop") ? { label: "Signal fault", error: levelLoopOpenError, value: `ERROR: ${levelLoopOpenError}` } : ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
   "sensor-encoder": (p) => ({ label: "Encoder pulses", value: String(encoderPulses(number(p, "revolutions"), number(p, "pulsesPerRevolution", 1024))) }),
-  "sensor-load-cell": (p) => ({ label: "Load-cell output", value: `${loadCellMillivolt(number(p, "forceN"), number(p, "capacityN", 1000)).toFixed(3)} mV` }),
+  "sensor-load-cell": (p) => {
+    const output = loadCellSignal(p);
+    return output.error
+      ? { label: "Load-cell output", value: "ERROR: " + output.error, error: output.error }
+      : { label: "Load-cell output", value: Number(output.value).toFixed(3) + " mV" };
+  },
   "sensor-current-transformer": (p) => ({ label: "CT secondary", value: `${currentTransformerSecondaryAmp(number(p, "primaryA"), number(p, "ratedPrimaryA", 100)).toFixed(3)} A` }),
   "signal-adc": (p) => {
     const converted = adcSignal(p);
@@ -233,6 +238,18 @@ export function climateContactClosed(modelId: "hvac-thermostat" | "hvac-humidist
     : humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), previous));
 }
 
+function loadCellSignal(properties: Properties): FunctionalSignal {
+  const capacity = properties.capacityN ?? 1000;
+  const force = properties.forceN ?? 0;
+  if (typeof capacity !== "number" || !Number.isFinite(capacity) || capacity <= 0) {
+    return fault("Load-cell capacity must be finite and positive.");
+  }
+  if (typeof force !== "number" || !Number.isFinite(force) || force < 0 || force > capacity) {
+    return fault("Load-cell force is outside the configured measuring range.");
+  }
+  return signal("millivolt", loadCellMillivolt(force, capacity));
+}
+
 function climateContactSignal(modelId: "hvac-thermostat" | "hvac-humidistat", properties: Properties): FunctionalSignal {
   const humidity = modelId === "hvac-humidistat";
   const measurement = properties[humidity ? "humidityPercent" : "temperatureC"] ?? 0;
@@ -326,7 +343,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-level-4-20") return bool(properties, "simulateOpenLoop") ? fault(levelLoopOpenError) : signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
   if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));
   if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
-  if (modelId === "sensor-load-cell") return signal("millivolt", loadCellMillivolt(number(properties, "forceN"), number(properties, "capacityN", 1000)));
+  if (modelId === "sensor-load-cell") return loadCellSignal(properties);
   if (modelId === "sensor-current-transformer") return signal("ampere", currentTransformerSecondaryAmp(number(properties, "primaryA"), number(properties, "ratedPrimaryA", 100)));
   if (modelId === "signal-adc") return adcSignal(properties);
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
