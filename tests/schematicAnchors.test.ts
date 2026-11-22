@@ -866,6 +866,7 @@ it.each([
   ["a9f04170", 0.5, "C", 6, ["1", "2"]],
   ["a9f06213", 13, "B", 10, ["1", "2", "3", "4"]],
   ["a9f08304", 4, "D", 10, ["1", "2", "3", "4", "5", "6"]],
+  ["a9k02463", 63, "C", 6, ["1", "2", "3", "4", "5", "6", "7", "8"]],
 ] as const)("publishes the exact ratings and anchors for Schneider %s", (code, ratedCurrentA, curve, icnKa, labels) => {
   const id = "schneider.acti9." + code;
   const definition = componentLibraryCatalog.find(entry => entry.id === id);
@@ -879,4 +880,13 @@ it.each([
 it("omits unavailable combinations from the German Acti9 order table", () => {
   expect(catalogById.has("schneider.acti9.a9f03170")).toBe(false);
   expect(catalogById.has("schneider.acti9.a9f08225")).toBe(false);
+});
+
+
+it("publishes iC60L fractional K-curve ratings without assigning Icn to the whole family", () => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "schneider.acti9.a9f95272");
+  expect(part?.propertiesSchema).toMatchObject({ ratedCurrentA: 1.6, curve: "K" });
+  expect(part?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4"]);
+  expect(part?.propertiesSchema).not.toHaveProperty("icnKa");
+  expect(catalogById.has("schneider.acti9.a9f94272")).toBe(false);
 });
