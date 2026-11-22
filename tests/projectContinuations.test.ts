@@ -3,10 +3,10 @@ import { createProjectWideReport } from "../src/reports/projectReport";
 import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
-import { addFreeSchematicSheet, createBlankProject, createStarterProject } from "../src/projects/starterProject";
+import { addFreeSchematicSheet, createBlankProject, createStarterProject, replaceSheetDocument } from "../src/projects/starterProject";
 import { editCustomTerminalContract } from "../src/projects/customTerminalEdit";
 import type { ComponentInstance } from "../src/types/electrical";
-import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
+import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, resolveProjectNet, updateProjectContinuation, validateProjectContinuations } from "../src/projects/projectContinuations";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { recordProjectEdit, redoProject, undoProject } from "../src/cad/projectHistory";
@@ -264,6 +264,13 @@ it("rejects cross-sheet driver collisions and faults old connected loads determi
   const joined = createProjectContinuation(project, { sheetId: first.id, endpoint: from }, { sheetId: middle.id, endpoint: to });
   if (!joined.ok) throw Error(joined.reason);
   expect(extendProjectContinuation(joined.project, joined.continuation.id, { sheetId: third.id, endpoint: to })).toMatchObject({ ok: false, reason: expect.stringContaining("S1.out, S2.out") });
+  const withLocalDriver = { ...middle.document,
+    components: [...middle.document.components, driver("S3", false)],
+    wires: [{ id: "added-local", from, to, points: [] }],
+  };
+  const localEdit = replaceSheetDocument(joined.project, middle.id, withLocalDriver);
+  expect(introducedDriverConflict(joined.project, localEdit)).toContain("S1.out, S3.out");
+  expect(introducedDriverConflict(localEdit, joined.project)).toBeUndefined();
   const [source, destination] = joined.continuation.points;
   const legacy = { ...joined.project, continuations: [{ ...joined.continuation, points: [
     source, { ...destination, role: "continuation" as const },

@@ -49,7 +49,7 @@ import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from ".
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
 import { editCustomTerminalContract } from "../projects/customTerminalEdit";
-import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
+import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml, workbookPrintHtml } from "../projects/schematicPrint";
 import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
@@ -440,6 +440,10 @@ export function App() {
         return [{ ...continuation, points: points.map((point, index) => ({ ...point, role: index === 0 ? "source" as const : index === points.length - 1 ? "destination" as const : "continuation" as const })) }];
       }),
     } : replaced;
+    if (next.wires !== document.wires) {
+      const conflict = introducedDriverConflict(project, nextProject);
+      if (conflict) { setNotice(conflict); return false; }
+    }
     if (selectedContinuationId && !nextProject.continuations?.some((item) => item.id === selectedContinuationId)) setSelectedContinuationId("");
     if (saveHistory) recordEdit(nextProject);
     else setProject(nextProject);
@@ -1454,7 +1458,7 @@ export function App() {
       if (!check.ok) { setNotice(check.reason ?? "The selected terminals cannot be connected."); return; }
       const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
       if (!wireBranchStart) wire.points = wireBends;
-      updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 });
+      if (!updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 })) return;
       setSelectedWireId(wire.id);
       setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
     }
