@@ -211,7 +211,22 @@ describe("placed functional component execution", () => {
     document.wires = [{ id: "measurement", from: { componentId: "load-cell", terminalId: "signal" }, to: { componentId: "meter", terminalId: "signal" }, points: [], netName: "MEAS" }];
     const meter = executeCircuitModels(document, catalogById).find((run) => run.reference === "P1")!;
     expect(meter.output.label).toBe("Voltage reading");
-    expect(Number(meter.evaluatedProperties.measuredValue)).toBeGreaterThan(0);
+    expect(meter.evaluatedProperties.measuredValue).toBe(0.01);
+  });
+
+  it("converts current-loop readings to amperes and diagnoses incompatible or missing input", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "source", definitionId: "sensor.level-4-20", reference: "B1", x: 100, y: 100, rotation: 0, properties: { levelPercent: 50 } },
+      { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 300, y: 100, rotation: 0, properties: { measurementKind: "Current", scaleMaximum: 0.02, requireWiredInput: true } },
+    ];
+    document.wires = [{ id: "reading", from: { componentId: "source", terminalId: "signal" }, to: { componentId: "meter", terminalId: "signal" }, points: [] }];
+    const read = () => executeCircuitModels(document, catalogById).find(({ reference }) => reference === "P1")!.output;
+    expect(read()).toMatchObject({ label: "Current reading", value: "0.012 / 0.02" });
+    document.components[1].properties.measurementKind = "Frequency";
+    expect(read().error).toContain("milliamp is not accepted");
+    document.wires = [];
+    expect(read().error).toContain("has no wire");
   });
 
   it("inhibits wired weighing control on overload or invalid calibration and recovers", () => {

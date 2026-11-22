@@ -11,9 +11,15 @@ export interface CircuitModelRun { componentId: string; reference: string; model
 const endpointKey = (componentId: string, terminalId: string) => `${componentId}.${terminalId}`;
 
 const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
+const panelMeterUnits = new Map<string, SignalUnit[]>([
+  ["Voltage", ["millivolt", "scalar"]],
+  ["Current", ["ampere", "milliamp", "scalar"]],
+  ["Frequency", ["hertz", "scalar"]],
+  ["Power", ["scalar"]],
+]);
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; requiresWire?: string; };
 
-function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+function inputBinding(modelId: string, terminalId: string, measurementKind?: string | number | boolean): InputBinding | undefined {
   if (modelId === "hvac-damper" && terminalId === "in") return { property: "runtimeDamperOpenCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDamperCommandBound", requiresWire: "requireWiredCommand" };
   if ((modelId === "hvac-thermostat" || modelId === "hvac-humidistat") && terminalId === "in") return { property: "enabled", acceptedUnits: ["boolean"] };
   if (modelId === "pneumatic-valve-5-2" && ["in-a", "in-b"].includes(terminalId)) return { property: terminalId === "in-a" ? "extendCoil" : "retractCoil", acceptedUnits: ["boolean"] };
@@ -40,7 +46,9 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-motor-starter" && ["aux-13", "aux-21"].includes(terminalId)) return { property: terminalId === "aux-13" ? "aux13Input" : "aux21Input", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-on-delay-timer" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-on-delay-timer" && terminalId === "15") return { property: "timerContactCommon", acceptedUnits: ["boolean"] };
-  if (modelId === "catalog-panel-meter" && terminalId === "signal") return { property: "measuredValue", acceptedUnits: numericalUnits };
+  if (modelId === "catalog-panel-meter" && terminalId === "signal") {
+    return { property: "measuredValue", acceptedUnits: panelMeterUnits.get(String(measurementKind)) ?? numericalUnits, requiresWire: "requireWiredInput" };
+  }
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && /^[1-3]1$/.test(terminalId)) return { property: `contact${terminalId}`, acceptedUnits: ["boolean"] };
@@ -126,7 +134,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
           const key = endpointKey(component.id, terminal.id);
           const incoming = signals.get(key);
-          const binding = inputBinding(definition.simulationModelId, terminal.id);
+          const binding = inputBinding(definition.simulationModelId, terminal.id, activeProperties.measurementKind);
           const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
           const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
           const required = binding?.requiresWire && activeProperties[binding.requiresWire] === true;
@@ -147,8 +155,12 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           if (binding?.property === "analogInput0") activeProperties.runtimeInvalidAi0 = false;
           if (binding?.property === "analogInput1") activeProperties.runtimeInvalidAi1 = false;
           const inputUnitKey = binding ? `${component.id}.${binding.property}` : "";
-          if (incoming !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== incoming.value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
-            activeProperties[binding.property] = incoming.value;
+          const value = definition.simulationModelId === "catalog-panel-meter" && typeof incoming?.value === "number" &&
+            ((activeProperties.measurementKind === "Current" && incoming.unit === "milliamp") ||
+             (activeProperties.measurementKind === "Voltage" && incoming.unit === "millivolt"))
+            ? incoming.value / 1000 : incoming?.value;
+          if (incoming !== undefined && value !== undefined && binding && binding.acceptedUnits.includes(incoming.unit) && (!pairedUnit || pairedUnit === incoming.unit) && (activeProperties[binding.property] !== value || inputUnits.get(inputUnitKey) !== incoming.unit)) {
+            activeProperties[binding.property] = value;
             if (binding.boundProperty) activeProperties[binding.boundProperty] = true;
             inputUnits.set(inputUnitKey, incoming.unit);
             changed = true;

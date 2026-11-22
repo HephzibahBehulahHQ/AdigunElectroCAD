@@ -31,7 +31,7 @@ export function createCurrentMonitoringProject(): ProjectTemplate {
       id, name, description, revision: 1,
       components: [
         { id: "ct", definitionId: "sensor.current-transformer", reference: "TA1", x: 155, y: 350, rotation: 0, properties: { primaryA: 50, ratedPrimaryA: 100 } },
-        { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 510, y: 190, rotation: 0, properties: { measurementKind: "Current", measuredValue: 0, scaleMaximum: 5 } },
+        { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 510, y: 190, rotation: 0, properties: { measurementKind: "Current", measuredValue: 0, scaleMaximum: 5, requireWiredInput: true } },
         { id: "limit", definitionId: "logic.comparator-greater-than", reference: "CMP1", x: 510, y: 435, rotation: 0, properties: { left: 0, right: 4 } },
         { id: "indicator", definitionId: "logic.output-coil", reference: "K1", x: 810, y: 435, rotation: 0, properties: { input: false } },
       ],
