@@ -1133,7 +1133,7 @@ it("keeps Siemens 5SL3 pole-specific availability and numbered neutral terminals
 
 
 it("uses the ABB S200M ordering codes, including the fractional-current suffixes", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M" && !entry.propertiesSchema.switchedNeutral);
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M" && !entry.propertiesSchema.switchedNeutral && typeof entry.propertiesSchema.icnKa === "number");
   const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
   expect(parts).toHaveLength(176);
   expect(part("2cds271001r0984")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "C", icnKa: 10 });
@@ -1143,7 +1143,7 @@ it("uses the ABB S200M ordering codes, including the fractional-current suffixes
 
 
 it("distinguishes ABB S200 and S200M order codes and breaking capacities", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200" && !entry.propertiesSchema.switchedNeutral);
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200" && !entry.propertiesSchema.switchedNeutral && typeof entry.propertiesSchema.icnKa === "number");
   const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "abb." + code);
   expect(parts).toHaveLength(176);
   expect(part("2cds251001r0981")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "D", icnKa: 6 });
@@ -1169,4 +1169,15 @@ it("places the ABB NA neutral on its documented numbered terminal pair", () => {
   expect(single?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3N", "4N"]);
   expect(triple?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7N", "8N"]);
   expect(triple?.manufacturerRecord?.topology).toMatchObject({ neutralTerminals: ["l4-in", "l4-out"], protectedPoles: 3 });
+});
+
+
+it("uses ABB industrial K/Z codes and preserves their separate rating standard", () => {
+  const parts = componentLibraryCatalog.filter(entry => ["S200", "S200M"].includes(entry.manufacturerRecord?.series ?? "") && ["K", "Z"].includes(String(entry.propertiesSchema.curve)));
+  const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
+  expect(parts).toHaveLength(264);
+  expect(part("2cds254001r0257")?.propertiesSchema).toMatchObject({ ratedCurrentA: 1.6, curve: "K" });
+  expect(part("2cds274001r0428")?.propertiesSchema).toMatchObject({ ratedCurrentA: 10, curve: "Z" });
+  expect(part("2cds274001r0428")?.propertiesSchema).not.toHaveProperty("icnKa");
+  expect(part("2cds274001r0428")?.standardsReferences).toContain("IEC/EN 60947-2");
 });
