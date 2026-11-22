@@ -1019,3 +1019,12 @@ it.each([
   expect(part?.propertiesSchema).toMatchObject({ articleNumber, icnKa });
   expect(part?.terminals.map(terminal => terminal.label)).toEqual(labels);
 });
+
+
+it("preserves Eaton FAZ6 article numbers, switched neutral and blank order cells", () => {
+  const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
+  expect(part("faz6-b6-1")?.propertiesSchema).toMatchObject({ articleNumber: "239001", icnKa: 6 });
+  expect(part("faz6-c16-3n")?.propertiesSchema).toMatchObject({ articleNumber: "239173", switchedNeutral: true });
+  expect(part("faz6-c16-3n")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+  expect(part("faz6-d63-4")).toBeUndefined();
+});
