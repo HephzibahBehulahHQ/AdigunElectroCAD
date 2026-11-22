@@ -1021,10 +1021,19 @@ it.each([
 });
 
 
-it("preserves Eaton FAZ6 article numbers, switched neutral and blank order cells", () => {
+it("preserves Eaton FAZ6 article numbers, switched neutral and German catalogue additions", () => {
   const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
   expect(part("faz6-b6-1")?.propertiesSchema).toMatchObject({ articleNumber: "239001", icnKa: 6 });
   expect(part("faz6-c16-3n")?.propertiesSchema).toMatchObject({ articleNumber: "239173", switchedNeutral: true });
   expect(part("faz6-c16-3n")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
-  expect(part("faz6-d63-4")).toBeUndefined();
+  expect(part("faz6-d63-4")?.propertiesSchema.articleNumber).toBe("168096");
+});
+
+
+it("keeps Eaton FAZ6 article numbers unique across the Spanish and German tables", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "FAZ6 xEffect");
+  const articles = parts.map(entry => entry.propertiesSchema.articleNumber);
+  expect(new Set(articles).size).toBe(parts.length);
+  expect(parts.find(entry => entry.id === "eaton.faz6-b1.5-3")?.propertiesSchema.articleNumber).toBe("177578");
+  expect(parts.find(entry => entry.id === "eaton.faz6-d6-1n")?.propertiesSchema.articleNumber).toBe("177527");
 });
