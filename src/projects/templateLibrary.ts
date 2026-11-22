@@ -1,3 +1,4 @@
+import { createPoweredTimerPilotTransferProject } from "./poweredTimerPilotTransferProject";
 import { createRelayControlFeedLossProject } from "./relayControlFeedLossProject";
 import { createMixedVoltageRelayPanelProject } from "./mixedVoltageRelayPanelProject";
 import { createContactorStatusPanelProject } from "./contactorStatusPanelProject";
@@ -160,6 +161,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createContactorStatusPanelProject(),
   createMixedVoltageRelayPanelProject(),
   createRelayControlFeedLossProject(),
+  createPoweredTimerPilotTransferProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
