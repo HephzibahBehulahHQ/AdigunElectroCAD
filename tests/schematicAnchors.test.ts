@@ -856,3 +856,18 @@ it("reroutes automatic wires around unrelated symbols and preserves hand-routed 
   expect(render({ ...document, wires: [{ ...wire, points }] })).toContain('d="' + orthogonalWirePath(from, to, points, from.vertical, to.vertical) + '"');
   expect(document.wires[0].points).toEqual([]);
 });
+
+
+it.each([
+  ["a9f73170", 0.5, "B", 6, ["1", "2"]],
+  ["a9f74313", 13, "C", 6, ["1", "2", "3", "4", "5", "6"]],
+  ["a9f85213", 13, "D", 10, ["1", "2", "3", "4"]],
+  ["a9f85463", 63, "D", 10, ["1", "2", "3", "4", "5", "6", "7", "8"]],
+] as const)("publishes the exact ratings and anchors for Schneider %s", (code, ratedCurrentA, curve, icnKa, labels) => {
+  const id = "schneider.acti9." + code;
+  const definition = componentLibraryCatalog.find(entry => entry.id === id);
+  expect(definition).toBe(catalogById.get(id));
+  expect(definition?.propertiesSchema).toMatchObject({ ratedCurrentA, curve, icnKa });
+  expect(definition?.manufacturerRecord?.orderCode).toBe(code.toUpperCase());
+  expect(definition?.terminals.map(terminal => terminal.label)).toEqual(labels);
+});
