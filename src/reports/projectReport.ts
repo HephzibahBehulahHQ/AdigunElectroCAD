@@ -14,6 +14,7 @@ export interface WireLine {
   netName: string;
   from: string;
   to: string;
+  conductorColor?: string;
   continuation?: {
     id: string;
     cableCore?: ProjectContinuation["cableCore"];
@@ -36,7 +37,7 @@ export interface ProjectReport {
   terminals: TerminalLine[];
 }
 
-export type ReportSection = "bom" | "wires" | "terminals";
+export type ReportSection = "bom" | "wires" | "terminals" | "cables";
 
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
@@ -79,7 +80,34 @@ export function reportCsv(report: ProjectReport, section: ReportSection): string
     const { headers, rows } = wireReportTable(report);
     return toCsv(headers, rows);
   }
+  if (section === "cables") {
+    const { headers, rows } = cableScheduleTable(report);
+    return toCsv(headers, rows);
+  }
   return report.terminals.some((line) => line.sheet) ? toCsv(["Sheet", "Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction])) : toCsv(["Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction]));
+}
+
+export function cableScheduleTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
+  const assigned = new Map<string, { cable: string; core: string; net: string; color: string; source: string; destination: string }>();
+  for (const wire of report.wires) {
+    const continuation = wire.continuation;
+    if (!continuation?.cableCore) continue;
+    const existing = assigned.get(continuation.id);
+    if (existing) existing.destination = wire.to;
+    else assigned.set(continuation.id, {
+      cable: continuation.cableCore.cableId,
+      core: continuation.cableCore.coreId,
+      net: wire.netName,
+      color: wire.conductorColor ?? "",
+      source: continuation.originalSource,
+      destination: wire.to,
+    });
+  }
+  const cores = [...assigned].sort(([, a], [, b]) => a.cable.localeCompare(b.cable, undefined, { numeric: true }) || a.core.localeCompare(b.core, undefined, { numeric: true }));
+  return {
+    headers: ["Cable ID", "Core ID", "Net", "Conductor color", "Source", "Destination", "Continuation ID"],
+    rows: cores.map(([id, core]) => [core.cable, core.core, core.net, core.color, core.source, core.destination, id]),
+  };
 }
 
 export function wireReportTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
@@ -143,6 +171,7 @@ export function createProjectWideReport({ sheets, continuations }: Pick<Electric
         netName: continuation.label,
         from,
         to,
+        conductorColor: continuation.conductorColor,
         continuation: { id: continuation.id, cableCore: continuation.cableCore, originalSource },
       });
       from = to;

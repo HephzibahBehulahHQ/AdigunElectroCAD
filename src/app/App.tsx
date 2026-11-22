@@ -48,7 +48,7 @@ import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml } from "../projects/schematicPrint";
-import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
+import { cableScheduleTable, createProjectReport, createProjectWideReport, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
@@ -2249,12 +2249,14 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, on
         <button onClick={() => onExport("bom", scope)}>Export BOM CSV</button>
         <button onClick={() => onExport("wires", scope)}>Export wires CSV</button>
         <button onClick={() => onExport("terminals", scope)}>Export terminals CSV</button>
+        {projectScope && <button onClick={() => onExport("cables", "project")}>Export cable schedule CSV</button>}
         <button onClick={onClose}>Close reports</button>
       </div>
     </div>
     <div className="report-grid">
       <ReportTable title="Bill of materials" headers={["Component", "Category", "Qty", "References"]} rows={report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")])} />
       <ReportTable title="Wire list" {...wireReportTable(report)} />
+      {projectScope && <ReportTable title="Cable schedule" {...cableScheduleTable(report)} />}
       <ReportTable title="Terminal list" headers={projectScope ? ["Sheet", "Reference", "Terminal", "Kind", "Direction"] : ["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => projectScope ? [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction] : [line.reference, line.terminal, line.kind, line.direction])} />
     </div>
   </section>;
