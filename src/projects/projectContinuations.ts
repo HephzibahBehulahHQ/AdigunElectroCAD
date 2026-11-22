@@ -71,21 +71,33 @@ export function projectContinuationSignalWarnings(project: Pick<ElectricalProjec
   });
 }
 
-export function projectSignalDriverConflicts(project: Pick<ElectricalProject, "sheets" | "continuations">): string[] {
-  // Prefix sheet-local component IDs exactly as the project runtime does.
+function projectDriverConflictGroups(project: Pick<ElectricalProject, "sheets" | "continuations">) {
+  if (!project.continuations?.length) return [];
+  const signature = (endpoints: TerminalEndpoint[]) => JSON.stringify(endpoints.map(({ componentId, terminalId }) =>
+    JSON.stringify([componentId, terminalId])).sort());
   const runtime = createProjectRuntimeDocument({ id: "signal-check", name: "", description: "", revision: 1, ...project });
-  const origins = new Map(project.sheets.flatMap((sheet) => sheet.document.components.map(({ id }) => [sheet.id + "::" + id, sheet.id] as const)));
-  return conflictingSignalDrivers(runtime, catalogById)
-    .filter(({ endpoints }) => new Set(endpoints.map(({ componentId }) => origins.get(componentId))).size > 1)
-    .map(({ message }) => message);
+  const groups = conflictingSignalDrivers(runtime, catalogById);
+  if (groups.length === 0) return [];
+  // A conflict can leave and return to the drivers' sheet. Compare against
+  // sheet-local connectivity rather than counting the sheets that own drivers.
+  const localOnly = new Set(project.sheets.flatMap((sheet) =>
+    conflictingSignalDrivers(sheet.document, catalogById).map(({ endpoints }) =>
+      signature(endpoints.map((endpoint) => ({ ...endpoint, componentId: sheet.id + "::" + endpoint.componentId }))))));
+  return groups.flatMap(({ endpoints, message }) => {
+    const key = signature(endpoints);
+    return localOnly.has(key) ? [] : [{ key, message }];
+  });
+}
+
+export function projectSignalDriverConflicts(project: Pick<ElectricalProject, "sheets" | "continuations">): string[] {
+  return projectDriverConflictGroups(project).map(({ message }) => message);
 }
 
 export function introducedDriverConflict(before: ElectricalProject, after: ElectricalProject): string | undefined {
-  if (!after.continuations?.length) return;
-  const conflicts = projectSignalDriverConflicts(after);
+  const conflicts = projectDriverConflictGroups(after);
   if (conflicts.length === 0) return;
-  const existing = new Set(projectSignalDriverConflicts(before));
-  return conflicts.find((message) => !existing.has(message));
+  const existing = new Set(projectDriverConflictGroups(before).map(({ key }) => key));
+  return conflicts.find(({ key }) => !existing.has(key))?.message;
 }
 
 export interface ProjectTerminalReference {
