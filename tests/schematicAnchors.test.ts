@@ -1056,3 +1056,14 @@ it("preserves the Siemens 5SL6 B-curve ordering exceptions and neutral terminals
   expect(part("5sl6202-6")).toBeUndefined();
   expect(part("5sl6614-7")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
 });
+
+
+it("uses the exact Siemens 5SY4 A/B/C/D order table including nonliteral current codes", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SY4");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(424);
+  expect(part("5sy4118-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 15, curve: "C", icnKa: 10 });
+  expect(part("5sy4105-5")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "A" });
+  expect(part("5sy4505-5")).toBeUndefined();
+  expect(part("5sy4604-5")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+});
