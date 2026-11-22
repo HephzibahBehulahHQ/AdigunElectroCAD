@@ -1,3 +1,4 @@
+import { createBlendRatioPermitProject } from "./blendRatioPermitProject";
 import { createTransferProofWatchdogProject } from "./transferProofWatchdogProject";
 import { createEncoderIndexInspectionProject } from "./encoderIndexInspectionProject";
 import { createThermalOverloadTemplate } from "./thermalOverloadCircuit";
@@ -123,6 +124,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createHumidityDamperProject(),
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
+  createBlendRatioPermitProject(),
   createVibrationVotingProject(),
   createEncoderIndexInspectionProject(),
   createDualChannelResetProject(),
