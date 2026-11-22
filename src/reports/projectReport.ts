@@ -50,7 +50,14 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
     line.quantity += 1;
     line.references.push(component.reference);
     bomByDefinition.set(definition.id, line);
-    for (const terminal of definition.terminals) terminals.set(`${component.id}.${terminal.id}`, { reference: component.reference, terminal: terminal.label, kind: terminal.kind, direction: terminal.direction });
+    for (const terminal of component.customTerminals ?? definition.terminals) {
+      terminals.set(`${component.id}.${terminal.id}`, {
+        reference: component.reference,
+        terminal: component.terminalLabels?.[terminal.id] ?? terminal.label,
+        kind: terminal.kind,
+        direction: terminal.direction,
+      });
+    }
   }
 
   const endpointLabel = (componentId: string, terminalId: string) => {

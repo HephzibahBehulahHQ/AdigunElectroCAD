@@ -1,11 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
+import { createBlankProject } from "../src/projects/starterProject";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { assignProjectCableCore } from "../src/projects/projectContinuations";
 import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable } from "../src/reports/projectReport";
 
 describe("engineering project reports", () => {
+  it("uses user-defined terminal identities and labels in local and project-wide reports", () => {
+    const project = createBlankProject();
+    const document = project.sheets[0].document;
+    document.components = [
+      { id: "custom", reference: "U1", definitionId: "user.drawn-symbol", x: 160, y: 160, rotation: 0, properties: {},
+        customTerminals: [{ id: "t3", label: "T3", kind: "control", direction: "output" }], terminalLabels: { t3: "RUN" } },
+      { id: "peer", reference: "U2", definitionId: "user.drawn-symbol", x: 400, y: 160, rotation: 0, properties: {}, terminalLabels: { t1: "ENABLE" } },
+    ];
+    document.wires = [{ id: "run-wire", netName: "RUN_ENABLE", from: { componentId: "custom", terminalId: "t3" }, to: { componentId: "peer", terminalId: "t1" }, points: [] }];
+    for (const report of [createProjectReport(document, catalogById), createProjectWideReport(project, catalogById)]) {
+      expect(report.wires[0]).toMatchObject({ from: "U1.RUN", to: "U2.ENABLE" });
+      expect(report.terminals.filter((terminal) => terminal.reference === "U1")).toEqual([
+        expect.objectContaining({ terminal: "RUN", kind: "control", direction: "output" }),
+      ]);
+      expect(reportCsv(report, "wires")).toContain('"U1.RUN","U2.ENABLE"');
+      expect(reportCsv(report, "terminals")).toContain('"U1","RUN","control","output"');
+    }
+  });
+
   it("derives a BOM, wire list and terminal list from the DOL document", () => {
     const report = createProjectReport(createDolMotorStarter(), catalogById);
 
