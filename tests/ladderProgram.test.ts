@@ -1,6 +1,16 @@
 import { expect, it } from "vitest";
 import { compileLadder, duplicateLadderRung, moveLadderRung, parseLadder, type LadderRung } from "../src/simulation/ladderProgram";
 import { previewLadder } from "../src/simulation/ladderProgram";
+
+it("inhibits the graphical preview when a not-equal contact reads an invalid analog sample", () => {
+  const program = "LD I0; SET M0; NE AI0 13824; OUT Q0";
+  const rungs = parseLadder(program)!;
+  const inputs = { input0: true, input1: false, q0: true, previousInput0: false, previousInput1: false, analogInput0: 27649, registers: [], memory: Array(8).fill(false) };
+  expect(previewLadder(rungs, inputs)).toMatchObject({
+    output: false, output1: false, memory: inputs.memory, contactEnergized: [], error: expect.stringContaining("Comparisons require"),
+  });
+  expect(previewLadder(rungs, { ...inputs, analogInput0: 27648 })).toMatchObject({ output: true, memory: [true, ...Array(7).fill(false)] });
+});
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LadderEditor } from "../src/components/LadderEditor";
