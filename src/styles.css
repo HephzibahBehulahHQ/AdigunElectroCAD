@@ -424,6 +424,10 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 
 @media print {
   :root { color-scheme: light; }
+  .workspace-dock, .header-utilities, .drawing-rulers, .drawing-cursor-readout, .wire-canvas-message,
+  .schematic [data-export-exclude], .schematic .selection-boundary { display: none; }
+  .drawing-area .schematic-wrap { min-height: 0; height: auto; overflow: hidden; }
+  .drawing-area .schematic { max-height: 150mm; }
   .report-panel {
     break-before: page;
     padding: 0;
