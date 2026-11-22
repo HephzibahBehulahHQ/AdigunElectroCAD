@@ -1,3 +1,4 @@
+import { createPneumaticStrokeWatchdogProject } from "./pneumaticStrokeWatchdogProject";
 import { createClampPositionPermitProject } from "./clampPositionPermitProject";
 import { createNetWeightCheckweigherProject } from "./netWeightCheckweigherProject";
 import { createSortingDecisionLatchProject } from "./sortingDecisionLatchProject";
@@ -162,6 +163,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
   createClampPositionPermitProject(),
+  createPneumaticStrokeWatchdogProject(),
   createTwoMotorTemplate(),
   createWiredHoldingTemplate(),
   createWiredReversingTemplate(),
