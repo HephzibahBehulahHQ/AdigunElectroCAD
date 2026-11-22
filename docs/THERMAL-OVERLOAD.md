@@ -10,7 +10,7 @@ The educational model retains normalized heat `h`; `h = 1` is the trip threshold
 
 Parameters are explicit; no manufacturer calibration or IEC trip-class conformity is claimed. This is a single retained relay thermal state, without separate rotor/stator heating, ambient compensation, phase-unbalance heating or inrush. A separate optional motor model can integrate user-entered rigid-rotor inertia and load torque; it does not change relay calibration or add electromagnetic flux dynamics. ABB's [motor thermal protection operation principle](https://techdoc.relays.protection-control.abb/r/REX615-Technical-Manual/PCL1/en-US/MPTTR-Operation-principle) describes current-squared heating and condition-dependent time constants; it motivates this simplified model but does not validate these application parameters or certify this implementation.
 
-When a connected six-terminal winding has some live feeds without three distinct phases from one source, the simulator reports unavailable unbalanced winding current. A modeled overload on an affected conducting path takes its current-model fault trip, which drops the contactor when the auxiliary contact is wired into its control circuit. With no live feeds or an open winding transition, this phase diagnostic is inactive.
+When a connected six-terminal winding or an enabled three-terminal motor has live feeds without three distinct phases from one source, the simulator reports unavailable unbalanced winding current. A modeled overload on an affected conducting path takes its current-model fault trip, which drops the contactor when the auxiliary contact is wired into its control circuit. With no live feeds or an open winding transition, this phase diagnostic is inactive.
 
 ## Evidence and remaining integration
 

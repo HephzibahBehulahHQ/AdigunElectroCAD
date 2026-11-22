@@ -60,14 +60,15 @@ it("derives the same three pole currents from forward and reversed wired feeds",
   }
 });
 
-it("detects a physical relay bypass and zeroes current after losing a motor phase", () => {
+it("detects a physical relay bypass and invalidates current after losing a motor phase", () => {
   let circuit = setCircuitBooleanInput(createWiredReversingCircuit(), catalogById, "start", "pressed", true);
   circuit.wires.push({ id: "bypass", from: { componentId: "overload", terminalId: "l1-in" }, to: { componentId: "overload", terminalId: "t1" }, points: [] });
   const bypass = executeCircuitModels(circuit, catalogById).find(r => r.reference === "F1")!;
   expect(bypass.evaluatedProperties.runtimeCurrentError).toContain("bypassed power path");
   circuit.wires = circuit.wires.filter(w => w.to.componentId !== "motor" || w.to.terminalId !== "u1");
-  expect(executeCircuitModels(circuit, catalogById).find(r => r.reference === "M1")?.output.value).toBe("STANDBY");
-  expect(executeCircuitModels(circuit, catalogById).find(r => r.reference === "F1")?.evaluatedProperties.runtimeLoadCurrentA).toBe(0);
+  const runs = executeCircuitModels(circuit, catalogById);
+  expect(runs.find(r => r.reference === "M1")?.output.error).toContain("unbalanced winding current");
+  expect(runs.find(r => r.reference === "F1")?.evaluatedProperties.runtimeCurrentError).toContain("unbalanced winding current");
 });
 
 it("traces the actual six-terminal star and delta line currents through F1", () => {

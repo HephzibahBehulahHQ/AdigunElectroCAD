@@ -221,13 +221,13 @@ describe("placed functional component execution", () => {
     const source = { ...structuredClone(document.components[0]), id: "independent-source", reference: "X2" };
     document.components.push(source);
     document.wires[0].from.componentId = source.id;
-    expect(executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")?.output.value).toBe("STANDBY");
+    expect(executeCircuitModels(document, catalogById).find((run) => run.reference === "M1")?.output.error).toContain("three distinct phases from one supply");
   });
   it("does not run a motor whose three terminals receive the same phase", () => {
     const document = structuredClone(templateFixtures[0].document);
     for (const wire of document.wires.filter((wire) => wire.to.componentId === document.components[3].id)) wire.from.terminalId = "l1-out";
     const motor = executeCircuitModels(document, catalogById).find((run) => run.reference === "M1");
-    expect(motor?.output.value).toBe("STANDBY");
+    expect(motor?.output.error).toContain("three distinct phases from one supply");
   });
   it("removes motor power when its breaker opens or a phase wire is removed", () => {
     const document = structuredClone(templateFixtures[0].document);
@@ -239,7 +239,7 @@ describe("placed functional component execution", () => {
     breaker.properties.closed = true;
     expect(motor()).toContain("rpm");
     document.wires.pop();
-    expect(motor()).toBe("STANDBY");
+    expect(motor()).toContain("unbalanced winding current is unavailable");
   });
   it("evaluates a placed parameterized IEC catalog record through its declared abstraction", () => {
     const document = createDolMotorStarter();

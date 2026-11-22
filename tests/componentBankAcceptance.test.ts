@@ -79,5 +79,5 @@ it("runs the selectable educational supply, breaker and motor only when all thre
   expect(motorOutput(document)).toBe("STANDBY");
   breaker.properties.closed = true;
   expect(motorOutput(document)).toBe("1440 rpm / 7.5 kW");
-  expect(motorOutput({ ...document, wires: document.wires.slice(0, -1) })).toBe("STANDBY");
+  expect(motorOutput({ ...document, wires: document.wires.slice(0, -1) })).toContain("unbalanced winding current is unavailable");
 });

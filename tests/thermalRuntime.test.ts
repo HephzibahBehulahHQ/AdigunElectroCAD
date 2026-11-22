@@ -18,6 +18,17 @@ function running() {
 }
 const coldTrip = 10 * Math.log(4 / 3);
 
+it("reports phase loss on a running three-terminal motor and trips its wired overload", () => {
+  const document = running();
+  const wires = document.wires.filter((wire) => wire.to.componentId !== "motor" || wire.to.terminalId !== "w1");
+  expect(wires).toHaveLength(document.wires.length - 1);
+  const missingPhase = { ...document, wires };
+  expect(motor(missingPhase)).toContain("does not have three distinct phases");
+  const tripped = advanceCircuitClock(missingPhase, catalogById, 0.1);
+  expect(relay(tripped)).toMatchObject({ runtimeThermalTripped: true, runtimeThermalError: expect.stringContaining("unbalanced winding current") });
+  expect(motor(tripped)).toBe("STANDBY");
+});
+
 it("runs the dedicated cold/hot overload sequence", () => {
   const result = verifyProjectTemplate(createThermalOverloadTemplate(), catalogById);
   expect(result.failedExpectations).toEqual([]);

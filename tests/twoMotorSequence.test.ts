@@ -48,7 +48,7 @@ it("does not run M2 with a missing power phase despite its control command", () 
   runtime = advanceCircuitClock(advanceCircuitClock(runtime, catalogById, .1), catalogById, 4);
   const runs = executeCircuitModels(runtime, catalogById);
   expect(runs.find(r => r.componentId === "m1")!.output.value).toContain("1470 rpm");
-  expect(runs.find(r => r.componentId === "m2")!.output.value).toBe("STANDBY");
+  expect(runs.find(r => r.componentId === "m2")!.output.error).toContain("unbalanced winding current");
 });
 
 it("uses the modeled Siemens devices and matching nameplate overload settings", () => {
