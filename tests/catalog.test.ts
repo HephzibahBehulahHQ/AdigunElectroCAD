@@ -238,3 +238,13 @@ it("uses the documented PNP rate limit and preserves all three complementary lea
   expect(evaluateFunctionalSignal(differential.simulationModelId, running, "phase-a-inverted")?.value).toBe(20480);
   expect(evaluateFunctionalSignal(differential.simulationModelId, running, "phase-z-inverted")?.value).toBe(20);
 });
+
+it("uses exact Phoenix Contact DIN rail stock and material variants without electrical terminals", () => {
+  const compact = catalogById.get("phoenix-contact.din-rail.1207679")!;
+  const aluminum = catalogById.get("phoenix-contact.din-rail.1207663")!;
+  const copper = catalogById.get("phoenix-contact.din-rail.1201895")!;
+  expect(compact.propertiesSchema).toMatchObject({ stockLengthMm: 755, cutLengthMm: 755, perforated: true });
+  expect(aluminum.propertiesSchema).toMatchObject({ widthMm: 35, depthMm: 15, stockLengthMm: 1000, material: "Aluminum", perforated: false });
+  expect(copper.propertiesSchema).toMatchObject({ stockLengthMm: 2000, material: "Copper", perforated: false });
+  for (const rail of [compact, aluminum, copper]) expect(rail.terminals).toEqual([]);
+});
