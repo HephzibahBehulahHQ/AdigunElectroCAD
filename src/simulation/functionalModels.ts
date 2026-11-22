@@ -26,17 +26,24 @@ const mathInput = (properties: Properties, key: string) => properties[key] === u
 const nominalMotorPoint: Model = (p) => ({ label: "Nominal motor point", value: bool(p, "energized") ? `${number(p, "nominalSpeedRpm")} rpm / ${number(p, "ratedPowerKw")} kW` : "STANDBY" });
 const breakerPath: Model = (p) => ({ label: "Breaker path", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${number(p, "poles", 3)}P / ${number(p, "ratedCurrentA")} A` });
 
-function resistanceTransmitterSignal(properties: Properties): FunctionalSignal {
-  const lower = number(properties, "lowerOhm", NaN);
-  const upper = number(properties, "upperOhm", NaN);
-  const resistance = number(properties, "resistanceOhm", NaN);
+function calibratedTransmitterSignal(input: number, lower: number, upper: number, quantity: "resistance" | "current"): FunctionalSignal {
   if (!Number.isFinite(lower) || !Number.isFinite(upper) || lower < 0 || upper <= lower) {
-    return fault("Transmitter calibration requires 0 ≤ lower resistance < upper resistance.");
+    return fault("Transmitter calibration requires 0 ≤ lower " + quantity + " < upper " + quantity + ".");
   }
-  if (!Number.isFinite(resistance) || resistance < lower || resistance > upper) {
-    return fault("Transmitter resistance is outside its calibrated span.");
+  if (!Number.isFinite(input) || input < lower || input > upper) {
+    return fault("Transmitter " + quantity + " is outside its calibrated span.");
   }
-  return signal("milliamp", 4 + 16 * ((resistance - lower) / (upper - lower)));
+  return signal("milliamp", 4 + 16 * ((input - lower) / (upper - lower)));
+}
+
+function transmitterSignal(model: "signal-resistance-transmitter" | "signal-current-transmitter", properties: Properties): FunctionalSignal {
+  return model === "signal-current-transmitter"
+    ? calibratedTransmitterSignal(number(properties, "inputAmps", NaN), number(properties, "lowerAmps", NaN), number(properties, "upperAmps", NaN), "current")
+    : calibratedTransmitterSignal(number(properties, "resistanceOhm", NaN), number(properties, "lowerOhm", NaN), number(properties, "upperOhm", NaN), "resistance");
+}
+
+function transmitterResult(result: FunctionalSignal): FunctionalModelResult {
+  return { label: "Transmitter current", value: result.error ? "INVALID" : Number(result.value).toFixed(2) + " mA", error: result.error };
 }
 
 export function timerParameterError(properties: Properties): string | undefined {
@@ -114,10 +121,8 @@ const models: Record<string, Model> = {
       : { label: "PLC raw value", value: String(converted.value) };
   },
   "signal-dac": (p) => ({ label: "DAC output", value: `${dacMilliamp(number(p, "raw")).toFixed(2)} mA` }),
-  "signal-resistance-transmitter": (p) => {
-    const result = resistanceTransmitterSignal(p);
-    return { label: "Transmitter current", value: result.error ? "INVALID" : `${Number(result.value).toFixed(2)} mA`, error: result.error };
-  },
+  "signal-resistance-transmitter": (p) => transmitterResult(transmitterSignal("signal-resistance-transmitter", p)),
+  "signal-current-transmitter": (p) => transmitterResult(transmitterSignal("signal-current-transmitter", p)),
   "pneumatic-valve-5-2": (p) => pneumaticDisplay("pneumatic-valve-5-2", p),
   "pneumatic-valve-3-2": (p) => pneumaticDisplay("pneumatic-valve-3-2", p),
   "pneumatic-cylinder-single": (p) => pneumaticDisplay("pneumatic-cylinder-single", p),
@@ -365,7 +370,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-current-transformer" && terminalId === "signal") return currentTransformerSignal(properties);
   if (modelId === "signal-adc") return adcSignal(properties);
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
-  if (modelId === "signal-resistance-transmitter") return resistanceTransmitterSignal(properties);
+  if (modelId === "signal-resistance-transmitter" || modelId === "signal-current-transmitter") return transmitterSignal(modelId, properties);
   return undefined;
 }
 

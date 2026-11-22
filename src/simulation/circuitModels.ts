@@ -49,6 +49,7 @@ function inputBinding(modelId: string, terminalId: string): InputBinding | undef
   if (modelId === "catalog-solenoid-actuator" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (terminalId === "in") {
     if (modelId === "signal-adc") return { property: "milliamp", acceptedUnits: ["milliamp"], requiresWire: "requireWiredInput" };
+    if (modelId === "signal-current-transmitter") return { property: "inputAmps", acceptedUnits: ["ampere"], requiresWire: "requireWiredInput" };
     if (modelId === "signal-resistance-transmitter") return { property: "resistanceOhm", acceptedUnits: ["ohm"], requiresWire: "requireWiredInput" };
     if (modelId === "signal-dac") return { property: "raw", acceptedUnits: ["plc-raw"] };
     return { property: "input", acceptedUnits: ["boolean"] };
