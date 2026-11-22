@@ -40,7 +40,7 @@ export function createMotorFeederWorkbook(): ElectricalProject {
       // The first feeder drawing also shows the separate W2 phase junctions.
       components.push(...phases.map<ComponentInstance>((phase, index) => ({
         id: `w2-junction-${phase.toLowerCase()}`, definitionId: "junction.power",
-        reference: `XW2-${phase}`, x: 600, y: 100 + index * 100, rotation: 0, properties: {},
+        reference: `XW2-${phase}`, x: 600, y: 100 + index * 120, rotation: 0, properties: {},
       })));
     }
     const localWires: Wire[] = base.wires

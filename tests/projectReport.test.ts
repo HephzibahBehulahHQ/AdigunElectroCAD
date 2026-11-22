@@ -10,6 +10,19 @@ import { executeProjectCircuitModels } from "../src/simulation/projectCircuitMod
 import { createFourSheetAnalogLevelWorkbook } from "../src/projects/fourSheetAnalogLevelWorkbook";
 
 describe("engineering project reports", () => {
+  it("reports editable overlaps from imported free sheets and clears them after repositioning", () => {
+    const project = createBlankProject();
+    const { document } = project.sheets[0];
+    const source = createDolMotorStarter().components[0];
+    document.components = [{ ...source, x: 220, y: 220 }, { ...source, id: "duplicate-position", reference: "X9", x: 220, y: 220 }];
+    const imported = parseProjectJson(JSON.stringify(project));
+    expect(createProjectWideReport(imported, catalogById).validation).toContainEqual({
+      severity: "warning", code: "component-clearance-overlap", sheet: `${project.sheets[0].name} · Sheet 1`,
+      message: "Drawing clearance overlaps between X1 and X9.",
+    });
+    imported.sheets[0].document.components[1].x = 540;
+    expect(createProjectWideReport(imported, catalogById).validation.some(({ code }) => code === "component-clearance-overlap")).toBe(false);
+  });
   it("scopes reported model results by sheet and retains faults in the project CSV", () => {
     const project = createFourSheetAnalogLevelWorkbook();
     project.continuations = [];

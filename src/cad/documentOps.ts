@@ -1,5 +1,5 @@
 import type { CircuitDocument, ComponentInstance, TerminalEndpoint, Wire } from "../types/electrical";
-import { componentFootprint, instanceFootprint } from "./componentGeometry";
+import { componentFootprint, componentFootprintsOverlap, instanceFootprint } from "./componentGeometry";
 
 export type PlacementLayout = "reference" | "free";
 type PlacementView = { x: number; y: number; width: number; height: number };
@@ -189,7 +189,7 @@ export function canPlaceComponent(components: ComponentInstance[], componentId: 
     ? instanceFootprint({ ...moving, x, y, definitionId: movingDefinitionId, size: movingSize })
     : componentFootprint(x, y, rotation, movingDefinitionId, movingSize);
   if (layout === "reference" && (bounds.left < 10 || bounds.right > 1090 || bounds.top < 90 || bounds.bottom > 770)) return false;
-  return components.every((component) => component.id === componentId || !overlaps(bounds, instanceFootprint(component)));
+  return components.every((component) => component.id === componentId || !componentFootprintsOverlap(bounds, instanceFootprint(component)));
 }
 
 export function nextComponentReference(components: ComponentInstance[], referencePrefix: string): string {
@@ -261,8 +261,3 @@ export function removeComponent(document: CircuitDocument, componentId: string):
   const wires = document.wires.filter((wire) => !removed.has(wire.id));
   return { document: { ...document, revision: document.revision + 1, components: document.components.filter((component) => component.id !== componentId), wires }, removedWireCount: document.wires.length - wires.length };
 }
-
-function overlaps(left: ReturnType<typeof componentFootprint>, right: ReturnType<typeof componentFootprint>): boolean {
-  return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
-}
-
