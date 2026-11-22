@@ -17,7 +17,11 @@ const k60n = {
   documentRevision: "Acti9 v2.0 (May 2017), K60N Biconnect order table and terminal diagrams",
 };
 const ic60lCurrents = [...originalCurrents, 0.5];
-const k60nCurrents = [6, 10, 16, 20, 32, 40, 50, 63];
+const k60h = {
+  series: "Acti9 K60H Biconnect", icnKa: 10, sourceUrl: acti9Catalogue,
+  documentRevision: "Acti9 v2.0 (May 2017), K60H Biconnect order table, terminal diagrams and Icn ratings",
+};
+const biconnectCurrents = [6, 10, 16, 20, 32, 40, 50, 63];
 const orderColumns = [
   { ...ic60nOriginal, curve: "C", prefix: "A9F74", currents: originalCurrents },
   { ...ic60nOriginal, curve: "D", prefix: "A9F75", currents: originalCurrents },
@@ -31,8 +35,10 @@ const orderColumns = [
   { ...ic60l, curve: "C", prefix: "A9F94", currents: ic60lCurrents },
   { ...ic60l, curve: "K", prefix: "A9F95", currents: [...ic60lCurrents, 1.6] },
   { ...ic60l, curve: "Z", prefix: "A9F92", currents: [...ic60lCurrents, 1.6] },
-  { ...k60n, curve: "B", prefix: "A9K01", currents: k60nCurrents },
-  { ...k60n, curve: "C", prefix: "A9K02", currents: k60nCurrents },
+  { ...k60n, curve: "B", prefix: "A9K01", currents: biconnectCurrents },
+  { ...k60n, curve: "C", prefix: "A9K02", currents: biconnectCurrents },
+  { ...k60h, curve: "B", prefix: "A9K11", currents: biconnectCurrents },
+  { ...k60h, curve: "C", prefix: "A9K12", currents: biconnectCurrents },
 ] as const;
 
 const germanCatalogue = "https://download.se.com/files?p_Doc_Ref=ZXPRESI9ACTI9&p_File_name=ZXPRESI9ACTI9_062025_WEB.pdf";
@@ -165,7 +171,7 @@ export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3
       propertiesSchema: { ratedCurrentA, curve, closed: true, ...(icnKa === undefined ? {} : { icnKa }) },
       simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
       documentation: "The manual Closed setting switches all documented poles together. No instantaneous trip, time-current curve, fault-current interruption or protection coordination is simulated." + (icnKa === undefined ? " Refer to the manufacturer table for voltage-dependent breaking capacities and approvals." : " Icn is specified at 230 V phase-neutral or 400 V phase-phase as applicable under IEC/EN 60898-1."),
-      standardsReferences: [...(icnKa === undefined ? [] : ["IEC/EN 60898-1"]), ...(series === k60n.series ? [] : ["IEC/EN 60947-2"]), sourceUrl, ...(series === ic60l.series && curve !== "MA" ? ["https://download.se.com/files?p_Doc_Ref=UAM-HDOFFERCAT-HK&p_enDocType=Catalog"] : []), ...(sourceUrl === germanCatalogue ? [acti9Catalogue] : [])],
+      standardsReferences: [...(icnKa === undefined ? [] : ["IEC/EN 60898-1"]), ...((series === k60n.series || series === k60h.series) ? [] : ["IEC/EN 60947-2"]), sourceUrl, ...(series === ic60l.series && curve !== "MA" ? ["https://download.se.com/files?p_Doc_Ref=UAM-HDOFFERCAT-HK&p_enDocType=Catalog"] : []), ...(sourceUrl === germanCatalogue ? [acti9Catalogue] : [])],
     };
   });
 });
