@@ -48,18 +48,20 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     const units: Record<string, string> = { Voltage: "V", Current: "A", Power: "W", Frequency: "Hz" };
     const unit = units[kind] ?? "";
     const reading = Number(properties.measuredValue ?? 0);
+    const faulted = Boolean(properties.runtimeSignalError);
     const maximum = Math.max(0.001, Number(properties.scaleMaximum ?? 100));
     const ratio = Math.max(0, Math.min(1, reading / maximum));
     const angle = (-140 + ratio * 100) * Math.PI / 180;
     const needleX = x + Math.cos(angle) * 11, needleY = y + Math.sin(angle) * 11;
-    return <g className={mark} aria-label={`Digital panel meter, ${kind}, ${Number.isFinite(reading) ? reading.toFixed(1) : "invalid"} ${unit}`}>
+    return <g className={mark} aria-label={`Digital panel meter, ${kind}, ${!faulted && Number.isFinite(reading) ? reading.toFixed(Math.abs(reading) < 1 ? 3 : 1) : "invalid"} ${unit}`}>
       {["supply", "common", "signal"].map((terminalId) => {
         const offset = controlTerminalOffset("catalog-panel-meter", terminalId)!;
         const rimX = Math.sqrt(22 ** 2 - offset.y ** 2) * Math.sign(offset.x);
         return <path key={terminalId} d={`M ${x + offset.x} ${y + offset.y} H ${x + rimX}`} />;
       })}
       <circle cx={x} cy={y} r="22" />
-      <path d={`M ${x - 13} ${y + 9} A 16 16 0 0 1 ${x + 13} ${y + 9} M ${x} ${y + 5} L ${needleX} ${needleY}`} />
+      <path d={`M ${x - 13} ${y + 9} A 16 16 0 0 1 ${x + 13} ${y + 9}`} />
+      {faulted ? <path d={`M ${x - 4} ${y - 5} l 8 8 m 0 -8 l -8 8`} /> : <path d={`M ${x} ${y + 5} L ${needleX} ${needleY}`} />}
       <circle cx={x} cy={y + 5} r="2" />
       <text x={x} y={y + 19} textAnchor="middle" className={text}>{unit}</text>
     </g>;
