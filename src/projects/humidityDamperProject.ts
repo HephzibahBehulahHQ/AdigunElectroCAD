@@ -1,18 +1,46 @@
 import type { ProjectTemplate } from "./templateLibrary";
+import type { CircuitSequenceStep } from "./templateVerification";
 
 export function createHumidityDamperProject(): ProjectTemplate {
   const id = "humidity-ventilation-damper";
   const name = "Humidity ventilation · damper travel and proof";
   const description = "A wired humidistat opens the damper at 62% relative humidity and releases at 58%. The actuator moves at 10 percentage points per second. A comparator asserts a proof coil only above 50% travel. This example models control signals and actuator position.";
-  const steps = [
-    { name: "Below demand", humidity: 55, seconds: 1, position: 0, proof: "OFF" },
-    { name: "Demand opens the damper gradually", humidity: 65, seconds: 3, position: 30, proof: "OFF" },
-    { name: "Exact proof threshold remains off", humidity: 65, seconds: 2, position: 50, proof: "OFF" },
-    { name: "Demand persists inside the deadband", humidity: 60, seconds: 2, position: 70, proof: "ON" },
-    { name: "Release closes the damper and drops proof", humidity: 55, seconds: 3, position: 40, proof: "OFF" },
-    { name: "Travel stops at fully closed", humidity: 55, seconds: 5, position: 0, proof: "OFF" },
-  ];
+  const humidityStep = (name: string, humidityPercent: number, durationSeconds: number, position: string, proof: string): CircuitSequenceStep => ({
+    name, durationSeconds, changes: [{ reference: "HU1", properties: { humidityPercent } }],
+    expectations: [
+      { reference: "DA1", label: "Damper position", exact: position },
+      { reference: "K1", label: "Coil", exact: proof },
+    ],
+  });
+  const invalidHumidity = "ERROR: Humidity and setpoint must be between 0 and 100 percent.";
   const invalidTravel = "ERROR: Damper travel time must be finite and positive.";
+  const operatingSequence: CircuitSequenceStep[] = [
+    humidityStep("Set HU1 to 55% for 1 s. Verify DA1 at 0% and proof OFF.", 55, 1, "0.0%", "OFF"),
+    humidityStep("Set HU1 to 65% for 3 s. Verify gradual travel to 30% and proof OFF.", 65, 3, "30.0%", "OFF"),
+    humidityStep("Hold HU1 at 65% for 2 s. At exactly 50%, proof stays OFF.", 65, 2, "50.0%", "OFF"),
+    humidityStep("Set HU1 to 60% for 2 s. Retained demand moves DA1 to 70% and proof turns ON.", 60, 2, "70.0%", "ON"),
+    {
+      name: "Set HU1 humidity to 101% for 2 s. Verify a humidity fault and unavailable proof.",
+      durationSeconds: 2,
+      changes: [{ reference: "HU1", properties: { humidityPercent: 101 } }],
+      expectations: [
+        { reference: "HU1", label: "Humidistat", exact: invalidHumidity },
+        { reference: "K1", label: "Signal fault", exact: invalidHumidity },
+      ],
+    },
+    humidityStep("Restore HU1 to 60% for 1 s. DA1 resumes from 70%, reaches 80%, and proof returns.", 60, 1, "80.0%", "ON"),
+    humidityStep("Lower HU1 to 55% for 3 s. DA1 returns to 50% and proof switches OFF.", 55, 3, "50.0%", "OFF"),
+    humidityStep("Hold HU1 at 55% for 5 s. DA1 stops at 0% and proof remains OFF.", 55, 5, "0.0%", "OFF"),
+    {
+      name: "Set DA1 travel time to zero. Verify an actuator fault and unavailable proof.",
+      durationSeconds: 1,
+      changes: [{ reference: "DA1", properties: { travelSeconds: 0 } }],
+      expectations: [
+        { reference: "DA1", label: "Damper position", exact: invalidTravel },
+        { reference: "K1", label: "Signal fault", exact: invalidTravel },
+      ],
+    },
+  ];
   return {
     id, name, description, category: "Process Control", level: "Intermediate",
     document: {
@@ -34,15 +62,7 @@ export function createHumidityDamperProject(): ProjectTemplate {
       { reference: "DA1", label: "Damper position", valueIncludes: "0.0%" },
       { reference: "K1", label: "Coil", valueIncludes: "OFF" },
     ],
-    testSequence: [...steps.map(({ name, humidity, seconds, position, proof }) => `${name}. Set HU1 to ${humidity}% for ${seconds} s. Expect DA1 at ${position}% and K1 ${proof}.`),
-      "Set DA1 travel time to zero. Expect a damper fault and unavailable proof signal."],
-    operatingSequence: [...steps.map(({ name, humidity, seconds, position, proof }) => ({
-      name, durationSeconds: seconds, changes: [{ reference: "HU1", properties: { humidityPercent: humidity } }],
-      expectations: [{ reference: "DA1", label: "Damper position", exact: `${position.toFixed(1)}%` }, { reference: "K1", label: "Coil", exact: proof }],
-    })), {
-      name: "Invalid travel time inhibits position proof", durationSeconds: 1,
-      changes: [{ reference: "DA1", properties: { travelSeconds: 0 } }],
-      expectations: [{ reference: "DA1", label: "Damper position", exact: invalidTravel }, { reference: "K1", label: "Signal fault", exact: invalidTravel }],
-    }],
+    testSequence: operatingSequence.map(({ name }) => name),
+    operatingSequence,
   };
 }
