@@ -1140,3 +1140,13 @@ it("uses the ABB S200M ordering codes, including the fractional-current suffixes
   expect(part("2cds274001r0971")?.propertiesSchema).toMatchObject({ ratedCurrentA: 1.6, curve: "D" });
   expect(part("2cds274001r0971")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
 });
+
+
+it("distinguishes ABB S200 and S200M order codes and breaking capacities", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200");
+  const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "abb." + code);
+  expect(parts).toHaveLength(176);
+  expect(part("2cds251001r0981")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "D", icnKa: 6 });
+  expect(part("2cds271001r0981")?.propertiesSchema.icnKa).toBe(10);
+  expect(part("2cds254001r0034")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
