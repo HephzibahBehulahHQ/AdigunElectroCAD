@@ -66,9 +66,10 @@ export function insertWireRoutePointAt(from: Point, to: Point, bends: readonly P
 }
 
 export function wireBranchAtPoint(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, point: Point, tolerance = 18): { source: WireBranchSource; position: number } | null {
+  const vertices = orthogonalWireVertices(from, to, bends, fromVertical, toVertical);
   const candidates = [
-    { source: "from" as const, vertices: orthogonalWireVertices(from, to, bends, fromVertical, toVertical) },
-    { source: "to" as const, vertices: orthogonalWireVertices(to, from, [...bends].reverse(), toVertical, fromVertical) },
+    { source: "from" as const, vertices },
+    { source: "to" as const, vertices: [...vertices].reverse() },
   ];
   let best: { source: WireBranchSource; position: number; distance: number } | null = null;
   for (const candidate of candidates) {
@@ -92,10 +93,8 @@ export function wireBranchAtPoint(from: Point, to: Point, bends: readonly Point[
 }
 
 export function wireBranchRoute(from: Point, to: Point, bends: readonly Point[], fromVertical: boolean, toVertical: boolean, source: WireBranchSource, position: number): { point: Point; points: Point[] } | null {
-  const start = source === "from" ? from : to; const end = source === "from" ? to : from;
-  const routeBends = source === "from" ? bends : [...bends].reverse();
-  const startVertical = source === "from" ? fromVertical : toVertical; const endVertical = source === "from" ? toVertical : fromVertical;
-  const vertices = orthogonalWireVertices(start, end, routeBends, startVertical, endVertical);
+  const vertices = orthogonalWireVertices(from, to, bends, fromVertical, toVertical);
+  if (source === "to") vertices.reverse();
   const lengths = vertices.slice(1).map((point, index) => Math.abs(point.x - vertices[index].x) + Math.abs(point.y - vertices[index].y));
   const total = lengths.reduce((sum, length) => sum + length, 0);
   if (!total || !Number.isFinite(position) || position <= 0 || position >= 1) return null;

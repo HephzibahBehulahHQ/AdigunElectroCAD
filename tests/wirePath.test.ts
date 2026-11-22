@@ -126,3 +126,14 @@ it("distinguishes a clear direct connection from a blocked automatic route", () 
   expect(findAutomaticWireBends(from, to, [barrier])).toBeNull();
   expect(automaticWireBends(from, to, [barrier])).toEqual([]);
 });
+
+it("keeps target-side branch taps on the actual parent route", () => {
+  const from = { x: 100, y: 100 };
+  const to = { x: 500, y: 300 };
+  const bends = [{ x: 240, y: 220 }];
+  const tap = { x: 440, y: 300 };
+  const branch = wireBranchAtPoint(from, to, bends, false, false, tap);
+  expect(branch).toEqual({ source: "from", position: .9 });
+  expect(wireBranchRoute(from, to, bends, false, false, "to", .1)?.point).toEqual(tap);
+  expect(wireBranchAtPoint(from, to, bends, false, false, { x: 440, y: 220 })).toBeNull();
+});
