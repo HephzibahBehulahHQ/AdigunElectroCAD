@@ -1,3 +1,4 @@
+import { createShaftMotionMonitorProject } from "./shaftMotionMonitorProject";
 import { createExtractionFanRunOnProject } from "./extractionFanRunOnProject";
 import { createPackagingBatchCounterProject } from "./packagingBatchCounterProject";
 import { createReservoirTransferPermitProject } from "./reservoirTransferPermitProject";
@@ -146,6 +147,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createReservoirTransferPermitProject(),
   createPackagingBatchCounterProject(),
   createExtractionFanRunOnProject(),
+  createShaftMotionMonitorProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
