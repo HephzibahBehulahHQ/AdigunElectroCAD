@@ -153,9 +153,11 @@ export function removeWire(document: CircuitDocument, wireId: string): CircuitDo
   return { ...document, revision: document.revision + 1, wires: document.wires.filter((wire) => !removed.has(wire.id)) };
 }
 
-export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string, view?: PlacementView): { x: number; y: number } | null {
+export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string, view?: PlacementView, instance?: ComponentInstance): { x: number; y: number } | null {
+  const candidates = instance ? [...components, instance] : components;
+  const fits = (x: number, y: number) => canPlaceComponent(candidates, instance?.id ?? "", x, y, definitionId, undefined, layout);
   if (layout === "free" && view) {
-    const footprint = componentFootprint(0, 0, 0, definitionId);
+    const footprint = instance ? instanceFootprint({ ...instance, x: 0, y: 0 }) : componentFootprint(0, 0, 0, definitionId);
     const firstX = Math.ceil((view.x - footprint.left + 12) / 20) * 20;
     const firstY = Math.ceil((view.y - footprint.top + 12) / 20) * 20;
     const lastX = view.x + view.width - footprint.right - 12;
@@ -164,7 +166,7 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
     const stepY = Math.ceil((footprint.bottom - footprint.top + 20) / 20) * 20;
     for (let y = firstY; y <= lastY; y += stepY) {
       for (let x = firstX; x <= lastX; x += stepX) {
-        if (canPlaceComponent(components, "", x, y, definitionId)) return { x, y };
+        if (fits(x, y)) return { x, y };
       }
     }
     return null;
@@ -173,7 +175,7 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
   const rows = layout === "reference" ? [140, 260, 380, 500] : [160, 280, 400, 520, 640];
   for (const x of columns) {
     for (const y of rows) {
-      if (canPlaceComponent(components, "", x, y, definitionId, undefined, layout)) return { x, y };
+      if (fits(x, y)) return { x, y };
     }
   }
   return null;

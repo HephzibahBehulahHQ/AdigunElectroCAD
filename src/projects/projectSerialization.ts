@@ -4,7 +4,7 @@ import { validateProjectContinuations } from "./projectContinuations";
 import { terminalGridReference } from "../cad/terminalAnchors";
 import { draftingLineTypes, MAX_DRAFTING_LAYERS, validLineWeight } from "../cad/draftingLayers";
 import type { DraftingStyle, DraftingLayer } from "../types/electrical";
-import type { CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
+import type { ComponentInstance, CircuitDocument, CircuitSheet, ElectricalProject, SchematicAnnotation, SchematicGraphic, SchematicGraphicPoint, TerminalDefinition, TerminalEndpoint, ProjectContinuation, ProjectContinuationRole, UserSymbolGraphic, Wire } from "../types/electrical";
 import { MAX_PROJECT_SHEETS } from "./projectLimits";
 import { MAX_DRAWING_GUIDES } from "../cad/drawingGuides";
 import { validPrintLayout, type PrintLayout } from "../cad/printLayout";
@@ -264,6 +264,26 @@ function parseAnnotation(value: unknown, sheetIndex: number, annotationIndex: nu
   const lines = text.split(/\r?\n/);
   if (lines.length > 8 || lines.some((line) => line.length > 160)) throw new Error("Annotation text must have at most 8 lines, with no line longer than 160 characters.");
   return { id: textValue(annotation.id, "annotation id", 120), text, x, y, color, ...(fontSize === undefined ? {} : { fontSize }), ...(rotation === undefined ? {} : { rotation }), ...(textAnchor === undefined ? {} : { textAnchor: textAnchor as SchematicAnnotation["textAnchor"] }), ...(fontWeight === undefined ? {} : { fontWeight: fontWeight as SchematicAnnotation["fontWeight"] }), ...(lineSpacing === undefined ? {} : { lineSpacing }), ...(fontStyle === undefined ? {} : { fontStyle: fontStyle as SchematicAnnotation["fontStyle"] }), ...(backgroundColor === undefined ? {} : { backgroundColor }) };
+}
+
+export function encodeCustomComponent(instance: ComponentInstance) {
+  const { id, reference, x, y, layerId, zIndex, ...component } = instance;
+  return { format: "adigun-electrocad-component", schemaVersion: 1, component };
+}
+
+export function parseCustomComponentJson(text: string): ComponentInstance {
+  const root = object(JSON.parse(text), "The file must contain a custom component.");
+  if (root.format !== "adigun-electrocad-component" || root.schemaVersion !== 1) {
+    throw new Error("Unsupported custom component file format or version.");
+  }
+  const component = object(root.component, "The custom component data is missing.");
+  if (component.definitionId !== "user.drawn-symbol" && component.definitionId !== "user.indicator-lamp") {
+    throw new Error("Only user-drawn symbols and custom indicators can be imported.");
+  }
+  if (component.definitionId === "user.drawn-symbol" && component.customSymbolGraphics === undefined) {
+    throw new Error("The user-drawn symbol has no drawing geometry.");
+  }
+  return parseComponent({ ...component, id: "imported-symbol", reference: "U1", x: 0, y: 0, layerId: undefined, zIndex: undefined }, 0, 0);
 }
 
 function parseComponent(value: unknown, sheetIndex: number, componentIndex: number) {
