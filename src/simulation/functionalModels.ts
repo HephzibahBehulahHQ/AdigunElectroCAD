@@ -119,8 +119,8 @@ const models: Record<string, Model> = {
   "pneumatic-frl": (p) => ({ label: "Outlet pressure", value: `${frlOutletPressureBar(number(p, "supplyBar"), number(p, "regulatorBar"), number(p, "dropBar")).toFixed(2)} bar` }),
   "hvac-heater": (p) => ({ label: "Heater output", value: `${panelHeaterPowerW(number(p, "setpointC"), number(p, "temperatureC"), number(p, "ratedPowerW")).toFixed(0)} W` }),
   "hvac-cooling-fan": (p) => ({ label: "Heat removal", value: `${panelFanCoolingW(number(p, "airflowM3PerHour"), number(p, "temperatureRiseC")).toFixed(1)} W` }),
-  "hvac-thermostat": (p) => ({ label: "Thermostat", value: binary(thermostatOn(number(p, "temperatureC"), number(p, "setpointC"), number(p, "hysteresisC"), bool(p, "previous"))) }),
-  "hvac-humidistat": (p) => ({ label: "Humidistat", value: binary(humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), bool(p, "previous"))) }),
+  "hvac-thermostat": (p) => ({ label: "Thermostat", value: binary(climateContactClosed("hvac-thermostat", p)) }),
+  "hvac-humidistat": (p) => ({ label: "Humidistat", value: binary(climateContactClosed("hvac-humidistat", p)) }),
   "hvac-damper": (p) => ({ label: "Damper position", value: `${damperPosition(number(p, "positionPercent"), number(p, "commandPercent"), number(p, "elapsedSeconds", 1), number(p, "travelSeconds", 10)).toFixed(1)}%` }),
   "hvac-chiller": (p) => ({ label: "Cooling output", value: `${chillerCoolingW(number(p, "ratedCoolingW"), bool(p, "compressorRunning")).toFixed(0)} W` }),
   "renewable-solar-panel": (p) => ({ label: "PV power", value: `${solarPowerW(number(p, "irradianceWPerM2"), number(p, "areaM2"), number(p, "efficiency")).toFixed(1)} W` }),
@@ -223,8 +223,16 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
 }
 export function hasFunctionalModel(modelId: string) { return ["contactor-dol-v1", "thermal-overload-dol-v1", "power-junction", "six-terminal-windings"].includes(modelId) || modelId in models; }
 
+export function climateContactClosed(modelId: "hvac-thermostat" | "hvac-humidistat", p: Properties): boolean {
+  const previous = typeof p.runtimeClimateContact === "boolean" ? p.runtimeClimateContact : bool(p, "previous");
+  return p.enabled !== false && (modelId === "hvac-thermostat"
+    ? thermostatOn(number(p, "temperatureC"), number(p, "setpointC"), number(p, "hysteresisC"), previous)
+    : humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), previous));
+}
+
 export function evaluateFunctionalSignal(modelId: string, properties: Properties, terminalId?: string): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
+  if (modelId === "hvac-thermostat" || modelId === "hvac-humidistat") return terminalId === "out" ? signal("boolean", climateContactClosed(modelId, properties)) : undefined;
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (modelId === "catalog-selector-switch" && ["14", "22"].includes(terminalId ?? "")) return signal("boolean", bool(properties, "closed") && bool(properties, "inputSignal"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
