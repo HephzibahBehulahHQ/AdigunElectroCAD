@@ -14,9 +14,9 @@ export interface TerminalAnchor {
 
 export const staticComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
-export function terminalHitRadius(anchor: TerminalAnchor, siblings: readonly TerminalAnchor[], zoom: number): number {
+export function terminalHitRadius(anchor: TerminalAnchor, siblings: readonly TerminalAnchor[], zoom: number, wireMode = false): number {
   const nearest = siblings.reduce((distance, other) => other === anchor ? distance : Math.min(distance, Math.hypot(other.x - anchor.x, other.y - anchor.y)), Infinity);
-  return Math.max(1, Math.min(9 / zoom, nearest / 2 - .25));
+  return Math.max(1, Math.min((wireMode ? 14 : 9) / zoom, nearest / 2 - .25));
 }
 export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
   const anchors: TerminalAnchor[] = document.id === "reference-dol-motor-starter" ? [
