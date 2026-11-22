@@ -246,22 +246,35 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   }
   propagatePower();
   const currentLoads: NominalCurrentLoad[] = [];
+  const motorSupply = (componentId: string) => {
+    const terminals = ["u1", "v1", "w1"].map((terminal) => endpointKey(componentId, terminal));
+    const feeds = terminals.map((terminal) => [...(powered.get(terminal) ?? [])]);
+    const currentFeeds = terminals.flatMap((terminal, index) => feeds[index].map((feed) => {
+      const separator = feed.lastIndexOf(":");
+      return { terminal, source: phaseOutput(feed.slice(0, separator), feed.slice(separator + 1)) };
+    }));
+    const phases = feeds.flat();
+    const sources = new Set(phases.map((feed) => feed.slice(0, feed.lastIndexOf(":"))));
+    return { feeds, currentFeeds, valid: feeds.every((feed) => feed.length === 1) && new Set(phases).size === 3 && sources.size === 1, sourceId: [...sources][0] };
+  };
+  const phaseSupplyError = (reference: string) => `${reference} does not have three distinct phases from one supply; unbalanced winding current is unavailable.`;
   for (const component of document.components) {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     if (model !== "catalog-induction-motor" && model !== "induction-motor-educational-v1") continue;
     const p = properties.get(component.id)!;
-    const feeds = ["u1", "v1", "w1"].map((terminal) => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
-    const uniqueFeeds = feeds.every((feed) => feed.length === 1) && new Set(feeds.map((feed) => feed[0])).size === 3;
-    const sameSource = new Set(feeds.flat().map((feed) => feed.slice(0, feed.lastIndexOf(":")))).size === 1;
+    const { feeds, currentFeeds, valid } = motorSupply(component.id);
     const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
     const frequency = motorFrequencies[0];
     const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
-    p.energized = (model === "induction-motor-educational-v1" || p.energized === true) && uniqueFeeds && sameSource && validFrequency;
+    const requested = model === "induction-motor-educational-v1" || p.energized === true;
+    p.energized = requested && valid && validFrequency;
+    if (requested && currentFeeds.length && !p.energized) {
+      const error = valid ? `${component.reference} does not have one valid supply frequency; motor current is unavailable.` : phaseSupplyError(component.reference);
+      p.runtimeSignalError = error;
+      currentLoads.push({ reference: component.reference, currentA: NaN, feeds: currentFeeds, error });
+    }
     if (p.energized) {
-      currentLoads.push({ reference: component.reference, currentA: Number(p.ratedCurrentA) > 0 ? Number(p.ratedCurrentA) : NaN, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
-        const feed = feeds[index][0], separator = feed.lastIndexOf(":");
-        return { terminal: endpointKey(component.id, terminal), source: phaseOutput(feed.slice(0, separator), feed.slice(separator + 1)) };
-      }) });
+      currentLoads.push({ reference: component.reference, currentA: Number(p.ratedCurrentA) > 0 ? Number(p.ratedCurrentA) : NaN, feeds: currentFeeds });
       const order = feeds.map((feed) => Number(feed[0].slice(-1)));
       let inversions = 0;
       for (let left = 0; left < order.length; left++) for (let right = left + 1; right < order.length; right++) if (order[left] > order[right]) inversions++;
@@ -277,25 +290,16 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const p = properties.get(component.id)!;
     const contacts = document.components.filter(item => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap(item => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
     const connection = windingConnection(document, component.id, contacts);
-    const terminals = ["u1", "v1", "w1"];
-    const feeds = terminals.map(terminal => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
-    const sources = feeds.flat();
-    const sourceIds = sources.map(feed => feed.slice(0, feed.lastIndexOf(":")));
-    const currentFeeds = terminals.flatMap((terminal, index) => feeds[index].map((feed) => {
-      const separator = feed.lastIndexOf(":");
-      return { terminal: endpointKey(component.id, terminal), source: phaseOutput(feed.slice(0, separator), feed.slice(separator + 1)) };
-    }));
-    const validFeeds = feeds.every(feed => feed.length === 1) && new Set(sources).size === 3 && new Set(sourceIds).size === 1;
-    if (!validFeeds) {
-      if (connection !== "open" && sources.length) {
-        const error = `${component.reference} does not have three distinct phases from one supply; unbalanced winding current is unavailable.`;
+    const { feeds, currentFeeds, valid, sourceId } = motorSupply(component.id);
+    if (!valid) {
+      if (connection !== "open" && currentFeeds.length) {
+        const error = phaseSupplyError(component.reference);
         p.runtimeMotorSupplyError = error;
         currentLoads.push({ reference: component.reference, currentA: NaN, feeds: currentFeeds, error });
       }
       continue;
     }
-    const supplyId = sourceIds[0];
-    const lineVoltageV = Number(properties.get(supplyId)?.nominalVoltageV ?? 0);
+    const lineVoltageV = Number(properties.get(sourceId)?.nominalVoltageV ?? 0);
     const impedance = Math.hypot(Number(p.resistanceOhm), Number(p.reactanceOhm));
     let currentA = connection === "open" ? 0
       : connection === "star" && Number(p.resistanceOhm) > 0 && Number(p.reactanceOhm) >= 0 && Number.isFinite(impedance) && Number.isFinite(lineVoltageV) ? lineVoltageV / Math.sqrt(3) / impedance
