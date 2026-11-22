@@ -1087,3 +1087,13 @@ it("preserves Siemens 5SY7 curve availability and 15 kA rating", () => {
   expect(part("5sy7104-6")).toBeUndefined();
   expect(part("5sy7606-6")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
 });
+
+
+it("keeps Siemens 5SY8 models within the published C/D selection table", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SY8");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(216);
+  expect(part("5sy8114-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.3, curve: "C", icnKa: 25 });
+  expect(part("5sy8163-6")).toBeUndefined();
+  expect(part("5sy8663-8")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+});

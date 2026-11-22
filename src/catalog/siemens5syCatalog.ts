@@ -25,9 +25,13 @@ const orderRows5sy7 = [
   { poleCodes: [1, 2, 3, 4, 5, 6], curve: "C", suffix: 7, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
   { poleCodes: [1, 2, 3, 4, 5, 6], curve: "D", suffix: 8, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
 ];
+const orderRows5sy8 = [
+  { poleCodes: [1, 2, 3, 4, 5, 6], curve: "C", suffix: 7, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
+  { poleCodes: [1, 2, 3, 4, 5, 6], curve: "D", suffix: 8, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
+];
 const specialCurrentCodes: Record<string, number> = { "05": 0.5, "11": 5, "14": 0.3, "15": 1.6, "18": 15 };
 
-function createSiemens5syCatalog(family: "5SY4" | "5SY6" | "5SY7", icnKa: number, orderRows: typeof orderRows5sy4): ElectricalComponentDefinition[] {
+function createSiemens5syCatalog(family: "5SY4" | "5SY6" | "5SY7" | "5SY8", icnKa: number, orderRows: typeof orderRows5sy4): ElectricalComponentDefinition[] {
   return [1, 2, 3, 4, 5, 6].flatMap(poleCode => {
     const switchedNeutral = poleCode >= 5;
     const protectedPoles = poleCode === 5 ? 1 : poleCode === 6 ? 3 : poleCode;
@@ -65,3 +69,5 @@ export const siemens5sy4Catalog = createSiemens5syCatalog("5SY4", 10, orderRows5
 export const siemens5sy6Catalog = createSiemens5syCatalog("5SY6", 6, orderRows5sy6);
 
 export const siemens5sy7Catalog = createSiemens5syCatalog("5SY7", 15, orderRows5sy7);
+
+export const siemens5sy8Catalog = createSiemens5syCatalog("5SY8", 25, orderRows5sy8);
