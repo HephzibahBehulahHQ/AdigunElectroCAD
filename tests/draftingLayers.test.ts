@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { createEntityLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting } from "../src/cad/draftingLayers";
+import { createEntityLayer, lockedDraftingEditReason, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting } from "../src/cad/draftingLayers";
 import { Schematic } from "../src/components/Schematic";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
@@ -86,4 +86,28 @@ it("hides layer geometry and terminal targets while retaining wire topology thro
   expect(hidden.match(/class="wire manual-wire/g)).toHaveLength(document.wires.length - 1);
   const undone = undoProject(recordProjectEdit({ undo: [], redo: [] }, before), after).project;
   expect(render(undone.sheets[0].document)).toContain('data-wire-terminal="adc.');
+});
+
+it("rejects locked component and wire mutations atomically and unlocks after reload", () => {
+  const project = createBlankProject();
+  const document = createAnalogLevelProject().document;
+  project.sheets[0].document = document;
+  const layerId = "locked-controls";
+  document.draftingLayers = [{ id: layerId, name: "Controls", locked: true }];
+  const component = document.components.find(({ id }) => id === "adc")!;
+  const wire = document.wires.find(({ id }) => id === "adc-raw")!;
+  component.layerId = wire.layerId = layerId;
+  for (const next of [
+    { ...document, components: document.components.map((entity) => entity === component ? { ...entity, x: entity.x + 20 } : entity) },
+    { ...document, wires: document.wires.filter((entity) => entity !== wire) },
+    { ...document, wires: document.wires.map((entity) => entity === wire ? { ...entity, points: [{ x: 350, y: 220 }] } : entity) },
+    { ...document, components: [...document.components, { ...component, id: "duplicate" }] },
+  ]) expect(lockedDraftingEditReason(document, next)).toBe("Layer Controls is locked.");
+  const restored = parseProjectJson(JSON.stringify(project)).sheets[0].document;
+  expect(restored.draftingLayers?.[0].locked).toBe(true);
+  expect(lockedDraftingEditReason(restored, structuredClone(restored))).toBeUndefined();
+  const unlocked = updateDraftingLayer(restored, layerId, { locked: false });
+  if (!unlocked.ok) throw Error(unlocked.reason);
+  expect(lockedDraftingEditReason(restored, unlocked.document)).toBeUndefined();
+  expect(lockedDraftingEditReason(unlocked.document, { ...unlocked.document, wires: [] })).toBeUndefined();
 });

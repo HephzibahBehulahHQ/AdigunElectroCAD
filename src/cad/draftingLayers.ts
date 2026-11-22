@@ -62,13 +62,33 @@ export function createEntityLayer(document: CircuitDocument, selection: Drafting
   return updateEntityDrafting(document, selection, { layerId: layer.id }, layer);
 }
 
-export function updateDraftingLayer(document: CircuitDocument, id: string, patch: DraftingStyle & Pick<DraftingLayer, "hidden">): DraftingEditResult {
+export function updateDraftingLayer(document: CircuitDocument, id: string, patch: DraftingStyle & Pick<DraftingLayer, "hidden" | "locked">): DraftingEditResult {
   const layers = document.draftingLayers ?? [];
   const existing = layers.find((layer) => layer.id === id);
   if (!existing) return { ok: false, reason: "Choose an existing drafting layer." };
   const next = { ...existing, ...patch };
   if (!validDraftingStyle(next)) return { ok: false, reason: "Choose a valid color, line type and lineweight from 0.5 to 12 drawing units." };
   if (next.hidden !== undefined && typeof next.hidden !== "boolean") return { ok: false, reason: "Choose a valid layer visibility." };
-  if (next.hidden === existing.hidden && next.draftingColor === existing.draftingColor && next.lineType === existing.lineType && next.lineWeight === existing.lineWeight) return { ok: true, document };
+  if (next.locked !== undefined && typeof next.locked !== "boolean") return { ok: false, reason: "Choose a valid layer lock." };
+  if (next.locked === existing.locked && next.hidden === existing.hidden && next.draftingColor === existing.draftingColor && next.lineType === existing.lineType && next.lineWeight === existing.lineWeight) return { ok: true, document };
   return { ok: true, document: { ...document, revision: document.revision + 1, draftingLayers: layers.map((layer) => layer.id === id ? next : layer) } };
+}
+
+export function lockedDraftingEditReason(before: CircuitDocument, after: CircuitDocument): string | undefined {
+  const locked = new Map(before.draftingLayers?.filter((layer) => layer.locked).map(({ id, name }) => [id, name]));
+  if (locked.size === 0) return;
+  for (const kind of ["components", "wires"] as const) {
+    if (before[kind] === after[kind]) continue;
+    const oldEntities = new Map<string, DraftingEntity>(before[kind].map((entity) => [entity.id, entity]));
+    const newEntities = new Map<string, DraftingEntity>(after[kind].map((entity) => [entity.id, entity]));
+    for (const [id, entity] of oldEntities) {
+      const layer = locked.get(entity.layerId ?? "");
+      const next = newEntities.get(id);
+      if (layer && next !== entity && JSON.stringify(next) !== JSON.stringify(entity)) return "Layer " + layer + " is locked.";
+    }
+    for (const [id, entity] of newEntities) {
+      const layer = locked.get(entity.layerId ?? "");
+      if (layer && oldEntities.get(id)?.layerId !== entity.layerId) return "Layer " + layer + " is locked.";
+    }
+  }
 }

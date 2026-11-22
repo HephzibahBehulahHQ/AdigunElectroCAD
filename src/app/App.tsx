@@ -3,7 +3,7 @@ import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { DraftingLayerFields } from "../components/DraftingLayerFields";
 import type { DraftingLayer } from "../types/electrical";
-import { createEntityLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting, type DraftingSelection } from "../cad/draftingLayers";
+import { createEntityLayer, lockedDraftingEditReason, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting, type DraftingSelection } from "../cad/draftingLayers";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -417,6 +417,8 @@ export function App() {
   };
 
   const updateDocument = (next: CircuitDocument, saveHistory = true) => {
+    const lockedReason = lockedDraftingEditReason(document, next);
+    if (lockedReason) { setNotice(lockedReason); return false; }
     const replaced = replaceSheetDocument(project, activeSheet.id, next);
     const anchors = terminalAnchors(next);
     const nextProject = replaced.continuations ? {
@@ -438,6 +440,7 @@ export function App() {
     if (selectedContinuationId && !nextProject.continuations?.some((item) => item.id === selectedContinuationId)) setSelectedContinuationId("");
     if (saveHistory) recordEdit(nextProject);
     else setProject(nextProject);
+    return true;
   };
 
   const selectContinuation = (continuationId: string) => {
@@ -1434,7 +1437,7 @@ export function App() {
       const next = reconnectWire(document, reconnectingWire.id, endpoint, reconnectSide);
       const issue = validateCircuit(next, catalogById).find((item) => item.severity === "error");
       if (issue) { setNotice(issue.message); return; }
-      if (next !== document) updateDocument(next);
+      if (next !== document && !updateDocument(next)) return;
       setSelectedWireId(reconnectingWire.id);
       setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
     } else {
@@ -1470,7 +1473,7 @@ export function App() {
       setNotice("Wire net names must contain 1–80 readable characters.");
       return;
     }
-    updateDocument(renameWire(document, selectedWire.id, normalized));
+    if (!updateDocument(renameWire(document, selectedWire.id, normalized))) return;
     setNotice(`Wire renamed to ${normalized}.`);
   };
 
@@ -1486,8 +1489,7 @@ export function App() {
   const draftingEntity = draftingTarget && (draftingTarget.kind === "wires" ? selectedWire : selectedComponent);
   const applyDraftingEdit = (result: ReturnType<typeof updateEntityDrafting>) => {
     if (!result.ok) { setNotice(result.reason); return false; }
-    if (result.document !== document) updateDocument(result.document);
-    return true;
+    return result.document === document || updateDocument(result.document);
   };
 
   const toggleDraftingLayerVisibility = (layer: DraftingLayer) => {
@@ -1539,7 +1541,7 @@ export function App() {
     if (!selectedWire) return;
     const before = document.wires.length;
     const updated = removeWire(document, selectedWire.id);
-    updateDocument(updated);
+    if (!updateDocument(updated)) return;
     setSelectedWireId("");
     setWireRouteEditId("");
     if (wireBranchStart && !updated.wires.some((wire) => wire.id === wireBranchStart.wireId)) { setWireStart(null); setWireBranchStart(null); }
@@ -1692,7 +1694,7 @@ export function App() {
       nextDocument = updatedTopology.document;
       removedWires = updatedTopology.removedWireCount;
     }
-    updateDocument(nextDocument);
+    if (!updateDocument(nextDocument)) return false;
     setNotice(removedWires
       ? `${selectedComponent.reference} topology updated; ${removedWires} wire(s) on removed terminals were deleted.`
       : `${selectedComponent.reference} parameter ${property} updated.`);
@@ -1760,7 +1762,7 @@ export function App() {
     const result = transformComponent(document, id, transform, clearance);
     if (!result.ok) { setNotice(result.reason ?? "Component transform blocked."); return; }
     if (result.document === document) return;
-    updateDocument(result.document);
+    if (!updateDocument(result.document)) return;
     setNotice(transform.kind === "resize" ? `${instance.reference} size set to ${Math.round(transform.size * 100)}%.` : `${instance.reference} rotated to ${transform.rotation}°.`);
   };
 
@@ -1777,7 +1779,7 @@ export function App() {
     }
     const result = moveComponentsByGrid(document, componentIds, deltaX, deltaY);
     if (!result.ok) { setNotice(result.reason ?? "Move blocked: keep symbols and labels inside the sheet and clear of neighbors."); return; }
-    if (result.document !== document) updateDocument(result.document);
+    if (result.document !== document && !updateDocument(result.document)) return;
     setNotice(`${componentIds.length} selected component${componentIds.length === 1 ? "" : "s"} moved; terminal-level wire topology is preserved.`);
   };
 
@@ -1786,8 +1788,7 @@ export function App() {
     const delta = Number(rawValue) - selectedComponent[axis];
     const result = moveComponentsByOffset(document, [selectedComponent.id], axis === "x" ? delta : 0, axis === "y" ? delta : 0);
     if (!result.ok) { setNotice(result.reason ?? "Position rejected."); return false; }
-    if (result.document !== document) updateDocument(result.document);
-    return true;
+    return result.document === document || updateDocument(result.document);
   };
 
   const dragComponent = (componentId: string, x: number, y: number) => {
@@ -1798,7 +1799,7 @@ export function App() {
     const result = moveComponentsByOffset(document, componentIds, x - component.x, y - component.y, 2);
     if (!result.ok) { setNotice(result.reason ?? "Move rejected."); return; }
     if (result.document === document) return;
-    updateDocument(result.document);
+    if (!updateDocument(result.document)) return;
     setNotice(`${componentIds.length} selected component${componentIds.length === 1 ? "" : "s"} moved; connected wire endpoints are preserved.`);
   };
 
@@ -1809,7 +1810,7 @@ export function App() {
       return;
     }
     const result = removeComponent(document, selectedComponent.id);
-    updateDocument(result.document);
+    if (!updateDocument(result.document)) return;
     if (wireStart?.componentId === selectedComponent.id || (wireBranchStart && !result.document.wires.some((wire) => wire.id === wireBranchStart.wireId))) { setWireStart(null); setWireBranchStart(null); }
     if (selectedWireId && !result.document.wires.some((wire) => wire.id === selectedWireId)) setSelectedWireId("");
     setComponentSelection("");
@@ -1822,7 +1823,7 @@ export function App() {
     if (!definition) { setNotice("The selected catalog definition is unavailable."); return; }
     const copy = duplicateComponentInstance(document.components, selectedComponent, `component-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, definition.referencePrefix, isReferenceSheet ? "reference" : "free");
     if (!copy) { setNotice("No clear position is available for another copy on this sheet."); return; }
-    updateDocument({ ...document, components: [...document.components, copy], revision: document.revision + 1 });
+    if (!updateDocument({ ...document, components: [...document.components, copy], revision: document.revision + 1 })) return;
     selectComponent(copy.id);
     setNotice(`${copy.reference} duplicated from ${selectedComponent.reference}. No wires were copied; connect the terminals you choose.`);
   };
@@ -1938,7 +1939,7 @@ export function App() {
 
       {isLabPage && <nav className="lab-route-nav" aria-label="Laboratory navigation"><a href="#CAD">← Back to CAD</a><strong>Laboratory</strong></nav>}
 
-      {!isLabPage &&       <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={activeSheetModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); setBotEditsUnsaved(true); updateDocument(next); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />}
+      {!isLabPage &&       <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={activeSheetModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); if (!updateDocument(next)) throw new Error("The edit affects a locked drafting layer."); setBotEditsUnsaved(true); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />}
 
       {authOpen && <section className="auth-panel" aria-label="Cloud account">
         <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
@@ -1996,7 +1997,7 @@ export function App() {
         <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
-        <details><summary>View</summary><div className="menu-popover view-menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <>{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={!layer.hidden} onClick={() => toggleDraftingLayerVisibility(layer)}>Layer visibility · {layer.name}</button>)}<button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
+        <details><summary>View</summary><div className="menu-popover view-menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <>{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={!layer.hidden} onClick={() => toggleDraftingLayerVisibility(layer)}>Layer visibility · {layer.name}</button>)}{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={layer.locked === true} onClick={() => { if (applyDraftingEdit(updateDraftingLayer(document, layer.id, { locked: !layer.locked }))) setNotice(layer.name + (layer.locked ? " unlocked." : " locked.")); }}>Layer lock · {layer.name}</button>)}<button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
         <details><summary>Insert</summary><div className="menu-popover"><button onClick={addSelectedComponent}>Component</button></div></details>
         <details><summary>Electrical</summary><div className="menu-popover"><button onClick={() => setNotice(`${topologyIssues.length ? `${topologyIssues.length} topology issue(s) found.` : t.valid}.`)}>Validate</button><button onClick={beginCrossSheetContinuation} disabled={project.sheets.length < 2}>Add sheet continuation</button><button onClick={beginExtendSelectedContinuation} disabled={!selectedContinuation || project.sheets.every((sheet) => selectedContinuation.points.some((point) => point.sheetId === sheet.id))}>Extend selected continuation</button></div></details>
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
