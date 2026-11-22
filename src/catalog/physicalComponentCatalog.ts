@@ -1,3 +1,4 @@
+import { schneiderBreakerCatalog } from "./schneiderBreakerCatalog";
 import { festoValveCatalog } from "./festoValveCatalog";
 import { omronEncoderCatalog } from "./omronEncoderCatalog";
 import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
@@ -34,6 +35,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...hbkLoadCellCatalog,
   ...omronEncoderCatalog,
   ...festoValveCatalog,
+  ...schneiderBreakerCatalog,
   ...phoenixRails.map(([orderCode, depthMm, stockLengthMm, perforated, material, reference]): ElectricalComponentDefinition => {
     const slug = originalProductPages[orderCode as keyof typeof originalProductPages];
     const sourceUrl = slug ? "https://www.phoenixcontact.com/en-pc/products/" + slug : reference;
