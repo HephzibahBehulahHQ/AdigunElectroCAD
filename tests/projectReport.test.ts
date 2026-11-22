@@ -47,7 +47,7 @@ describe("engineering project reports", () => {
     document.components = [
       { id: "custom", reference: "U1", definitionId: "user.drawn-symbol", x: 160, y: 160, rotation: 0, properties: {},
         customTerminals: [{ id: "t3", label: "T3", kind: "control", direction: "output" }], terminalLabels: { t3: "RUN" } },
-      { id: "peer", reference: "U2", definitionId: "user.drawn-symbol", x: 400, y: 160, rotation: 0, properties: {}, terminalLabels: { t1: "ENABLE" } },
+      { id: "peer", reference: "U2", definitionId: "user.drawn-symbol", x: 400, y: 160, rotation: 0, properties: { terminalLabel1: "OVERRIDE", terminalLabel2: "LEGACY" }, terminalLabels: { t1: "ENABLE" } },
     ];
     document.wires = [{ id: "run-wire", netName: "RUN_ENABLE", from: { componentId: "custom", terminalId: "t3" }, to: { componentId: "peer", terminalId: "t1" }, points: [] }];
     for (const report of [createProjectReport(document, catalogById), createProjectWideReport(project, catalogById)]) {
@@ -57,6 +57,8 @@ describe("engineering project reports", () => {
       ]);
       expect(reportCsv(report, "wires")).toContain('"U1.RUN","U2.ENABLE"');
       expect(reportCsv(report, "terminals")).toContain('"U1","RUN","control","output"');
+      expect(reportCsv(report, "terminals")).toContain('"U2","LEGACY"');
+      expect(reportCsv(report, "terminals")).not.toContain("OVERRIDE");
     }
   });
 
@@ -111,11 +113,14 @@ it("reports every continuation hop with its current cable core, adjacent termina
   const project = edited.project;
   const [source, junction, destination, ...remaining] = project.sheets;
   project.sheets = [junction, source, destination, ...remaining];
-  const report = createProjectWideReport(project, catalogById);
   const continuation = project.continuations!.find((item) => item.id === "feed-m2-l1")!;
   const [start, middle, end] = continuation.points;
+  const sourceComponent = source.document.components.find(({ id }) => id === start.endpoint.componentId)!;
+  const terminalIndex = catalogById.get(sourceComponent.definitionId)!.terminals.findIndex(({ id }) => id === start.endpoint.terminalId);
+  sourceComponent.properties["terminalLabel" + (terminalIndex + 1)] = "FEED-L1";
+  const report = createProjectWideReport(project, catalogById);
   const hops = report.wires.filter((line) => line.continuation?.id === continuation.id);
-  const originalSource = `${source.name} · Sheet 2 · ${start.gridReference} · X1.L1`;
+  const originalSource = `${source.name} · Sheet 2 · ${start.gridReference} · X1.FEED-L1`;
   expect(report.wires.filter((line) => line.continuation)).toHaveLength(39);
   expect(hops).toHaveLength(2);
   expect(hops[0].from).toBe(originalSource);

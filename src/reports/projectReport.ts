@@ -1,3 +1,4 @@
+import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { validateProjectContinuations } from "../projects/projectContinuations";
@@ -71,10 +72,10 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
     line.quantity += 1;
     line.references.push(component.reference);
     bomByDefinition.set(definition.id, line);
-    for (const terminal of component.customTerminals ?? definition.terminals) {
+    for (const [index, terminal] of (component.customTerminals ?? definition.terminals).entries()) {
       terminals.set(`${component.id}.${terminal.id}`, {
         reference: component.reference,
-        terminal: component.terminalLabels?.[terminal.id] ?? terminal.label,
+        terminal: component.terminalLabels?.[terminal.id] ?? displayTerminalLabel(component.properties, index, terminal.label),
         kind: terminal.kind,
         direction: terminal.direction,
       });
@@ -192,8 +193,11 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     const sheet = sheetLocations.get(sheetId);
     const component = sheet?.components.get(endpoint.componentId);
     const definition = component && definitions.get(component.definitionId);
-    const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === endpoint.terminalId);
-    const label = component?.terminalLabels?.[endpoint.terminalId] ?? terminal?.label ?? endpoint.terminalId;
+    const terminals = component?.customTerminals ?? definition?.terminals ?? [];
+    const index = terminals.findIndex((terminal) => terminal.id === endpoint.terminalId);
+    const label = component && index >= 0
+      ? component.terminalLabels?.[endpoint.terminalId] ?? displayTerminalLabel(component.properties, index, terminals[index].label)
+      : endpoint.terminalId;
     return `${sheet?.name ?? sheetId} · ${gridReference} · ${component?.reference ?? endpoint.componentId}.${label}`;
   };
   for (const continuation of continuations ?? []) {
