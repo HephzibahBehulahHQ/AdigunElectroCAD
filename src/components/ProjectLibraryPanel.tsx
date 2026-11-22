@@ -95,7 +95,22 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <small>{filtered.length ? currentPage * 5 + 1 : 0}–{Math.min((currentPage + 1) * 5, filtered.length)} of {filtered.length}</small>
     </nav>
     <section className="template-library">
-      <details className="project-information"><summary>Project details and operating sequence</summary><strong>{selected.name}</strong><p>{selected.description}</p><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol><p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : [...verification.topologyIssues.map(({ message }) => message), ...verification.failedExpectations].join(" ")}</p></details>
+      <details className="project-information"><summary>Project details and operating sequence</summary><strong>{selected.name}</strong><p>{selected.description}</p><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol><p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : [...verification.topologyIssues.map(({ message }) => message), ...verification.failedExpectations].join(" ")}</p>
+        {verification.sequenceResults.length > 0 && <details>
+          <summary>Recorded check results</summary>
+          <ol>{verification.sequenceResults.map((step, index) => {
+            const checks = selected.operatingSequence?.[index].expectations ?? [];
+            return <li key={index}>
+              <strong>{step.passed ? "Passed" : "Failed"}</strong> · {step.name}
+              <ul>{checks.map(({ reference, label }, checkIndex) => {
+                const result = step.runs.find((run) => run.reference === reference && run.output.label === label);
+                return <li key={checkIndex}>{reference} · {label} · {result?.output.value ?? "No matching result"}</li>;
+              })}
+              {step.failures.map((failure, failureIndex) => <li key={"failure-" + failureIndex}>{failure}</li>)}</ul>
+            </li>;
+          })}</ol>
+        </details>}
+      </details>
       {selected.id === SOURCE_BACKED_DOL_TEMPLATE_ID && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenFourSheetWorkbook}>Open 4-sheet DOL project</button><button className="wide workbook-open" onClick={onOpenWorkbook}>Open 10-sheet feeder workbook</button></details>}
       {selected.id === "wired-star-delta-control" && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenStarDeltaWorkbook}>Open 4-sheet star–delta project</button></details>}
       {selected.id === "wired-reversing-interlocks" && <details className="project-workbooks"><summary>Open multi-sheet version</summary><button className="wide workbook-open" onClick={onOpenReversingWorkbook}>Open 4-sheet reversing project</button></details>}

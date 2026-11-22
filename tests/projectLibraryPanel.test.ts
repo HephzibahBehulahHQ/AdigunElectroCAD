@@ -82,6 +82,19 @@ it("shows topology failures in project details", () => {
   expect(markup).toContain(verification.topologyIssues[0].message);
 });
 
+it("shows actual readings and faults from recorded ventilation checks", () => {
+  const selected = templateLibrary.find(({ id }) => id === "humidity-ventilation-damper")!;
+  const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {
+    active: true, templates: templateLibrary, selected, verification: verifyProjectTemplate(selected, catalogById),
+    onSelect: () => {}, onLoad: () => {}, onOpenWorkbook: () => {},
+    onOpenFourSheetWorkbook: () => {}, onOpenStarDeltaWorkbook: () => {},
+    onOpenReversingWorkbook: () => {}, onOpenTwoMotorWorkbook: () => {},
+  }));
+  expect(markup).toContain("Recorded check results");
+  expect(markup).toContain("DA1 · Damper position · 90.0%");
+  expect(markup).toContain("K1 · Signal fault · ERROR: Required control terminal DA1.IN has no wire.");
+});
+
 it("previews the authored pilot lamp symbol and its routed return", () => {
   const selected = templateLibrary.find(({ id }) => id === "wired-pilot-indicator")!;
   const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {
