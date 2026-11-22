@@ -80,9 +80,12 @@ export function projectSignalDriverConflicts(project: Pick<ElectricalProject, "s
     .map(({ message }) => message);
 }
 
-function introducedDriverConflict(before: ElectricalProject, after: ElectricalProject): string | undefined {
+export function introducedDriverConflict(before: ElectricalProject, after: ElectricalProject): string | undefined {
+  if (!after.continuations?.length) return;
+  const conflicts = projectSignalDriverConflicts(after);
+  if (conflicts.length === 0) return;
   const existing = new Set(projectSignalDriverConflicts(before));
-  return projectSignalDriverConflicts(after).find((message) => !existing.has(message));
+  return conflicts.find((message) => !existing.has(message));
 }
 
 export interface ProjectTerminalReference {
