@@ -26,7 +26,7 @@ describe("engineering project reports", () => {
 
   it("exports local topology findings and cross-sheet continuation findings with their scope", () => {
     const project = createMotorFeederWorkbook();
-    expect(createProjectWideReport(project, catalogById).validation.filter(({ severity }) => severity === "error")).toEqual([]);
+    expect(createProjectWideReport(project, catalogById).validation).toEqual([]);
     const sheetIndex = project.sheets.findIndex(({ document }) => document.wires.length > 0);
     const sheet = project.sheets[sheetIndex];
     const wire = sheet.document.wires[0];

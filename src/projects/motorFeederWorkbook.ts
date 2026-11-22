@@ -32,6 +32,8 @@ export function createMotorFeederWorkbook(): ElectricalProject {
       ...component,
       id: ids.get(oldId)!,
       reference: references[oldId] ?? component.reference,
+      // Leave room below the breaker for the contactor coil terminals and their routes.
+      y: oldId === "breaker" ? 185 : component.y,
       properties: { ...component.properties },
     }));
     if (ordinal === 1) {
