@@ -1,3 +1,4 @@
+import { parseProjectJson } from "../src/projects/projectSerialization";
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
@@ -81,9 +82,28 @@ describe("engineering project reports", () => {
     expect(reportCsv(report, "bom")).toContain('"M1, M2"');
   });
 
+  it("exports inherited and overridden wire drafting colors after project reload", () => {
+    const project = createMotorFeederWorkbook();
+    const sheet = project.sheets.find(({ document }) => document.wires.length >= 2)!;
+    const document = sheet.document;
+    const [inherited, overridden] = document.wires;
+    document.draftingLayers = [{ id: "field-wiring", name: "Field wiring", draftingColor: "#1d567c" }];
+    inherited.layerId = overridden.layerId = "field-wiring";
+    overridden.draftingColor = "#d5242a";
+    const loaded = parseProjectJson(JSON.stringify(project));
+    const local = createProjectReport(loaded.sheets.find(({ id }) => id === sheet.id)!.document, catalogById);
+    const workbook = createProjectWideReport(loaded, catalogById);
+    for (const report of [local, workbook]) {
+      expect(report.wires.find(({ id }) => id === inherited.id)?.draftingColor).toBe("#1d567c");
+      expect(report.wires.find(({ id }) => id === overridden.id)?.draftingColor).toBe("#d5242a");
+      expect(reportCsv(report, "wires")).toContain('"#1d567c"');
+      expect(reportCsv(report, "wires")).toContain('"#d5242a"');
+    }
+  });
+
   it("serializes wire reports with a stable CSV header", () => {
     const report = createProjectReport(createDolMotorStarter(), catalogById);
-    expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Net","From","To"');
+    expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Net","From","To","Drafting color"');
   });
 });
 
@@ -102,7 +122,7 @@ it("aggregates BOM, wires, and terminals across sheets with sheet context", () =
   expect(report.wires[0]).toMatchObject({ sheet: "Power · Sheet 1", netName: "L1" });
   expect(report.terminals).toHaveLength(80);
   expect(report.terminals[0].sheet).toBe("Power · Sheet 1");
-  expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To","Continuation ID","Cable ID","Core ID","Original source"');
+  expect(reportCsv(report, "wires").split("\n")[0]).toBe('"Sheet","Net","From","To","Continuation ID","Cable ID","Core ID","Original source","Drafting color","Conductor color"');
   expect(reportCsv(report, "terminals").split("\n")[0]).toBe('"Sheet","Reference","Terminal","Kind","Direction"');
 });
 
@@ -130,7 +150,7 @@ it("reports every continuation hop with its current cable core, adjacent termina
   expect(hops[1].continuation).toEqual({ id: continuation.id, cableCore: continuation.cableCore, originalSource });
   expect(wireReportTable(report).rows).toContainEqual([
     `${junction.name} · Sheet 1`, continuation.label, hops[1].from, hops[1].to,
-    continuation.id, 'Panel "A", W2', "Phase A", originalSource,
+    continuation.id, 'Panel "A", W2', "Phase A", originalSource, "", continuation.conductorColor,
   ]);
   expect(reportCsv(report, "wires")).toContain('"feed-m2-l1","Panel ""A"", W2","Phase A"');
   const schedule = cableScheduleTable(report);

@@ -1,3 +1,4 @@
+import { resolveDraftingStyle } from "../cad/draftingLayers";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
@@ -18,6 +19,7 @@ export interface WireLine {
   netName: string;
   from: string;
   to: string;
+  draftingColor?: string;
   conductorColor?: string;
   continuation?: {
     id: string;
@@ -90,7 +92,13 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
 
   return {
     bom: [...bomByDefinition.values()].sort((left, right) => left.category.localeCompare(right.category) || left.component.localeCompare(right.component)),
-    wires: document.wires.map((wire) => ({ id: wire.id, netName: wire.netName ?? "—", from: endpointLabel(wire.from.componentId, wire.from.terminalId), to: endpointLabel(wire.to.componentId, wire.to.terminalId) })),
+    wires: document.wires.map((wire) => ({
+      id: wire.id,
+      netName: wire.netName ?? "—",
+      from: endpointLabel(wire.from.componentId, wire.from.terminalId),
+      to: endpointLabel(wire.to.componentId, wire.to.terminalId),
+      draftingColor: resolveDraftingStyle(wire, document.draftingLayers).draftingColor,
+    })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
     validation: validateCircuit(document, definitions),
   };
@@ -149,14 +157,15 @@ export function cableScheduleTable(report: ProjectReport): { headers: string[]; 
 
 export function wireReportTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
   if (!report.projectWide) {
-    return { headers: ["Net", "From", "To"], rows: report.wires.map((line) => [line.netName, line.from, line.to]) };
+    return { headers: ["Net", "From", "To", "Drafting color"], rows: report.wires.map((line) => [line.netName, line.from, line.to, line.draftingColor ?? ""]) };
   }
   return {
-    headers: ["Sheet", "Net", "From", "To", "Continuation ID", "Cable ID", "Core ID", "Original source"],
+    headers: ["Sheet", "Net", "From", "To", "Continuation ID", "Cable ID", "Core ID", "Original source", "Drafting color", "Conductor color"],
     rows: report.wires.map((line) => [
       line.sheet ?? "", line.netName, line.from, line.to,
       line.continuation?.id ?? "", line.continuation?.cableCore?.cableId ?? "",
       line.continuation?.cableCore?.coreId ?? "", line.continuation?.originalSource ?? "",
+      line.draftingColor ?? "", line.conductorColor ?? "",
     ]),
   };
 }
