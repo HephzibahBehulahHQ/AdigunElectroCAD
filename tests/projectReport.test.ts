@@ -4,7 +4,7 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createBlankProject } from "../src/projects/starterProject";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { assignProjectCableCore } from "../src/projects/projectContinuations";
-import { createProjectReport, createProjectWideReport, reportCsv, wireReportTable } from "../src/reports/projectReport";
+import { cableScheduleTable, createProjectReport, createProjectWideReport, reportCsv, wireReportTable } from "../src/reports/projectReport";
 
 describe("engineering project reports", () => {
   it("uses user-defined terminal identities and labels in local and project-wide reports", () => {
@@ -94,10 +94,16 @@ it("reports every continuation hop with its current cable core, adjacent termina
     continuation.id, 'Panel "A", W2', "Phase A", originalSource,
   ]);
   expect(reportCsv(report, "wires")).toContain('"feed-m2-l1","Panel ""A"", W2","Phase A"');
+  const schedule = cableScheduleTable(report);
+  expect(schedule.rows.filter((row) => row.at(-1) === continuation.id)).toEqual([
+    ['Panel "A", W2', "Phase A", continuation.label, continuation.conductorColor, originalSource, hops[1].to, continuation.id],
+  ]);
+  expect(reportCsv(report, "cables")).toContain('"Panel ""A"", W2","Phase A"');
 
   const cleared = assignProjectCableCore(project, continuation.id, null);
   if (!cleared.ok) throw new Error(cleared.reason);
   const csv = reportCsv(createProjectWideReport(cleared.project, catalogById), "wires");
   expect(csv).toContain('"feed-m2-l1","",""');
   expect(csv).not.toContain('Panel ""A"", W2');
+  expect(reportCsv(createProjectWideReport(cleared.project, catalogById), "cables")).not.toContain(continuation.id);
 });
