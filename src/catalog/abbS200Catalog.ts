@@ -12,17 +12,43 @@ const orderRows = [
   { curve: "D", suffix: "1", currents: cdCurrents },
 ];
 
+
+const industrialCurrentCodes = new Map<number, string>([
+  [0.5, "015"],
+  [1, "021"],
+  [1.6, "025"],
+  [2, "027"],
+  [3, "031"],
+  [4, "033"],
+  [6, "037"],
+  [8, "040"],
+  [10, "042"],
+  [13, "044"],
+  [16, "046"],
+  [20, "048"],
+  [25, "051"],
+  [32, "053"],
+  [40, "055"],
+  [50, "057"],
+  [63, "060"],
+]);
+const industrialOrderRows = [
+  { curve: "K", suffix: "7", currents: [...industrialCurrentCodes.keys()] },
+  { curve: "Z", suffix: "8", currents: [...industrialCurrentCodes.keys()].filter(current => current !== 13) },
+];
+
 function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutral = false): ElectricalComponentDefinition[] {
   const prefix = { S200: "2CDS25", S200M: "2CDS27", S200P: "2CDS28" }[series];
   const sourceUrl = switchedNeutral ? neutralCatalogue : series === "S200P" ? pCatalogue : catalogue;
-  const availableRows = switchedNeutral ? orderRows.filter(row => row.curve !== "D") : orderRows;
+  const availableRows = switchedNeutral ? orderRows.filter(row => row.curve !== "D") : series === "S200P" ? orderRows : [...orderRows, ...industrialOrderRows];
   return (switchedNeutral ? [1, 3] : [1, 2, 3, 4]).flatMap(protectedPoles => {
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
     const neutralTerminals = switchedNeutral ? branches.at(-1)! : [];
     const labeledTerminals = terminals.map(terminal => neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal);
     return availableRows.flatMap(({ curve, suffix, currents }) => currents.filter(ratedCurrentA => series !== "S200P" || curve !== "C" || ratedCurrentA !== 13).map((ratedCurrentA): ElectricalComponentDefinition => {
-      const ratingCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
+      const industrialCurve = curve === "K" || curve === "Z";
+      const ratingCode = industrialCurve ? industrialCurrentCodes.get(ratedCurrentA)! : ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
       const orderCode = prefix + protectedPoles + (switchedNeutral ? "103R" : "001R") + ratingCode + suffix;
       const model = "S20" + protectedPoles + series.slice(4) + "-" + curve + ratedCurrentA + (switchedNeutral ? "NA" : "");
       const icnKa = series === "S200P" ? (ratedCurrentA <= 25 ? 25 : 15) : series === "S200M" ? 10 : 6;
@@ -34,13 +60,13 @@ function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutra
         terminals: labeledTerminals,
         manufacturerRecord: {
           manufacturer: "ABB", series, orderCode, sourceUrl, terminalMap: "verified",
-          documentRevision: switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " B/C/D ordering details and diagrams",
+          documentRevision: switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " " + curve + " ordering details and diagrams",
           topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles, ...(switchedNeutral ? { neutralTerminals } : {}) },
         },
-        propertiesSchema: { ratedCurrentA, curve, icnKa, ...(switchedNeutral ? { switchedNeutral } : {}), closed: true },
+        propertiesSchema: { ratedCurrentA, curve, ...(industrialCurve ? {} : { icnKa }), ...(switchedNeutral ? { switchedNeutral } : {}), closed: true },
         simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
-        documentation: "The Closed setting controls the linked contacts. The published Icn is the IEC/EN 60898-1 rating. Simulation covers manual switching continuity.",
-        standardsReferences: ["IEC/EN 60898-1", sourceUrl],
+        documentation: "The Closed setting controls the linked contacts. Simulation covers manual switching continuity." + (industrialCurve ? " Refer to ABB for IEC/EN 60947-2 breaking capacity at the intended voltage." : " The published Icn is the IEC/EN 60898-1 rating."),
+        standardsReferences: [industrialCurve ? "IEC/EN 60947-2" : "IEC/EN 60898-1", sourceUrl],
       };
     }));
   });
