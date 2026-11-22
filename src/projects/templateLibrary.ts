@@ -1,3 +1,4 @@
+import { createMotorPhaseOrderComparisonProject } from "./motorPhaseOrderComparisonProject";
 import { createFusedMotorPhaseLossProject } from "./fusedMotorPhaseLossProject";
 import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampProject";
 import { createCascadedTimerStartProject } from "./cascadedTimerStartProject";
@@ -191,6 +192,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createWiredStarDeltaTemplate(),
   createSourcedDolTemplate(),
   createFusedMotorPhaseLossProject(),
+  createMotorPhaseOrderComparisonProject(),
   createVfdFeederProject(),
 ];
 
