@@ -106,6 +106,13 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
       return { ...component, properties: { ...component.properties, runtimeClimateContact: contact.value === true } };
     }
     if (["contactor-dol-v1", "catalog-motor-starter"].includes(model ?? "")) return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
+    if (model === "catalog-interface-relay") {
+      const active = evaluated.get(component.id);
+      const powered = typeof active?.runtimeCoilVoltageV === "number";
+      if (powered || typeof component.properties.runtimeCoilEnergized === "boolean") {
+        return { ...component, properties: { ...component.properties, runtimeCoilEnergized: powered && active?.energized === true } };
+      }
+    }
     if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
       if (active.runtimeSignalError) return component;
