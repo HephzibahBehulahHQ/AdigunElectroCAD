@@ -4,9 +4,27 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createBlankProject } from "../src/projects/starterProject";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { assignProjectCableCore } from "../src/projects/projectContinuations";
-import { cableScheduleTable, createProjectReport, createProjectWideReport, reportCsv, wireReportTable } from "../src/reports/projectReport";
+import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, wireReportTable } from "../src/reports/projectReport";
 
 describe("engineering project reports", () => {
+  it("exports local topology findings and cross-sheet continuation findings with their scope", () => {
+    const project = createMotorFeederWorkbook();
+    expect(createProjectWideReport(project, catalogById).validation).toEqual([]);
+    const sheetIndex = project.sheets.findIndex(({ document }) => document.wires.length > 0);
+    const sheet = project.sheets[sheetIndex];
+    const wire = sheet.document.wires[0];
+    sheet.document.wires.push({ ...wire, id: "broken-wire", to: { ...wire.to, terminalId: "missing" } });
+    project.continuations![0].points[0].gridReference = "WRONG1";
+    const local = createProjectReport(sheet.document, catalogById);
+    const workbook = createProjectWideReport(project, catalogById);
+    expect(local.validation.some(({ message }) => message.includes("broken-wire"))).toBe(true);
+    expect(electricalValidationTable(workbook).rows).toEqual(expect.arrayContaining([
+      [expect.stringContaining(`Sheet ${sheetIndex + 1}`), "error", expect.any(String), expect.stringContaining("broken-wire")],
+      ["Cross-sheet continuations", "error", "invalid-project-continuation", expect.stringContaining("WRONG1")],
+    ]));
+    expect(reportCsv(workbook, "validation")).toContain('"Cross-sheet continuations","error","invalid-project-continuation"');
+  });
+
   it("uses user-defined terminal identities and labels in local and project-wide reports", () => {
     const project = createBlankProject();
     const document = project.sheets[0].document;
