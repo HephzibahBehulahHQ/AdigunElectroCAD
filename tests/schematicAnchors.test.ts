@@ -910,3 +910,15 @@ it.each([
   expect(part?.terminals).toHaveLength(terminalCount);
   expect(part?.manufacturerRecord?.orderCode).toBe(code.toUpperCase());
 });
+
+
+it.each([
+  ["faz-b12-1-sp", "FAZ-B12/1-SP", 12, "B", ["1", "2"]],
+  ["faz-c1.6-2", "FAZ-C1.6/2", 1.6, "C", ["1", "2", "3", "4"]],
+  ["faz-d63-4", "FAZ-D63/4", 63, "D", ["1", "2", "3", "4", "5", "6", "7", "8"]],
+] as const)("maps the Eaton %s order reference and numbered terminals", (suffix, orderCode, ratedCurrentA, curve, labels) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "eaton." + suffix);
+  expect(part?.manufacturerRecord).toMatchObject({ orderCode, series: "FAZ UL 1077" });
+  expect(part?.propertiesSchema).toMatchObject({ ratedCurrentA, curve });
+  expect(part?.terminals.map(terminal => terminal.label)).toEqual(labels);
+});
