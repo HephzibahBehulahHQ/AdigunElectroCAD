@@ -185,3 +185,25 @@ it("reports an obstructed saved automatic wire and clears the warning after repa
   document.components.pop();
   expect(report().validation).toEqual([]);
 });
+
+it("reports a blocked branch leg and clears the warning when its obstacle moves", () => {
+  const project = createBlankProject();
+  const document = project.sheets[0].document;
+  document.components = [
+    { id: "feed", reference: "S1", definitionId: "logic.no-contact", x: 120, y: 350, rotation: 0, properties: {} },
+    { id: "first", reference: "K1", definitionId: "logic.output-coil", x: 380, y: 350, rotation: 0, properties: {} },
+    { id: "second", reference: "K2", definitionId: "logic.output-coil", x: 980, y: 420, rotation: 0, properties: {} },
+    { id: "blocker", reference: "U1", definitionId: "user.drawn-symbol", x: 600, y: 350, rotation: 0, properties: {},
+      customSymbolGraphics: [{ id: "drawing", name: "Tall enclosure", kind: "line", x1: 0, y1: -360, x2: 0, y2: 440, color: "#000000", strokeWidth: 1 }] },
+  ];
+  const source = { componentId: "feed", terminalId: "out" };
+  document.wires = [
+    { id: "parent", from: source, to: { componentId: "first", terminalId: "in" }, points: [] },
+    { id: "branch", netName: "ENABLE", from: source, to: { componentId: "second", terminalId: "in" }, points: [], branchOfWireId: "parent", branchSource: "from", branchPosition: .5 },
+  ];
+  const warnings = () => createProjectWideReport(project, catalogById).validation.filter(({ code }) => code === "blocked-branch-wire-route");
+  expect(warnings()).toEqual([expect.objectContaining({ severity: "warning", message: expect.stringMatching(/ENABLE.*U1/) })]);
+  document.components[3].x = 1070;
+  expect(warnings()).toEqual([]);
+  expect(document.wires[1].branchOfWireId).toBe("parent");
+});
