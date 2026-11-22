@@ -1,3 +1,5 @@
+import { canConnectTerminals } from "../src/electrical/topology";
+import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
@@ -178,6 +180,28 @@ describe("placed functional component execution", () => {
     expect(runs.find((run) => run.reference === "PLC1")?.output.value).toContain("I0 OFF");
     expect(runs.find((run) => run.reference === "Y1")?.output.value).toBe("RETRACTED");
   });
+  it("wires calculated CT secondary current to a panel meter and propagates invalid ratings", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "ct", definitionId: "sensor.current-transformer", reference: "TA1", x: 150, y: 220, rotation: 0, properties: { primaryA: 50, ratedPrimaryA: 100 } },
+      { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 450, y: 220, rotation: 0, properties: { measurementKind: "Current", scaleMaximum: 5 } },
+      { id: "adc", definitionId: "signal.adc", reference: "ADC1", x: 750, y: 220, rotation: 0, properties: {} },
+    ];
+    document.wires = [];
+    const from = { componentId: "ct", terminalId: "signal" };
+    const to = { componentId: "meter", terminalId: "signal" };
+    expect(terminalAnchors(document)).toContainEqual(expect.objectContaining({ endpoint: from, x: 197, y: 220 }));
+    expect(canConnectTerminals(document, catalogById, from, to).ok).toBe(true);
+    expect(canConnectTerminals(document, catalogById, from, { componentId: "adc", terminalId: "in" }).ok).toBe(false);
+    document.wires.push({ id: "ct-reading", from, to, points: [] });
+    const readMeter = () => executeCircuitModels(document, catalogById).find(({ reference }) => reference === "P1")!;
+    expect(readMeter().evaluatedProperties.measuredValue).toBe(2.5);
+    document.components[0].properties.ratedPrimaryA = 0;
+    expect(readMeter().output.error).toContain("CT primary rating");
+    document.components[0].properties.ratedPrimaryA = 50;
+    expect(readMeter().evaluatedProperties.measuredValue).toBe(5);
+  });
+
   it("passes a wired numeric sensor signal into a panel meter reading", () => {
     const document = createDolMotorStarter();
     document.components = [

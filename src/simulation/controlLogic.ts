@@ -54,4 +54,4 @@ export function vibrationRms(accelerationSamples: number[]) {
 }
 export function encoderPulses(revolutions: number, pulsesPerRevolution: number) { return Math.round(revolutions * Math.max(1, pulsesPerRevolution)); }
 export function loadCellMillivolt(forceN: number, capacityN: number, sensitivityMvPerV = 2, excitationV = 5) { return clamp(forceN / (capacityN > 0 ? capacityN : 1), 0, 1) * sensitivityMvPerV * excitationV; }
-export function currentTransformerSecondaryAmp(primaryAmp: number, primaryRatedAmp: number, secondaryRatedAmp = 5) { return Math.max(0, primaryAmp) / Math.max(1, primaryRatedAmp) * Math.max(0, secondaryRatedAmp); }
+export function currentTransformerSecondaryAmp(primaryAmp: number, primaryRatedAmp: number, secondaryRatedAmp = 5) { return Math.max(0, primaryAmp) / (primaryRatedAmp > 0 ? primaryRatedAmp : 1) * Math.max(0, secondaryRatedAmp); }
