@@ -10,6 +10,7 @@ import { transformComponent } from "../src/cad/documentOps";
 import { transformFromHandle } from "../src/components/ComponentTransformHandles";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
+import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import type { ProjectContinuation } from "../src/types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "../src/components/functionalSymbols";
 import { createStarDeltaCircuit } from "../src/projects/starDeltaCircuit";
@@ -337,6 +338,22 @@ it("renders STOP and START terminal IDs at their connected reference anchors", (
   }
   const svg = renderToStaticMarkup(createElement(Schematic, { document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null, onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined }));
   for (const [terminal, value] of [["stop.21", "21"], ["stop.22", "22"], ["start.13", "13"], ["start.14", "14"]]) expect(svg).toContain(`data-terminal="${terminal}">${value}</text>`);
+});
+
+it("lays out all 36 feeder source markers without overlapping adjacent terminal stacks", () => {
+  const project = createMotorFeederWorkbook();
+  const [sheet] = project.sheets;
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document: sheet.document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    continuations: project.continuations, projectSheets: project.sheets, activeSheetId: sheet.id,
+    onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined,
+  }));
+  const boxes = [...markup.matchAll(/class="project-continuation-marker" transform="translate\(([-.\d]+) ([-.\d]+)\)"[^>]*><rect x="-3" y="-15" width="([.\d]+)" height="18"/g)]
+    .map(([, x, y, width]) => ({ left: +x - 3, top: +y - 15, right: +x - 3 + +width, bottom: +y + 3 }));
+  expect(boxes).toHaveLength(36);
+  for (const [index, box] of boxes.entries()) {
+    expect(boxes.slice(index + 1).some((other) => box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top)).toBe(false);
+  }
 });
 
 it("renders source, intermediate, and destination continuation references with sheet/grid traceability", () => {

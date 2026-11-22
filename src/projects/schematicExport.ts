@@ -32,7 +32,7 @@ const standaloneStyles = `
   .free-terminal-label { fill: #13233b; font-size: 10px; font-weight: 800; paint-order: stroke; stroke: #f4f8fc; stroke-width: 3px; stroke-linejoin: round; }
   .wire-junction { fill: #7c3aed; }
   .project-continuation-marker rect { fill: #f8fbff; stroke-width: 1.5; }
-  .project-continuation-marker text { font: 700 10px Inter, Arial, sans-serif; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
+  .project-continuation-marker text { font: 700 10px ui-monospace, Consolas, monospace; paint-order: stroke; stroke: #f8fbff; stroke-width: 2px; stroke-linejoin: round; }
 `;
 
 type DrawingBounds = { x: number; y: number; width: number; height: number };
