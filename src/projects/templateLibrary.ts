@@ -1,3 +1,4 @@
+import { createDuplexPumpAlternatorProject } from "./duplexPumpAlternatorProject";
 import { createBlendRatioPermitProject } from "./blendRatioPermitProject";
 import { createTransferProofWatchdogProject } from "./transferProofWatchdogProject";
 import { createEncoderIndexInspectionProject } from "./encoderIndexInspectionProject";
@@ -138,6 +139,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
+  createDuplexPumpAlternatorProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
