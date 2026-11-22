@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { parseProjectJson } from "../src/projects/projectSerialization";
+import { encodeProject, parseProjectJson } from "../src/projects/projectSerialization";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 import { terminalGridReference } from "../src/cad/terminalAnchors";
 
@@ -12,6 +12,15 @@ function freeSheetWithComponent() {
 }
 
 describe("project JSON import validation", () => {
+  it("loads legacy and version 1 projects through the same validation and rejects unknown versions", () => {
+    const legacy = createStarterProject();
+    const encoded = encodeProject(legacy);
+    expect(encoded.schemaVersion).toBe(1);
+    expect(parseProjectJson(JSON.stringify(encoded))).toEqual(parseProjectJson(JSON.stringify(legacy)));
+    for (const schemaVersion of [0, 2, "1", null]) {
+      expect(() => parseProjectJson(JSON.stringify({ ...encoded, schemaVersion }))).toThrow("Unsupported project schema version");
+    }
+  });
   it("rejects duplicate sheet ids that would make edits target multiple sheets", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     input.sheets[1].id = input.sheets[0].id;

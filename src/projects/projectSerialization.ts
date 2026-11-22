@@ -11,6 +11,12 @@ import { validPrintLayout, type PrintLayout } from "../cad/printLayout";
 import { validDrawingGrid, type DrawingGrid } from "../cad/drawingGrid";
 import type { DrawingGuide } from "../types/electrical";
 
+const projectSchemaVersion = 1;
+
+export function encodeProject(project: ElectricalProject) {
+  return { ...project, schemaVersion: projectSchemaVersion };
+}
+
 export function parseProjectJson(text: string): ElectricalProject {
   let value: unknown;
   try {
@@ -19,6 +25,9 @@ export function parseProjectJson(text: string): ElectricalProject {
     throw new Error("The selected file is not valid JSON.");
   }
   const root = object(value, "The selected file must contain a project object.");
+  if (root.schemaVersion !== undefined && root.schemaVersion !== projectSchemaVersion) {
+    throw new Error("Unsupported project schema version. Open the file in a compatible version of AdigunElectroCAD.");
+  }
   const sheetsValue = array(root.sheets, "The project must contain at least one sheet.");
   if (sheetsValue.length === 0 || sheetsValue.length > MAX_PROJECT_SHEETS) throw new Error(`A project must contain between 1 and ${MAX_PROJECT_SHEETS} sheets.`);
   const project: ElectricalProject = {
