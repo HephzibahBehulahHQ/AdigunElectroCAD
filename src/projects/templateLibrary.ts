@@ -1,3 +1,18 @@
+import { createFusedMotorPhaseLossProject } from "./fusedMotorPhaseLossProject";
+import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampProject";
+import { createCascadedTimerStartProject } from "./cascadedTimerStartProject";
+import { createPoweredTimerPilotTransferProject } from "./poweredTimerPilotTransferProject";
+import { createRelayControlFeedLossProject } from "./relayControlFeedLossProject";
+import { createMixedVoltageRelayPanelProject } from "./mixedVoltageRelayPanelProject";
+import { createContactorStatusPanelProject } from "./contactorStatusPanelProject";
+import { createDcPilotSharedReturnProject } from "./dcPilotSharedReturnProject";
+import { createDehumidifierLockoutProject } from "./dehumidifierLockoutProject";
+import { createDualRtdDisagreementProject } from "./dualRtdDisagreementProject";
+import { createPneumaticStrokeWatchdogProject } from "./pneumaticStrokeWatchdogProject";
+import { createClampPositionPermitProject } from "./clampPositionPermitProject";
+import { createNetWeightCheckweigherProject } from "./netWeightCheckweigherProject";
+import { createSortingDecisionLatchProject } from "./sortingDecisionLatchProject";
+import { createCompressorRestartDelayProject } from "./compressorRestartDelayProject";
 import { createTestBenchSourceSelectorProject } from "./testBenchSourceSelectorProject";
 import { createShaftMotionMonitorProject } from "./shaftMotionMonitorProject";
 import { createExtractionFanRunOnProject } from "./extractionFanRunOnProject";
@@ -128,6 +143,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
   createTankFillPermitProject(),
   createHumidityDamperProject(),
+  createDehumidifierLockoutProject(),
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
   createBlendRatioPermitProject(),
@@ -135,13 +151,22 @@ export const templateLibrary: ProjectTemplate[] = [
   createEncoderIndexInspectionProject(),
   createDualChannelResetProject(),
   createPt100TemperatureAlarmProject(),
+  createDualRtdDisagreementProject(),
   createPt100PlcTransmitterProject(),
   createTypeKThermocoupleAlarmProject(),
   createFreezerAlarmProject(),
   createWeighStationProject(),
+  createNetWeightCheckweigherProject(),
   createCurrentMonitoringProject(),
   createCurrentLoopInterlockProject(),
   createPilotIndicatorProject(),
+  createDcPilotSharedReturnProject(),
+  createContactorStatusPanelProject(),
+  createMixedVoltageRelayPanelProject(),
+  createRelayControlFeedLossProject(),
+  createPoweredTimerPilotTransferProject(),
+  createCascadedTimerStartProject(),
+  createMarshallingTerminalLampProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
@@ -150,10 +175,14 @@ export const templateLibrary: ProjectTemplate[] = [
   createExtractionFanRunOnProject(),
   createShaftMotionMonitorProject(),
   createTestBenchSourceSelectorProject(),
+  createCompressorRestartDelayProject(),
+  createSortingDecisionLatchProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
+  createClampPositionPermitProject(),
+  createPneumaticStrokeWatchdogProject(),
   createTwoMotorTemplate(),
   createWiredHoldingTemplate(),
   createWiredReversingTemplate(),
@@ -161,6 +190,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createThermalWiredReversingTemplate(),
   createWiredStarDeltaTemplate(),
   createSourcedDolTemplate(),
+  createFusedMotorPhaseLossProject(),
   createVfdFeederProject(),
 ];
 

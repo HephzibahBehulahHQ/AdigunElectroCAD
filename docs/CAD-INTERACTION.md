@@ -44,11 +44,15 @@ Click a terminal in Select or Wiring mode to start a wire. Click a compatible te
 
 On 2026-11-22, headless Chrome ran the editor at commit `aedc4d0` with a local three-component project. Browser-dispatched clicks created an automatic wire and a wire with two bends. The Properties move command relocated the shared source, then the second destination. Both rendered routes matched the new terminal coordinates and survived a local save and reload. Physical pointer dragging and live screen-reader behavior still need workstation verification.
 
+Space activates a focused wire, terminal, or continuation control. With focus on the drawing itself, hold Space and drag to pan.
+
 Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The electrical model connects the new wire to the selected parent endpoint. Removing the parent wire also removes its dependent branches.
 
 Switching sheets discards an unfinished local wire, branch, or reconnection. To connect different sheets, start **Electrical → Add sheet continuation** and choose the source terminal before switching sheets. Focus an existing continuation marker and press Space to edit its properties on the current sheet, or press Enter to follow it to the linked sheet.
 
 Select a wire to change its conductor color or replace either terminal in Properties. Reconnection validates the revised topology and carries dependent branch taps with their parent endpoint. Replacing a branch’s source detaches it from the old parent. For any direct wire on a free sheet, including example wires, use Edit route points and Add route point. Click the selected route to insert a waypoint, then drag it or use the arrow keys. Right-click a handle or press Delete to remove the point. Reset to automatic route clears waypoints. To reposition a branch tap, edit its parent route.
+
+Validation names unrelated symbols crossed by a saved manual route. The active-sheet check in the project library also fails when a saved route is obstructed, even when its electrical sequence passes.
 
 When a waypoint moves, the preview recalculates attached taps and their branches from the preview route. Releasing the waypoint saves the route in one undoable edit.
 
@@ -56,6 +60,8 @@ For selected line, rectangle, or ellipse drafting geometry, edit X1, Y1, X2, and
 Use Freehand to sketch an unfilled path by dragging on a free sheet. The path is stored as editable polyline geometry, so users can rename it, choose its color and stroke width, and move or edit individual vertices later. Freehand drawings are visual drafting marks and do not create electrical connections.
 On a selected graphic, choose Make component symbol to turn that one drafted shape into a generic, named user symbol. The shape is centered and fitted inside its symbol body; the original is removed only when placement succeeds. Properties lets users change its name, color, terminal labels, kinds, directions, and added terminal anchor positions. Duplicate the component to reuse the authored shape. The symbol is a drawing and connectable terminal set only; it does not imply a voltage or simulated behavior.
 Shift-click additional drafted graphics to select a composition, then choose Make symbol from N graphics in Properties. The shapes are centered and fitted together while preserving each shape’s color, fill, and stroke; the active graphic stays individually editable until conversion.
+An interface relay with a control supply reaching A1 or A2 derives its state from the wired coil circuit and configured voltage rating. Its changeover poles switch independently. A relay driven only by Boolean signals continues to use its signal input.
+
 On a custom pilot indicator, set the rated voltage and AC/DC mode in Properties, then wire its control terminals T1 and T2. For DC, connect positive to T1 and return to T2. The lamp lights only with a complete matching supply path. A rating of zero leaves an older indicator unrated until configured. Alternate terminal labels keep the original physical identities. Extra terminals remain available for drafting and wiring and do not drive the lamp. The model uses ideal continuity and voltage matching, with no modeled current draw or inrush.
 For added terminals on the generic user symbol, edit the local X/Y anchor offsets in Properties. Offsets are bounded to -60..60 units, follow component scale and rotation, and move the wire connection point and terminal label together. Built-in T1/T2 pin endpoints stay aligned with the indicator glyph.
 

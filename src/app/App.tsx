@@ -263,7 +263,7 @@ export function App() {
     window.addEventListener("keydown", (event) => {
       if (accessLocked.current) return;
       if (event.code !== "Space" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-      if (event.target instanceof Element && event.target.closest("input, select, textarea, [contenteditable], [data-wire-terminal]")) return;
+      if (event.target instanceof Element && event.target.closest("input, select, textarea, button, summary, a[href], [contenteditable], [role=button]")) return;
       if (!(viewport.matches(":hover") || viewport.contains(window.document.activeElement))) return;
       event.preventDefault();
       event.stopPropagation();

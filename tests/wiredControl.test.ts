@@ -1,3 +1,4 @@
+import { createMixedVoltageRelayPanelProject } from "../src/projects/mixedVoltageRelayPanelProject";
 import { createWiredHoldingTemplate } from "../src/projects/wiredHoldingCircuit";
 import { verifyProjectTemplate } from "../src/projects/templateVerification";
 import { expect, it } from "vitest";
@@ -81,4 +82,26 @@ it("runs the dedicated wired starter operating sequence", () => {
   expect(result.topologyIssues).toEqual([]);
   expect(result.failedExpectations).toEqual([]);
   expect(result.passed).toBe(true);
+});
+
+it("drives isolated AC and DC loads from separate poles of a physically wired relay", () => {
+  const { document } = createMixedVoltageRelayPanelProject();
+
+  const idle = evaluateWiredControl(document, catalogById);
+  expect(idle.get("relay")).toEqual({ energized: false, voltageV: 0 });
+  expect(idle.get("dropped-out")).toEqual({ energized: true, voltageV: 24 });
+  expect(idle.get("picked-up")).toEqual({ energized: false, voltageV: 0 });
+
+  const closed = press(document, "command", true);
+  const active = evaluateWiredControl(closed, catalogById);
+  expect(active.get("relay")).toEqual({ energized: true, voltageV: 24 });
+  expect(active.get("picked-up")).toEqual({ energized: true, voltageV: 230 });
+  expect(active.get("dropped-out")).toEqual({ energized: false, voltageV: 0 });
+  expect(executeCircuitModels(closed, catalogById)).toContainEqual(expect.objectContaining({
+    reference: "K1", output: expect.objectContaining({ value: "ENERGIZED · 2 CO" }),
+  }));
+
+  const openReturn = { ...closed, wires: closed.wires.filter(({ id }) => id !== "coil-return") };
+  expect(evaluateWiredControl(openReturn, catalogById).get("relay")).toEqual({ energized: false, voltageV: 0 });
+  expect(evaluateWiredControl(openReturn, catalogById).get("dropped-out")).toEqual({ energized: true, voltageV: 24 });
 });

@@ -64,7 +64,7 @@ export function simulationResultsTable(
   };
 }
 
-function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
+export function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
   if (document.id === "reference-dol-motor-starter") return [];
   const hiddenLayers = new Set(document.draftingLayers?.filter(({ hidden }) => hidden).map(({ id }) => id));
   const visible = document.components.filter(({ layerId }) => !hiddenLayers.has(layerId ?? ""));
@@ -84,9 +84,13 @@ function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
       return [{ severity: "warning", code: "blocked-branch-wire-route",
         message: "Branch " + (wire.netName ?? wire.id) + " has no clear automatic route. Its fallback crosses " + blockedBy.join(", ") + "." }];
     }
-    if (wire.points.length) return [];
     const from = anchors.get(endpointKey(wire.from)), to = anchors.get(endpointKey(wire.to));
     if (!from || !to) return [];
+    if (wire.points.length) {
+      const blockedBy = wireRouteObstructions(from, to, wire.points, obstacles).map((id) => references.get(id) ?? id);
+      return blockedBy.length ? [{ severity: "warning", code: "blocked-manual-wire-route",
+        message: "Wire " + (wire.netName ?? wire.id) + " crosses " + blockedBy.join(", ") + ". Edit its route points to clear the obstruction." }] : [];
+    }
     if (findAutomaticWireBends(from, to, obstacles) !== null) return [];
     const blockedBy = wireRouteObstructions(from, to, [], obstacles).map((id) => references.get(id) ?? id);
     return [{ severity: "warning", code: "blocked-automatic-wire-route",
