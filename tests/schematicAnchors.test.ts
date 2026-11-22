@@ -958,3 +958,14 @@ it.each([
   expect(part?.propertiesSchema).toMatchObject({ voltageRating: "240 VAC", interruptingRatingKa: 10, terminalStyle: "Ring tongue" });
   expect(part?.terminals).toHaveLength(terminalCount);
 });
+
+
+it("preserves the documented Eaton FAZ-RT packaging and pole exceptions", () => {
+  const getPart = (code: string) => componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
+  expect(getPart("faz-c35-1-rt")?.manufacturerRecord?.orderCode).toBe("FAZ-C35/1-RT");
+  expect(getPart("faz-c13-4-rt")?.propertiesSchema).toMatchObject({
+    voltageRating: "480Y/277 VAC", interruptingRatingKa: 14, terminalStyle: "Ring tongue",
+  });
+  expect(getPart("faz-d40-1-rt-sp")?.terminals).toHaveLength(2);
+  expect(getPart("faz-d40-2-rt")).toBeUndefined();
+});

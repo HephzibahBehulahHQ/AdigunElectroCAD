@@ -46,17 +46,30 @@ const branchCircuitRows = [
   { curve: "B", voltage: "240", interruptingRatingKa: 10, currents: [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
   { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
   { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
+  { curve: "B", voltage: "wye", interruptingRatingKa: 10, currents: [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 30, 32], ringTongueSeries: true, singlePolePackage: false },
+  { curve: "B", voltage: "wye", interruptingRatingKa: 14, currents: [15, 16, 20, 25], ringTongueSeries: true, singlePolePackage: false },
+  { curve: "B", voltage: "240", interruptingRatingKa: 10, currents: [35, 40, 50, 63], ringTongueSeries: true, singlePolePackage: false },
+  { curve: "C", voltage: "wye", interruptingRatingKa: 14, currents: [13, 15, 16, 20, 25], ringTongueSeries: true, singlePolePackage: true },
+  { curve: "C", voltage: "wye", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 30, 32], ringTongueSeries: true, singlePolePackage: true },
+  { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [40], ringTongueSeries: true, singlePolePackage: true },
+  { curve: "D", voltage: "wye", interruptingRatingKa: 14, currents: [13, 15, 16, 20], ringTongueSeries: true, singlePolePackage: true },
+  { curve: "D", voltage: "wye", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 25, 30, 32], ringTongueSeries: true, singlePolePackage: true },
+  { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [35, 50, 63], ringTongueSeries: true, singlePolePackage: false },
+  { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [35], ringTongueSeries: true, singlePolePackage: false },
+  { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [40], ringTongueSeries: true, singlePolePackage: true, singlePoleOnly: true },
 ] as const;
 
 export const eatonFazNaCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
   return branchCircuitRows.flatMap(row => {
-    const suffixes = "series240V" in row ? ["-NA-L", "-RT-L"] : ["-NA"];
+    if ("singlePoleOnly" in row && poles !== 1) return [];
+    const suffixes = "ringTongueSeries" in row ? ["-RT"] : "series240V" in row ? ["-NA-L", "-RT-L"] : ["-NA"];
     return suffixes.flatMap(suffix => row.currents.map((ratedCurrentA): ElectricalComponentDefinition => {
       const { curve, voltage, interruptingRatingKa } = row;
       const model = "FAZ" + suffix;
-      const ringTongue = suffix === "-RT-L";
-      const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + suffix + (poles === 1 && !ringTongue ? "-SP" : "");
+      const ringTongue = suffix.startsWith("-RT");
+      const singlePolePackage = "singlePolePackage" in row ? row.singlePolePackage : !ringTongue;
+      const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + suffix + (poles === 1 && singlePolePackage ? "-SP" : "");
       const voltageRating = voltage === "240" ? "240 VAC" : poles === 1 ? "277 VAC" : "480Y/277 VAC";
       // Eaton lists the four-pole C13 separately at 10 kA.
       const partInterruptingRatingKa = model === "FAZ-NA" && curve === "C" && ratedCurrentA === 13 && poles === 4 ? 10 : interruptingRatingKa;
