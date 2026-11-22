@@ -343,7 +343,17 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "safety-light-curtain") return <g className={mark}><path d={`M ${x - 18} ${cy - 16} V ${cy + 16} M ${x + 18} ${cy - 16} V ${cy + 16}`} />{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 13} ${cy + offset} H ${x + 13}`} />)}</g>;
   if (symbolId === "safety-pull-cord") return <g className={mark}><path d={`M ${x - 28} ${cy - 8} H ${x + 18} M ${x + 8} ${cy - 8} V ${cy + 12} M ${x} ${cy + 12} H ${x + 16}`} /></g>;
   if (symbolId === "safety-zero-speed") return <g className={mark}><circle cx={x} cy={cy} r="15" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>0</text></g>;
-  if (symbolId === "safety-phase-failure") return <g className={mark}>{[-12, 0, 12].map((offset) => <circle key={offset} cx={x + offset} cy={cy} r="5" />)}<path d={`M ${x - 24} ${cy + 15} H ${x + 24}`} /></g>;
+  if (symbolId === "safety-phase-failure") return <g className={mark}>
+    {(["l1", "l2", "l3"] as const).map((phase, index) => {
+      const pinX = x + (index - 1) * 24;
+      const present = properties[phase] === true;
+      return <g key={phase} data-phase-monitor-input={phase} aria-label={phase.toUpperCase() + (present ? " present" : " absent")}>
+        <path d={`M ${pinX} ${y - 27} V ${cy - 5}`} />
+        <circle cx={pinX} cy={cy} r="5" style={{ fill: present ? "#15803d" : "none" }} />
+      </g>;
+    })}
+    <path d={`M ${x - 24} ${cy + 15} H ${x + 24}`} />
+  </g>;
   if (symbolId === "safety-earth-leakage") return <g className={mark}><circle cx={x} cy={cy - 3} r="11" /><path d={`M ${x} ${cy + 8} V ${cy + 16} M ${x - 9} ${cy + 16} H ${x + 9} M ${x - 5} ${cy + 20} H ${x + 5}`} /></g>;
 
   if (symbolId === "panel-busbar") return <g className={mark}>{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 27} ${cy + offset} H ${x + 27}`} />)}<path d={`M ${x - 20} ${cy + 16} H ${x + 20}`} /></g>;

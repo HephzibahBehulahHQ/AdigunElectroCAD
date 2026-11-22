@@ -1,3 +1,4 @@
+import { createPhaseMonitorLocalizationProject } from "./phaseMonitorLocalizationProject";
 import { createMotorPhaseOrderComparisonProject } from "./motorPhaseOrderComparisonProject";
 import { createFusedMotorPhaseLossProject } from "./fusedMotorPhaseLossProject";
 import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampProject";
@@ -193,6 +194,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createSourcedDolTemplate(),
   createFusedMotorPhaseLossProject(),
   createMotorPhaseOrderComparisonProject(),
+  createPhaseMonitorLocalizationProject(),
   createVfdFeederProject(),
 ];
 
