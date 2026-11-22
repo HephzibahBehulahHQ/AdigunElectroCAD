@@ -122,3 +122,30 @@ export const eatonFazNaDcCatalog: ElectricalComponentDefinition[] = [1, 2].flatM
     };
   });
 });
+
+const rtDcCatalogue = "https://www.eaton.com/content/dam/eaton/products/electrical-circuit-protection/circuit-breakers/faz-na-faz-rt-xeffect-miniature-circuit-breaker/eaton-xeffect-faz-rt-dc-mcb-catalog-CA003037en-en-us.pdf";
+
+export const eatonFazRtDcCatalog: ElectricalComponentDefinition[] = [1, 2].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  const polarizedTerminals = terminals.map((terminal, index) => ({ ...terminal, label: dcTerminalLabels[index] }));
+  return [...dcCurrents, 50].map(ratedCurrentA => {
+    const orderCode = "FAZ-C" + ratedCurrentA + "/" + poles + "-RT-DC";
+    const voltagePerPoleV = ratedCurrentA === 2 ? 220 : 250;
+    return {
+      id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
+      name: "Eaton " + orderCode + " · FAZ-RT-DC",
+      category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
+      description: "Polarized IEC C-curve DC breaker with ring-tongue terminals.",
+      terminals: polarizedTerminals,
+      manufacturerRecord: {
+        manufacturer: "Eaton", series: "FAZ-RT-DC", orderCode, sourceUrl: rtDcCatalogue, terminalMap: "verified",
+        documentRevision: "CA003037EN, order selection and technical data with connection diagrams",
+        topology: { type: "polarized-mechanically-linked-breaker", closed: branches, open: [], polaritySensitive: true },
+      },
+      propertiesSchema: { ratedCurrentA, curve: "C", voltagePerPoleV, breakingCapacityKa: 10, terminalStyle: "Ring tongue", closed: true },
+      simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
+      documentation: "The DC voltage rating is per pole under IEC/EN 60947-2. Follow the manufacturer polarity diagram. Simulation models manual switching of the contacts. Polarity validation and overcurrent tripping are outside scope.",
+      standardsReferences: ["IEC/EN 60947-2", rtDcCatalogue],
+    };
+  });
+});

@@ -979,3 +979,12 @@ it("shows Eaton FAZ-NA-DC polarity and the series voltage condition", () => {
   expect(twoPole?.terminals.map(terminal => terminal.label)).toEqual(["1 (+)", "2 (−)", "3 (−)", "4 (+)"]);
   expect(twoPole?.propertiesSchema.voltageRating).toBe("250 VDC with poles in series");
 });
+
+
+it("preserves the Eaton FAZ-RT-DC per-pole voltage exception and polarity", () => {
+  const onePole = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c2-1-rt-dc");
+  const twoPole = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c50-2-rt-dc");
+  expect(onePole?.propertiesSchema).toMatchObject({ voltagePerPoleV: 220, terminalStyle: "Ring tongue" });
+  expect(twoPole?.propertiesSchema).toMatchObject({ voltagePerPoleV: 250, breakingCapacityKa: 10 });
+  expect(twoPole?.terminals.map(terminal => terminal.label)).toEqual(["1 (+)", "2 (−)", "3 (−)", "4 (+)"]);
+});
