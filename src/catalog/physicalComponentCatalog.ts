@@ -3,30 +3,52 @@ import { omronEncoderCatalog } from "./omronEncoderCatalog";
 import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 
+const railGuide = "https://assets.phoenixcontact.com/file/d093f1e3-03b5-4032-b8ba-582ffacd83e8/media/original/US_Shop-Floor-Productivity-FA-brochure_20230705_1282861-01.pdf";
+const railCatalog = "https://www.phoenixcontact.com/assets/17253072-b386-4c6d-8e5f-446f1ee8c43a/index.html";
+const galvanized = "Galvanized steel";
 const phoenixRails = [
-  { orderCode: "0801733", depthMm: 7.5, perforated: true, slug: "din-rail-ns-35-75-perf-2000mm-0801733" },
-  { orderCode: "0801681", depthMm: 7.5, perforated: false, slug: "din-rail-ns-35-75-unperf-2000mm-0801681" },
-  { orderCode: "1201730", depthMm: 15, perforated: true, slug: "din-rail-perforated-ns-35-15-perf-2000mm-1201730" },
-  { orderCode: "1201714", depthMm: 15, perforated: false, slug: "din-rail-ns-3515-unperf-2000mm-1201714" },
+  ["0801733", 7.5, 2000, true, galvanized, railGuide],
+  ["0801681", 7.5, 2000, false, galvanized, railGuide],
+  ["1201730", 15, 2000, true, galvanized, railGuide],
+  ["1201714", 15, 2000, false, galvanized, railGuide],
+  ["0814681", 7.5, 2000, true, "Aluminum", railGuide],
+  ["0801704", 7.5, 2000, false, "Aluminum", railGuide],
+  ["1207663", 15, 1000, false, "Aluminum", railGuide],
+  ["1201756", 15, 2000, false, "Aluminum", railGuide],
+  ["0801762", 7.5, 2000, false, "Copper", railGuide],
+  ["1201895", 15, 2000, false, "Copper", railGuide],
+  ["1207679", 15, 755, true, galvanized, railCatalog],
+  ["1207682", 15, 955, true, galvanized, railCatalog],
+  ["1207658", 15, 1000, true, galvanized, railCatalog],
+  ["1207695", 15, 1155, true, galvanized, railCatalog],
+  ["1207655", 15, 1000, false, galvanized, railCatalog],
 ] as const;
+const originalProductPages = {
+  "0801733": "din-rail-ns-35-75-perf-2000mm-0801733",
+  "0801681": "din-rail-ns-35-75-unperf-2000mm-0801681",
+  "1201730": "din-rail-perforated-ns-35-15-perf-2000mm-1201730",
+  "1201714": "din-rail-ns-3515-unperf-2000mm-1201714",
+} as const;
 
 export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...hbkLoadCellCatalog,
   ...omronEncoderCatalog,
   ...festoValveCatalog,
-  ...phoenixRails.map(({ orderCode, depthMm, perforated, slug }): ElectricalComponentDefinition => {
-    const sourceUrl = "https://www.phoenixcontact.com/en-pc/products/" + slug;
+  ...phoenixRails.map(([orderCode, depthMm, stockLengthMm, perforated, material, reference]): ElectricalComponentDefinition => {
+    const slug = originalProductPages[orderCode as keyof typeof originalProductPages];
+    const sourceUrl = slug ? "https://www.phoenixcontact.com/en-pc/products/" + slug : reference;
     return {
       id: "phoenix-contact.din-rail." + orderCode,
       name: "Phoenix Contact " + orderCode + " · NS 35/" + depthMm + (perforated ? " perforated" : " solid"),
       category: "Distribution & Panel Hardware", referencePrefix: "DR", symbolId: "panel-din-rail",
-      description: "Steel top-hat mounting rail with 35 mm width and 2000 mm stock length.",
-      manufacturerRecord: { manufacturer: "Phoenix Contact", series: "NS 35", orderCode, sourceUrl, terminalMap: "none-mechanical" },
+      description: material + " top-hat mounting rail with 35 mm width and " + stockLengthMm + " mm stock length.",
+      manufacturerRecord: { manufacturer: "Phoenix Contact", series: "NS 35", orderCode, sourceUrl, terminalMap: "none-mechanical",
+        documentRevision: reference === railCatalog ? "2026 Cabinet accessories, DIN rail order table, p. 53" : "2023 Shop Floor Productivity, DIN rail selection, p. 35" },
       terminals: [],
-      propertiesSchema: { widthMm: 35, depthMm, stockLengthMm: 2000, cutLengthMm: 2000, perforated },
+      propertiesSchema: { widthMm: 35, depthMm, stockLengthMm, cutLengthMm: stockLengthMm, perforated, material },
       simulationModelId: "none", simulationSupport: "symbol-only",
       documentation: "Mechanical mounting hardware. Select a separate, documented terminal or bonding accessory for any electrical connection. The drawing mark represents the rail type. The cut-length property records the intended installation length.",
-      standardsReferences: ["EN 60715 profile reference", sourceUrl],
+      standardsReferences: ["EN 60715 profile reference", ...new Set([sourceUrl, reference])],
     };
   }),
   {
