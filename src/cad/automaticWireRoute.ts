@@ -56,6 +56,13 @@ function searchCorridorGrid(from: SchematicGraphicPoint, to: SchematicGraphicPoi
   return null;
 }
 
+export function wireRouteObstructions(from: TerminalAnchor, to: TerminalAnchor, bends: readonly SchematicGraphicPoint[], obstacles: readonly Obstacle[]): string[] {
+  const vertices = orthogonalWireVertices(from, to, bends, from.vertical, to.vertical);
+  return obstacles.filter((obstacle) => obstacle.componentId !== from.endpoint.componentId &&
+    obstacle.componentId !== to.endpoint.componentId && !routeIsClear(vertices, [obstacle]))
+    .map(({ componentId }) => componentId);
+}
+
 /** Preserve the standard center route when clear. Search nearby orthogonal corridors when it is blocked. */
 export function findAutomaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] | null {
   const otherSymbols = obstacles.filter(({ componentId }) => componentId !== from.endpoint.componentId && componentId !== to.endpoint.componentId);
