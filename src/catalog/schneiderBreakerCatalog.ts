@@ -98,6 +98,15 @@ const c120nRows = [
 ] as const;
 const c120nFrenchVariants = [[80, 73], [100, 75], [125, 77]] as const;
 
+const c120hOrderStarts = [
+  [18401, 18445, 18489],
+  [18412, 18456, 18500],
+  [18423, 18467, 18511],
+  [18434, 18478, 18522],
+] as const;
+const c120hCurrents = [63, 80, 100, 125] as const;
+const c120Curves = ["B", "C", "D"] as const;
+
 export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const branches = Array.from({ length: poles }, (_, index) => ["l" + (index + 1) + "-in", "l" + (index + 1) + "-out"]);
   const terminals = branches.flatMap(([line, load], index): TerminalDefinition[] => {
@@ -129,13 +138,20 @@ export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3
     documentRevision: "Acti9 v2.0 (May 2017), C120N order tables and terminal diagrams",
   };
   const c120nParts = c120nRows.filter(([poleCount]) => poleCount === poles).flatMap(([, ratedCurrentA, codes]) =>
-    codes.map((suffix, index) => ({ ...c120n, ratedCurrentA, curve: ["B", "C", "D"][index], orderCode: "A9N183" + suffix })),
+    codes.map((suffix, index) => ({ ...c120n, ratedCurrentA, curve: c120Curves[index], orderCode: "A9N183" + suffix })),
   );
   const frenchParts = poles === 4 ? c120nFrenchVariants.map(([ratedCurrentA, suffix]) => ({
     ...c120n, ratedCurrentA, curve: "C", orderCode: "A9N183" + suffix,
     documentRevision: c120n.documentRevision + " (France-only order code)",
   })) : [];
-  return [...internationalParts, ...germanParts, ...maParts, ...c120nParts, ...frenchParts].map(({ curve, orderCode, ratedCurrentA, series, icnKa, sourceUrl, documentRevision }): ElectricalComponentDefinition => {
+  const c120hParts = c120hOrderStarts[poles - 1].flatMap((firstCode, curveIndex) =>
+    c120hCurrents.map((ratedCurrentA, currentIndex) => ({
+      series: "Acti9 C120H", icnKa: 15, sourceUrl: acti9Catalogue,
+      documentRevision: "Acti9 v2.0 (May 2017), C120H order table, terminal diagrams and Icn ratings",
+      curve: c120Curves[curveIndex], ratedCurrentA, orderCode: "A9N" + (firstCode + currentIndex),
+    })),
+  );
+  return [...internationalParts, ...germanParts, ...maParts, ...c120nParts, ...frenchParts, ...c120hParts].map(({ curve, orderCode, ratedCurrentA, series, icnKa, sourceUrl, documentRevision }): ElectricalComponentDefinition => {
     return {
       id: "schneider.acti9." + orderCode.toLowerCase(), name: "Schneider Electric " + orderCode + " · " + series.replace("Acti9 ", "") + " " + poles + "P " + curve + ratedCurrentA,
       category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
