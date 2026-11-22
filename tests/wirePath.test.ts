@@ -1,4 +1,4 @@
-import { automaticWireBends, findAutomaticWireBends } from "../src/cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -26,11 +26,13 @@ it("rotates and translates power anchors without changing saved wire topology", 
 
 it.each([createTwoMotorSequence, createWiredReversingCircuit])("keeps routes clear of component bodies and reference labels (%#)", (create) => {
   const document = create(), anchors = terminalAnchors(document);
+  const obstacles = wireRouteObstacles(document.components);
   const conflicts: string[] = [];
   for (const wire of document.wires) {
     const find = (end: typeof wire.from) => anchors.find(a => a.endpoint.componentId === end.componentId && a.endpoint.terminalId === end.terminalId)!;
     const from = find(wire.from), to = find(wire.to);
-    const tokens = orthogonalWirePath(from, to, wire.points, from.vertical, to.vertical).split(" ");
+    const points = wire.points.length ? wire.points : automaticWireBends(from, to, obstacles);
+    const tokens = orthogonalWirePath(from, to, points, from.vertical, to.vertical).split(" ");
     let x = Number(tokens[1]), y = Number(tokens[2]);
     for (let i = 3; i < tokens.length; i += 2) {
       const nx = tokens[i] === "H" ? Number(tokens[i + 1]) : x;

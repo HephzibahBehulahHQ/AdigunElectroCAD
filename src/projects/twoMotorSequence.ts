@@ -38,18 +38,18 @@ export function createTwoMotorSequence(): CircuitDocument {
   }
   connect("start", "out", "plc", "in-0", [{ x: 180, y: 140 }, { x: 180, y: 240 }, { x: 20, y: 240 }, { x: 20, y: 442 }]);
   connect("f1", "aux-96", "overloads", "in-a", [{ x: 370, y: 500 }, { x: 370, y: 580 }, { x: 30, y: 580 }, { x: 30, y: 628 }]);
-  connect("f2", "aux-96", "overloads", "in-b", [{ x: 770, y: 500 }, { x: 770, y: 600 }, { x: 20, y: 600 }, { x: 20, y: 652 }]);
+  connect("f2", "aux-96", "overloads", "in-b");
   connect("breaker", "aux-closed", "f1", "aux-95", [{ x: 600, y: 260 }, { x: 600, y: 480 }, { x: 370, y: 480 }]);
   connect("breaker", "aux-closed", "f2", "aux-95", [{ x: 600, y: 260 }, { x: 600, y: 480 }, { x: 770, y: 480 }]);
-  connect("overloads", "out", "master", "in-a", [{ x: 180, y: 640 }, { x: 180, y: 620 }, { x: 430, y: 620 }, { x: 430, y: 628 }]);
+  connect("overloads", "out", "master", "in-a");
   connect("breaker", "aux-closed", "master", "in-b", [{ x: 590, y: 260 }, { x: 590, y: 620 }, { x: 430, y: 620 }, { x: 430, y: 652 }]);
-  connect("master", "out", "fault", "in-a", [{ x: 570, y: 640 }, { x: 570, y: 620 }, { x: 880, y: 620 }, { x: 880, y: 680 }]);
+  connect("master", "out", "fault", "in-a");
   connect("fault", "out", "stop-or-fault", "in-b", [{ x: 1030, y: 680 }, { x: 1030, y: 615 }, { x: 880, y: 615 }, { x: 880, y: 552 }]);
-  connect("stop", "out", "stop-or-fault", "in-a", [{ x: 180, y: 300 }, { x: 180, y: 340 }, { x: 880, y: 340 }, { x: 880, y: 528 }]);
+  connect("stop", "out", "stop-or-fault", "in-a");
   connect("stop-or-fault", "out", "plc", "in-1", [{ x: 1030, y: 540 }, { x: 1030, y: 760 }, { x: 10, y: 760 }, { x: 10, y: 460 }]);
-  connect("plc", "out-0", "run", "in-a", [{ x: 180, y: 460 }, { x: 180, y: 333 }, { x: 880, y: 333 }, { x: 880, y: 348 }]);
+  connect("plc", "out-0", "run", "in-a");
   connect("master", "out", "run", "in-b", [{ x: 570, y: 640 }, { x: 570, y: 580 }, { x: 850, y: 580 }, { x: 850, y: 372 }]);
-  connect("run", "out", "km1", "a1", [{ x: 1050, y: 360 }, { x: 1050, y: 460 }, { x: 230, y: 460 }, { x: 230, y: 368 }]);
+  connect("run", "out", "km1", "a1");
   connect("run", "out", "timer", "a1", [{ x: 1030, y: 360 }, { x: 1030, y: 300 }, { x: 880, y: 300 }, { x: 880, y: 188 }]);
   connect("run", "out", "timer", "15", [{ x: 1020, y: 350 }, { x: 860, y: 350 }, { x: 860, y: 188 }]);
   connect("run", "out", "second", "in-b", [{ x: 1040, y: 360 }, { x: 1040, y: 280 }, { x: 680, y: 280 }, { x: 680, y: 212 }]);

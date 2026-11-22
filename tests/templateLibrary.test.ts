@@ -1,3 +1,5 @@
+import { wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
+import { createProjectReport } from "../src/reports/projectReport";
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { canConnectTerminals, validateCircuit } from "../src/electrical/topology";
@@ -11,7 +13,7 @@ import { initialDolState } from "../src/simulation/dolSimulator";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createFourSheetAnalogLevelWorkbook } from "../src/projects/fourSheetAnalogLevelWorkbook";
 import { canPlaceComponent, createManualWire, moveComponentsByOffset, moveComponentToGrid, removeWire } from "../src/cad/documentOps";
-import { terminalAnchors } from "../src/cad/terminalAnchors";
+import { endpointKey, terminalAnchors } from "../src/cad/terminalAnchors";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("project template library", () => {
@@ -189,6 +191,17 @@ describe("project template library", () => {
     expect(document.components.map(({ id }) => id)).toEqual(template.document.components.map(({ id }) => id));
     expect(document.wires.map(({ from, to }) => ({ from, to }))).toEqual(template.document.wires.map(({ from, to }) => ({ from, to })));
     expect(verifyProjectTemplate({ ...template, document }, catalogById).passed).toBe(true);
+    const blocked = createProjectReport(document, catalogById).validation.filter(({ code }) => code === "blocked-automatic-wire-route");
+    expect(blocked).toEqual([]);
+    const obstacles = wireRouteObstacles(document.components);
+    const anchors = new Map(terminalAnchors(document).map((anchor) => [endpointKey(anchor.endpoint), anchor]));
+    const obstructed = document.wires.filter((item) => item.points.length && !item.branchOfWireId).flatMap((wire) => {
+      const from = anchors.get(endpointKey(wire.from))!;
+      const to = anchors.get(endpointKey(wire.to))!;
+      const components = wireRouteObstructions(from, to, wire.points, obstacles);
+      return components.length ? [{ wire: wire.id, components }] : [];
+    });
+    expect(obstructed).toEqual([]);
     const svg = renderToStaticMarkup(createElement(Schematic, {
       document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
       onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
