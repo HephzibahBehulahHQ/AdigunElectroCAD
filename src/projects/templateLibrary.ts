@@ -1,3 +1,4 @@
+import { createCompressorRestartDelayProject } from "./compressorRestartDelayProject";
 import { createTestBenchSourceSelectorProject } from "./testBenchSourceSelectorProject";
 import { createShaftMotionMonitorProject } from "./shaftMotionMonitorProject";
 import { createExtractionFanRunOnProject } from "./extractionFanRunOnProject";
@@ -150,6 +151,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createExtractionFanRunOnProject(),
   createShaftMotionMonitorProject(),
   createTestBenchSourceSelectorProject(),
+  createCompressorRestartDelayProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
