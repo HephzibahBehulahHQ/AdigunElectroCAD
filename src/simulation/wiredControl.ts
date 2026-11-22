@@ -24,7 +24,8 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
     [from, to].some((endpoint) => endpoint.componentId === component.id && ["a1", "a2"].includes(endpoint.terminalId)))) : [];
   const relayIds = new Set(relays.map(({ id }) => id));
   const coils = [...contactors, ...timers, ...relays];
-  const loads = [...coils, ...indicators];
+  const valves = document.components.filter(c => model(c.id)?.startsWith("festo-vovg-"));
+  const loads = [...coils, ...indicators, ...valves];
   if (!loads.length) return new Map();
   let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true || (model(c.id) === "catalog-on-delay-timer" && props(c.id).energized === true)]));
   const relayFallback = (id: string) => relayIds.has(id) && props(id).energized === true;

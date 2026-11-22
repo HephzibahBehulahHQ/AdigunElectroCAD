@@ -1,5 +1,5 @@
 export type SimulationSupport = "symbol-only" | "connectivity" | "control-logic" | "numerical" | "validated";
-export type TerminalKind = "power" | "control" | "protective-earth" | "shield";
+export type TerminalKind = "power" | "control" | "protective-earth" | "shield" | "pneumatic";
 
 export interface TerminalDefinition {
   id: string;
