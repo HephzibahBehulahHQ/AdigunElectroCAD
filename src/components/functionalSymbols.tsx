@@ -192,10 +192,11 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   }
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
     const closed = properties.closed === true;
-    const sourcedPoles = /^breaker-acti9-([1-4])p$/.exec(symbolId);
+    const sourcedPoles = /^breaker-acti9-([1-4])p(n)?$/.exec(symbolId);
     const poles = sourcedPoles ? Number(sourcedPoles[1]) : Number(properties.poles) === 4 ? 4 : 3;
     const offsets = sourcedPoles ? Array.from({ length: poles }, (_, index) => (index - (poles - 1) / 2) * 24) : poles === 4 ? [-36, -12, 12, 36] : [-32, 0, 32];
-    return <g className={mark} aria-label={`${poles === 3 ? "Three" : poles}-pole circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+    const poleLabel = sourcedPoles?.[2] ? (poles - 1) + "-pole plus switched neutral" : (poles === 3 ? "Three" : poles) + "-pole";
+    return <g className={mark} aria-label={`${poleLabel} circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
       <rect x={x + offsets[0] - 9} y={y} width={offsets.at(-1)! - offsets[0] + 18} height="13" />
       {offsets.map(offset => <path key={offset} d={poleContactPath(x + offset, y, closed)} />)}
     </g>;
