@@ -1,3 +1,4 @@
+import { createNetWeightCheckweigherProject } from "./netWeightCheckweigherProject";
 import { createSortingDecisionLatchProject } from "./sortingDecisionLatchProject";
 import { createCompressorRestartDelayProject } from "./compressorRestartDelayProject";
 import { createTestBenchSourceSelectorProject } from "./testBenchSourceSelectorProject";
@@ -141,6 +142,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createTypeKThermocoupleAlarmProject(),
   createFreezerAlarmProject(),
   createWeighStationProject(),
+  createNetWeightCheckweigherProject(),
   createCurrentMonitoringProject(),
   createCurrentLoopInterlockProject(),
   createPilotIndicatorProject(),
