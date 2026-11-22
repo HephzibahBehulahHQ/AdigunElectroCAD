@@ -159,6 +159,18 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   expect(renderFree(false).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
 });
 
+it("gives terminal hit targets priority and disables branch targets during a terminal wire draft", () => {
+  const document = createReversingCircuit();
+  const render = (wireStart: typeof document.wires[number]["from"] | null) => renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: true, wireStart,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onWireBranchStart: () => {},
+  }));
+  expect(render(null)).toContain("wire-branch-hit-target");
+  const draft = render(document.wires[0].from);
+  expect(draft).not.toContain("wire-branch-hit-target");
+  expect(draft.indexOf('class="terminal-anchors"')).toBeGreaterThan(draft.indexOf('class="project-continuation-markers"'));
+});
+
 it("lays out every documented PNOZ terminal outside its module symbol", () => {
   const definition = catalogById.get("iec.safety-relay.01")!;
   const component = { id: "SR1", definitionId: definition.id, reference: "SR1", x: 300, y: 300, rotation: 0 as const, properties: definition.propertiesSchema };
