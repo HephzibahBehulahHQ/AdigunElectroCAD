@@ -22,10 +22,18 @@ const standaloneStyles = `
   .wire.pe-wire { stroke: #167a52; }
   .contact-blade, .generic-symbol-mark { fill: none; stroke: #1d2d41; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .contact-blade.closed { stroke: #c71c2c; }
+  .contact-blade.open-fault { stroke: #d84a3a; }
+  .mechanical-link { fill: none; stroke: #667991; stroke-width: 2.5; stroke-dasharray: 7 6; }
   .free-symbol, .coil, .overload { fill: #f7fbff; stroke: #24456b; stroke-width: 2; }
   .free-reference, .reference-label { fill: #102a43; font-size: 15px; font-weight: 900; }
   .free-kind, .device-label, .sheet-note { fill: #35506e; font-size: 12px; font-weight: 700; }
   .motor { fill: #d9e8f5; stroke: #2261cf; stroke-width: 5; }
+  .motor.running { fill: #c4f3d9; stroke: #158b59; }
+  .motor-mark { fill: #2454c4; font-size: 37px; font-weight: 900; }
+  .motor-phase { fill: #2454c4; font-size: 19px; font-weight: 800; }
+  .coil.energized { fill: #c4f3d9; stroke: #158b59; }
+  .coil-label { fill: #17324f; font-size: 13px; font-weight: 900; }
+  .overload.tripped { fill: #fbd0cd; stroke: #d84a3a; }
   .generic-symbol-mark, .functional-symbol { stroke: var(--component-ink, #2272ad); stroke-width: 2.4; }
   .functional-symbol-text { stroke: none; fill: #17649c; font-size: 10px; font-weight: 900; }
   .terminal-pin { fill: #fff; stroke: #1e5f96; stroke-width: 2.5; }
