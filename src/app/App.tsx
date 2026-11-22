@@ -30,7 +30,7 @@ import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, mo
 import { componentsInStackOrder, reorderComponents } from "../cad/componentStack";
 import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
-import { canConnectTerminals, validateCircuit } from "../electrical/topology";
+import { canConnectTerminals, connectionSignalIssue, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { createFourSheetDolWorkbook } from "../projects/fourSheetDolWorkbook";
 import { createFourSheetStarDeltaWorkbook } from "../projects/fourSheetStarDeltaWorkbook";
@@ -1438,6 +1438,12 @@ export function App() {
     }
     if (reconnectingWire) {
       const next = reconnectWire(document, reconnectingWire.id, endpoint, reconnectSide);
+      const previousWires = new Set(document.wires);
+      for (const wire of next.wires) {
+        if (previousWires.has(wire)) continue;
+        const signalIssue = connectionSignalIssue(next, catalogById, wire.from, wire.to);
+        if (signalIssue) { setNotice(signalIssue); return; }
+      }
       const issue = validateCircuit(next, catalogById).find((item) => item.severity === "error");
       if (issue) { setNotice(issue.message); return; }
       if (next !== document && !updateDocument(next)) return;

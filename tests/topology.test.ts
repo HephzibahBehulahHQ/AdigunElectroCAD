@@ -1,3 +1,5 @@
+import { createBlankProject } from "../src/projects/starterProject";
+import { parseProjectJson } from "../src/projects/projectSerialization";
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { canConnectTerminals, validateCircuit } from "../src/electrical/topology";
@@ -14,6 +16,28 @@ describe("circuit topology validation", () => {
     document.wires.push({ id: "bad-signal", from, to, points: [] });
     expect(validateCircuit(document, catalogById)).toContainEqual(expect.objectContaining({ code: "incompatible-signal-unit" }));
   });
+  it("rejects newly mismatched meter wiring and preserves legacy mismatches as repairable warnings", () => {
+    const project = createBlankProject();
+    const document = project.sheets[0].document;
+    document.components = [
+      { id: "source", definitionId: "sensor.level-4-20", reference: "B1", x: 160, y: 240, rotation: 0, properties: { levelPercent: 50 } },
+      { id: "meter", definitionId: "iec.panel-meter.01", reference: "P1", x: 400, y: 240, rotation: 0, properties: {} },
+    ];
+    const from = { componentId: "source", terminalId: "signal" };
+    const to = { componentId: "meter", terminalId: "signal" };
+    expect(canConnectTerminals(document, catalogById, from, to)).toMatchObject({ ok: false, reason: expect.stringContaining("milliamp and millivolt") });
+    document.components[1].properties.measurementKind = "Current";
+    expect(canConnectTerminals(document, catalogById, from, to).ok).toBe(true);
+    expect(canConnectTerminals(document, catalogById, to, from).ok).toBe(true);
+    document.wires.push({ id: "existing", from, to, points: [] });
+    document.components[1].properties.measurementKind = "Frequency";
+    const reloaded = parseProjectJson(JSON.stringify(project)).sheets[0].document;
+    expect(reloaded.wires).toEqual(document.wires);
+    expect(validateCircuit(reloaded, catalogById)).toContainEqual(expect.objectContaining({
+      severity: "warning", code: "incompatible-configured-signal-unit",
+    }));
+  });
+
   it("accepts the converter stages of the analog PLC example", () => {
     const document = createAnalogLevelProject().document;
     expect(validateCircuit(document, catalogById)).toEqual([]);

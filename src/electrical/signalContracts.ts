@@ -3,6 +3,17 @@ import type { SignalUnit } from "../simulation/functionalModels";
 
 const numeric: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
 
+const panelMeterUnits = new Map<string, SignalUnit[]>([
+  ["Voltage", ["millivolt", "scalar"]],
+  ["Current", ["ampere", "milliamp", "scalar"]],
+  ["Frequency", ["hertz", "scalar"]],
+  ["Power", ["scalar"]],
+]);
+
+export function panelMeterSignalUnits(kind: string | number | boolean | undefined): SignalUnit[] {
+  return panelMeterUnits.get(String(kind)) ?? numeric;
+}
+
 export function functionalOutputTerminal(definition: ElectricalComponentDefinition): TerminalDefinition | undefined {
   const model = definition.simulationModelId;
   if (model === "catalog-selector-switch") return definition.terminals.find((terminal) => terminal.id === "14" || terminal.id === "22");

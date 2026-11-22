@@ -1,5 +1,5 @@
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalEndpoint, Wire } from "../types/electrical";
-import { terminalSignalUnits } from "./signalContracts";
+import { panelMeterSignalUnits, terminalSignalUnits } from "./signalContracts";
 import { signalDriverConflicts } from "./signalDrivers";
 
 export interface TopologyIssue {
@@ -28,7 +28,7 @@ export function canConnectTerminals(document: CircuitDocument, definitions: Map<
   const toTerminal = resolveTerminal(to, document, definitions);
   if (!fromTerminal || !toTerminal) return { ok: false, reason: "Both wire endpoints must be valid catalog terminals." };
   if (fromTerminal.kind !== toTerminal.kind && !(fromTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, to)) && !(toTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, from))) return { ok: false, reason: `${fromTerminal.kind} and ${toTerminal.kind} terminals cannot be wired together.` };
-  const signalIssue = incompatibleSignal(document, definitions, from, to);
+  const signalIssue = connectionSignalIssue(document, definitions, from, to);
   if (signalIssue) return { ok: false, reason: signalIssue };
   if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) return { ok: false, reason: "Two input terminals or two output terminals cannot be wired together." };
   const duplicate = document.wires.some((wire) => sameConnection(wire.from, wire.to, from, to));
@@ -61,8 +61,12 @@ export function validateCircuit(document: CircuitDocument, definitions: Map<stri
     const fromTerminal = resolveTerminal(wire.from, document, definitions);
     const toTerminal = resolveTerminal(wire.to, document, definitions);
     if (!fromTerminal || !toTerminal) continue;
-    const signalIssue = incompatibleSignal(document, definitions, wire.from, wire.to);
-    if (signalIssue) issues.push({ severity: "error", code: "incompatible-signal-unit", message: `${wire.id}: ${signalIssue}` });
+    const signalIssue = connectionSignalIssue(document, definitions, wire.from, wire.to, false);
+    if (signalIssue) issues.push({ severity: "error", code: "incompatible-signal-unit", message: wire.id + ": " + signalIssue });
+    else {
+      const configuredIssue = connectionSignalIssue(document, definitions, wire.from, wire.to);
+      if (configuredIssue) issues.push({ severity: "warning", code: "incompatible-configured-signal-unit", message: wire.id + ": " + configuredIssue });
+    }
     if (fromTerminal.kind !== toTerminal.kind && !(fromTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, wire.to)) && !(toTerminal.kind === "control" && acceptsControlAtPrimary(document, definitions, wire.from))) issues.push({ severity: "error", code: "incompatible-terminal-kind", message: `${wire.id} joins incompatible ${fromTerminal.kind} and ${toTerminal.kind} terminals.` });
     if ((fromTerminal.direction === "input" && toTerminal.direction === "input") || (fromTerminal.direction === "output" && toTerminal.direction === "output")) issues.push({ severity: "error", code: "incompatible-terminal-direction", message: `${wire.id} joins two ${fromTerminal.direction} terminals.` });
     const connectionId = [endpointId(wire.from), endpointId(wire.to)].sort().join("|");
@@ -124,10 +128,13 @@ function endpointId(endpoint: TerminalEndpoint) {
   return `${endpoint.componentId}.${endpoint.terminalId}`;
 }
 
-function incompatibleSignal(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>, from: TerminalEndpoint, to: TerminalEndpoint): string | undefined {
+export function connectionSignalIssue(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>, from: TerminalEndpoint, to: TerminalEndpoint, includeConfigured = true): string | undefined {
   const units = (endpoint: TerminalEndpoint) => {
     const component = document.components.find((item) => item.id === endpoint.componentId);
     const definition = component && definitions.get(component.definitionId);
+    if (includeConfigured && definition?.simulationModelId === "catalog-panel-meter" && endpoint.terminalId === "signal") {
+      return panelMeterSignalUnits(component?.properties.measurementKind ?? definition.propertiesSchema.measurementKind);
+    }
     return definition && terminalSignalUnits(definition, endpoint.terminalId);
   };
   const left = units(from); const right = units(to);
