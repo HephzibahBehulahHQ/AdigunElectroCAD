@@ -1,6 +1,7 @@
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { validateProjectContinuations } from "../projects/projectContinuations";
+import type { ProjectCircuitModelRun } from "../simulation/projectCircuitModels";
 
 export interface BomLine {
   definitionId: string;
@@ -38,9 +39,25 @@ export interface ProjectReport {
   wires: WireLine[];
   terminals: TerminalLine[];
   validation: Array<TopologyIssue & { sheet?: string }>;
+  simulation?: ReturnType<typeof simulationResultsTable>;
 }
 
-export type ReportSection = "bom" | "wires" | "terminals" | "cables" | "validation";
+export type ReportSection = "bom" | "wires" | "terminals" | "cables" | "validation" | "simulation";
+
+export function simulationResultsTable(
+  runs: readonly ProjectCircuitModelRun[], sheets: ElectricalProject["sheets"],
+  state: "running" | "paused" | "stopped", activeSheetId?: string,
+): { headers: string[]; rows: string[][] } {
+  const sheetNames = new Map(sheets.map((sheet, index) => [sheet.id, `${sheet.name} · Sheet ${index + 1}`]));
+  const columns = ["Mode", "Reference", "Model", "Result", "Value", "Fault"];
+  return {
+    headers: activeSheetId === undefined ? ["Sheet", ...columns] : columns,
+    rows: runs.filter((run) => activeSheetId === undefined || run.sheetId === activeSheetId).map(({ sheetId, reference, modelId, output }) => {
+      const values = [state, reference, modelId, output.label, output.value, output.error ?? ""];
+      return activeSheetId === undefined ? [sheetNames.get(sheetId) ?? sheetId, ...values] : values;
+    }),
+  };
+}
 
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
@@ -79,6 +96,7 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
 }
 
 export function reportCsv(report: ProjectReport, section: ReportSection): string {
+  if (section === "simulation") return report.simulation ? toCsv(report.simulation.headers, report.simulation.rows) : "";
   if (section === "bom") return toCsv(["Component", "Category", "Quantity", "References"], report.bom.map((line) => [line.component, line.category, String(line.quantity), line.references.join(", ")]));
   if (section === "wires") {
     const { headers, rows } = wireReportTable(report);
