@@ -50,6 +50,8 @@ Switching sheets discards an unfinished local wire, branch, or reconnection. To 
 
 Select a wire to change its conductor color or replace either terminal in Properties. Reconnection validates the revised topology and carries dependent branch taps with their parent endpoint. Replacing a branch’s source detaches it from the old parent. For any direct wire on a free sheet, including example wires, use Edit route points and Add route point. Click the selected route to insert a waypoint, then drag it or use the arrow keys. Right-click a handle or press Delete to remove the point. Reset to automatic route clears waypoints. To reposition a branch tap, edit its parent route.
 
+Validation names unrelated symbols crossed by a saved manual route. The active-sheet check in the project library also fails when a saved route is obstructed, even when its electrical sequence passes.
+
 When a waypoint moves, the preview recalculates attached taps and their branches from the preview route. Releasing the waypoint saves the route in one undoable edit.
 
 For selected line, rectangle, or ellipse drafting geometry, edit X1, Y1, X2, and Y2 numerically in Properties for exact placement and sizing. Coordinates stay within the 1100 × 780 sheet and the shape must span at least 4 units. Polyline and polygon geometry remains editable by its vertex handles.

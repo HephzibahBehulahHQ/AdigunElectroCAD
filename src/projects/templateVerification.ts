@@ -1,3 +1,4 @@
+import { wireClearanceWarnings } from "../reports/projectReport";
 import { endpointKey } from "../cad/terminalAnchors";
 import { removeWire } from "../cad/documentOps";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
@@ -77,6 +78,7 @@ export function verifyProjectTemplate(template: ProjectTemplate, catalog: Map<st
     const run = runs.find((candidate) => candidate.reference === expectation.reference && candidate.output.label === expectation.label);
     return run?.output.value.includes(expectation.valueIncludes) ? [] : [`${expectation.reference}: ${expectation.label} must include ${expectation.valueIncludes}`];
   });
+  failedExpectations.push(...wireClearanceWarnings(template.document).map(({ message }) => message));
   if (!template.expectedOutputs.length) failedExpectations.push("Project has no baseline output checks");
   for (const { reference, output } of runs) {
     if (output.error) failedExpectations.push(`Unexpected baseline fault at ${reference}: ${output.error}`);
