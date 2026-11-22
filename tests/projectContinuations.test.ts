@@ -285,3 +285,30 @@ it("rejects cross-sheet driver collisions and faults old connected loads determi
     expect(load.evaluatedProperties.input).toBe(false);
   }
 });
+
+it("rejects a remote bridge between two drivers on the same source sheet", () => {
+  const project = addFreeSchematicSheet(createBlankProject());
+  const [source, remote] = project.sheets;
+  source.document.components = [true, false].map((input, index) => ({
+    id: "source-" + index, reference: index === 0 ? "S1" : "S2", definitionId: "logic.no-contact", x: 160 + index * 200, y: 240,
+    rotation: 0, properties: { input },
+  }));
+  remote.document.components = [0, 1].map((index) => ({
+    id: "passive-" + index, reference: "X" + index, definitionId: "user.drawn-symbol", x: 160 + index * 200, y: 240,
+    rotation: 0, properties: {}, customTerminals: [{ id: "t1", label: "T1", kind: "control", direction: "bidirectional" }],
+  }));
+  const passive = (index: number) => ({ componentId: "passive-" + index, terminalId: "t1" });
+  const connect = (drawing: typeof project, index: number) => createProjectContinuation(drawing,
+    { sheetId: source.id, endpoint: { componentId: "source-" + index, terminalId: "out" } },
+    { sheetId: remote.id, endpoint: passive(index) });
+  const first = connect(project, 0);
+  if (!first.ok) throw Error(first.reason);
+  const second = connect(first.project, 1);
+  if (!second.ok) throw Error(second.reason);
+  const bridged = replaceSheetDocument(second.project, remote.id, {
+    ...remote.document, wires: [{ id: "bridge", from: passive(0), to: passive(1), points: [] }],
+  });
+  expect(introducedDriverConflict(second.project, bridged)).toContain("S1.out, S2.out");
+  expect(createProjectWideReport(bridged, catalogById).validation).toContainEqual(expect.objectContaining({ code: "project-signal-driver-conflict" }));
+  expect(introducedDriverConflict(bridged, second.project)).toBeUndefined();
+});
