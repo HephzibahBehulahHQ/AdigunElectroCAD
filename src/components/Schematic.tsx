@@ -400,7 +400,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
   const componentsById = new Map(document.components.map((component) => [component.id, component]));
   const routeStart = onWireBend && wireStart && visibleIds.has(wireStart.componentId) ? anchorIndex.get(endpointKey(wireStart)) : undefined;
-  const [wirePointer, setWirePointer] = useState<(SchematicGraphicPoint & { vertical?: boolean }) | null>(null);
+  const [wirePointer, setWirePointer] = useState<(SchematicGraphicPoint & Partial<TerminalAnchor>) | null>(null);
   useEffect(() => { setWirePointer(null); }, [wireStart, document.id]);
   const pinsByComponent = new Map<string, TerminalAnchor[]>();
   for (const anchor of anchors) {
@@ -410,6 +410,10 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   }
   const [routePreview, setRoutePreview] = useState<{ wireId: string; points: SchematicGraphicPoint[] } | null>(null);
   const routeObstacles = wireRouteObstacles(previewDocument.components.filter(({ id }) => visibleIds.has(id)));
+  const previewTarget = wirePointer?.endpoint && anchorIndex.get(endpointKey(wirePointer.endpoint));
+  const draftBends = routeStart && previewTarget && wireBends.length === 0
+    ? automaticWireBends(routeStart, previewTarget, routeObstacles)
+    : wireBends;
   const currentRoutePoints = (wire: Wire) => {
     if (routePreview?.wireId === wire.id) return routePreview.points;
     if (wire.points.length || wire.branchOfWireId) return wire.points;
@@ -648,7 +652,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {visibleComponents.map((component) => <PlacedSymbol key={component.id} component={component} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={lockedLayers.has(component.layerId ?? "") ? undefined : onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
-      {routeStart && (wirePointer || wireBends.length > 0) && <path data-export-exclude="" data-wire-draft="" d={orthogonalWirePath(routeStart, wirePointer ?? wireBends.at(-1)!, wireBends, routeStart.vertical, wirePointer?.vertical)} fill="none" stroke="#1976d2" strokeWidth="2" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+      {routeStart && (wirePointer || wireBends.length > 0) && <path data-export-exclude="" data-wire-draft="" d={orthogonalWirePath(routeStart, previewTarget ?? wirePointer ?? wireBends.at(-1)!, draftBends, routeStart.vertical, previewTarget?.vertical ?? wirePointer?.vertical)} fill="none" stroke="#1976d2" strokeWidth="2" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
       <g className="terminal-pin-markers" pointerEvents="none">{visibleAnchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="3" className="terminal-pin" vectorEffect="non-scaling-stroke" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>
       {transformTarget && visibleIds.has(transformTarget.id) && !lockedLayers.has(transformTarget.layerId ?? "") && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
