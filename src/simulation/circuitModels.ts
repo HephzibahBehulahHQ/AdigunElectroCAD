@@ -232,6 +232,16 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const conducting = model === "catalog-circuit-breaker" || model === "breaker-3p-v1" ? p.closed === true
       : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
       : false;
+    const definition = definitionsByComponent.get(component.id);
+    if (definition?.symbolId.startsWith("breaker-acti9-")) {
+      p.poles = definition.terminals.length / 2;
+      if (conducting) {
+        for (const { id } of definition.terminals) {
+          if (id.endsWith("-in")) link(endpointKey(component.id, id), endpointKey(component.id, id.replace(/-in$/, "-out")));
+        }
+      }
+      continue;
+    }
     for (const phase of ["l1", "l2", "l3"] as const) {
       if (!conducting && !(model === "catalog-fuse-switch" && fusePoleClosed(p, phase))) continue;
       link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));

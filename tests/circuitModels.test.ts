@@ -393,3 +393,23 @@ it("rejects a mixed-frequency feed at a wired phase monitor", () => {
   l3.from = { componentId: "drive", terminalId: "w1" };
   expect(monitor().output.value).toBe("HEALTHY");
 });
+
+it("switches the fourth Acti9 pole without bridging it to an adjacent phase", () => {
+  const { document } = createVfdPhaseProofProject();
+  const breaker = {
+    id: "acti9", definitionId: "schneider.acti9.a9f74416", reference: "Q9",
+    x: 520, y: 250, rotation: 0 as const, properties: { closed: true },
+  };
+  document.components.push(breaker);
+  const phase = document.wires.find(wire => wire.id === "feed-l3")!;
+  const from = phase.from;
+  phase.from = { componentId: "acti9", terminalId: "l4-out" };
+  document.wires.push({ id: "fourth-pole-feed", from, to: { componentId: "acti9", terminalId: "l4-in" }, points: [] });
+  const monitor = () => executeCircuitModels(document, catalogById).find(run => run.reference === "PF1")?.output.value;
+  expect(monitor()).toBe("HEALTHY");
+  phase.from.terminalId = "l3-out";
+  expect(monitor()).toBe("FAILED");
+  phase.from.terminalId = "l4-out";
+  breaker.properties.closed = false;
+  expect(monitor()).toBe("FAILED");
+});
