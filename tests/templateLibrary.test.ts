@@ -27,6 +27,13 @@ describe("project template library", () => {
     expect(unknown.failures).toContain("Unknown wire typo.out to damper.in");
   });
 
+  it("requires every wire for the CT metering and indication checks", () => {
+    const template = templateLibrary.find(({ id }) => id === "ct-secondary-current-monitoring")!;
+    for (const wire of template.document.wires) {
+      const document = removeWire(template.document, wire.id);
+      expect(verifyProjectTemplate({ ...template, document }, catalogById).passed, wire.id).toBe(false);
+    }
+  });
   it("requires every wire for the weigh-station acceptance sequence", () => {
     const template = templateLibrary.find(({ id }) => id === "weigh-station-acceptance-window")!;
     for (const wire of template.document.wires) {
@@ -145,7 +152,7 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(26);
+    expect(templateLibrary).toHaveLength(27);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });
