@@ -12,7 +12,7 @@ import { DrawingRulers } from "./DrawingRulers";
 import { PrintFrame } from "./PrintFrame";
 import { snapToDrawingGuides } from "../cad/drawingGuides";
 import { defaultDrawingGrid, snapDrawingCoordinate, visibleGridSpacing } from "../cad/drawingGrid";
-import { componentFootprint, componentLabelOffsets } from "../cad/componentGeometry";
+import { componentFootprint, componentLabelOffsets, instanceFootprint } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, terminalHitRadius, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
 import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
@@ -602,7 +602,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       <g className="terminal-pin-markers" pointerEvents="none">{anchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="3" className="terminal-pin" vectorEffect="non-scaling-stroke" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>{(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <g key={endpointKey(item.endpoint)} data-wire-terminal={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom)} fill="transparent" />{wireMode && <circle cx={item.x} cy={item.y} r="4" pointerEvents="none" vectorEffect="non-scaling-stroke" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} />}<title>{`${endpointKey(item.endpoint)} · Shift-click target to continue branch`}</title></g>)}</g>}
       {transformTarget && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
-      <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
+      <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} componentClearances={previewDocument.components.map(instanceFootprint)} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
       </g>
       {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>
@@ -611,11 +611,11 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
 }
 
 
-function ProjectContinuationMarkers({ continuations = [], projectSheets = [], activeSheetId = "", anchors, onNavigate, selectedContinuationId = "", onSelect }: { continuations?: ProjectContinuation[]; projectSheets?: CircuitSheet[]; activeSheetId?: string; anchors: TerminalAnchor[]; onNavigate?: (sheetId: string) => void; selectedContinuationId?: string; onSelect?: (continuationId: string) => void }) {
+function ProjectContinuationMarkers({ continuations = [], projectSheets = [], activeSheetId = "", anchors, componentClearances = [], onNavigate, selectedContinuationId = "", onSelect }: { continuations?: ProjectContinuation[]; projectSheets?: CircuitSheet[]; activeSheetId?: string; anchors: TerminalAnchor[]; componentClearances?: ReturnType<typeof instanceFootprint>[]; onNavigate?: (sheetId: string) => void; selectedContinuationId?: string; onSelect?: (continuationId: string) => void }) {
   const sheetNumbers = new Map(projectSheets.map((sheet, index) => [sheet.id, index + 1]));
   const anchorByEndpoint = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
   const stackByEndpoint = new Map<string, number>();
-  const occupied: Array<{ left: number; right: number; y: number }> = [];
+  const occupied = [...componentClearances];
   return <g className="project-continuation-markers" aria-label="Project sheet continuation references">{continuations.flatMap((continuation) => {
     const pointIndex = continuation.points.findIndex((item) => item.sheetId === activeSheetId);
     const point = continuation.points[pointIndex];
@@ -638,12 +638,14 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
     const label = `${continuation.label} ${links}`;
     const width = Math.max(82, label.length * 6.1 + 12);
     const y = anchor.y - 12 - stackIndex * 22;
+    const top = y - 15;
+    const bottom = y + 3;
     let left = anchor.x + 9;
-    for (const other of occupied.filter((row) => Math.abs(row.y - y) < 22).sort((a, b) => a.left - b.left)) {
+    for (const other of occupied.filter((box) => top < box.bottom + 4 && bottom + 4 > box.top).sort((a, b) => a.left - b.left)) {
       if (left + width + 4 <= other.left) break;
       if (left < other.right + 4) left = other.right + 4;
     }
-    occupied.push({ left, right: left + width, y });
+    occupied.push({ left, right: left + width, top, bottom });
     const navigateTo = target?.sheetId;
     return [<g key={continuation.id + ":" + activeSheetId} className={continuation.id === selectedContinuationId ? "project-continuation-marker selected" : "project-continuation-marker"} transform={`translate(${left + 3} ${y})`} role={onSelect || (navigateTo && onNavigate) ? "button" : undefined} tabIndex={onSelect || (navigateTo && onNavigate) ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); if (navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && (navigateTo || onSelect)) { event.preventDefault(); event.stopPropagation(); if (event.key === "Enter" && navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); } }}><rect x="-3" y="-15" width={width} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" fontFamily="monospace" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}. Click or press Enter to follow. Press Space for properties.`}</title></g>];
   })}</g>;
