@@ -107,7 +107,7 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
         result: verifyProjectTemplate({ ...selected, document: matchingDocument }, catalogById),
       })}>Check active sheet</button>}
         <p role="status">{currentCheck ? "Active sheet verification" : "Library example verification"}</p>
-        <p className={displayedVerification.passed ? "template-verification pass" : "template-verification issue"}>{displayedVerification.passed ? "✓ Topology and recorded model checks passed." : [...displayedVerification.topologyIssues.map(({ message }) => message), ...displayedVerification.failedExpectations].join(" ")}</p>
+        <p className={displayedVerification.passed ? "template-verification pass" : "template-verification issue"}>{displayedVerification.passed ? "✓ Topology, drawing clearance and recorded model checks passed." : [...displayedVerification.topologyIssues.map(({ message }) => message), ...displayedVerification.failedExpectations].join(" ")}</p>
         {displayedVerification.sequenceResults.length > 0 && <details>
           <summary>Recorded check results</summary>
           <ol>{displayedVerification.sequenceResults.map((step, index) => {
