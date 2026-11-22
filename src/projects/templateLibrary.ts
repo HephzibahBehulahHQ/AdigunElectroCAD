@@ -1,3 +1,4 @@
+import { createTestBenchSourceSelectorProject } from "./testBenchSourceSelectorProject";
 import { createShaftMotionMonitorProject } from "./shaftMotionMonitorProject";
 import { createExtractionFanRunOnProject } from "./extractionFanRunOnProject";
 import { createPackagingBatchCounterProject } from "./packagingBatchCounterProject";
@@ -148,6 +149,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPackagingBatchCounterProject(),
   createExtractionFanRunOnProject(),
   createShaftMotionMonitorProject(),
+  createTestBenchSourceSelectorProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
