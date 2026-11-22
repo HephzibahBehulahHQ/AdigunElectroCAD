@@ -7,7 +7,7 @@ export interface TerminalDefinition {
   kind: TerminalKind;
   direction: "input" | "output" | "bidirectional";
   leadColor?: string;
-  position?: { x: number; y: number };
+  position?: { x: number; y: number; vertical?: boolean };
 }
 
 export interface ElectricalComponentDefinition {

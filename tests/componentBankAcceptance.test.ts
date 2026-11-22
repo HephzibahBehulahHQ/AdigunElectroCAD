@@ -91,21 +91,23 @@ it("keeps Festo fluid lines isolated from coil wires and switches the documented
   const no = place(catalogById.get("festo.vovg.560699")!, document, "no", { x: 720, y: 140 });
   no.reference = "V2";
   document.components = [ac, dc, nc, no];
+  const fiveWay = place(catalogById.get("festo.vovg.560701")!, document, "five-way", { x: 720, y: 420 });
+  document.components.push(fiveWay);
   const endpoint = (componentId: string, terminalId: string) => ({ componentId, terminalId });
   const connect = (from: ReturnType<typeof endpoint>, to: ReturnType<typeof endpoint>) => {
     expect(canConnectTerminals(document, catalogById, from, to).ok).toBe(true);
     document.wires.push(createManualWire(document, from, to));
   };
-  const paths = () => executeCircuitModels(document, catalogById).filter(run => run.output.label === "Open pneumatic path").map(run => run.output.value);
-  expect(paths()).toEqual(["2 ↔ 3", "1 ↔ 2"]);
+  const paths = () => executeCircuitModels(document, catalogById).filter(run => run.output.label.startsWith("Open pneumatic path")).map(run => run.output.value);
+  expect(paths()).toEqual(["2 ↔ 3", "1 ↔ 2", "1 ↔ 2 · 4 ↔ 5"]);
   expect(canConnectTerminals(document, catalogById, endpoint("nc", "port-2"), endpoint("no", "a1")).ok).toBe(false);
   connect(endpoint("nc", "port-2"), endpoint("no", "port-1"));
   connect(endpoint("ac", "line"), endpoint("dc", "line-in"));
   connect(endpoint("ac", "neutral"), endpoint("dc", "neutral-in"));
-  for (const valve of [nc, no]) {
+  for (const valve of [nc, no, fiveWay]) {
     connect(endpoint("dc", "plus-out"), endpoint(valve.id, "a1"));
     connect(endpoint("dc", "zero-out"), endpoint(valve.id, "a2"));
   }
-  expect(paths()).toEqual(["1 ↔ 2", "2 ↔ 3"]);
+  expect(paths()).toEqual(["1 ↔ 2", "2 ↔ 3", "1 ↔ 4 · 2 ↔ 3"]);
   expect(validateCircuit(document, catalogById)).toEqual([]);
 });

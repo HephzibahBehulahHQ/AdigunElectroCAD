@@ -273,6 +273,21 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "sensor-level") return <g className={mark}><path d={`M ${x - 15} ${cy - 17} V ${cy + 17} H ${x + 15} V ${cy - 17}`} /><path d={`M ${x - 13} ${cy + 7} H ${x + 13}`} /></g>;
   if (symbolId === "sensor-vibration") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 20} L ${x - 13} ${cy - 12} L ${x - 3} ${cy + 12} L ${x + 7} ${cy - 12} L ${x + 17} ${cy + 12} L ${x + 25} ${cy}`} /></g>;
   if (symbolId === "sensor-encoder") return <g className={mark}><circle cx={x} cy={cy} r="14" />{[0, 90, 180, 270].map((angle) => <path key={angle} d={`M ${x} ${cy - 14} V ${cy - 8}`} transform={`rotate(${angle} ${x} ${cy})`} />)}<circle cx={x} cy={cy} r="3" /></g>;
+  if (symbolId === "pneumatic-vovg-five-way") {
+    const line = (x1: number, y1: number, x2: number, y2: number) => ["M", x+x1, y+y1, "L", x+x2, y+y2].join(" ");
+    return <g className={mark}>
+      <rect x={x-34} y={y-20} width={72} height={40} />
+      <path d={[
+        line(2,-20,2,20), line(-52,-11,-34,-11), line(-52,11,-34,11),
+        line(8,-36,8,-20), line(32,-36,32,-20), ...[6,20,34].map(port => line(port,20,port,38)),
+        line(20,20,32,-20), line(8,-20,6,20), line(28,-15,32,-20), line(33,-14,32,-20),
+        line(2,14,6,20), line(10,14,6,20), line(30,16,38,16),
+        line(-16,20,-28,-20), line(-4,-20,-2,20), line(-29,-14,-28,-20), line(-23,-15,-28,-20),
+        line(-6,14,-2,20), line(2,14,-2,20), line(-34,16,-26,16),
+        ["M",x+38,y,"l",3,-5,3,10,3,-10,3,5].join(" "),
+      ].join(" ")} />
+    </g>;
+  }
   if (symbolId === "pneumatic-vovg-no" || symbolId === "pneumatic-vovg-nc") {
     const supplyOpen = symbolId === "pneumatic-vovg-no";
     const cell = (center: number, open: boolean) => {
