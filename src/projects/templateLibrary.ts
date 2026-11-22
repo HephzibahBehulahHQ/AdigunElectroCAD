@@ -1,3 +1,4 @@
+import { createClampPositionPermitProject } from "./clampPositionPermitProject";
 import { createNetWeightCheckweigherProject } from "./netWeightCheckweigherProject";
 import { createSortingDecisionLatchProject } from "./sortingDecisionLatchProject";
 import { createCompressorRestartDelayProject } from "./compressorRestartDelayProject";
@@ -160,6 +161,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
   createPneumaticTemplate(true),
+  createClampPositionPermitProject(),
   createTwoMotorTemplate(),
   createWiredHoldingTemplate(),
   createWiredReversingTemplate(),
