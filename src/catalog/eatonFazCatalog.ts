@@ -92,3 +92,33 @@ export const eatonFazNaCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].f
     }));
   });
 });
+
+
+const dcCatalogue = "https://www.eaton.com/content/dam/eaton/products/electrical-circuit-protection/circuit-breakers/faz-na-dc-xeffect-miniature-circuit-breaker/eaton-xeffect-faz-na-dc-mcb-catalog-ca003033en-en-us.pdf";
+const dcCurrents = [2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32, 35, 40];
+const dcTerminalLabels = ["1 (+)", "2 (−)", "3 (−)", "4 (+)"];
+
+export const eatonFazNaDcCatalog: ElectricalComponentDefinition[] = [1, 2].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  const polarizedTerminals = terminals.map((terminal, index) => ({ ...terminal, label: dcTerminalLabels[index] }));
+  const voltageRating = poles === 1 ? "125 VDC" : "250 VDC with poles in series";
+  return dcCurrents.map(ratedCurrentA => {
+    const orderCode = "FAZ-C" + ratedCurrentA + "/" + poles + "-NA-DC" + (poles === 1 ? "-SP" : "");
+    return {
+      id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
+      name: "Eaton " + orderCode + " · FAZ-NA-DC Branch Breaker",
+      category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
+      description: "Polarized C-curve UL 489 DC branch-circuit breaker with lift screw terminals.",
+      terminals: polarizedTerminals,
+      manufacturerRecord: {
+        manufacturer: "Eaton", series: "FAZ-NA-DC UL 489", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "CA08100005E (July 2026), FAZ-NA-DC order table; CA003033EN, p. 3, polarity diagrams",
+        topology: { type: "polarized-mechanically-linked-breaker", closed: branches, open: [], polaritySensitive: true },
+      },
+      propertiesSchema: { ratedCurrentA, curve: "C", voltageRating, interruptingRatingKa: 10, terminalStyle: "Lift screw", closed: true },
+      simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
+      documentation: "Manual switching opens or closes each pole. Follow Eaton’s polarity diagram. The two-pole 250 VDC rating requires external series wiring. Simulation covers contact connectivity and leaves polarity validation and overcurrent tripping outside scope.",
+      standardsReferences: ["UL 489", catalogue, dcCatalogue],
+    };
+  });
+});

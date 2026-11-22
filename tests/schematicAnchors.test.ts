@@ -969,3 +969,13 @@ it("preserves the documented Eaton FAZ-RT packaging and pole exceptions", () => 
   expect(getPart("faz-d40-1-rt-sp")?.terminals).toHaveLength(2);
   expect(getPart("faz-d40-2-rt")).toBeUndefined();
 });
+
+
+it("shows Eaton FAZ-NA-DC polarity and the series voltage condition", () => {
+  const onePole = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c2-1-na-dc-sp");
+  const twoPole = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c40-2-na-dc");
+  expect(onePole?.terminals.map(terminal => terminal.label)).toEqual(["1 (+)", "2 (−)"]);
+  expect(onePole?.propertiesSchema.voltageRating).toBe("125 VDC");
+  expect(twoPole?.terminals.map(terminal => terminal.label)).toEqual(["1 (+)", "2 (−)", "3 (−)", "4 (+)"]);
+  expect(twoPole?.propertiesSchema.voltageRating).toBe("250 VDC with poles in series");
+});
