@@ -1,3 +1,4 @@
+import { createMixedVoltageRelayPanelProject } from "./mixedVoltageRelayPanelProject";
 import { createContactorStatusPanelProject } from "./contactorStatusPanelProject";
 import { createDcPilotSharedReturnProject } from "./dcPilotSharedReturnProject";
 import { createDehumidifierLockoutProject } from "./dehumidifierLockoutProject";
@@ -156,6 +157,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPilotIndicatorProject(),
   createDcPilotSharedReturnProject(),
   createContactorStatusPanelProject(),
+  createMixedVoltageRelayPanelProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
