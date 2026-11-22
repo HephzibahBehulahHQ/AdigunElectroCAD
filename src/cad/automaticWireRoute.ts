@@ -19,7 +19,7 @@ function routeIsClear(vertices: readonly SchematicGraphicPoint[], obstacles: rea
   return vertices.slice(1).every((end, index) => segmentIsClear(vertices[index], end, obstacles));
 }
 
-function searchCorridorGrid(from: SchematicGraphicPoint, to: SchematicGraphicPoint, xs: number[], ys: number[], obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
+function searchCorridorGrid(from: SchematicGraphicPoint, to: SchematicGraphicPoint, xs: number[], ys: number[], obstacles: readonly Obstacle[]): SchematicGraphicPoint[] | null {
   const columns = [...new Set([...xs, from.x, to.x])].sort((a, b) => a - b);
   const rows = [...new Set([...ys, from.y, to.y])].sort((a, b) => a - b);
   const width = columns.length;
@@ -53,11 +53,11 @@ function searchCorridorGrid(from: SchematicGraphicPoint, to: SchematicGraphicPoi
       queue.push(next);
     }
   }
-  return [];
+  return null;
 }
 
 /** Preserve the standard center route when clear. Search nearby orthogonal corridors when it is blocked. */
-export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
+export function findAutomaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] | null {
   const otherSymbols = obstacles.filter(({ componentId }) => componentId !== from.endpoint.componentId && componentId !== to.endpoint.componentId);
   const vertices = (bends: SchematicGraphicPoint[]) => orthogonalWireVertices(from, to, bends, from.vertical, to.vertical);
   if (routeIsClear(vertices([]), otherSymbols)) return [];
@@ -79,4 +79,9 @@ export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obs
     if (cost < bestCost) { best = candidate; bestCost = cost; }
   }
   return best.length ? best : searchCorridorGrid(from, to, xs, ys, otherSymbols);
+}
+
+/** Keep previously saved wires visible if the geometry no longer permits an automatic route. */
+export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
+  return findAutomaticWireBends(from, to, obstacles) ?? [];
 }
