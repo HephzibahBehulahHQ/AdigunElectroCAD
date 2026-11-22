@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
 import { Schematic } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference, terminalHitRadius } from "../src/cad/terminalAnchors";
-import { componentFootprint } from "../src/cad/componentGeometry";
+import { componentFootprint, instanceFootprint } from "../src/cad/componentGeometry";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
 import { transformComponent } from "../src/cad/documentOps";
 import { transformFromHandle } from "../src/components/ComponentTransformHandles";
@@ -351,8 +351,10 @@ it("lays out all 36 feeder source markers without overlapping adjacent terminal 
   const boxes = [...markup.matchAll(/class="project-continuation-marker" transform="translate\(([-.\d]+) ([-.\d]+)\)"[^>]*><rect x="-3" y="-15" width="([.\d]+)" height="18"/g)]
     .map(([, x, y, width]) => ({ left: +x - 3, top: +y - 15, right: +x - 3 + +width, bottom: +y + 3 }));
   expect(boxes).toHaveLength(36);
+  const components = sheet.document.components.map(instanceFootprint);
   for (const [index, box] of boxes.entries()) {
-    expect(boxes.slice(index + 1).some((other) => box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top)).toBe(false);
+    const obstacles = [...components, ...boxes.slice(index + 1)];
+    expect(obstacles.some((other) => box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top)).toBe(false);
   }
 });
 
