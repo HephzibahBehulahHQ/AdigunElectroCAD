@@ -192,6 +192,8 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
   }
   if (modelId === "power-junction") return { label: "Attached power conductors", value: String(number(properties, "connectedConductors")) };
   if (modelId === "six-terminal-windings") {
+    const supplyError = text(properties, "runtimeMotorSupplyError");
+    if (supplyError) return { label: "Winding operating point", error: supplyError, value: `ERROR: ${supplyError}` };
     const connection = text(properties, "connection", "open");
     const voltage = number(properties, "lineVoltageV");
     if (bool(properties, "mechanicalTransientEnabled")) {

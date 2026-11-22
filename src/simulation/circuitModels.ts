@@ -277,12 +277,23 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const p = properties.get(component.id)!;
     const contacts = document.components.filter(item => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap(item => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
     const connection = windingConnection(document, component.id, contacts);
-    const feeds = ["u1", "v1", "w1"].map(terminal => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
-    const validFeeds = feeds.every(feed => feed.length === 1) && new Set(feeds.flat()).size === 3;
-    if (!validFeeds) continue;
-    const sourceIds = feeds.flat().map(feed => feed.slice(0, feed.lastIndexOf(":")));
-    const sameSource = new Set(sourceIds).size === 1;
-    if (!sameSource) continue;
+    const terminals = ["u1", "v1", "w1"];
+    const feeds = terminals.map(terminal => [...(powered.get(endpointKey(component.id, terminal)) ?? [])]);
+    const sources = feeds.flat();
+    const sourceIds = sources.map(feed => feed.slice(0, feed.lastIndexOf(":")));
+    const currentFeeds = terminals.flatMap((terminal, index) => feeds[index].map((feed) => {
+      const separator = feed.lastIndexOf(":");
+      return { terminal: endpointKey(component.id, terminal), source: phaseOutput(feed.slice(0, separator), feed.slice(separator + 1)) };
+    }));
+    const validFeeds = feeds.every(feed => feed.length === 1) && new Set(sources).size === 3 && new Set(sourceIds).size === 1;
+    if (!validFeeds) {
+      if (connection !== "open" && sources.length) {
+        const error = `${component.reference} does not have three distinct phases from one supply; unbalanced winding current is unavailable.`;
+        p.runtimeMotorSupplyError = error;
+        currentLoads.push({ reference: component.reference, currentA: NaN, feeds: currentFeeds, error });
+      }
+      continue;
+    }
     const supplyId = sourceIds[0];
     const lineVoltageV = Number(properties.get(supplyId)?.nominalVoltageV ?? 0);
     const impedance = Math.hypot(Number(p.resistanceOhm), Number(p.reactanceOhm));
@@ -335,10 +346,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       p.runtimeMotorLineCurrentA = 0;
       p.runtimeMotorModelError = "";
     }
-    currentLoads.push({ reference: component.reference, currentA, feeds: ["u1", "v1", "w1"].map((terminal, index) => {
-      const feed = feeds[index][0], separator = feed.lastIndexOf(":");
-      return { terminal: endpointKey(component.id, terminal), source: endpointKey(feed.slice(0, separator), `${feed.slice(separator + 1)}-out`) };
-    }) });
+    currentLoads.push({ reference: component.reference, currentA, feeds: currentFeeds });
   }
   const overloads = document.components.filter(c => definitionsByComponent.get(c.id)?.simulationModelId === "thermal-overload-dol-v1").map(c => ({ id: c.id, poles: [1, 2, 3].map(phase => ({ input: endpointKey(c.id, `l${phase}-in`), output: endpointKey(c.id, `t${phase}`) })) }));
   // Do not silently treat connected but unsupported load families as zero current.
