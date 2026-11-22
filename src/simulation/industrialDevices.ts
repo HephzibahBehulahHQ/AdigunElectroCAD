@@ -69,3 +69,7 @@ export function doorInterlockClosed(doorClosed: boolean, keyReleased: boolean) {
 export function stackLightChannels(red: boolean, yellow: boolean, green: boolean) { return { red, yellow, green }; }
 export function shieldedCableInterferenceFactor(shieldBonded: boolean) { return shieldBonded ? 0.1 : 1; }
 export function cableTrayFillPercent(usedAreaMm2: number, availableAreaMm2: number) { return clamp(Math.max(0, usedAreaMm2) / Math.max(1, availableAreaMm2) * 100, 0, 100); }
+
+export function fusePoleClosed(properties: Readonly<Record<string, unknown>>, phase: "l1" | "l2" | "l3"): boolean {
+  return properties.fuseHealthy !== false && properties["fuse" + phase.toUpperCase() + "Open"] !== true;
+}

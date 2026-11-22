@@ -1,3 +1,4 @@
+import { fusePoleClosed } from "../simulation/industrialDevices";
 import { controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
 import { evaluateFunctionalSignal } from "../simulation/functionalModels";
 
@@ -157,12 +158,13 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     <path d={`M ${x - 2} ${y - 27} V ${y + 27} M ${x + 2} ${y - 27} V ${y + 27}`} />
   </g>;
   if (symbolId === "fuse" || symbolId.startsWith("fuse-")) {
-    const healthy = properties.fuseHealthy !== false;
+    const poles = (["l1", "l2", "l3"] as const).map((phase, index) => ({ phase, offset: (index - 1) * 32, closed: fusePoleClosed(properties, phase) }));
+    const healthy = poles.every(({ closed }) => closed);
     return <g className={mark} aria-label={`Three-pole fuse switch, ${healthy ? "healthy" : "fuse open"}`} data-state={healthy ? "healthy" : "open"}>
-      {[-32, 0, 32].map(offset => <g key={offset}>
+      {poles.map(({ phase, offset, closed }) => <g key={phase} data-fuse-pole={phase} data-state={closed ? "closed" : "open"}>
         <path d={`M ${x + offset} ${y - 27} V ${y - 10} M ${x + offset} ${y + 10} V ${y + 27}`} />
         <rect x={x + offset - 5} y={y - 10} width="10" height="20" />
-        <path d={healthy ? `M ${x + offset - 2} ${y + 7} L ${x + offset + 2} ${y - 7}` : `M ${x + offset} ${y - 6} V ${y + 6}`} />
+        <path d={closed ? `M ${x + offset - 2} ${y + 7} L ${x + offset + 2} ${y - 7}` : `M ${x + offset} ${y - 6} V ${y + 6}`} />
       </g>)}
     </g>;
   }
