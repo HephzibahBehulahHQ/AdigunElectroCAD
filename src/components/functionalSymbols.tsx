@@ -278,6 +278,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     })}
     <text x={x} y={cy + 5} textAnchor="middle" className={text}>{symbolId === "signal-adc" ? "A/D" : "D/A"}</text>
   </g>;
+  if (symbolId === "signal-current-transmitter") return <g className={mark} aria-label="Current to 4–20 mA transmitter"><rect x={x - 33} y={cy - 15} width="66" height="30" rx="3" /><path d={`M ${x - 47} ${y - 18} H ${x - 33} M ${x + 33} ${y - 18} H ${x + 47} M ${x - 47} ${y - 6} H ${x - 33}`} /><text x={x} y={cy + 5} textAnchor="middle" className={text}>A → mA</text></g>;
   if (symbolId === "signal-resistance-transmitter") return <g className={mark} aria-label="Resistance to current transmitter"><rect x={x - 33} y={cy - 15} width="66" height="30" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>Ω → mA</text></g>;
 
   if (symbolId.startsWith("pneumatic-valve-")) return <g className={mark}>{symbolId.endsWith("5-2") ? <><rect x={x - 26} y={cy - 15} width="26" height="30" /><rect x={x} y={cy - 15} width="26" height="30" /><path d={`M ${x - 22} ${cy + 8} L ${x - 4} ${cy - 8} M ${x + 4} ${cy - 8} L ${x + 22} ${cy + 8}`} /></> : <><rect x={x - 18} y={cy - 15} width="36" height="30" /><path d={`M ${x - 13} ${cy + 8} L ${x + 13} ${cy - 8} M ${x} ${cy - 15} V ${cy + 15}`} /></>}<circle cx={x - 32} cy={cy} r="4" /><circle cx={x + 32} cy={cy} r="4" /></g>;

@@ -130,7 +130,7 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "common") return { x: -47, y: 14 };
     if (terminalId === "signal") return { x: 47, y: 0 };
   }
-  if (modelId === "signal-adc" || modelId === "signal-dac") {
+  if (modelId === "signal-adc" || modelId === "signal-dac" || modelId === "signal-current-transmitter") {
     if (terminalId === "in") return { x: -47, y: -18 };
     if (terminalId === "out") return { x: 47, y: -18 };
     if (terminalId === "common") return { x: -47, y: -6 };

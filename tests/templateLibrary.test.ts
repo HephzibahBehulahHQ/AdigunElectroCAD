@@ -27,6 +27,13 @@ describe("project template library", () => {
     expect(unknown.failures).toContain("Unknown wire typo.out to damper.in");
   });
 
+  it("detects a removed link anywhere from the CT to the PLC interlock", () => {
+    const template = templateLibrary.find(({ id }) => id === "ct-current-loop-plc-interlock")!;
+    for (const wire of template.document.wires) {
+      const document = removeWire(template.document, wire.id);
+      expect(verifyProjectTemplate({ ...template, document }, catalogById).passed, wire.id).toBe(false);
+    }
+  });
   it("requires every wire for the CT metering and indication checks", () => {
     const template = templateLibrary.find(({ id }) => id === "ct-secondary-current-monitoring")!;
     for (const wire of template.document.wires) {
@@ -152,7 +159,7 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(27);
+    expect(templateLibrary).toHaveLength(28);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });

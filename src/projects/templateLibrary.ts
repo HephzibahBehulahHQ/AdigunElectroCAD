@@ -12,6 +12,7 @@ import { createTankFillPermitProject } from "./tankFillPermitProject";
 import { createHumidityDamperProject } from "./humidityDamperProject";
 import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
 import { createPt100PlcTransmitterProject } from "./pt100PlcTransmitterProject";
+import { createCurrentLoopInterlockProject } from "./currentLoopInterlockProject";
 import { createCurrentMonitoringProject } from "./currentMonitoringProject";
 import { createWeighStationProject } from "./weighStationProject";
 import { createFreezerAlarmProject } from "./freezerAlarmProject";
@@ -128,6 +129,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createFreezerAlarmProject(),
   createWeighStationProject(),
   createCurrentMonitoringProject(),
+  createCurrentLoopInterlockProject(),
   createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
   createTimedRelayTransferProject(),
