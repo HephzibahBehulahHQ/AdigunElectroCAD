@@ -1,8 +1,8 @@
-import { findAutomaticWireBends, wireRouteObstacles, wireRouteObstructions } from "../cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../cad/automaticWireRoute";
 import { endpointKey, terminalAnchors } from "../cad/terminalAnchors";
 import { resolveDraftingStyle } from "../cad/draftingLayers";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
-import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
+import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint, Wire } from "../types/electrical";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { projectContinuationSignalWarnings, projectSignalDriverConflicts, validateProjectContinuations } from "../projects/projectContinuations";
 import type { ProjectCircuitModelRun } from "../simulation/projectCircuitModels";
@@ -71,8 +71,20 @@ function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
   const references = new Map(visible.map(({ id, reference }) => [id, reference]));
   const obstacles = wireRouteObstacles(visible);
   const anchors = new Map(terminalAnchors(document).map((anchor) => [endpointKey(anchor.endpoint), anchor]));
+  const routePoints = (wire: Wire) => {
+    const from = anchors.get(endpointKey(wire.from)), to = anchors.get(endpointKey(wire.to));
+    return wire.points.length || wire.branchOfWireId || !from || !to ? wire.points : automaticWireBends(from, to, obstacles);
+  };
   return document.wires.flatMap((wire): TopologyIssue[] => {
-    if (wire.points.length || wire.branchOfWireId || hiddenLayers.has(wire.layerId ?? "")) return [];
+    if (hiddenLayers.has(wire.layerId ?? "")) return [];
+    if (wire.branchOfWireId) {
+      const branch = resolveBranchWireRoute(wire, document.wires, anchors, obstacles, routePoints);
+      if (!branch?.blockedBy.length) return [];
+      const blockedBy = branch.blockedBy.map((id) => references.get(id) ?? id);
+      return [{ severity: "warning", code: "blocked-branch-wire-route",
+        message: "Branch " + (wire.netName ?? wire.id) + " has no clear automatic route. Its fallback crosses " + blockedBy.join(", ") + "." }];
+    }
+    if (wire.points.length) return [];
     const from = anchors.get(endpointKey(wire.from)), to = anchors.get(endpointKey(wire.to));
     if (!from || !to) return [];
     if (findAutomaticWireBends(from, to, obstacles) !== null) return [];

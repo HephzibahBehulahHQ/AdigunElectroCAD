@@ -1,7 +1,7 @@
 import { instanceFootprint } from "./componentGeometry";
-import { orthogonalWireVertices } from "./wirePath";
-import type { TerminalAnchor } from "./terminalAnchors";
-import type { ComponentInstance, SchematicGraphicPoint } from "../types/electrical";
+import { orthogonalWireVertices, wireBranchRoute } from "./wirePath";
+import { endpointKey, type TerminalAnchor } from "./terminalAnchors";
+import type { ComponentInstance, SchematicGraphicPoint, Wire } from "../types/electrical";
 
 type Obstacle = ReturnType<typeof instanceFootprint> & { componentId: string };
 
@@ -94,14 +94,44 @@ export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obs
 }
 
 /** Preserve the parent prefix and route only the outgoing leg from its junction. */
-export function automaticBranchWireBends(
+function automaticBranchWireRoute(
   from: TerminalAnchor,
   to: TerminalAnchor,
   junction: { point: SchematicGraphicPoint; points: SchematicGraphicPoint[] },
   obstacles: readonly Obstacle[],
-): SchematicGraphicPoint[] {
+): BranchWireRoute {
   const tap = { ...junction.point, endpoint: from.endpoint };
-  const bends = automaticWireBends(tap, to, obstacles);
-  const leg = orthogonalWireVertices(tap, to, bends, false, to.vertical);
-  return [...junction.points, ...leg.slice(1, -1)];
+  const bends = findAutomaticWireBends(tap, to, obstacles);
+  const leg = orthogonalWireVertices(tap, to, bends ?? [], false, to.vertical);
+  return {
+    point: junction.point,
+    points: [...junction.points, ...leg.slice(1, -1)],
+    blockedBy: bends === null ? wireRouteObstructions(tap, to, [], obstacles) : [],
+  };
+}
+interface BranchWireRoute {
+  point: SchematicGraphicPoint;
+  points: SchematicGraphicPoint[];
+  blockedBy: string[];
+}
+
+export function resolveBranchWireRoute(
+  wire: Wire,
+  wires: readonly Wire[],
+  anchors: ReadonlyMap<string, TerminalAnchor>,
+  obstacles: readonly Obstacle[],
+  routePoints: (wire: Wire) => readonly SchematicGraphicPoint[],
+  seen = new Set<string>(),
+): BranchWireRoute | null {
+  if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
+  const parent = wires.find(({ id }) => id === wire.branchOfWireId);
+  if (!parent) return null;
+  const from = anchors.get(endpointKey(parent.from));
+  const to = anchors.get(endpointKey(parent.to));
+  const source = anchors.get(endpointKey(wire.from));
+  const target = anchors.get(endpointKey(wire.to));
+  if (!from || !to || !source || !target) return null;
+  const parentBranch = resolveBranchWireRoute(parent, wires, anchors, obstacles, routePoints, new Set([...seen, wire.id]));
+  const junction = wireBranchRoute(from, to, parentBranch?.points ?? routePoints(parent), from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
+  return junction && automaticBranchWireRoute(source, target, junction, obstacles);
 }

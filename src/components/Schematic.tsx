@@ -1,4 +1,4 @@
-import { automaticBranchWireBends, automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
@@ -17,7 +17,7 @@ import { defaultDrawingGrid, snapDrawingCoordinate, visibleGridSpacing } from ".
 import { componentFootprint, componentLabelOffsets, instanceFootprint } from "../cad/componentGeometry";
 import { endpointKey, staticComponentIds, terminalAnchors, terminalHitRadius, type TerminalAnchor } from "../cad/terminalAnchors";
 export { terminalAnchors } from "../cad/terminalAnchors";
-import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, wireBranchRoute, type WireBranchSource } from "../cad/wirePath";
+import { insertWireRoutePointAt, orthogonalWirePath, wireBranchAtPoint, type WireBranchSource } from "../cad/wirePath";
 import { appendFreehandPoint, freehandPathBounds } from "../cad/freehandPath";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent } from "react";
 
@@ -421,18 +421,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     const to = anchorIndex.get(endpointKey(wire.to));
     return from && to ? automaticWireBends(from, to, routeObstacles) : wire.points;
   };
-  const branchRouteForWire = (wire: Wire, seen = new Set<string>()): { point: { x: number; y: number }; points: { x: number; y: number }[] } | null => {
-    if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
-    const parent = document.wires.find((item) => item.id === wire.branchOfWireId);
-    const from = parent && anchorIndex.get(endpointKey(parent.from)); const to = parent && anchorIndex.get(endpointKey(parent.to));
-    if (!parent || !from || !to) return null;
-    const nextSeen = new Set(seen); nextSeen.add(wire.id);
-    const parentBranch = branchRouteForWire(parent, nextSeen);
-    const junction = wireBranchRoute(from, to, parentBranch?.points ?? currentRoutePoints(parent), from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
-    const source = anchorIndex.get(endpointKey(wire.from));
-    const target = anchorIndex.get(endpointKey(wire.to));
-    return junction && source && target ? { point: junction.point, points: automaticBranchWireBends(source, target, junction, routeObstacles) } : junction;
-  };
+  const branchRouteForWire = (wire: Wire) => resolveBranchWireRoute(wire, document.wires, anchorIndex, routeObstacles, currentRoutePoints);
   const graphicStart = useRef<{ x: number; y: number } | null>(null);
   const selectionGesture = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
@@ -642,9 +631,11 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
         return <g key={wire.id}>
           <path d={path} style={wireDraftingStyle(wire, document.draftingLayers)} className={`wire manual-wire${from.power && to.power ? " power-wire" : ""}${wire.id === selectedWireId ? " selected-wire" : ""}`} />
           {!wireMode && <path data-export-exclude="" d={path} fill="none" stroke="transparent" strokeWidth="14" pointerEvents="stroke" role="button" tabIndex={0}
-            aria-label={`Select wire ${wire.netName ?? wire.id}`}
+            aria-label={`Select wire ${wire.netName ?? wire.id}${branch?.blockedBy.length ? " (route obstructed)" : ""}`}
             onClick={(event) => { event.stopPropagation(); if (wireRouteEditId === wire.id && !wire.branchOfWireId && !lockedLayers.has(wire.layerId ?? "")) insertRoutePoint(event); else onWireSelect(wire.id); }}
-            onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onWireSelect(wire.id); } }} />}
+            onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onWireSelect(wire.id); } }}>
+            {branch?.blockedBy.length ? <title>Branch route obstructed. See the Validation report.</title> : null}
+          </path>}
           {wireRouteEditId === wire.id && !wire.branchOfWireId && !lockedLayers.has(wire.layerId ?? "") && <path d={path} className="wire-route-hit-target" aria-hidden="true" onClick={insertRoutePoint} />}
           {wireMode && !wireStart && onWireBranchStart && <path d={path} className="wire-branch-hit-target" role="button" tabIndex={0} aria-label={`Create a branch from ${wire.netName ?? wire.id}`} onClick={startBranch} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onWireBranchStart(wire.id, "from", .5); } }} />}
           {branch && <circle cx={branch.point.x} cy={branch.point.y} r="5" className="wire-junction" aria-label={`Electrical junction on ${wire.netName ?? wire.id}`} />}

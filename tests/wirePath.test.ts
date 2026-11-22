@@ -1,4 +1,4 @@
-import { automaticBranchWireBends, automaticWireBends, findAutomaticWireBends, wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -151,7 +151,12 @@ it("keeps a branch attached while routing its outgoing leg around a symbol", () 
     const tap = { ...junction.point, endpoint: from.endpoint };
     expect(wireRouteObstructions(tap, to, [], obstacles)).toEqual(["unrelated"]);
 
-    const points = automaticBranchWireBends(from, to, junction, obstacles);
+    const parent = { id: "parent", from: from.endpoint, to: { componentId: "parent-load", terminalId: "in" }, points: [] };
+    const branch = { id: "branch", from: from.endpoint, to: to.endpoint, points: [], branchOfWireId: parent.id, branchSource: "from" as const, branchPosition: .5 };
+    const anchors = new Map([["source.out", from], ["target.in", to], ["parent-load.in", { ...parentTarget, endpoint: parent.to }]]);
+    const route = resolveBranchWireRoute(branch, [parent, branch], anchors, obstacles, (wire) => wire.points)!;
+    expect(route.blockedBy).toEqual([]);
+    const points = route.points;
     const vertices = orthogonalWireVertices(from, to, points);
     expect(points.slice(0, junction.points.length)).toEqual(junction.points);
     expect(vertices).toContainEqual(junction.point);
