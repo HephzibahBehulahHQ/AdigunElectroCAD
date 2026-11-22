@@ -41,6 +41,6 @@ export async function finishAnonymousUpgrade(password: string) {
 }
 
 export async function signOut() {
-  const { error } = await supabaseClient().auth.signOut();
+  const { error } = await supabaseClient().auth.signOut({scope: "local"});
   if (error) throw error;
 }

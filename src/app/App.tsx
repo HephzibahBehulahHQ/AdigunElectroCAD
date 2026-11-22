@@ -45,7 +45,8 @@ import { removeProjectSheet, reorderProjectSheet } from "../projects/sheetManage
 import { templateLibrary } from "../projects/templateLibrary";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
 import { verifyProjectTemplate } from "../projects/templateVerification";
-import { beginAnonymousUpgrade, finishAnonymousUpgrade, isAnonymousUser, signIn, signOut, signUp, startAnonymousPreview } from "../services/auth";
+import { isAnonymousUser, signOut } from "../services/auth";
+import { accountRequest, verifiedUser } from "../services/productAccount";
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
 import { parseProjectJson } from "../projects/projectSerialization";
@@ -91,7 +92,6 @@ const copy = {
 } as const;
 
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
-const UPGRADE_USER_KEY = "adigun-electro-cad.upgrade-user.v1";
 const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
 const isUserSymbolDefinition = (definitionId: string) => definitionId === "user.indicator-lamp" || definitionId === "user.drawn-symbol";
@@ -205,9 +205,16 @@ export function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [existingAccountMode, setExistingAccountMode] = useState(false);
+  const [authMode, setAuthMode] = useState<"sign-in" | "register" | "reset-password">("sign-in");
+  const [codeSent, setCodeSent] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [guestState, setGuestState] = useState<"checking" | "active" | "expired" | "unavailable">("checking");
+  const [guestRetry, setGuestRetry] = useState(0);
+  const locked = !authUser && guestState !== "active";
+  const accessLocked = useRef(true);
+  accessLocked.current = locked;
   const [authMessage, setAuthMessage] = useState("");
-  const [upgradeUserId, setUpgradeUserId] = useState(() => window.localStorage.getItem(UPGRADE_USER_KEY) ?? "");
   const [cloudSelection, setCloudSelection] = useState<CloudProjectSelection | null>(null);
   const activeAuthUserId = useRef<string | null>(null);
   const authEventVersion = useRef(0);
@@ -254,6 +261,7 @@ export function App() {
     let suppressClick = false;
     const releaseSpace = () => { spaceHeld = false; viewport.classList.remove("pan-ready"); };
     window.addEventListener("keydown", (event) => {
+      if (accessLocked.current) return;
       if (event.code !== "Space" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       if (event.target instanceof Element && event.target.closest("input, select, textarea, [contenteditable], [data-wire-terminal]")) return;
       if (!(viewport.matches(":hover") || viewport.contains(window.document.activeElement))) return;
@@ -350,13 +358,43 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    const client = supabaseClient();
     let active = true;
-    const initialVersion = authEventVersion.current;
-    void client.auth.getUser().then(({ data }) => { if (active && authEventVersion.current === initialVersion) { activeAuthUserId.current = data.user?.id ?? null; setAuthUser(data.user); } });
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => { authEventVersion.current++; activeAuthUserId.current = session?.user.id ?? null; setAuthUser(session?.user ?? null); });
-    return () => { active = false; subscription.unsubscribe(); };
+    let timer: number | undefined;
+    const { data: { subscription } } = supabaseClient().auth.onAuthStateChange((_event, session) => {
+      const version = ++authEventVersion.current;
+      window.clearTimeout(timer);
+      if (!session) {
+        activeAuthUserId.current = null;
+        setAuthUser(null);
+        return;
+      }
+      timer = window.setTimeout(() => {
+        void verifiedUser().catch(() => null).then((user) => {
+          if (!active || version !== authEventVersion.current) return;
+          activeAuthUserId.current = user?.id ?? null;
+          setAuthUser(user);
+        });
+      }, 0);
+    });
+    return () => { active = false; window.clearTimeout(timer); subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    if (authUser) return;
+    let active = true;
+    let timer: number | undefined;
+    setGuestState("checking");
+    void accountRequest({step: "guest", allowStart: true}).then(({step, remainingMs}) => {
+      if (!active) return;
+      if (step !== "guest" || typeof remainingMs !== "number" || !Number.isInteger(remainingMs) || remainingMs < 0 || remainingMs > 240000) throw new Error("Invalid guest trial");
+      setGuestState(remainingMs ? "active" : "expired");
+      if (remainingMs) timer = window.setTimeout(() => {
+        setGuestState("expired");
+        setIsRunning(false);
+      }, remainingMs);
+    }).catch(() => { if (active) setGuestState("unavailable"); });
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [authUser, guestRetry]);
 
   useEffect(() => {
     try { setCloudSelection(readCloudProjectSelection(window.localStorage, authUser?.id)); }
@@ -830,51 +868,39 @@ export function App() {
     }
   };
 
-  const authenticate = async (mode: "sign-in" | "sign-up") => {
+  const authenticate = async (mode: typeof authMode) => {
+    setAuthBusy(true);
     try {
-      const user = mode === "sign-in" ? await signIn(authEmail, authPassword) : await signUp(authEmail, authPassword);
-      setAuthUser(user);
-      setAuthPassword("");
-      setExistingAccountMode(false);
-      setAuthMessage(mode === "sign-up" ? "Check your email to confirm the account before signing in." : "Signed in. Cloud project commands are now available.");
+      if (!codeSent) {
+        const result = await accountRequest({step: "begin", mode, email: authEmail, password: authPassword});
+        if (result.step !== "verify") throw new Error("Could not request an email code.");
+        setAuthMode(mode);
+        setCodeSent(true);
+        setAuthMessage("Enter the code sent to your email.");
+        return;
+      }
+      const result = await accountRequest({step: "verify", code: emailCode});
+      if (result.step === "signed-in" && result.session) {
+        const {error} = await supabaseClient().auth.setSession(result.session);
+        if (error) throw error;
+        const user = await verifiedUser();
+        if (!user) throw new Error("Could not verify your ElectroCAD session.");
+        activeAuthUserId.current = user.id;
+        setAuthUser(user);
+        setAuthMessage("Signed in.");
+      } else if (result.step === "registered") {
+        setAuthMessage("Account verified. Sign in with your ElectroCAD password and a fresh email code.");
+      } else if (result.step === "password-reset") {
+        setAuthMessage("Password reset. Sign in with your new password.");
+      } else throw new Error("Could not verify the email code.");
+      setCodeSent(false);
+      setAuthMode("sign-in");
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Authentication failed.");
-    }
-  };
-
-  const startPreview = async () => {
-    try {
-      const user = await startAnonymousPreview();
-      setAuthUser(user);
-      setAuthMessage("Preview started. The five-minute reminder is informational only; it does not restrict account access.");
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Anonymous preview could not start.");
-    }
-  };
-
-  const beginUpgrade = async () => {
-    try {
-      const result = await beginAnonymousUpgrade(authEmail);
-      if (result.existingEmail) { setExistingAccountMode(true); setAuthPassword(""); }
-      if (result.sent && authUser) {
-        window.localStorage.setItem(UPGRADE_USER_KEY, authUser.id);
-        setUpgradeUserId(authUser.id);
-      }
-      setAuthMessage(result.existingEmail ? "That email already has an account. Enter its existing password and press Sign in to existing account." : result.message);
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Could not send the confirmation email. Try again.");
-    }
-  };
-
-  const finishUpgrade = async () => {
-    try {
-      const user = await finishAnonymousUpgrade(authPassword);
-      window.localStorage.removeItem(UPGRADE_USER_KEY);
-      setUpgradeUserId("");
-      setAuthUser(user);
-      setAuthMessage("Password set. The anonymous account is now linked to the confirmed email.");
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Set a password only after confirming the email link.");
+    } finally {
+      setAuthPassword("");
+      setEmailCode("");
+      setAuthBusy(false);
     }
   };
 
@@ -1949,7 +1975,8 @@ export function App() {
   };
 
   return (
-    <main className={isLabPage ? "app-shell lab-route-active" : "app-shell"}>
+    <>
+    <main inert={locked} className={isLabPage ? "app-shell lab-route-active" : "app-shell"}>
       {componentContextMenu && contextComponent && <div className="component-context-menu" role="menu" aria-label={`Actions for ${contextComponent.reference}`} style={{ left: componentContextMenu.x, top: componentContextMenu.y }} onContextMenu={(event) => event.preventDefault()}>
         <strong>{contextComponent.reference} · {catalogById.get(contextComponent.definitionId)?.name ?? "Component"}</strong>
         <button role="menuitem" onClick={() => setComponentContextMenu(null)}>Properties and terminals</button>
@@ -1971,16 +1998,6 @@ export function App() {
       {isLabPage && <nav className="lab-route-nav" aria-label="Laboratory navigation"><a href="#CAD">← Back to CAD</a><strong>Laboratory</strong></nav>}
 
       {!isLabPage &&       <LiveCopilot canvas={document} projectId={project.id} catalog={catalogById} selectedId={selectedComponentId} simulationState={isRunning ? "running" : runtimeDocument ? "paused" : "stopped"} liveOutput={activeSheetModelRuns.find((run) => run.componentId === selectedComponentId)?.output} owner={authUser?.id ?? "guest"} cloudOwner={authUser && !anonymousSession ? authUser.id : null} activation={botActivation} onShow={() => setBotActivation((value) => value + 1)} onUnread={setBotUnread} onOpen={setBotOpen} editable={!isReferenceSheet} onApply={(next) => { if (isReferenceSheet) throw new Error("Reference-sheet wiring is fixed. Use a free sheet for Bot wire fixes."); if (!updateDocument(next)) throw new Error("The edit affects a locked drafting layer."); setBotEditsUnsaved(true); setNotice("Bot wire fix applied without saving. Undo reverses it. Sign in and explicitly save to preserve it."); }} />}
-
-      {authOpen && <section className="auth-panel" aria-label="Cloud account">
-        <div><strong>{authUser ? anonymousSession ? "Guest preview account" : "Authenticated cloud account" : "Cloud account"}</strong><p>{anonymousSession ? "Preview access is not time-limited. Anonymous accounts can read, update and delete their owned data; the database blocks only new inserts." : "Use a confirmed email and password for cloud project creation and cross-device access."}</p></div>
-        {!authUser && <div className="auth-fields"><label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button onClick={() => void authenticate("sign-in")}>Sign in</button><button onClick={() => void authenticate("sign-up")}>Create account</button><button onClick={() => void startPreview()}>Start preview</button></div></div>}
-        {anonymousSession && !existingAccountMode && <div className="auth-fields"><label>Confirmed email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><div className="auth-actions"><button onClick={() => void beginUpgrade()}>1. Send confirmation</button><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button><button onClick={() => { setExistingAccountMode(true); setAuthPassword(""); setAuthMessage(""); }}>Use an existing account</button></div></div>}
-        {anonymousSession && existingAccountMode && <form className="auth-fields" onSubmit={(event) => { event.preventDefault(); void authenticate("sign-in"); }}><label>Account email<input type="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>Existing password<input type="password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="current-password" /></label><div className="auth-actions"><button type="submit">Sign in to existing account</button><button type="button" onClick={() => { setExistingAccountMode(false); setAuthPassword(""); setAuthMessage(""); }}>Back to guest upgrade</button><span>This switches accounts; guest data stays with the guest account.</span></div></form>}
-        {authUser && !anonymousSession && upgradeUserId === authUser.id && <div className="auth-fields"><label>New password<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete="new-password" /></label><button onClick={() => void finishUpgrade()}>2. Set password after confirmation</button></div>}
-        {authUser && !anonymousSession && <div className="auth-actions"><span>{authUser.email ?? "Confirmed account"}</span><button onClick={() => void signOut().then(() => { setAuthUser(null); setAuthMessage("Signed out."); }).catch((error) => setAuthMessage(error instanceof Error ? error.message : "Sign out failed."))}>Sign out</button></div>}
-        {authMessage && <p className="auth-message">{authMessage}</p>}
-      </section>}
 
       <nav className="menu-row" aria-label="Project actions" onPointerOver={(event) => {
         const current = resolveTopLevelMenu(event.target as Element, event.currentTarget);
@@ -2181,6 +2198,32 @@ export function App() {
 
       <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span role="status" aria-atomic="true">{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
     </main>
+    {(authOpen || locked) && <section className={locked ? "auth-panel electro-auth-lock" : "auth-panel"} role={locked ? "dialog" : undefined} aria-modal={locked || undefined} aria-label="ElectroCAD account">
+      <div><strong>ElectroCAD account</strong><p>{locked ? guestState === "checking" ? "Checking guest access…" : guestState === "unavailable" ? "Could not verify guest access." : "Your four-minute guest trial has ended." : "Use your ElectroCAD password and a fresh email code."}</p></div>
+      {!locked && <button type="button" onClick={() => setAuthOpen(false)}>Close</button>}
+      {guestState === "unavailable" && <button type="button" onClick={() => setGuestRetry((n) => n + 1)}>Retry guest access</button>}
+      {!authUser && <form className="auth-fields" onSubmit={(event) => {
+        event.preventDefault();
+        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        void authenticate(submitter?.value === "register" ? "register" : authMode === "register" && !codeSent ? "sign-in" : authMode);
+      }}>
+        {codeSent ? <label>Email code<input value={emailCode} onChange={(event) => setEmailCode(event.target.value)} inputMode="numeric" autoComplete="one-time-code" required pattern="[0-9]{6,10}" maxLength={10} /></label> : <>
+          <label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="username" required /></label>
+          <label>{authMode === "reset-password" ? "New password" : "Password"}<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete={authMode === "reset-password" ? "new-password" : "current-password"} minLength={12} maxLength={256} required /></label>
+        </>}
+        <div className="auth-actions">
+          <button disabled={authBusy}>{codeSent ? "Verify code" : authMode === "reset-password" ? "Send reset code" : "Sign in"}</button>
+          {!codeSent && authMode !== "reset-password" && <button value="register" disabled={authBusy}>Create account</button>}
+          <button type="button" disabled={authBusy} onClick={() => {
+            setAuthMode(codeSent || authMode === "reset-password" ? "sign-in" : "reset-password");
+            setCodeSent(false); setEmailCode(""); setAuthPassword(""); setAuthMessage("");
+          }}>{codeSent ? "Start again" : authMode === "reset-password" ? "Back to sign in" : "Forgot password?"}</button>
+        </div>
+      </form>}
+      {authUser && <div className="auth-actions"><span>{authUser.email}</span><button onClick={() => void signOut().catch(() => setAuthMessage("Sign out failed."))}>Sign out</button></div>}
+      {authMessage && <p className="auth-message" role="status">{authMessage}</p>}
+    </section>}
+    </>
   );
 }
 
