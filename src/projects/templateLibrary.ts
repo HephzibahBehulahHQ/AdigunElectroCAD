@@ -1,3 +1,4 @@
+import { createDcPilotSharedReturnProject } from "./dcPilotSharedReturnProject";
 import { createDehumidifierLockoutProject } from "./dehumidifierLockoutProject";
 import { createDualRtdDisagreementProject } from "./dualRtdDisagreementProject";
 import { createPneumaticStrokeWatchdogProject } from "./pneumaticStrokeWatchdogProject";
@@ -152,6 +153,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createCurrentMonitoringProject(),
   createCurrentLoopInterlockProject(),
   createPilotIndicatorProject(),
+  createDcPilotSharedReturnProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
