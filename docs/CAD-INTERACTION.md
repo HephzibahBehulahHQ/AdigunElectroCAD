@@ -44,6 +44,8 @@ Click a terminal in Select or Wiring mode to start a wire. Click a compatible te
 
 On 2026-11-22, headless Chrome ran the editor at commit `aedc4d0` with a local three-component project. Browser-dispatched clicks created an automatic wire and a wire with two bends. The Properties move command relocated the shared source, then the second destination. Both rendered routes matched the new terminal coordinates and survived a local save and reload. Physical pointer dragging and live screen-reader behavior still need workstation verification.
 
+Space activates a focused wire, terminal, or continuation control. With focus on the drawing itself, hold Space and drag to pan.
+
 Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The electrical model connects the new wire to the selected parent endpoint. Removing the parent wire also removes its dependent branches.
 
 Switching sheets discards an unfinished local wire, branch, or reconnection. To connect different sheets, start **Electrical → Add sheet continuation** and choose the source terminal before switching sheets. Focus an existing continuation marker and press Space to edit its properties on the current sheet, or press Enter to follow it to the linked sheet.
