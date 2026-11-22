@@ -19,7 +19,7 @@ export function createHumidityDamperProject(): ProjectTemplate {
       id, name, description, revision: 1,
       components: [
         { id: "humidity", definitionId: "hvac.humidistat", reference: "HU1", x: 150, y: 320, rotation: 0, properties: { humidityPercent: 55, setpointPercent: 60, hysteresisPercent: 4 } },
-        { id: "damper", definitionId: "hvac.damper", reference: "DA1", x: 380, y: 320, rotation: 0, properties: { positionPercent: 0, commandPercent: 0, travelSeconds: 10 } },
+        { id: "damper", definitionId: "hvac.damper", reference: "DA1", x: 380, y: 320, rotation: 0, properties: { positionPercent: 0, commandPercent: 0, travelSeconds: 10, requireWiredCommand: true } },
         { id: "proof", definitionId: "logic.comparator-greater-than", reference: "CMP1", x: 610, y: 320, rotation: 0, properties: { left: 0, right: 50 } },
         { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 840, y: 320, rotation: 0, properties: { input: false } },
       ],
