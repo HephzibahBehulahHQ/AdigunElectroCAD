@@ -1008,3 +1008,14 @@ it("exposes Eaton FAZ neutral terminals as a separate switched pair", () => {
   expect(three?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
   expect(three?.manufacturerRecord?.topology).toMatchObject({ protectedPoles: 3, neutralTerminals: ["l4-in", "l4-out"] });
 });
+
+
+it.each([
+  ["fazt-b1-1", "240770", 15, ["1", "2"]],
+  ["fazt-c16-3n", "241165", 15, ["1", "2", "3", "4", "5", "6", "N", "N"]],
+  ["fazt-d40-4", "142508", 10, ["1", "2", "3", "4", "5", "6", "7", "8"]],
+] as const)("maps Eaton FAZ-T %s to the published article and terminal configuration", (code, articleNumber, icnKa, labels) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
+  expect(part?.propertiesSchema).toMatchObject({ articleNumber, icnKa });
+  expect(part?.terminals.map(terminal => terminal.label)).toEqual(labels);
+});
