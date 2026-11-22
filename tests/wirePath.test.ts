@@ -1,4 +1,4 @@
-import { automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../src/cad/automaticWireRoute";
+import { automaticBranchWireBends, automaticWireBends, findAutomaticWireBends, wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -136,4 +136,26 @@ it("keeps target-side branch taps on the actual parent route", () => {
   expect(branch).toEqual({ source: "from", position: .9 });
   expect(wireBranchRoute(from, to, bends, false, false, "to", .1)?.point).toEqual(tap);
   expect(wireBranchAtPoint(from, to, bends, false, false, { x: 440, y: 220 })).toBeNull();
+});
+
+it("keeps a branch attached while routing its outgoing leg around a symbol", () => {
+  const source = { endpoint: { componentId: "source", terminalId: "out" }, x: 100, y: 200 };
+  const target = { endpoint: { componentId: "target", terminalId: "in" }, x: 600, y: 450 };
+  const parentTarget = { x: 500, y: 200 };
+  const obstacles = [{ componentId: "unrelated", left: 400, right: 510, top: 270, bottom: 390 }];
+
+  for (const offset of [0, 30]) {
+    const from = { ...source, x: source.x + offset };
+    const to = { ...target, y: target.y + offset };
+    const junction = wireBranchRoute(from, parentTarget, [], false, false, "from", .5)!;
+    const tap = { ...junction.point, endpoint: from.endpoint };
+    expect(wireRouteObstructions(tap, to, [], obstacles)).toEqual(["unrelated"]);
+
+    const points = automaticBranchWireBends(from, to, junction, obstacles);
+    const vertices = orthogonalWireVertices(from, to, points);
+    expect(points.slice(0, junction.points.length)).toEqual(junction.points);
+    expect(vertices).toContainEqual(junction.point);
+    expect(vertices.at(-1)).toEqual(to);
+    expect(wireRouteObstructions(from, to, points, obstacles)).toEqual([]);
+  }
 });

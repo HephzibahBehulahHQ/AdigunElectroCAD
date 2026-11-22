@@ -92,3 +92,16 @@ export function findAutomaticWireBends(from: TerminalAnchor, to: TerminalAnchor,
 export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
   return findAutomaticWireBends(from, to, obstacles) ?? [];
 }
+
+/** Preserve the parent prefix and route only the outgoing leg from its junction. */
+export function automaticBranchWireBends(
+  from: TerminalAnchor,
+  to: TerminalAnchor,
+  junction: { point: SchematicGraphicPoint; points: SchematicGraphicPoint[] },
+  obstacles: readonly Obstacle[],
+): SchematicGraphicPoint[] {
+  const tap = { ...junction.point, endpoint: from.endpoint };
+  const bends = automaticWireBends(tap, to, obstacles);
+  const leg = orthogonalWireVertices(tap, to, bends, false, to.vertical);
+  return [...junction.points, ...leg.slice(1, -1)];
+}

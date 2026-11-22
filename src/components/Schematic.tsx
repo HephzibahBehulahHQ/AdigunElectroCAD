@@ -1,4 +1,4 @@
-import { automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticBranchWireBends, automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
@@ -428,7 +428,10 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     if (!parent || !from || !to) return null;
     const nextSeen = new Set(seen); nextSeen.add(wire.id);
     const parentBranch = branchRouteForWire(parent, nextSeen);
-    return wireBranchRoute(from, to, parentBranch?.points ?? currentRoutePoints(parent), from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
+    const junction = wireBranchRoute(from, to, parentBranch?.points ?? currentRoutePoints(parent), from.vertical ?? false, to.vertical ?? false, wire.branchSource, wire.branchPosition);
+    const source = anchorIndex.get(endpointKey(wire.from));
+    const target = anchorIndex.get(endpointKey(wire.to));
+    return junction && source && target ? { point: junction.point, points: automaticBranchWireBends(source, target, junction, routeObstacles) } : junction;
   };
   const graphicStart = useRef<{ x: number; y: number } | null>(null);
   const selectionGesture = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
