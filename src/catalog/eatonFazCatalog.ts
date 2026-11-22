@@ -43,24 +43,29 @@ const branchCircuitRows = [
   { curve: "D", voltage: "wye", interruptingRatingKa: 14, currents: [13, 15, 16, 20] },
   { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [35, 40] },
   { curve: "C", voltage: "wye", interruptingRatingKa: 14, currents: [13] },
+  { curve: "B", voltage: "240", interruptingRatingKa: 10, currents: [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
+  { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
+  { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
 ] as const;
 
 export const eatonFazNaCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
-  return branchCircuitRows.flatMap(({ curve, voltage, interruptingRatingKa, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
-    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + "-NA" + (poles === 1 ? "-SP" : "");
+  return branchCircuitRows.flatMap((row) => row.currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    const { curve, voltage, interruptingRatingKa } = row;
+    const model = "lowVoltageSeries" in row ? "FAZ-NA-L" : "FAZ-NA";
+    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + model.slice(3) + (poles === 1 ? "-SP" : "");
     const voltageRating = voltage === "240" ? "240 VAC" : poles === 1 ? "277 VAC" : "480Y/277 VAC";
     // Eaton lists the four-pole C13 separately at 10 kA.
-    const partInterruptingRatingKa = curve === "C" && ratedCurrentA === 13 && poles === 4 ? 10 : interruptingRatingKa;
+    const partInterruptingRatingKa = model === "FAZ-NA" && curve === "C" && ratedCurrentA === 13 && poles === 4 ? 10 : interruptingRatingKa;
     return {
       id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
-      name: "Eaton " + orderCode + " · FAZ-NA Branch Breaker",
+      name: "Eaton " + orderCode + " · " + model + " Branch Breaker",
       category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
       description: "DIN-rail UL 489 branch-circuit breaker with screw terminals.",
       terminals,
       manufacturerRecord: {
-        manufacturer: "Eaton", series: "FAZ-NA UL 489", orderCode, sourceUrl: catalogue, terminalMap: "verified",
-        documentRevision: "CA08100005E (July 2026), vol. 4 tab 1, section 1.2, FAZ-NA B/C/D selection",
+        manufacturer: "Eaton", series: model + " UL 489", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "CA08100005E (July 2026), vol. 4 tab 1, section 1.2, " + model + " B/C/D selection",
         topology: { type: "mechanically-linked-breaker", closed: branches, open: [], auxiliaryInstalled: false },
       },
       propertiesSchema: { ratedCurrentA, curve, voltageRating, interruptingRatingKa: partInterruptingRatingKa, closed: true },

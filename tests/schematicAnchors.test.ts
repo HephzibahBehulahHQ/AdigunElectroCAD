@@ -935,3 +935,15 @@ it.each([
   expect(part?.propertiesSchema).toMatchObject({ voltageRating, interruptingRatingKa });
   expect(part?.terminals).toHaveLength(terminalCount);
 });
+
+
+it.each([
+  ["faz-c0.5-1-na-l-sp", "FAZ-C0.5/1-NA-L-SP", 2],
+  ["faz-d1.5-3-na-l", "FAZ-D1.5/3-NA-L", 6],
+  ["faz-b32-4-na-l", "FAZ-B32/4-NA-L", 8],
+] as const)("publishes the 240 V Eaton %s with the exact order code", (suffix, orderCode, terminalCount) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "eaton." + suffix);
+  expect(part?.manufacturerRecord).toMatchObject({ orderCode, series: "FAZ-NA-L UL 489" });
+  expect(part?.propertiesSchema).toMatchObject({ voltageRating: "240 VAC", interruptingRatingKa: 10 });
+  expect(part?.terminals).toHaveLength(terminalCount);
+});
