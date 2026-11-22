@@ -267,6 +267,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId.startsWith("logic-math-")) { const label = symbolId.endsWith("add") ? "+" : symbolId.endsWith("subtract") ? "−" : symbolId.endsWith("multiply") ? "×" : "÷"; return <g className={mark}><rect x={x - 22} y={cy - 15} width="44" height="30" rx="3" /><text x={x} y={cy + 6} textAnchor="middle" className={text}>{label}</text></g>; }
 
   if (symbolId === "sensor-pt100") return <g className={mark}><rect x={x - 22} y={cy - 12} width="44" height="24" rx="3" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>PT</text></g>;
+  if (symbolId === "sensor-thermocouple-two-lead") return <g className={mark}><path d={["M", x - 47, y - 18, "H", x - 25, "L", x, y + 4, "L", x + 25, y - 18, "H", x + 47].join(" ")} /><circle cx={x} cy={y + 4} r={3} /></g>;
   if (symbolId === "sensor-thermocouple") return <g className={mark}><path d={`M ${x - 24} ${cy - 12} V ${cy + 12} M ${x + 24} ${cy - 12} V ${cy + 12} M ${x - 16} ${cy - 12} L ${x + 16} ${cy + 12}`} /><circle cx={x} cy={cy} r="4" /></g>;
   if (symbolId === "sensor-flow") return <g className={mark}><circle cx={x} cy={cy} r="14" /><path d={`M ${x - 28} ${cy} H ${x + 20} M ${x + 13} ${cy - 7} L ${x + 20} ${cy} L ${x + 13} ${cy + 7}`} /></g>;
   if (symbolId === "sensor-level") return <g className={mark}><path d={`M ${x - 15} ${cy - 17} V ${cy + 17} H ${x + 15} V ${cy - 17}`} /><path d={`M ${x - 13} ${cy + 7} H ${x + 13}`} /></g>;
@@ -358,7 +359,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
 
   if (symbolId === "panel-busbar") return <g className={mark}>{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 27} ${cy + offset} H ${x + 27}`} />)}<path d={`M ${x - 20} ${cy + 16} H ${x + 20}`} /></g>;
   if (symbolId === "panel-distribution") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 17} ${cy + offset} H ${x + 17}`} />)}</g>;
-  if (symbolId === "panel-din-rail") return <g className={mark}><path d={`M ${x - 28} ${cy - 8} H ${x + 28} M ${x - 28} ${cy + 8} H ${x + 28}`} />{[-16, 0, 16].map((offset) => <path key={offset} d={`M ${x + offset} ${cy - 8} V ${cy + 8}`} />)}</g>;
+  if (symbolId === "panel-din-rail") return <g className={mark}><rect x={x - 34} y={cy - 8} width={68} height={16} />{properties.perforated !== false && [-20, 0, 20].map((offset) => <rect key={offset} x={x + offset - 5} y={cy - 2} width={10} height={4} rx={2} />)}</g>;
   if (symbolId === "panel-door-interlock") return <g className={mark}><rect x={x - 18} y={cy - 16} width="24" height="32" /><path d={`M ${x + 6} ${cy} H ${x + 26} M ${x - 8} ${cy} H ${x + 4}`} /><circle cx={x - 3} cy={cy + 7} r="2" /></g>;
   if (symbolId === "panel-stack-light") return <g className={mark} aria-label="Indicator tower stack light">
     <rect x={x - 12} y={y - 27} width="24" height="42" rx="3" />

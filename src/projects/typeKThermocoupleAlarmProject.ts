@@ -23,7 +23,7 @@ export function createTypeKThermocoupleAlarmProject(): ProjectTemplate {
     document: {
       id, name, description, revision: 1,
       components: [
-        { id: "probe", definitionId: "sensor.thermocouple", reference: "B1", x: 180, y: 360, rotation: 0, properties: { temperatureC: 100, referenceJunctionC: 0 } },
+        { id: "probe", definitionId: "sensor.thermocouple-type-k", reference: "B1", x: 180, y: 360, rotation: 0, properties: { temperatureC: 100, referenceJunctionC: 0 } },
         { id: "limit", definitionId: "logic.comparator-greater-than", reference: "CMP1", x: 480, y: 360, rotation: 0, properties: { left: 0, right: 20.6 } },
         { id: "alarm", definitionId: "logic.output-coil", reference: "Q1", x: 780, y: 360, rotation: 0, properties: { input: false } },
       ],
