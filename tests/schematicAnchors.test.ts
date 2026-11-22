@@ -773,3 +773,14 @@ it("converts the exact canvas terminal anchor into its project grid reference", 
   }
   expect(terminalGridReference(document, { componentId: "missing", terminalId: "missing" })).toBe("A1");
 });
+
+it("draws damper blade travel from measured position rather than command", () => {
+  const render = (position: number) => renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: "hvac-damper", x: 100, y: 100,
+    properties: { positionPercent: 0, commandPercent: 100, runtimeDamperPositionPercent: position },
+  }));
+  expect(render(0)).toContain('d="M 80 95 L 120 79"');
+  expect(render(60)).toContain('Damper position 60.0%');
+  expect(render(100)).toContain('d="M 80 87 L 120 87"');
+  expect(render(NaN)).toContain('Damper position unavailable');
+});

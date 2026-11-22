@@ -290,7 +290,13 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "hvac-heater" || symbolId === "panel-heater") return <g className={mark}><path d={`M ${x - 26} ${cy} H ${x - 17} L ${x - 9} ${cy - 12} L ${x} ${cy + 12} L ${x + 9} ${cy - 12} L ${x + 17} ${cy} H ${x + 26}`} /></g>;
   if (symbolId === "hvac-fan" || symbolId === "panel-fan") return <g className={mark}><circle cx={x} cy={cy} r="15" />{[0, 120, 240].map((angle) => <path key={angle} d={`M ${x} ${cy} C ${x + 14} ${cy - 3} ${x + 15} ${cy - 12} ${x + 4} ${cy - 13}`} transform={`rotate(${angle} ${x} ${cy})`} />)}</g>;
   if (symbolId === "hvac-thermostat" || symbolId === "hvac-humidistat") return <g className={mark}><circle cx={x} cy={cy} r="14" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>{symbolId.endsWith("thermostat") ? "T" : "H"}</text></g>;
-  if (symbolId === "hvac-damper") return <g className={mark}>{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 20} ${cy + offset} L ${x + 20} ${cy + offset - 8}`} />)}</g>;
+  if (symbolId === "hvac-damper") {
+    const position = properties.runtimeDamperPositionPercent ?? properties.positionPercent;
+    const validPosition = typeof position === "number" && Number.isFinite(position) && position >= 0 && position <= 100;
+    const rise = validPosition ? 8 * (1 - position / 100) : 4;
+    const label = validPosition ? `Damper position ${position.toFixed(1)}%` : "Damper position unavailable";
+    return <g className={mark} aria-label={label}><title>{label}</title>{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 20} ${cy + offset + rise} L ${x + 20} ${cy + offset - rise}`} />)}</g>;
+  }
   if (symbolId === "hvac-chiller") return <g className={mark}><circle cx={x} cy={cy} r="15" />{[0, 60, 120].map((angle) => <path key={angle} d={`M ${x - 13} ${cy} H ${x + 13}`} transform={`rotate(${angle} ${x} ${cy})`} />)}</g>;
 
   if (symbolId === "solar-panel") return <g className={mark}><rect x={x - 20} y={cy - 15} width="40" height="30" rx="2" />{[-7, 7].map((offset) => <path key={offset} d={`M ${x + offset} ${cy - 15} V ${cy + 15} M ${x - 20} ${cy + offset} H ${x + 20}`} />)}</g>;
