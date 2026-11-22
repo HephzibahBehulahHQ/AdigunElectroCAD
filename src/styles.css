@@ -467,3 +467,5 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 }
 
 .view-menu-popover { max-height: calc(100dvh - 110px); overflow: auto; }
+
+.electro-auth-lock { position: fixed !important; top: 50% !important; left: 50% !important; right: auto !important; transform: translate(-50%, -50%); width: min(420px, calc(100vw - 32px)); z-index: 10000; box-shadow: 0 0 0 100vmax rgb(4 12 23 / 75%); }

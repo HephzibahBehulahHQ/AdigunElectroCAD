@@ -1,6 +1,13 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
+  public: {
+    Tables: Record<string, never>;
+    Views: Record<string, never>;
+    Functions: { adigunelectrocad_has_verified_product_session: { Args: Record<string, never>; Returns: boolean } };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
   adigunelectrocad: {
     Tables: {
       my_data: {

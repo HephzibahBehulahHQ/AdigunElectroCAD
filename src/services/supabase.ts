@@ -3,7 +3,7 @@ import type { Database } from "./database.types";
 
 export type RuntimeConfig = AdigunElectroCadRuntimeConfig;
 
-let client: SupabaseClient<Database> | undefined;
+let client: SupabaseClient<Database, "adigunelectrocad"> | undefined;
 
 export function runtimeConfig(): RuntimeConfig {
   const config = window.ADIGUN_ELECTRO_CAD_RUNTIME_CONFIG;
@@ -13,12 +13,12 @@ export function runtimeConfig(): RuntimeConfig {
   return config;
 }
 
-export function supabaseClient(): SupabaseClient<Database> {
+export function supabaseClient(): SupabaseClient<Database, "adigunelectrocad"> {
   if (client) return client;
   const config = runtimeConfig();
-  client = createClient<Database>(config.supabaseUrl, config.supabaseAnonKey, {
+  client = createClient<Database, "adigunelectrocad">(config.supabaseUrl, config.supabaseAnonKey, {
     db: { schema: config.supabaseSchema },
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    auth: { persistSession: false, autoRefreshToken: true, detectSessionInUrl: false },
   });
   return client;
 }
