@@ -1,3 +1,4 @@
+import { createExtractionFanRunOnProject } from "./extractionFanRunOnProject";
 import { createPackagingBatchCounterProject } from "./packagingBatchCounterProject";
 import { createReservoirTransferPermitProject } from "./reservoirTransferPermitProject";
 import { createDuplexPumpAlternatorProject } from "./duplexPumpAlternatorProject";
@@ -144,6 +145,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createDuplexPumpAlternatorProject(),
   createReservoirTransferPermitProject(),
   createPackagingBatchCounterProject(),
+  createExtractionFanRunOnProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
