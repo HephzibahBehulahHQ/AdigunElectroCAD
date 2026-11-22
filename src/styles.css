@@ -406,6 +406,7 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .drawing-ruler-units { position: absolute; top: 0; left: 0; width: 55px; height: 21px; text-align: center; line-height: var(--ruler-top); border-bottom: 1px solid #829ab1; border-right: 1px solid #829ab1; }
 .drawing-cursor-readout { position: absolute; bottom: 5px; right: 5px; padding: 3px 6px; border: 1px solid #829ab1; border-radius: 3px; pointer-events: none; white-space: pre; }
 .drawing-ruler { pointer-events: auto; touch-action: none; }
+.free-drawing-viewport[data-wiring] .drawing-ruler { pointer-events: none; }
 .drawing-ruler-x { cursor: ns-resize; }
 .drawing-ruler-y { cursor: ew-resize; }
 .drawing-guide-preview { position: absolute; border: 0 dashed #007c91; }
@@ -416,7 +417,8 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .component-placement-outline { fill: #0f766e12; stroke: #0f766e; stroke-width: 1.5; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
 .component-placement-preview.blocked .component-placement-outline { fill: #b91c1c19; stroke: #b91c1c; }
 .free-drawing-viewport .terminal-anchors g { cursor: crosshair; }
-.free-drawing-viewport .terminal-anchors g:is(:hover, :focus-visible) .terminal-anchor:not(.active) { fill: #22d3ee; stroke: #075985; }
+.terminal-anchors g:not([data-wiring]):not(:hover):not(:focus-visible) .terminal-anchor { visibility: hidden; }
+.terminal-anchors g:is(:hover, :focus-visible) .terminal-anchor:not(.active) { visibility: visible; fill: #22d3ee; stroke: #075985; }
 .free-drawing-viewport.pan-ready .schematic, .free-drawing-viewport.pan-ready .schematic * { cursor: grab !important; }
 .free-drawing-viewport.panning .schematic, .free-drawing-viewport.panning .schematic * { cursor: grabbing !important; }
 
