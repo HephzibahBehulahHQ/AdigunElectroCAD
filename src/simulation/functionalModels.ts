@@ -291,8 +291,10 @@ function encoderFrequencySignal(properties: Properties, terminalId?: string): Fu
     return fault("Encoder shaft speed or resolution is outside the model range.");
   }
   const phaseHz = rpm / 60 * resolution;
-  if (phaseHz > 100000) return fault("Encoder channel frequency exceeds 100 kHz.");
-  return signal("hertz", terminalId === "phase-z" ? rpm / 60 : phaseHz);
+  const maxHz = number(properties, "maxResponseHz", 100000);
+  if (!Number.isFinite(maxHz) || maxHz <= 0) return fault("Encoder response limit must be positive.");
+  if (phaseHz > maxHz) return fault("Encoder channel frequency exceeds " + maxHz / 1000 + " kHz.");
+  return signal("hertz", terminalId?.startsWith("phase-z") ? rpm / 60 : phaseHz);
 }
 
 function loadCellSignal(properties: Properties): FunctionalSignal {

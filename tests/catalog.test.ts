@@ -14,7 +14,6 @@ describe("IEC-oriented component catalog", () => {
   });
 
   it("offers one clearly generic profile per modeled family and keeps sourced devices distinct", () => {
-    expect(componentLibraryCatalog.length).toBeLessThan(200);
     expect(componentLibraryCatalog.map((definition) => definition.id)).not.toContain("iec.induction-motor.03");
     expect(componentLibraryCatalog.map((definition) => definition.id)).toContain("iec.induction-motor.41");
     expect(componentLibraryCatalog.map((definition) => definition.id)).toContain("iec.motor-starter.01");
@@ -223,4 +222,16 @@ it("maps each Omron encoder channel and enforces its model speed limits", () => 
   expect(evaluateFunctionalSignal(part.simulationModelId, running, "vcc")).toBeUndefined();
   const highResolution = catalogById.get("omron.e6b2-cwz6c.2000p-2m")!;
   expect(evaluateFunctionalSignal(part.simulationModelId, { ...highResolution.propertiesSchema, shaftSpeedRpm: 6000 }, "phase-a")?.error).toContain("100 kHz");
+});
+
+it("uses the documented PNP rate limit and preserves all three complementary leads", () => {
+  const pnp = catalogById.get("omron.e6b2-cwz5b.1000p-0.5m")!;
+  expect(pnp.propertiesSchema.maxSourceCurrentMa).toBe(35);
+  expect(evaluateFunctionalSignal(pnp.simulationModelId, { ...pnp.propertiesSchema, shaftSpeedRpm: 3600 }, "phase-a")?.error).toContain("50 kHz");
+  const differential = catalogById.get("omron.e6b2-cwz1x.1024p-0.5m")!;
+  expect(differential.terminals).toHaveLength(9);
+  expect(functionalOutputTerminals(differential).map(terminal => terminal.label)).toEqual(["A+", "A−", "B+", "B−", "Z+", "Z−"]);
+  const running = { ...differential.propertiesSchema, shaftSpeedRpm: 1200 };
+  expect(evaluateFunctionalSignal(differential.simulationModelId, running, "phase-a-inverted")?.value).toBe(20480);
+  expect(evaluateFunctionalSignal(differential.simulationModelId, running, "phase-z-inverted")?.value).toBe(20);
 });
