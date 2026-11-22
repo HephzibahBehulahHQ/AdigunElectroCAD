@@ -614,12 +614,16 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
 function ProjectContinuationMarkers({ continuations = [], projectSheets = [], activeSheetId = "", anchors, onNavigate, selectedContinuationId = "", onSelect }: { continuations?: ProjectContinuation[]; projectSheets?: CircuitSheet[]; activeSheetId?: string; anchors: TerminalAnchor[]; onNavigate?: (sheetId: string) => void; selectedContinuationId?: string; onSelect?: (continuationId: string) => void }) {
   const sheetNumbers = new Map(projectSheets.map((sheet, index) => [sheet.id, index + 1]));
   const anchorByEndpoint = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
-  return <g className="project-continuation-markers" aria-label="Project sheet continuation references">{continuations.flatMap((continuation, continuationIndex) => {
+  const stackByEndpoint = new Map<string, number>();
+  const occupied: Array<{ left: number; right: number; y: number }> = [];
+  return <g className="project-continuation-markers" aria-label="Project sheet continuation references">{continuations.flatMap((continuation) => {
     const pointIndex = continuation.points.findIndex((item) => item.sheetId === activeSheetId);
     const point = continuation.points[pointIndex];
     const anchor = point && anchorByEndpoint.get(endpointKey(point.endpoint));
     if (!point || !anchor) return [];
-    const stackIndex = continuations.slice(0, continuationIndex).filter((prior) => { const priorPoint = prior.points.find((item) => item.sheetId === activeSheetId); return priorPoint && endpointKey(priorPoint.endpoint) === endpointKey(point.endpoint); }).length;
+    const key = endpointKey(point.endpoint);
+    const stackIndex = stackByEndpoint.get(key) ?? 0;
+    stackByEndpoint.set(key, stackIndex + 1);
     const previous = continuation.points[pointIndex - 1];
     const next = continuation.points[pointIndex + 1];
     const source = continuation.points[0];
@@ -632,8 +636,16 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
       previous && previous !== source && `(src ${sourceRef})`,
     ].filter(Boolean).join(" ");
     const label = `${continuation.label} ${links}`;
+    const width = Math.max(82, label.length * 6.1 + 12);
+    const y = anchor.y - 12 - stackIndex * 22;
+    let left = anchor.x + 9;
+    for (const other of occupied.filter((row) => Math.abs(row.y - y) < 22).sort((a, b) => a.left - b.left)) {
+      if (left + width + 4 <= other.left) break;
+      if (left < other.right + 4) left = other.right + 4;
+    }
+    occupied.push({ left, right: left + width, y });
     const navigateTo = target?.sheetId;
-    return [<g key={continuation.id + ":" + activeSheetId} className={continuation.id === selectedContinuationId ? "project-continuation-marker selected" : "project-continuation-marker"} transform={`translate(${anchor.x + 12} ${anchor.y - 12 - stackIndex * 20})`} role={onSelect || (navigateTo && onNavigate) ? "button" : undefined} tabIndex={onSelect || (navigateTo && onNavigate) ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); if (navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && (navigateTo || onSelect)) { event.preventDefault(); event.stopPropagation(); if (event.key === "Enter" && navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); } }}><rect x="-3" y="-15" width={Math.max(82, label.length * 5.6)} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}. Click or press Enter to follow. Press Space for properties.`}</title></g>];
+    return [<g key={continuation.id + ":" + activeSheetId} className={continuation.id === selectedContinuationId ? "project-continuation-marker selected" : "project-continuation-marker"} transform={`translate(${left + 3} ${y})`} role={onSelect || (navigateTo && onNavigate) ? "button" : undefined} tabIndex={onSelect || (navigateTo && onNavigate) ? 0 : undefined} aria-label={`Wire ${continuation.label}, source ${sourceRef}, point on sheet ${sheetNumbers.get(activeSheetId) ?? "?"} at ${point.gridReference}`} onClick={(event) => { event.stopPropagation(); if (navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); }} onKeyDown={(event) => { if ((event.key === "Enter" || event.key === " ") && (navigateTo || onSelect)) { event.preventDefault(); event.stopPropagation(); if (event.key === "Enter" && navigateTo) onNavigate?.(navigateTo); onSelect?.(continuation.id); } }}><rect x="-3" y="-15" width={width} height="18" rx="3" style={{ stroke: continuation.conductorColor }} /><text x="2" y="-3" fontFamily="monospace" style={{ fill: continuation.conductorColor }}>{label}</text><title>{`${continuation.label}: source ${sourceRef}; this point S${sheetNumbers.get(activeSheetId) ?? "?"} · ${point.gridReference}. Click or press Enter to follow. Press Space for properties.`}</title></g>];
   })}</g>;
 }
 
