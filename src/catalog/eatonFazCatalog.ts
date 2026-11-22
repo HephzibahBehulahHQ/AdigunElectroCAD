@@ -8,10 +8,20 @@ const orderRows = [
   { curve: "D", currents: [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32, 40, 50, 63] },
 ] as const;
 
+const kAndZCurrents = [0.5, 1, 1.6, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 32];
+const additionalOrderRows = [
+  { curve: "K", currents: [...kAndZCurrents, 40, 50, 63], maxPoles: 4 },
+  { curve: "Z", currents: kAndZCurrents, maxPoles: 4 },
+  { curve: "Z", currents: [40, 50, 63], maxPoles: 2 },
+  { curve: "S", currents: [1, 2, 3, 4, 6, 10, 16, 20, 25, 32, 40], maxPoles: 2 },
+] as const;
+
 export const eatonFazCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
-  return orderRows.flatMap(({ curve, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
-    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + (poles === 1 ? "-SP" : "");
+  const availableRows = [...orderRows, ...additionalOrderRows.filter(row => poles <= row.maxPoles)];
+  return availableRows.flatMap(({ curve, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    const singlePackage = poles === 1 && (curve === "B" || curve === "C" || curve === "D");
+    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + (singlePackage ? "-SP" : "");
     return {
       id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
       name: "Eaton " + orderCode + " · FAZ Supplementary Protector",
@@ -20,7 +30,7 @@ export const eatonFazCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fla
       terminals,
       manufacturerRecord: {
         manufacturer: "Eaton", series: "FAZ UL 1077", orderCode, sourceUrl: catalogue, terminalMap: "verified",
-        documentRevision: "CA08100005E, vol. 4 tab 1, section 1.3, UL 1077 B/C/D product selection",
+        documentRevision: "CA08100005E, vol. 4 tab 1, section 1.3, UL 1077 product selection",
         topology: { type: "mechanically-linked-breaker", closed: branches, open: [], auxiliaryInstalled: false },
       },
       propertiesSchema: { ratedCurrentA, curve, closed: true },
