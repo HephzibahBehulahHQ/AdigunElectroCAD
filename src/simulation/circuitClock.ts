@@ -41,6 +41,21 @@ export function setCircuitLevelInput(document: CircuitDocument, catalog: Map<str
   return latchSafetyFaults({ ...document, components: document.components.map((item) => item.id === componentId ? { ...item, properties: { ...item.properties, levelPercent } } : item) }, catalog);
 }
 
+export function climateMeasurementField(modelId?: string) {
+  if (modelId === "hvac-thermostat") return { property: "temperatureC", label: "Live temperature (°C)", min: -273.15, max: undefined };
+  if (modelId === "hvac-humidistat") return { property: "humidityPercent", label: "Live relative humidity (%)", min: 0, max: 100 };
+}
+
+export function setCircuitClimateInput(document: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>, componentId: string, value: number): CircuitDocument {
+  const component = document.components.find((item) => item.id === componentId);
+  const field = climateMeasurementField(component && catalog.get(component.definitionId)?.simulationModelId);
+  if (!field || !Number.isFinite(value) || value < field.min || (field.max !== undefined && value > field.max)) {
+    throw new Error("Select a climate component and enter a valid live measurement.");
+  }
+  return { ...document, components: document.components.map((item) => item === component
+    ? { ...item, properties: { ...item.properties, [field.property]: value } } : item) };
+}
+
 function latchSafetyFaults(next: CircuitDocument, catalog: Map<string, ElectricalComponentDefinition>): CircuitDocument {
   const faults = new Set(executeCircuitModels(next, catalog).filter((run) => ["catalog-safety-relay", "safety-dual-relay"].includes(run.modelId) && (run.evaluatedProperties.channelAClosed !== true || run.evaluatedProperties.channelBClosed !== true)).map((run) => run.componentId));
   return { ...next, components: next.components.map((item) => faults.has(item.id) ? { ...item, properties: { ...item.properties, runtimeSafetyArmed: false, runtimeResetReady: false } } : item) };

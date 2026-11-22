@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { templateFixtures } from "../src/projects/templateLibrary";
-import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
+import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitClimateInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
@@ -27,8 +27,7 @@ describe("circuit simulation clock", () => {
     let runtime = advanceCircuitClock(design, catalogById, 0.1);
     const coil = () => executeCircuitModels(runtime, catalogById).find(({ componentId }) => componentId === "coil")?.output.value;
     const sample = (value: number) => {
-      runtime = advanceCircuitClock({ ...runtime, components: runtime.components.map((component) => component.id === "sensor"
-        ? { ...component, properties: { ...component.properties, [measurement]: value } } : component) }, catalogById, 0.1);
+      runtime = advanceCircuitClock(setCircuitClimateInput(runtime, catalogById, "sensor", value), catalogById, 0.1);
     };
     expect(coil()).toBe("ON");
     sample(deadband);
@@ -41,6 +40,10 @@ describe("circuit simulation clock", () => {
     expect(coil()).toBe("OFF");
     expect(design.components[1].properties).toEqual({ [measurement]: demand });
     expect(resetCircuitClock(runtime, catalogById).components[1].properties.runtimeClimateContact).toBeUndefined();
+    expect(() => setCircuitClimateInput(runtime, catalogById, "sensor", -274)).toThrow();
+    expect(() => setCircuitClimateInput(runtime, catalogById, "sensor", Infinity)).toThrow();
+    expect(() => setCircuitClimateInput(runtime, catalogById, "coil", demand)).toThrow();
+    if (measurement === "humidityPercent") expect(() => setCircuitClimateInput(runtime, catalogById, "sensor", 101)).toThrow();
   });
 
   it("scans wired PLC inputs, retains Q0, and fails closed on a program error", () => {
