@@ -92,6 +92,38 @@ interface Props {
 
 const isSameEndpoint = (left: TerminalEndpoint | null, right: TerminalEndpoint) => Boolean(left && left.componentId === right.componentId && left.terminalId === right.terminalId);
 
+function TerminalHitTarget({ anchor, component, radius, markerRadius, wireMode, wireStart, onSelect }: {
+  anchor: TerminalAnchor;
+  component: CircuitDocument["components"][number] | undefined;
+  radius: number;
+  markerRadius: number;
+  wireMode: boolean;
+  wireStart: TerminalEndpoint | null;
+  onSelect: Props["onTerminalSelect"];
+}) {
+  const { endpoint, x, y } = anchor;
+  const key = endpointKey(endpoint);
+  const terminals = component?.customTerminals ?? catalogById.get(component?.definitionId ?? "")?.terminals ?? [];
+  const index = terminals.findIndex(({ id }) => id === endpoint.terminalId);
+  const pin = component && index >= 0
+    ? component.terminalLabels?.[endpoint.terminalId] ?? displayTerminalLabel(component.properties, index, terminals[index].label)
+    : endpoint.terminalId;
+  const label = "Wire terminal " + (component?.reference ?? endpoint.componentId) + " " + pin;
+  const active = isSameEndpoint(wireStart, endpoint);
+  return <g data-wire-terminal={key} role="button" tabIndex={0} aria-label={label} aria-pressed={active}
+    onClick={(event) => { event.stopPropagation(); onSelect(endpoint, event.shiftKey); }}
+    onKeyDown={(event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(endpoint, event.shiftKey);
+    }}>
+    <circle cx={x} cy={y} r={radius} fill="transparent" />
+    {wireMode && <circle cx={x} cy={y} r={markerRadius} pointerEvents="none" vectorEffect="non-scaling-stroke" className={active ? "terminal-anchor active" : "terminal-anchor"} />}
+    <title>{label + " · Shift-click target to continue branch"}</title>
+  </g>;
+}
+
 function wirePath(from: TerminalAnchor, to: TerminalAnchor, points: readonly { x: number; y: number }[] = []): string { return orthogonalWirePath(from, to, points, from.vertical, to.vertical); }
 
 function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotation: SchematicAnnotation; selected: boolean; onSelect: (id: string) => void; onMove?: Props["onAnnotationMove"] }) {
@@ -360,6 +392,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   const paintOrder = componentsInStackOrder(transformed.components);
   const anchors = terminalAnchors({ ...previewDocument, components: previewMove ? componentsInStackOrder(previewDocument.components) : paintOrder });
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const componentsById = new Map(document.components.map((component) => [component.id, component]));
   const routeStart = onWireBend && wireStart ? anchorIndex.get(endpointKey(wireStart)) : undefined;
   const [wirePointer, setWirePointer] = useState<(SchematicGraphicPoint & { vertical?: boolean }) | null>(null);
   useEffect(() => { setWirePointer(null); }, [wireStart, document.id]);
@@ -606,7 +639,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       {transformTarget && onComponentTransform && <ComponentTransformHandles key={transformTarget.id} component={transformed.components.find((item) => item.id === transformTarget.id)!} onPreview={(action) => setTransformPreview(action ? { id: transformTarget.id, action } : null)} onCommit={(action) => onComponentTransform(transformTarget.id, action)} />}
       {selectionBox && <rect className="selection-marquee" x={Math.min(selectionBox.x1, selectionBox.x2)} y={Math.min(selectionBox.y1, selectionBox.y2)} width={Math.abs(selectionBox.x2 - selectionBox.x1)} height={Math.abs(selectionBox.y2 - selectionBox.y1)} pointerEvents="none" />}
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} componentClearances={previewDocument.components.map(instanceFootprint)} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
-      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <g key={endpointKey(item.endpoint)} data-wire-terminal={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom)} fill="transparent" />{wireMode && <circle cx={item.x} cy={item.y} r="4" pointerEvents="none" vectorEffect="non-scaling-stroke" className={isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor"} />}<title>{`${endpointKey(item.endpoint)} · Shift-click target to continue branch`}</title></g>)}</g>}
+      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <TerminalHitTarget key={endpointKey(item.endpoint)} anchor={item} component={componentsById.get(item.endpoint.componentId)} radius={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom)} markerRadius={4} wireMode={wireMode} wireStart={wireStart} onSelect={onTerminalSelect} />)}</g>}
       </g>
       {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>
@@ -665,6 +698,7 @@ export function Schematic({ document, symbolStates, onPlaceComponent, placementP
   const lineClass = (active: boolean) => active ? "wire energized" : "wire";
   const anchors = terminalAnchors(document);
   const anchorIndex = new Map(anchors.map((item) => [endpointKey(item.endpoint), item]));
+  const componentsById = new Map(document.components.map((component) => [component.id, component]));
   const routeStart = onWireBend && wireStart ? anchorIndex.get(endpointKey(wireStart)) : undefined;
   const manualWires = document.wires.filter((wire) => wire.id.startsWith("manual-wire-"));
 
@@ -745,7 +779,7 @@ export function Schematic({ document, symbolStates, onPlaceComponent, placementP
       {document.components.filter((component) => !staticComponentIds.has(component.id)).map((component) => <PlacedSymbol key={component.id} component={component} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} onSelect={onSelect} terminalAnchorsForComponent={anchors.filter((anchor) => anchor.endpoint.componentId === component.id)} />)}
       {routeStart && (wirePointer || wireBends.length > 0) && <path data-export-exclude="" data-wire-draft="" d={orthogonalWirePath(routeStart, wirePointer ?? wireBends.at(-1)!, wireBends, routeStart.vertical, wirePointer?.vertical)} fill="none" stroke="#1976d2" strokeWidth="2" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
       <g className="terminal-pin-markers" pointerEvents="none">{anchors.map((item) => <g key={endpointKey(item.endpoint)}><circle cx={item.x} cy={item.y} r="5" className="terminal-pin" /><title>{endpointKey(item.endpoint)}</title></g>)}</g>
-      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <g key={endpointKey(item.endpoint)} data-wire-terminal={endpointKey(item.endpoint)} role="button" tabIndex={0} aria-label={`Wire terminal ${endpointKey(item.endpoint)}; Shift-click a target to keep branching from the active source`} onClick={(event) => { event.stopPropagation(); onTerminalSelect(item.endpoint, event.shiftKey); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onTerminalSelect(item.endpoint, event.shiftKey); } }}><circle cx={item.x} cy={item.y} r="7" fill={wireMode ? undefined : "transparent"} className={wireMode ? isSameEndpoint(wireStart, item.endpoint) ? "terminal-anchor active" : "terminal-anchor" : undefined} /><title>{endpointKey(item.endpoint) + " · Shift-click target to continue branch"}</title></g>)}</g>}
+      {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{anchors.map((item) => <TerminalHitTarget key={endpointKey(item.endpoint)} anchor={item} component={componentsById.get(item.endpoint.componentId)} radius={7} markerRadius={7} wireMode={wireMode} wireStart={wireStart} onSelect={onTerminalSelect} />)}</g>}
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={anchors} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
     </svg>
   </div>;

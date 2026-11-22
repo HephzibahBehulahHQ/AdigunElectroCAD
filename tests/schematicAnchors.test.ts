@@ -76,7 +76,7 @@ it("persists component stacking and renders symbols and terminal hit targets in 
     onTerminalSelect: () => {},
   }));
   expect(markup).toMatch(/class="free-reference"[^>]*>PLC1<.*class="free-reference"[^>]*>ADC1</);
-  expect(markup).toMatch(/Wire terminal plc\.ai-0.*Wire terminal adc\.in/);
+  expect(markup).toMatch(/data-wire-terminal="plc\.ai-0".*aria-label="Wire terminal PLC1 [^"]+".*data-wire-terminal="adc\.in".*aria-label="Wire terminal ADC1 [^"]+"/);
 });
 
 it("places every selectable catalog terminal at a distinct wireable canvas point", () => {
@@ -167,7 +167,11 @@ it("gives terminal hit targets priority and disables branch targets during a ter
     onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {}, onWireBranchStart: () => {},
   }));
   expect(render(null)).toContain("wire-branch-hit-target");
-  const draft = render(document.wires[0].from);
+  const source = document.wires[0].from;
+  const component = document.components.find(({ id }) => id === source.componentId)!;
+  component.terminalLabels = { ...component.terminalLabels, [source.terminalId]: "TEST PIN" };
+  const draft = render(source);
+  expect(draft).toContain('aria-label="Wire terminal ' + component.reference + ' TEST PIN" aria-pressed="true"');
   expect(draft).not.toContain("wire-branch-hit-target");
   expect(draft.indexOf('class="terminal-anchors"')).toBeGreaterThan(draft.indexOf('class="project-continuation-markers"'));
 });

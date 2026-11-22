@@ -457,3 +457,9 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
     background: transparent;
   }
 }
+
+.terminal-anchors [data-wire-terminal]:focus-visible > circle:first-of-type {
+  stroke: #075985;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
