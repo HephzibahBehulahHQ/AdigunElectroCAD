@@ -1,3 +1,4 @@
+import { automaticWireBends } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -91,4 +92,26 @@ it("inserts a route waypoint where the user clicks an existing wire segment", ()
   expect(nested).toMatchObject({ point: { x: 240, y: 180 }, index: 1 });
   expect(orthogonalWireVertices(from, to, nested!.points).some((point) => point.x === nested!.point.x && point.y === nested!.point.y)).toBe(true);
   expect(insertWireRoutePointAt(from, to, [], false, false, { x: 700, y: 700 })).toBeNull();
+});
+
+it("finds a multi-corridor path around staggered obstacles", () => {
+  const from = { x: 100, y: 400, endpoint: { componentId: "source", terminalId: "out" } };
+  const to = { x: 900, y: 400, endpoint: { componentId: "load", terminalId: "in" } };
+  const obstacles = [
+    { componentId: "lower", left: 250, right: 380, top: 280, bottom: 772 },
+    { componentId: "upper", left: 600, right: 720, top: 0, bottom: 520 },
+  ];
+  const bends = automaticWireBends(from, to, obstacles);
+  expect(bends.length).toBeGreaterThan(2);
+  const route = orthogonalWireVertices(from, to, bends);
+  expect(route).toContainEqual(expect.objectContaining({ y: 274 }));
+  expect(route).toContainEqual(expect.objectContaining({ y: 526 }));
+  for (let index = 1; index < route.length; index++) {
+    const a = route[index - 1], b = route[index];
+    expect(a.x === b.x || a.y === b.y).toBe(true);
+    for (const box of obstacles) {
+      expect(Math.max(a.x, b.x) < box.left || Math.min(a.x, b.x) > box.right ||
+        Math.max(a.y, b.y) < box.top || Math.min(a.y, b.y) > box.bottom).toBe(true);
+    }
+  }
 });

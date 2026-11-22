@@ -9,13 +9,51 @@ export function wireRouteObstacles(components: readonly ComponentInstance[]): Ob
   return components.map((component) => ({ ...instanceFootprint(component), componentId: component.id }));
 }
 
+function segmentIsClear(start: SchematicGraphicPoint, end: SchematicGraphicPoint, obstacles: readonly Obstacle[]): boolean {
+  return obstacles.every(({ left, right, top, bottom }) =>
+    Math.max(start.x, end.x) < left || Math.min(start.x, end.x) > right ||
+    Math.max(start.y, end.y) < top || Math.min(start.y, end.y) > bottom);
+}
+
 function routeIsClear(vertices: readonly SchematicGraphicPoint[], obstacles: readonly Obstacle[]): boolean {
-  return vertices.slice(1).every((end, index) => {
-    const start = vertices[index];
-    return obstacles.every(({ left, right, top, bottom }) =>
-      Math.max(start.x, end.x) < left || Math.min(start.x, end.x) > right ||
-      Math.max(start.y, end.y) < top || Math.min(start.y, end.y) > bottom);
-  });
+  return vertices.slice(1).every((end, index) => segmentIsClear(vertices[index], end, obstacles));
+}
+
+function searchCorridorGrid(from: SchematicGraphicPoint, to: SchematicGraphicPoint, xs: number[], ys: number[], obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
+  const columns = [...new Set([...xs, from.x, to.x])].sort((a, b) => a - b);
+  const rows = [...new Set([...ys, from.y, to.y])].sort((a, b) => a - b);
+  const width = columns.length;
+  const node = (point: SchematicGraphicPoint) => rows.indexOf(point.y) * width + columns.indexOf(point.x);
+  const pointAt = (id: number) => ({ x: columns[id % width], y: rows[Math.floor(id / width)] });
+  const start = node(from), target = node(to);
+  const parents = new Map([[start, start]]);
+  const queue = [start];
+  for (let index = 0; index < queue.length; index++) {
+    const current = queue[index];
+    if (current === target) {
+      const path = [pointAt(target)];
+      for (let id = target; id !== start;) {
+        id = parents.get(id)!;
+        path.push(pointAt(id));
+      }
+      path.reverse();
+      return path.slice(1, -1).filter((point, index) => {
+        const before = path[index], after = path[index + 2];
+        return (before.x !== point.x || point.x !== after.x) &&
+          (before.y !== point.y || point.y !== after.y);
+      });
+    }
+    const row = Math.floor(current / width), column = current % width;
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+      const nextColumn = column + dx, nextRow = row + dy;
+      if (nextColumn < 0 || nextColumn >= width || nextRow < 0 || nextRow >= rows.length) continue;
+      const next = nextRow * width + nextColumn;
+      if (parents.has(next) || !segmentIsClear(pointAt(current), pointAt(next), obstacles)) continue;
+      parents.set(next, current);
+      queue.push(next);
+    }
+  }
+  return [];
 }
 
 /** Preserve the standard center route when clear. Search nearby orthogonal corridors when it is blocked. */
@@ -40,5 +78,5 @@ export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obs
     const cost = length + route.length * 4;
     if (cost < bestCost) { best = candidate; bestCost = cost; }
   }
-  return best;
+  return best.length ? best : searchCorridorGrid(from, to, xs, ys, otherSymbols);
 }
