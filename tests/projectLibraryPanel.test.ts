@@ -82,6 +82,21 @@ it("shows topology failures in project details", () => {
   expect(markup).toContain(verification.topologyIssues[0].message);
 });
 
+it("offers active-sheet checks when the selected example is loaded", () => {
+  const selected = templateLibrary.find(({ id }) => id === "weigh-station-acceptance-window")!;
+  const render = (activeDocument: typeof selected.document) => renderToStaticMarkup(createElement(ProjectLibraryPanel, {
+    active: true, templates: templateLibrary, selected, verification: verifyProjectTemplate(selected, catalogById), activeDocument,
+    onSelect: () => {}, onLoad: () => {}, onOpenWorkbook: () => {},
+    onOpenFourSheetWorkbook: () => {}, onOpenStarDeltaWorkbook: () => {},
+    onOpenReversingWorkbook: () => {}, onOpenTwoMotorWorkbook: () => {},
+  }));
+  const edited = { ...selected.document, wires: selected.document.wires.slice(1) };
+  expect(render(edited)).toContain("Check active sheet");
+  expect(render({ ...edited, id: "unrelated" })).not.toContain("Check active sheet");
+  expect(verifyProjectTemplate({ ...selected, document: edited }, catalogById).passed).toBe(false);
+  expect(verifyProjectTemplate(selected, catalogById).passed).toBe(true);
+});
+
 it("shows actual readings and faults from recorded ventilation checks", () => {
   const selected = templateLibrary.find(({ id }) => id === "humidity-ventilation-damper")!;
   const markup = renderToStaticMarkup(createElement(ProjectLibraryPanel, {

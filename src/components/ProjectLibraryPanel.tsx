@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ProjectTemplate } from "../projects/templateLibrary";
-import type { TemplateVerification } from "../projects/templateVerification";
+import { verifyProjectTemplate, type TemplateVerification } from "../projects/templateVerification";
+import type { CircuitDocument } from "../types/electrical";
 import { SOURCE_BACKED_DOL_TEMPLATE_ID } from "../projects/sourcedDolTemplate";
 
 import { catalogById } from "../catalog/dolCatalog";
@@ -40,11 +41,12 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook, onOpenPlcSensorWorkbook, onOpenVfdWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, activeDocument, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook, onOpenPlcSensorWorkbook, onOpenVfdWorkbook }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
   verification: TemplateVerification;
+  activeDocument?: CircuitDocument;
   onSelect: (id: string) => void;
   onLoad: () => void;
   onOpenWorkbook: () => void;
@@ -61,6 +63,10 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   const [level, setLevel] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(0);
+  const [checkedSheet, setCheckedSheet] = useState<{ templateId: string; document: CircuitDocument; result: TemplateVerification }>();
+  const matchingDocument = activeDocument?.id === selected.document.id ? activeDocument : undefined;
+  const currentCheck = matchingDocument && checkedSheet?.document === matchingDocument && checkedSheet.templateId === selected.id ? checkedSheet.result : undefined;
+  const displayedVerification = currentCheck ?? verification;
   const filtered = templates.slice().sort((a, b) => Number(b.id === SOURCE_BACKED_DOL_TEMPLATE_ID) - Number(a.id === SOURCE_BACKED_DOL_TEMPLATE_ID)).filter((template) => (!level || template.level === level) && (!category || template.category === category) && `${template.name} ${template.category} ${template.id}`.toLowerCase().includes(query.toLowerCase()));
   const pages = Math.max(1, Math.ceil(filtered.length / 5));
   const currentPage = Math.min(page, pages - 1);
@@ -95,10 +101,16 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       <small>{filtered.length ? currentPage * 5 + 1 : 0}–{Math.min((currentPage + 1) * 5, filtered.length)} of {filtered.length}</small>
     </nav>
     <section className="template-library">
-      <details className="project-information"><summary>Project details and operating sequence</summary><strong>{selected.name}</strong><p>{selected.description}</p><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol><p className={verification.passed ? "template-verification pass" : "template-verification issue"}>{verification.passed ? "✓ Topology and recorded model checks passed." : [...verification.topologyIssues.map(({ message }) => message), ...verification.failedExpectations].join(" ")}</p>
-        {verification.sequenceResults.length > 0 && <details>
+      <details className="project-information"><summary>Project details and operating sequence</summary><strong>{selected.name}</strong><p>{selected.description}</p><ol>{selected.testSequence.map((step, index) => <li key={index}>{step}</li>)}</ol>{matchingDocument && <button type="button" className="wide workbook-open" onClick={() => setCheckedSheet({
+        templateId: selected.id,
+        document: matchingDocument,
+        result: verifyProjectTemplate({ ...selected, document: matchingDocument }, catalogById),
+      })}>Check active sheet</button>}
+        <p role="status">{currentCheck ? "Active sheet verification" : "Library example verification"}</p>
+        <p className={displayedVerification.passed ? "template-verification pass" : "template-verification issue"}>{displayedVerification.passed ? "✓ Topology and recorded model checks passed." : [...displayedVerification.topologyIssues.map(({ message }) => message), ...displayedVerification.failedExpectations].join(" ")}</p>
+        {displayedVerification.sequenceResults.length > 0 && <details>
           <summary>Recorded check results</summary>
-          <ol>{verification.sequenceResults.map((step, index) => {
+          <ol>{displayedVerification.sequenceResults.map((step, index) => {
             const checks = selected.operatingSequence?.[index].expectations ?? [];
             return <li key={index}>
               <strong>{step.passed ? "Passed" : "Failed"}</strong> · {step.name}
