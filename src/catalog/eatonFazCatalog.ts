@@ -43,35 +43,39 @@ const branchCircuitRows = [
   { curve: "D", voltage: "wye", interruptingRatingKa: 14, currents: [13, 15, 16, 20] },
   { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [35, 40] },
   { curve: "C", voltage: "wye", interruptingRatingKa: 14, currents: [13] },
-  { curve: "B", voltage: "240", interruptingRatingKa: 10, currents: [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
-  { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
-  { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], lowVoltageSeries: true },
+  { curve: "B", voltage: "240", interruptingRatingKa: 10, currents: [1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
+  { curve: "C", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
+  { curve: "D", voltage: "240", interruptingRatingKa: 10, currents: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32], series240V: true },
 ] as const;
 
 export const eatonFazNaCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
-  return branchCircuitRows.flatMap((row) => row.currents.map((ratedCurrentA): ElectricalComponentDefinition => {
-    const { curve, voltage, interruptingRatingKa } = row;
-    const model = "lowVoltageSeries" in row ? "FAZ-NA-L" : "FAZ-NA";
-    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + model.slice(3) + (poles === 1 ? "-SP" : "");
-    const voltageRating = voltage === "240" ? "240 VAC" : poles === 1 ? "277 VAC" : "480Y/277 VAC";
-    // Eaton lists the four-pole C13 separately at 10 kA.
-    const partInterruptingRatingKa = model === "FAZ-NA" && curve === "C" && ratedCurrentA === 13 && poles === 4 ? 10 : interruptingRatingKa;
-    return {
-      id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
-      name: "Eaton " + orderCode + " · " + model + " Branch Breaker",
-      category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
-      description: "DIN-rail UL 489 branch-circuit breaker with screw terminals.",
-      terminals,
-      manufacturerRecord: {
-        manufacturer: "Eaton", series: model + " UL 489", orderCode, sourceUrl: catalogue, terminalMap: "verified",
-        documentRevision: "CA08100005E (July 2026), vol. 4 tab 1, section 1.2, " + model + " B/C/D selection",
-        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], auxiliaryInstalled: false },
-      },
-      propertiesSchema: { ratedCurrentA, curve, voltageRating, interruptingRatingKa: partInterruptingRatingKa, closed: true },
-      simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
-      documentation: "The Closed setting controls the linked poles. Overcurrent tripping and protection coordination are outside the simulation scope. Published UL 489 interrupting ratings apply at the listed AC voltage.",
-      standardsReferences: ["UL 489", catalogue],
-    };
-  }));
+  return branchCircuitRows.flatMap(row => {
+    const suffixes = "series240V" in row ? ["-NA-L", "-RT-L"] : ["-NA"];
+    return suffixes.flatMap(suffix => row.currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+      const { curve, voltage, interruptingRatingKa } = row;
+      const model = "FAZ" + suffix;
+      const ringTongue = suffix === "-RT-L";
+      const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + poles + suffix + (poles === 1 && !ringTongue ? "-SP" : "");
+      const voltageRating = voltage === "240" ? "240 VAC" : poles === 1 ? "277 VAC" : "480Y/277 VAC";
+      // Eaton lists the four-pole C13 separately at 10 kA.
+      const partInterruptingRatingKa = model === "FAZ-NA" && curve === "C" && ratedCurrentA === 13 && poles === 4 ? 10 : interruptingRatingKa;
+      return {
+        id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
+        name: "Eaton " + orderCode + " · " + model + " Branch Breaker",
+        category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
+        description: "DIN-rail UL 489 branch-circuit breaker with " + (ringTongue ? "ring-tongue" : "screw") + " terminals.",
+        terminals,
+        manufacturerRecord: {
+          manufacturer: "Eaton", series: model + " UL 489", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+          documentRevision: "CA08100005E (July 2026), vol. 4 tab 1, section 1.2, " + model + " B/C/D selection",
+          topology: { type: "mechanically-linked-breaker", closed: branches, open: [], auxiliaryInstalled: false },
+        },
+        propertiesSchema: { ratedCurrentA, curve, voltageRating, interruptingRatingKa: partInterruptingRatingKa, terminalStyle: ringTongue ? "Ring tongue" : "Screw", closed: true },
+        simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
+        documentation: "The Closed setting controls the linked poles. Overcurrent tripping and protection coordination are outside the simulation scope. Published UL 489 interrupting ratings apply at the listed AC voltage.",
+        standardsReferences: ["UL 489", catalogue],
+      };
+    }));
+  });
 });

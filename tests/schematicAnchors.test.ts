@@ -947,3 +947,14 @@ it.each([
   expect(part?.propertiesSchema).toMatchObject({ voltageRating: "240 VAC", interruptingRatingKa: 10 });
   expect(part?.terminals).toHaveLength(terminalCount);
 });
+
+
+it.each([
+  ["faz-c0.5-1-rt-l", "FAZ-C0.5/1-RT-L", 2],
+  ["faz-d32-4-rt-l", "FAZ-D32/4-RT-L", 8],
+] as const)("publishes Eaton %s with ring-tongue terminals", (suffix, orderCode, terminalCount) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "eaton." + suffix);
+  expect(part?.manufacturerRecord).toMatchObject({ orderCode, series: "FAZ-RT-L UL 489" });
+  expect(part?.propertiesSchema).toMatchObject({ voltageRating: "240 VAC", interruptingRatingKa: 10, terminalStyle: "Ring tongue" });
+  expect(part?.terminals).toHaveLength(terminalCount);
+});
