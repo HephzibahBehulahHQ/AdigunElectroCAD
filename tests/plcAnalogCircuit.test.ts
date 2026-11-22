@@ -120,6 +120,6 @@ it("fails an open 4–20 mA loop closed without presenting the last raw value as
   expect(plc.output.value).toContain("Q0 OFF");
   expect(coil.output.error).toMatch(/loop is open/i);
   expect(coil.evaluatedProperties.input).toBe(false);
-  expect(trace.at(-1).status).toBe("inhibited");
+  expect(trace.at(-1)).toMatchObject({ status: "inhibited", analogInput0: null });
   expect(JSON.stringify(design)).toBe(before);
 });
