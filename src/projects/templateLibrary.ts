@@ -26,6 +26,7 @@ import { createDuplexPumpAlternatorProject } from "./duplexPumpAlternatorProject
 import { createBlendRatioPermitProject } from "./blendRatioPermitProject";
 import { createTransferProofWatchdogProject } from "./transferProofWatchdogProject";
 import { createEncoderIndexInspectionProject } from "./encoderIndexInspectionProject";
+import { createMotorPhaseLossLockoutProject } from "./motorPhaseLossLockoutProject";
 import { createThermalOverloadTemplate } from "./thermalOverloadCircuit";
 import { createThermalWiredReversingTemplate, createWiredReversingTemplate } from "./wiredReversingCircuit";
 import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
@@ -192,6 +193,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createWiredHoldingTemplate(),
   createWiredReversingTemplate(),
   createThermalOverloadTemplate(),
+  createMotorPhaseLossLockoutProject(),
   createThermalWiredReversingTemplate(),
   createWiredStarDeltaTemplate(),
   createSourcedDolTemplate(),
