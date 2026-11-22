@@ -1,3 +1,4 @@
+import { createVfdPhaseProofProject } from "./vfdPhaseProofProject";
 import { createPhaseMonitorLocalizationProject } from "./phaseMonitorLocalizationProject";
 import { createMotorPhaseOrderComparisonProject } from "./motorPhaseOrderComparisonProject";
 import { createFusedMotorPhaseLossProject } from "./fusedMotorPhaseLossProject";
@@ -196,6 +197,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createMotorPhaseOrderComparisonProject(),
   createPhaseMonitorLocalizationProject(),
   createVfdFeederProject(),
+  createVfdPhaseProofProject(),
 ];
 
 function createTemplate(index: number): ProjectTemplate {
