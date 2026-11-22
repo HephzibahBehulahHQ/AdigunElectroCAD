@@ -119,8 +119,8 @@ const models: Record<string, Model> = {
   "pneumatic-frl": (p) => ({ label: "Outlet pressure", value: `${frlOutletPressureBar(number(p, "supplyBar"), number(p, "regulatorBar"), number(p, "dropBar")).toFixed(2)} bar` }),
   "hvac-heater": (p) => ({ label: "Heater output", value: `${panelHeaterPowerW(number(p, "setpointC"), number(p, "temperatureC"), number(p, "ratedPowerW")).toFixed(0)} W` }),
   "hvac-cooling-fan": (p) => ({ label: "Heat removal", value: `${panelFanCoolingW(number(p, "airflowM3PerHour"), number(p, "temperatureRiseC")).toFixed(1)} W` }),
-  "hvac-thermostat": (p) => ({ label: "Thermostat", value: binary(climateContactClosed("hvac-thermostat", p)) }),
-  "hvac-humidistat": (p) => ({ label: "Humidistat", value: binary(climateContactClosed("hvac-humidistat", p)) }),
+  "hvac-thermostat": (p) => climateContactResult("Thermostat", "hvac-thermostat", p),
+  "hvac-humidistat": (p) => climateContactResult("Humidistat", "hvac-humidistat", p),
   "hvac-damper": (p) => {
     const error = damperParameterError(p);
     return error ? { label: "Damper position", value: `ERROR: ${error}`, error } : { label: "Damper position", value: `${damperFeedback(p).toFixed(1)}%` };
@@ -233,6 +233,29 @@ export function climateContactClosed(modelId: "hvac-thermostat" | "hvac-humidist
     : humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), previous));
 }
 
+function climateContactSignal(modelId: "hvac-thermostat" | "hvac-humidistat", properties: Properties): FunctionalSignal {
+  const humidity = modelId === "hvac-humidistat";
+  const measurement = properties[humidity ? "humidityPercent" : "temperatureC"] ?? 0;
+  const setpoint = properties[humidity ? "setpointPercent" : "setpointC"] ?? 0;
+  const hysteresis = properties[humidity ? "hysteresisPercent" : "hysteresisC"] ?? 0;
+  const minimum = humidity ? 0 : -273.15;
+  const maximum = humidity ? 100 : Infinity;
+  const inRange = (value: string | number | boolean) =>
+    typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum;
+  if (!inRange(measurement) || !inRange(setpoint)) {
+    return fault(humidity ? "Humidity and setpoint must be between 0 and 100 percent." : "Temperature and setpoint must be finite and at or above absolute zero.");
+  }
+  if (typeof hysteresis !== "number" || !Number.isFinite(hysteresis) || hysteresis < 0 || (humidity && hysteresis > 100)) {
+    return fault(humidity ? "Humidity hysteresis must be between 0 and 100 percent." : "Temperature hysteresis must be finite and nonnegative.");
+  }
+  return signal("boolean", climateContactClosed(modelId, properties));
+}
+
+function climateContactResult(label: string, modelId: "hvac-thermostat" | "hvac-humidistat", properties: Properties): FunctionalModelResult {
+  const output = climateContactSignal(modelId, properties);
+  return output.error ? { label, value: "ERROR: " + output.error, error: output.error } : { label, value: binary(output.value === true) };
+}
+
 function damperFeedback(p: Properties) {
   if (typeof p.runtimeDamperPositionPercent === "number") return p.runtimeDamperPositionPercent;
   const position = number(p, "positionPercent");
@@ -252,7 +275,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
     const error = damperParameterError(properties);
     return error ? fault(error) : signal("scalar", damperFeedback(properties));
   }
-  if (modelId === "hvac-thermostat" || modelId === "hvac-humidistat") return terminalId === "out" ? signal("boolean", climateContactClosed(modelId, properties)) : undefined;
+  if (modelId === "hvac-thermostat" || modelId === "hvac-humidistat") return terminalId === "out" ? climateContactSignal(modelId, properties) : undefined;
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (modelId === "catalog-selector-switch" && ["14", "22"].includes(terminalId ?? "")) return signal("boolean", bool(properties, "closed") && bool(properties, "inputSignal"));
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) return pneumaticSignal(modelId, properties);
