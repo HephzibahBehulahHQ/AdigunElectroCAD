@@ -9,6 +9,7 @@ import { createVibrationVotingProject } from "./vibrationVotingProject";
 import { createFlowBalanceAlarmProject } from "./flowBalanceAlarmProject";
 import { createAnalogLevelProject } from "./analogLevelProject";
 import { createTankFillPermitProject } from "./tankFillPermitProject";
+import { createHumidityDamperProject } from "./humidityDamperProject";
 import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
 import { createPt100PlcTransmitterProject } from "./pt100PlcTransmitterProject";
 import { createTypeKThermocoupleAlarmProject } from "./typeKThermocoupleAlarmProject";
@@ -113,6 +114,7 @@ export const templateFixtures: ProjectTemplate[] = scenarios.map((_, index) => c
 export const templateLibrary: ProjectTemplate[] = [
   createAnalogLevelProject(),
   createTankFillPermitProject(),
+  createHumidityDamperProject(),
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
   createVibrationVotingProject(),

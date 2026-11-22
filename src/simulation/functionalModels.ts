@@ -121,7 +121,10 @@ const models: Record<string, Model> = {
   "hvac-cooling-fan": (p) => ({ label: "Heat removal", value: `${panelFanCoolingW(number(p, "airflowM3PerHour"), number(p, "temperatureRiseC")).toFixed(1)} W` }),
   "hvac-thermostat": (p) => ({ label: "Thermostat", value: binary(climateContactClosed("hvac-thermostat", p)) }),
   "hvac-humidistat": (p) => ({ label: "Humidistat", value: binary(climateContactClosed("hvac-humidistat", p)) }),
-  "hvac-damper": (p) => ({ label: "Damper position", value: `${damperPosition(number(p, "positionPercent"), number(p, "commandPercent"), number(p, "elapsedSeconds", 1), number(p, "travelSeconds", 10)).toFixed(1)}%` }),
+  "hvac-damper": (p) => {
+    const error = damperParameterError(p);
+    return error ? { label: "Damper position", value: `ERROR: ${error}`, error } : { label: "Damper position", value: `${damperFeedback(p).toFixed(1)}%` };
+  },
   "hvac-chiller": (p) => ({ label: "Cooling output", value: `${chillerCoolingW(number(p, "ratedCoolingW"), bool(p, "compressorRunning")).toFixed(0)} W` }),
   "renewable-solar-panel": (p) => ({ label: "PV power", value: `${solarPowerW(number(p, "irradianceWPerM2"), number(p, "areaM2"), number(p, "efficiency")).toFixed(1)} W` }),
   "renewable-charge-controller": (p) => ({ label: "Charge current", value: `${chargeControllerCurrentA(number(p, "solarInputW"), number(p, "batteryVoltageV"), number(p, "maximumCurrentA")).toFixed(2)} A` }),
@@ -230,8 +233,25 @@ export function climateContactClosed(modelId: "hvac-thermostat" | "hvac-humidist
     : humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), previous));
 }
 
+function damperFeedback(p: Properties) {
+  if (typeof p.runtimeDamperPositionPercent === "number") return p.runtimeDamperPositionPercent;
+  const position = number(p, "positionPercent");
+  return p.runtimeDamperCommandBound === true ? position : damperPosition(position, number(p, "commandPercent"), number(p, "elapsedSeconds", 1), number(p, "travelSeconds", 10));
+}
+
+export function damperParameterError(p: Properties): string | undefined {
+  const travel = p.travelSeconds ?? 10;
+  const position = p.runtimeDamperPositionPercent ?? p.positionPercent ?? 0;
+  if (typeof travel !== "number" || !Number.isFinite(travel) || travel <= 0) return "Damper travel time must be finite and positive.";
+  if (typeof position !== "number" || !Number.isFinite(position) || position < 0 || position > 100) return "Damper position must be between 0 and 100 percent.";
+}
+
 export function evaluateFunctionalSignal(modelId: string, properties: Properties, terminalId?: string): FunctionalSignal | undefined {
   if (text(properties, "runtimeSignalError")) return fault(text(properties, "runtimeSignalError"));
+  if (modelId === "hvac-damper" && terminalId === "out") {
+    const error = damperParameterError(properties);
+    return error ? fault(error) : signal("scalar", damperFeedback(properties));
+  }
   if (modelId === "hvac-thermostat" || modelId === "hvac-humidistat") return terminalId === "out" ? signal("boolean", climateContactClosed(modelId, properties)) : undefined;
   if (modelId === "catalog-circuit-breaker") return signal("boolean", bool(properties, "closed"));
   if (modelId === "catalog-selector-switch" && ["14", "22"].includes(terminalId ?? "")) return signal("boolean", bool(properties, "closed") && bool(properties, "inputSignal"));
