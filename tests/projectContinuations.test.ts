@@ -1,3 +1,6 @@
+import { catalogById } from "../src/catalog/dolCatalog";
+import { createProjectWideReport } from "../src/reports/projectReport";
+import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
 import { expect, it } from "vitest";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { addFreeSchematicSheet, createBlankProject, createStarterProject } from "../src/projects/starterProject";
@@ -212,3 +215,35 @@ it("extends a continuation onto an unused sheet even when tabs were reordered be
   expect(validateProjectContinuations(result.project)).toEqual([]);
 });
 
+
+it("uses the actual cross-sheet signal driver when extending a net and reports meter mode changes", () => {
+  const project = addFreeSchematicSheet(addFreeSchematicSheet(createBlankProject()));
+  const [first, source, third] = project.sheets;
+  const meter = (reference: string): ComponentInstance => ({
+    id: "meter", reference, definitionId: "iec.panel-meter.02", x: 200, y: 240, rotation: 0,
+    properties: { measurementKind: "Current", requireWiredInput: true },
+  });
+  first.document.components = [meter("P1")];
+  source.document.components = [{
+    id: "driver", reference: "B1", definitionId: "sensor.level-4-20", x: 200, y: 240, rotation: 0, properties: { levelPercent: 50 },
+  }];
+  third.document.components = [meter("P2")];
+  const input = { componentId: "meter", terminalId: "signal" };
+  const joined = createProjectContinuation(project, { sheetId: source.id, endpoint: { componentId: "driver", terminalId: "signal" } }, { sheetId: first.id, endpoint: input });
+  if (!joined.ok) throw Error(joined.reason);
+  expect(joined.continuation.points[0].sheetId).toBe(first.id);
+  const nextPoint = { sheetId: third.id, endpoint: input };
+  third.document.components[0].properties.measurementKind = "Frequency";
+  expect(extendProjectContinuation(joined.project, joined.continuation.id, nextPoint)).toMatchObject({ ok: false, reason: expect.stringContaining("Incompatible simulated signals") });
+  third.document.components[0].properties.measurementKind = "Current";
+  const extended = extendProjectContinuation(joined.project, joined.continuation.id, nextPoint);
+  if (!extended.ok) throw Error(extended.reason);
+  const read = (drawing: typeof project) => executeProjectCircuitModels(drawing, catalogById).find(({ sheetId, componentId }) => sheetId === third.id && componentId === "meter");
+  expect(read(extended.project)?.evaluatedProperties.measuredValue).toBe(0.012);
+  third.document.components[0].properties.measurementKind = "Frequency";
+  const reloaded = parseProjectJson(JSON.stringify(extended.project));
+  expect(createProjectWideReport(reloaded, catalogById).validation).toContainEqual(expect.objectContaining({
+    severity: "warning", code: "incompatible-continuation-signal-unit",
+  }));
+  expect(read(reloaded)?.output.error).toContain("milliamp is not accepted");
+});

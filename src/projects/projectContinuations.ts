@@ -1,6 +1,6 @@
 import { catalogById } from "../catalog/dolCatalog";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
-import { canConnectTerminals } from "../electrical/topology";
+import { canConnectTerminals, connectionSignalIssue, type TopologyIssue } from "../electrical/topology";
 import { terminalGridReference } from "../cad/terminalAnchors";
 
 /** Validate sheet membership, real local terminals, and the retained source of every cross-sheet net. */
@@ -46,6 +46,28 @@ export function validateProjectContinuations(project: Pick<ElectricalProject, "s
   return issues;
 }
 
+
+/** Use the same simulated signal constraints as on-sheet wiring, while preserving older project data. */
+export function projectContinuationSignalWarnings(project: Pick<ElectricalProject, "sheets" | "continuations">): TopologyIssue[] {
+  const sheets = new Map(project.sheets.map((sheet) => [sheet.id, sheet]));
+  return (project.continuations ?? []).flatMap((continuation) => {
+    const terminals = continuation.points.flatMap(({ sheetId, endpoint }, index) => {
+      const component = sheets.get(sheetId)?.document.components.find(({ id }) => id === endpoint.componentId);
+      const definition = component && catalogById.get(component.definitionId);
+      const terminal = (component?.customTerminals ?? definition?.terminals)?.find(({ id }) => id === endpoint.terminalId);
+      return component && terminal ? [{ component: { ...component, id: String(index) }, terminal }] : [];
+    });
+    const document: CircuitDocument = { id: continuation.id, name: continuation.label, description: "", revision: 1,
+      components: terminals.map(({ component }) => component), wires: [] };
+    return terminals.filter(({ terminal }) => terminal.direction === "output").flatMap((from) =>
+      terminals.filter(({ terminal }) => terminal.direction === "input").flatMap((to): TopologyIssue[] => {
+        const issue = connectionSignalIssue(document, catalogById,
+          { componentId: from.component.id, terminalId: from.terminal.id },
+          { componentId: to.component.id, terminalId: to.terminal.id });
+        return issue ? [{ severity: "warning", code: "incompatible-continuation-signal-unit", message: "Continuation " + continuation.label + ": " + issue }] : [];
+      }));
+  });
+}
 
 export interface ProjectTerminalReference {
   sheetId: string;
@@ -205,14 +227,15 @@ export function extendProjectContinuation(
   if (existing.points.some((point) => point.sheetId === nextPoint.sheetId)) return { ok: false, reason: "This continuation already has a point on that sheet." };
   const source = existing.points[0];
   if (!source) return { ok: false, reason: "The selected continuation has no source terminal." };
-  const sourceSheet = project.sheets.find((sheet) => sheet.id === source.sheetId)!;
-  const resolve = (sheet: CircuitSheet, endpoint: TerminalEndpoint) => {
-    const component = sheet.document.components.find((item) => item.id === endpoint.componentId);
+  const resolve = (sheet: CircuitSheet | undefined, endpoint: TerminalEndpoint) => {
+    const component = sheet?.document.components.find((item) => item.id === endpoint.componentId);
     const definition = component && catalogById.get(component.definitionId);
     const terminal = (component?.customTerminals ?? definition?.terminals)?.find((item) => item.id === endpoint.terminalId);
     return component && terminal ? { component, terminal } : undefined;
   };
-  const sourceTerminal = resolve(sourceSheet, source.endpoint);
+  const sourceTerminal = existing.points.map((point) => resolve(project.sheets.find(({ id }) => id === point.sheetId), point.endpoint))
+    .find((candidate) => candidate?.terminal.direction === "output")
+    ?? resolve(project.sheets.find(({ id }) => id === source.sheetId), source.endpoint);
   const destinationTerminal = resolve(destinationSheet, nextPoint.endpoint);
   if (!sourceTerminal || !destinationTerminal) return { ok: false, reason: "Choose real terminals from the component catalog." };
   const checkDocument: CircuitDocument = {
@@ -227,7 +250,7 @@ export function extendProjectContinuation(
     revision: 1,
   };
   const connectionCheck = canConnectTerminals(checkDocument, catalogById,
-    { componentId: "continuation-source", terminalId: source.endpoint.terminalId },
+    { componentId: "continuation-source", terminalId: sourceTerminal.terminal.id },
     { componentId: "continuation-extension", terminalId: nextPoint.endpoint.terminalId });
   if (!connectionCheck.ok) return { ok: false, reason: connectionCheck.reason ?? "Those terminals cannot be connected." };
 
