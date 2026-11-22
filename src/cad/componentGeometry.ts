@@ -217,4 +217,6 @@ export function instanceFootprint(component: ComponentInstance) {
   return bounds;
 }
 
-
+export function componentFootprintsOverlap(left: ReturnType<typeof componentFootprint>, right: ReturnType<typeof componentFootprint>): boolean {
+  return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
+}

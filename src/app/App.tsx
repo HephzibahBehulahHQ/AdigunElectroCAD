@@ -54,7 +54,7 @@ import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml, workbookPrintHtml } from "../projects/schematicPrint";
-import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
+import { componentClearanceWarnings, cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
@@ -1060,7 +1060,9 @@ export function App() {
     if (!file) return;
     try {
       const imported = parseProjectJson(await file.text());
-      loadProjectIntoEditor(imported, `${imported.name} imported locally. Save to keep this project copy.`);
+      const hasOverlap = imported.sheets.some(({ document }) => componentClearanceWarnings(document).length > 0);
+      const guidance = hasOverlap ? "Component clearance overlaps found. See Reports → Entire project." : "Save to keep this project copy.";
+      loadProjectIntoEditor(imported, `${imported.name} imported locally. ${guidance}`);
     } catch (error) {
       setNotice(`Import rejected: ${error instanceof Error ? error.message : "Unable to read project."}`);
     }

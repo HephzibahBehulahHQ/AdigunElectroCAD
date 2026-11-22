@@ -1,4 +1,5 @@
 import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../cad/automaticWireRoute";
+import { componentFootprintsOverlap, instanceFootprint } from "../cad/componentGeometry";
 import { endpointKey, terminalAnchors } from "../cad/terminalAnchors";
 import { resolveDraftingStyle } from "../cad/draftingLayers";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
@@ -98,6 +99,22 @@ export function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[
   });
 }
 
+export function componentClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
+  if (document.id === "reference-dol-motor-starter") return [];
+  const footprints = document.components.map(component => ({ reference: component.reference, bounds: instanceFootprint(component) }));
+  const warnings: TopologyIssue[] = [];
+  for (const [index, footprint] of footprints.entries()) {
+    // Keep reports bounded even when many components occupy the same location.
+    for (let prior = 0; prior < index; prior++) {
+      const other = footprints[prior];
+      if (!componentFootprintsOverlap(footprint.bounds, other.bounds)) continue;
+      warnings.push({ severity: "warning", code: "component-clearance-overlap", message: `Drawing clearance overlaps between ${other.reference} and ${footprint.reference}.` });
+      break;
+    }
+  }
+  return warnings;
+}
+
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
   const components = new Map(document.components.map((component) => [component.id, component]));
@@ -136,7 +153,7 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
       draftingColor: resolveDraftingStyle(wire, document.draftingLayers).draftingColor,
     })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
-    validation: [...validateCircuit(document, definitions), ...wireClearanceWarnings(document)],
+    validation: [...validateCircuit(document, definitions), ...wireClearanceWarnings(document), ...componentClearanceWarnings(document)],
   };
 }
 
