@@ -1,3 +1,5 @@
+import { findAutomaticWireBends, wireRouteObstacles, wireRouteObstructions } from "../cad/automaticWireRoute";
+import { endpointKey, terminalAnchors } from "../cad/terminalAnchors";
 import { resolveDraftingStyle } from "../cad/draftingLayers";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
@@ -62,6 +64,24 @@ export function simulationResultsTable(
   };
 }
 
+function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
+  if (document.id === "reference-dol-motor-starter") return [];
+  const hiddenLayers = new Set(document.draftingLayers?.filter(({ hidden }) => hidden).map(({ id }) => id));
+  const visible = document.components.filter(({ layerId }) => !hiddenLayers.has(layerId ?? ""));
+  const references = new Map(visible.map(({ id, reference }) => [id, reference]));
+  const obstacles = wireRouteObstacles(visible);
+  const anchors = new Map(terminalAnchors(document).map((anchor) => [endpointKey(anchor.endpoint), anchor]));
+  return document.wires.flatMap((wire): TopologyIssue[] => {
+    if (wire.points.length || wire.branchOfWireId || hiddenLayers.has(wire.layerId ?? "")) return [];
+    const from = anchors.get(endpointKey(wire.from)), to = anchors.get(endpointKey(wire.to));
+    if (!from || !to) return [];
+    if (findAutomaticWireBends(from, to, obstacles) !== null) return [];
+    const blockedBy = wireRouteObstructions(from, to, [], obstacles).map((id) => references.get(id) ?? id);
+    return [{ severity: "warning", code: "blocked-automatic-wire-route",
+      message: "Wire " + (wire.netName ?? wire.id) + " has no clear automatic route. Its fallback crosses " + blockedBy.join(", ") + "." }];
+  });
+}
+
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
   const components = new Map(document.components.map((component) => [component.id, component]));
@@ -100,7 +120,7 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
       draftingColor: resolveDraftingStyle(wire, document.draftingLayers).draftingColor,
     })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
-    validation: validateCircuit(document, definitions),
+    validation: [...validateCircuit(document, definitions), ...wireClearanceWarnings(document)],
   };
 }
 

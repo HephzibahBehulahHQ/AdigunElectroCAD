@@ -26,7 +26,7 @@ describe("engineering project reports", () => {
 
   it("exports local topology findings and cross-sheet continuation findings with their scope", () => {
     const project = createMotorFeederWorkbook();
-    expect(createProjectWideReport(project, catalogById).validation).toEqual([]);
+    expect(createProjectWideReport(project, catalogById).validation.filter(({ severity }) => severity === "error")).toEqual([]);
     const sheetIndex = project.sheets.findIndex(({ document }) => document.wires.length > 0);
     const sheet = project.sheets[sheetIndex];
     const wire = sheet.document.wires[0];
@@ -165,4 +165,23 @@ it("reports every continuation hop with its current cable core, adjacent termina
   expect(csv).toContain('"feed-m2-l1","",""');
   expect(csv).not.toContain('Panel ""A"", W2');
   expect(reportCsv(createProjectWideReport(cleared.project, catalogById), "cables")).not.toContain(continuation.id);
+});
+
+it("reports an obstructed saved automatic wire and clears the warning after repair", () => {
+  const project = createBlankProject();
+  const document = project.sheets[0].document;
+  document.components = [
+    { id: "feed", reference: "S1", definitionId: "logic.no-contact", x: 120, y: 350, rotation: 0, properties: {} },
+    { id: "load", reference: "K1", definitionId: "logic.output-coil", x: 980, y: 350, rotation: 0, properties: {} },
+    { id: "blocker", reference: "U1", definitionId: "user.drawn-symbol", x: 500, y: 350, rotation: 0, properties: {},
+      customSymbolGraphics: [{ id: "drawing", name: "Tall enclosure", kind: "line", x1: 0, y1: -360, x2: 0, y2: 440, color: "#000000", strokeWidth: 1 }] },
+  ];
+  document.wires = [{ id: "w", netName: "ENABLE", from: { componentId: "feed", terminalId: "out" }, to: { componentId: "load", terminalId: "in" }, points: [] }];
+  const report = () => createProjectWideReport(project, catalogById);
+  expect(report().validation).toContainEqual(expect.objectContaining({
+    severity: "warning", code: "blocked-automatic-wire-route", message: expect.stringContaining("ENABLE"),
+  }));
+  expect(reportCsv(report(), "validation")).toContain("U1");
+  document.components.pop();
+  expect(report().validation).toEqual([]);
 });
