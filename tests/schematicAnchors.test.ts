@@ -1037,3 +1037,12 @@ it("keeps Eaton FAZ6 article numbers unique across the Spanish and German tables
   expect(parts.find(entry => entry.id === "eaton.faz6-b1.5-3")?.propertiesSchema.articleNumber).toBe("177578");
   expect(parts.find(entry => entry.id === "eaton.faz6-d6-1n")?.propertiesSchema.articleNumber).toBe("177527");
 });
+
+
+it("maps SENTRON 5SL4 fractional and switched-neutral order codes to the correct terminals", () => {
+  const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "siemens." + code);
+  expect(part("5sl4114-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.3, curve: "C", icnKa: 10 });
+  expect(part("5sl4114-6")).toBeUndefined();
+  expect(part("5sl4515-8")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "N", "N"]);
+  expect(part("5sl4663-6")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+});

@@ -1,3 +1,4 @@
+import { siemens5sl4Catalog } from "./siemens5sl4Catalog";
 import { eatonFaz6Catalog } from "./eatonFaz6Catalog";
 import { eatonFaztCatalog } from "./eatonFaztCatalog";
 import { eatonFazCatalog, eatonFazNaCatalog, eatonFazNaDcCatalog, eatonFazRtDcCatalog, eatonFazNeutralCatalog } from "./eatonFazCatalog";
@@ -46,6 +47,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...eatonFazNeutralCatalog,
   ...eatonFaztCatalog,
   ...eatonFaz6Catalog,
+  ...siemens5sl4Catalog,
   ...phoenixRails.map(([orderCode, depthMm, stockLengthMm, perforated, material, reference]): ElectricalComponentDefinition => {
     const slug = originalProductPages[orderCode as keyof typeof originalProductPages];
     const sourceUrl = slug ? "https://www.phoenixcontact.com/en-pc/products/" + slug : reference;
