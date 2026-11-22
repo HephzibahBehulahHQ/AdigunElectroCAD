@@ -419,3 +419,41 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .free-drawing-viewport .terminal-anchors g:is(:hover, :focus-visible) .terminal-anchor:not(.active) { fill: #22d3ee; stroke: #075985; }
 .free-drawing-viewport.pan-ready .schematic, .free-drawing-viewport.pan-ready .schematic * { cursor: grab !important; }
 .free-drawing-viewport.panning .schematic, .free-drawing-viewport.panning .schematic * { cursor: grabbing !important; }
+
+@media print {
+  :root { color-scheme: light; }
+  .report-panel {
+    break-before: page;
+    padding: 0;
+    border: 0;
+    background: #fff;
+    color: #13233b;
+  }
+  .report-actions { display: none; }
+  .report-heading span { color: #334155; }
+  .report-grid { display: block; }
+  .report-table-section {
+    margin-bottom: 12pt;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .report-table-section > strong { break-after: avoid; }
+  .report-table-wrap { max-height: none; overflow: visible; }
+  .report-table-wrap table {
+    min-width: 0;
+    font-size: 8pt;
+  }
+  .report-table-wrap thead { display: table-header-group; }
+  .report-table-wrap tr { break-inside: avoid; }
+  .report-table-wrap th, .report-table-wrap td {
+    padding: 3pt;
+    border-bottom: 1px solid #cad4df;
+  }
+  .report-table-wrap th {
+    position: static;
+    overflow-wrap: normal;
+    color: #13233b;
+    background: transparent;
+  }
+}

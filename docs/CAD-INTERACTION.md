@@ -38,6 +38,8 @@ Open View → Print layout to configure a free sheet's paper frame. Choose A4 th
 
 File → Print schematic opens the frame in the browser's print dialog. To produce a framed PDF, select Save as PDF at actual size with browser headers and footers disabled. The print document sets the saved physical paper size and includes the frame, title block, and schematic without editor controls.
 
+Open Engineering reports and select Active sheet or Entire project before using the browser’s Print command. The selected report scope follows the schematic on separate pages. Report tables expand to include every row and repeat their column headings on subsequent pages.
+
 Click a terminal in Select or Wiring mode to start a wire. Click a compatible terminal to finish with an automatic orthogonal route. To specify the route, click empty drawing space to add one or more bends before clicking the destination terminal. The dashed preview follows the pointer, and bends use the sheet's snap setting. Escape cancels the unfinished wire. A finished wire retains its terminal identities when either component moves, and custom bends stay at their drawing coordinates.
 
 Shift-clicking a target keeps the source active so users can add more terminal branches. To branch from a wire on a free sheet, click near its visible route and then choose a compatible terminal. Shift-click targets to add more branches at that attachment. The saved branch records its parent wire, source endpoint, and relative route position, so moving the parent endpoints moves the displayed tap. The electrical model connects the new wire to the selected parent endpoint. Removing the parent wire also removes its dependent branches.
