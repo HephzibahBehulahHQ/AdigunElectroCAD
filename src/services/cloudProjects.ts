@@ -1,11 +1,12 @@
 import type { ElectricalProject } from "../types/electrical";
+import { encodeProject } from "../projects/projectSerialization";
 import type { Json } from "./database.types";
 import { runtimeConfig, supabaseClient } from "./supabase";
 
 export interface CloudProject { id: string; document: ElectricalProject; updatedAt: string; }
 
 const table = () => supabaseClient().schema(runtimeConfig().supabaseSchema);
-const asJson = (value: ElectricalProject) => value as unknown as Json;
+const asJson = (project: ElectricalProject) => encodeProject(project) as unknown as Json;
 
 export async function saveCloudProject(userId: string, project: ElectricalProject, cloudProjectId?: string): Promise<CloudProject> {
   const payload = { user_id: userId, name: project.name, description: project.description, document: asJson(project), revision: project.revision, updated_at: new Date().toISOString() };

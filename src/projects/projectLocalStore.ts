@@ -1,5 +1,5 @@
 import type { ElectricalProject } from "../types/electrical";
-import { parseProjectJson } from "./projectSerialization";
+import { encodeProject, parseProjectJson } from "./projectSerialization";
 
 type ProjectStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -15,7 +15,7 @@ export function readLocalProject(storage: ProjectStorage, key: string): { projec
 }
 
 export function writeLocalProject(storage: ProjectStorage, key: string, project: ElectricalProject): void {
-  const serialized = JSON.stringify(project);
+  const serialized = JSON.stringify(encodeProject(project));
   parseProjectJson(serialized);
   const current = storage.getItem(key);
   if (current === serialized) return;

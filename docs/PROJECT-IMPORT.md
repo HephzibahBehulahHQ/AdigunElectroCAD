@@ -1,5 +1,7 @@
 # Project JSON validation
 
+New exports and saved project documents use `schemaVersion: 1`. Unversioned project files and saves load through the same validation and use version 1 when saved again. An unknown schema version is rejected before the editor replaces the open project. The existing `revision` field tracks edits independently.
+
 Imports validate project/sheet structure, limits, catalog definitions, component references, finite coordinates, rotations, property types and terminal topology. Known simulated signal-unit mismatches are rejected. Sheet IDs must be unique after whitespace normalization so selection and edits identify one sheet.
 
 Reference-DOL sheets must use the supported reference drawing document ID; free sheets cannot claim that ID. This prevents the editor from showing a fixed reference drawing while treating the same sheet as a free-form runtime circuit. Valid projects containing reference and free sheets continue to round-trip.

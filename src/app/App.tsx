@@ -49,7 +49,7 @@ import { isAnonymousUser, signOut } from "../services/auth";
 import { accountRequest, verifiedUser } from "../services/productAccount";
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
-import { parseProjectJson } from "../projects/projectSerialization";
+import { encodeProject, parseProjectJson } from "../projects/projectSerialization";
 import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
@@ -924,7 +924,7 @@ export function App() {
   };
 
   const exportProject = () => {
-    downloadBlob(new Blob([JSON.stringify(project, null, 2)], { type: "application/json" }), "adigun-electro-cad-project.json");
+    downloadBlob(new Blob([JSON.stringify(encodeProject(project), null, 2)], { type: "application/json" }), "adigun-electro-cad-project.json");
     setNotice("Project JSON exported.");
   };
 
