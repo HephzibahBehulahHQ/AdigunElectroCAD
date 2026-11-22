@@ -9,6 +9,21 @@ import { verifyProjectTemplate } from "../src/projects/templateVerification";
 
 const motor = (document: ReturnType<typeof createWiredStarDeltaCircuit>) => executeCircuitModels(document, catalogById).find(run => run.reference === "M1")!.output.value;
 
+it("reports a live phase loss and trips the wired overload instead of assuming zero current", () => {
+  let runtime = setCircuitBooleanInput(createWiredStarDeltaCircuit(), catalogById, "breaker", "closed", true);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "start", "pressed", true);
+  runtime = setCircuitBooleanInput(runtime, catalogById, "start", "pressed", false);
+  expect(motor(runtime)).toContain("STAR · 230.94 V/winding");
+
+  runtime = { ...runtime, wires: runtime.wires.filter((wire) => wire.id !== "sd-overload-l3") };
+  expect(motor(runtime)).toContain("does not have three distinct phases");
+  const tripped = advanceCircuitClock(runtime, catalogById, 0.1);
+  const relay = tripped.components.find((component) => component.id === "overload")!;
+  expect(relay.properties).toMatchObject({ runtimeThermalTripped: true, runtimeThermalError: expect.stringContaining("unbalanced winding current") });
+  expect(evaluateWiredControl(tripped, catalogById).get("forward")?.energized).toBe(false);
+  expect(motor(tripped)).toContain("OPEN · 0.00 V/winding");
+});
+
 it("runs the wired star, open-transition, delta, overload and reset sequence", () => {
   const template = createWiredStarDeltaTemplate();
   expect(template.document.components.find(component => component.id === "overload")?.properties.thermalEnabled).toBe(true);

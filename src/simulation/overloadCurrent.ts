@@ -2,6 +2,7 @@
 export interface NominalCurrentLoad {
   reference: string;
   currentA: number;
+  error?: string;
   feeds: Array<{ source: string; terminal: string }>;
 }
 export interface OverloadCurrentPath { id: string; poles: Array<{ input: string; output: string }>; }
@@ -43,7 +44,7 @@ export function traceOverloadCurrents(graph: ReadonlyMap<string, readonly string
         } else if (unsupportedTransferNodes.some(node => fromSource.has(node) && reach(node).has(feed.terminal))) {
           errors.add(`Unsupported power conversion on the feeder to ${load.reference}; nominal relay current is unavailable.`);
         } else if (!Number.isFinite(load.currentA) || load.currentA < 0) {
-          errors.add(`Invalid nominal load current at ${load.reference}.`);
+          errors.add(load.error ?? `Invalid nominal load current at ${load.reference}.`);
         } else {
           phaseCurrentsA[index] += load.currentA;
           if (!Number.isFinite(phaseCurrentsA[index])) errors.add("Summed load current exceeds the supported numerical range.");
