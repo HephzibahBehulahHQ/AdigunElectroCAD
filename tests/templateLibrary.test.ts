@@ -174,6 +174,19 @@ describe("project template library", () => {
     expect(steps.map((step) => step.passed)).toEqual([true, true, true]);
     expect(JSON.stringify(document)).toBe(before);
   });
+  it("rejects a library example with overlapping components even when its outputs still match", () => {
+    const template = templateLibrary.find(({ id }) => id === "analog-level-plc-threshold")!;
+    const document = structuredClone(template.document);
+    const [source, converter] = document.components;
+    converter.x = source.x;
+    converter.y = source.y;
+    const result = verifyProjectTemplate({ ...template, document }, catalogById);
+    expect(result.passed).toBe(false);
+    expect(result.topologyIssues).toEqual([]);
+    expect(result.sequenceResults.every(({ passed }) => passed)).toBe(true);
+    expect(result.failedExpectations).toContain("Drawing clearance overlaps between B1 and ADC1.");
+  });
+
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
     expect(templateLibrary).toHaveLength(56);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
