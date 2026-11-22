@@ -1,3 +1,4 @@
+import { createEncoderIndexInspectionProject } from "./encoderIndexInspectionProject";
 import { createThermalOverloadTemplate } from "./thermalOverloadCircuit";
 import { createThermalWiredReversingTemplate, createWiredReversingTemplate } from "./wiredReversingCircuit";
 import { createWiredHoldingTemplate } from "./wiredHoldingCircuit";
@@ -122,6 +123,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createAnalogLoopbackProject(),
   createFlowBalanceAlarmProject(),
   createVibrationVotingProject(),
+  createEncoderIndexInspectionProject(),
   createDualChannelResetProject(),
   createPt100TemperatureAlarmProject(),
   createPt100PlcTransmitterProject(),
