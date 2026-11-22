@@ -1,3 +1,4 @@
+import { automaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
@@ -408,7 +409,14 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     else pinsByComponent.set(anchor.endpoint.componentId, [anchor]);
   }
   const [routePreview, setRoutePreview] = useState<{ wireId: string; points: SchematicGraphicPoint[] } | null>(null);
-  const currentRoutePoints = (wire: Wire) => routePreview?.wireId === wire.id ? routePreview.points : wire.points;
+  const routeObstacles = wireRouteObstacles(previewDocument.components.filter(({ id }) => visibleIds.has(id)));
+  const currentRoutePoints = (wire: Wire) => {
+    if (routePreview?.wireId === wire.id) return routePreview.points;
+    if (wire.points.length || wire.branchOfWireId) return wire.points;
+    const from = anchorIndex.get(endpointKey(wire.from));
+    const to = anchorIndex.get(endpointKey(wire.to));
+    return from && to ? automaticWireBends(from, to, routeObstacles) : wire.points;
+  };
   const branchRouteForWire = (wire: Wire, seen = new Set<string>()): { point: { x: number; y: number }; points: { x: number; y: number }[] } | null => {
     if (!wire.branchOfWireId || !wire.branchSource || wire.branchPosition === undefined || seen.has(wire.id)) return null;
     const parent = document.wires.find((item) => item.id === wire.branchOfWireId);
@@ -613,7 +621,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
           const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
           if (!matrix) return;
           const pointer = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
-          const inserted = insertWireRoutePointAt(from, to, wire.points, from.vertical ?? false, to.vertical ?? false, pointer, 18 / zoom, snapSpacing);
+          const inserted = insertWireRoutePointAt(from, to, routePoints, from.vertical ?? false, to.vertical ?? false, pointer, 18 / zoom, snapSpacing);
           if (inserted) onWireRouteChange?.(wire.id, inserted.points);
         };
         const startBranch = (event: PointerEvent<SVGPathElement>) => {
