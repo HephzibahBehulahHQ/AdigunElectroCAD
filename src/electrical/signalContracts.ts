@@ -24,6 +24,7 @@ export function functionalOutputTerminals(definition: ElectricalComponentDefinit
 /** Known simulated signal contracts; undefined leaves physical/unsupported terminals unclassified. */
 export function terminalSignalUnits(definition: ElectricalComponentDefinition, terminalId: string): SignalUnit[] | undefined {
   const model = definition.simulationModelId;
+  if (model === "hvac-damper") return terminalId === "in" ? ["boolean"] : terminalId === "out" ? ["scalar"] : undefined;
   if ((model === "hvac-thermostat" || model === "hvac-humidistat") && (terminalId === "in" || terminalId === "out")) return ["boolean"];
   if (model === "catalog-circuit-breaker" && terminalId === "aux-closed") return ["boolean"];
   if (["pneumatic-valve-5-2", "pneumatic-valve-3-2"].includes(model)) {
