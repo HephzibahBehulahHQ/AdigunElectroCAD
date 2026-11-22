@@ -1,3 +1,4 @@
+import { createContactorStatusPanelProject } from "../src/projects/contactorStatusPanelProject";
 import { createWiredHoldingTemplate } from "../src/projects/wiredHoldingCircuit";
 import { verifyProjectTemplate } from "../src/projects/templateVerification";
 import { expect, it } from "vitest";
@@ -81,4 +82,38 @@ it("runs the dedicated wired starter operating sequence", () => {
   expect(result.topologyIssues).toEqual([]);
   expect(result.failedExpectations).toEqual([]);
   expect(result.passed).toBe(true);
+});
+
+it("drives isolated AC and DC loads from separate poles of a physically wired relay", () => {
+  const { document } = createContactorStatusPanelProject();
+  const component = document.components.find(({ id }) => id === "contactor")!;
+  component.definitionId = "iec.interface-relay.02";
+  component.properties = { coilVoltageV: 24, coilDc: true, changeoverContacts: 2 };
+  const acLamp = document.components.find(({ id }) => id === "picked-up")!;
+  acLamp.properties = { ...acLamp.properties, ratedVoltageV: 230, dc: false };
+  const wire = (id: string) => document.wires.find((item) => item.id === id)!;
+  wire("no-feed").from = { componentId: "ac", terminalId: "line" };
+  wire("no-feed").to.terminalId = "21";
+  wire("picked-up-feed").from.terminalId = "24";
+  wire("picked-up-return").to = { componentId: "ac", terminalId: "neutral" };
+  wire("nc-feed").to.terminalId = "11";
+  wire("dropped-out-feed").from.terminalId = "12";
+
+  const idle = evaluateWiredControl(document, catalogById);
+  expect(idle.get("contactor")).toEqual({ energized: false, voltageV: 0 });
+  expect(idle.get("dropped-out")).toEqual({ energized: true, voltageV: 24 });
+  expect(idle.get("picked-up")).toEqual({ energized: false, voltageV: 0 });
+
+  const closed = press(document, "command", true);
+  const active = evaluateWiredControl(closed, catalogById);
+  expect(active.get("contactor")).toEqual({ energized: true, voltageV: 24 });
+  expect(active.get("picked-up")).toEqual({ energized: true, voltageV: 230 });
+  expect(active.get("dropped-out")).toEqual({ energized: false, voltageV: 0 });
+  expect(executeCircuitModels(closed, catalogById)).toContainEqual(expect.objectContaining({
+    reference: "KM1", output: expect.objectContaining({ value: "ENERGIZED · 2 CO" }),
+  }));
+
+  const openReturn = { ...closed, wires: closed.wires.filter(({ id }) => id !== "coil-return") };
+  expect(evaluateWiredControl(openReturn, catalogById).get("contactor")).toEqual({ energized: false, voltageV: 0 });
+  expect(evaluateWiredControl(openReturn, catalogById).get("dropped-out")).toEqual({ energized: true, voltageV: 24 });
 });

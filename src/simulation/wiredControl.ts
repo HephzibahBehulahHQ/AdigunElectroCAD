@@ -15,15 +15,19 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
     (wire.from.componentId === c.id && ["a1", "a2"].includes(wire.from.terminalId)) ||
     (wire.to.componentId === c.id && ["a1", "a2"].includes(wire.to.terminalId))));
   const timers = document.components.filter(c => model(c.id) === "catalog-on-delay-timer" && typeof props(c.id).coilVoltageV === "number");
-  const coils = [...contactors, ...timers];
   const indicators = document.components.filter((c) => model(c.id) === "indicator-lamp-v1");
-  const loads = [...coils, ...indicators];
   const acSources = document.components.filter(c => model(c.id) === "control-supply-v1");
   const dcSources = document.components.filter(c => model(c.id) === "catalog-dc-control-supply");
   const transformers = document.components.filter(c => model(c.id) === "catalog-control-transformer");
   const sources = [...acSources, ...dcSources, ...transformers];
+  const relays = sources.length ? document.components.filter((component) => model(component.id) === "catalog-interface-relay" && document.wires.some(({ from, to }) =>
+    [from, to].some((endpoint) => endpoint.componentId === component.id && ["a1", "a2"].includes(endpoint.terminalId)))) : [];
+  const relayIds = new Set(relays.map(({ id }) => id));
+  const coils = [...contactors, ...timers, ...relays];
+  const loads = [...coils, ...indicators];
   if (!loads.length) return new Map();
   let state = new Map(coils.map(c => [c.id, props(c.id).runtimeCoilEnergized === true || (model(c.id) === "catalog-on-delay-timer" && props(c.id).energized === true)]));
+  const relayFallback = (id: string) => relayIds.has(id) && props(id).energized === true;
   const seen = new Set<string>();
   const key = (id: string, terminal: string) => `${id}.${terminal}`;
   for (let iteration = 0; iteration <= coils.length * 2 + 2; iteration++) {
@@ -51,6 +55,13 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       if (m === "thermal-overload-dol-v1" && p.tripped !== true && !(p.thermalEnabled === true && p.runtimeThermalTripped === true)) link(key(c.id, "aux-95"), key(c.id, "aux-96"));
       if (isContactor(c.id) && state.get(c.id)) link(key(c.id, "aux-13"), key(c.id, "aux-14"));
       if (isContactor(c.id) && !state.get(c.id) && isControl(c.id, "aux-21") && isControl(c.id, "aux-22")) link(key(c.id, "aux-21"), key(c.id, "aux-22"));
+      if (m === "catalog-interface-relay") {
+        const energized = state.get(c.id) ?? p.energized === true;
+        for (const pole of [1, 2, 3]) {
+          const common = pole + "1", switched = pole + (energized ? "4" : "2");
+          if (isControl(c.id, common) && isControl(c.id, switched)) link(key(c.id, common), key(c.id, switched));
+        }
+      }
       if (m === "catalog-on-delay-timer") {
         const done = state.get(c.id) === true && Number(p.elapsedSeconds) >= Number(p.delaySeconds);
         link(key(c.id, "15"), key(c.id, done ? "18" : "16"));
@@ -138,10 +149,11 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
           }
         }
       }
-      result.set(load.id, value);
+      if (attached.length || !relayIds.has(load.id)) result.set(load.id, value);
     }
-    if (coils.every(c => result.get(c.id)!.energized === state.get(c.id))) return result;
-    state = new Map(coils.map((coil) => [coil.id, result.get(coil.id)!.energized]));
+    const nextState = new Map(coils.map(({ id }) => [id, result.get(id)?.energized ?? relayFallback(id)]));
+    if (coils.every(({ id }) => nextState.get(id) === state.get(id))) return result;
+    state = nextState;
   }
   return new Map(loads.map(c => [c.id, { energized: false, voltageV: 0, error: "Control contacts did not settle; all evaluated loads are inhibited." }]));
 }
