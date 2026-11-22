@@ -35,6 +35,7 @@ export interface DraftingLayer extends DraftingStyle {
   id: string;
   name: string;
   hidden?: boolean;
+  locked?: boolean;
 }
 
 export interface DraftingEntity extends DraftingStyle {
