@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { drawingFitsFrame, paddedDrawingBounds, prepareStandaloneSchematicSvg } from "../src/projects/schematicExport";
+import { workbookPrintHtml } from "../src/projects/schematicPrint";
+import { defaultPrintLayout } from "../src/cad/printLayout";
 
 describe("schematic SVG export", () => {
+  it("preserves workbook page order and mixed physical print sizes", () => {
+    const html = workbookPrintHtml([
+      { svg: '<svg data-sheet="power"></svg>', layout: { ...defaultPrintLayout, format: "A3" } },
+      { svg: '<svg data-sheet="control"></svg>', layout: { ...defaultPrintLayout, orientation: "portrait" } },
+      { svg: '<svg data-sheet="legacy"></svg>' },
+    ]);
+    expect(html).toContain("@page sheet0 { size: 420mm 297mm; margin: 0; }");
+    expect(html).toContain("@page sheet1 { size: 210mm 297mm; margin: 0; }");
+    expect(html).toContain("@page sheet2 { size:");
+    expect(html).toContain("section + section { break-before: page; }");
+    expect(html.match(/data-sheet="\w+"/g)).toEqual(['data-sheet="power"', 'data-sheet="control"', 'data-sheet="legacy"']);
+  });
+
   it("includes signed drawing coordinates and detects clipping against the old frame", () => {
     const content = { x: -180.5, y: -120.25, width: 1360, height: 920 };
     expect(paddedDrawingBounds(content)).toEqual({ x: -205, y: -145, width: 1409, height: 969 });

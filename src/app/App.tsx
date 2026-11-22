@@ -3,6 +3,8 @@ import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { DraftingLayerFields } from "../components/DraftingLayerFields";
 import { createEntityLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting, type DraftingSelection } from "../cad/draftingLayers";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import type { User } from "@supabase/supabase-js";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
@@ -47,7 +49,7 @@ import { parseProjectJson } from "../projects/projectSerialization";
 import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
-import { schematicPrintHtml } from "../projects/schematicPrint";
+import { schematicPrintHtml, workbookPrintHtml } from "../projects/schematicPrint";
 import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
@@ -948,26 +950,55 @@ export function App() {
     }
   };
 
+  const openSchematicPrint = (markup: string) => {
+    const frame = window.document.createElement("iframe");
+    frame.title = "Schematic print document";
+    frame.setAttribute("sandbox", "allow-same-origin allow-modals");
+    frame.style.cssText = "position:fixed; left:0; top:0; width:1px; height:1px; border:0; opacity:0; pointer-events:none";
+    frame.addEventListener("load", () => {
+      const view = frame.contentWindow;
+      if (!view) { frame.remove(); setNotice("The schematic print document could not be opened."); return; }
+      view.addEventListener("afterprint", () => frame.remove(), { once: true });
+      view.focus();
+      view.print();
+    }, { once: true });
+    frame.srcdoc = markup;
+    window.document.body.append(frame);
+    setNotice("Print the frame or choose Save as PDF at actual size in the browser dialog.");
+  };
+
   const printSchematic = () => {
     try {
       const capture = captureSchematicSvg("frame");
-      if (!capture) return;
-      const frame = window.document.createElement("iframe");
-      frame.title = "Schematic print document";
-      frame.setAttribute("sandbox", "allow-same-origin allow-modals");
-      frame.style.cssText = "position:fixed; left:0; top:0; width:1px; height:1px; border:0; opacity:0; pointer-events:none";
-      frame.addEventListener("load", () => {
-        const view = frame.contentWindow;
-        if (!view) { frame.remove(); setNotice("The schematic print document could not be opened."); return; }
-        view.addEventListener("afterprint", () => frame.remove(), { once: true });
-        view.focus();
-        view.print();
-      }, { once: true });
-      frame.srcdoc = schematicPrintHtml(capture.markup, isReferenceSheet ? undefined : document.printLayout);
-      window.document.body.append(frame);
-      setNotice("Print the frame or choose Save as PDF at actual size in the browser dialog.");
+      if (capture) openSchematicPrint(schematicPrintHtml(capture.markup, isReferenceSheet ? undefined : document.printLayout));
     } catch {
       setNotice("The schematic could not be prepared for printing.");
+    }
+  };
+
+  const printWorkbook = () => {
+    const host = window.document.createElement("div");
+    host.style.cssText = "position:fixed; width:1100px; height:780px; visibility:hidden; pointer-events:none";
+    window.document.body.append(host);
+    const root = createRoot(host);
+    try {
+      const clipped: string[] = [];
+      const pages = sheets.map((sheet) => {
+        flushSync(() => root.render(<Schematic key={sheet.id} document={sheet.document} selectedComponentId="" selectedWireId="" simulation={initialDolState()} wireMode={false} wireStart={null} onSelect={() => {}} onWireSelect={() => {}} onTerminalSelect={() => {}} showGrid={false} continuations={continuations} projectSheets={sheets} activeSheetId={sheet.id} />));
+        const drawing = host.querySelector("svg.schematic");
+        if (!(drawing instanceof SVGSVGElement)) throw new Error("Missing sheet drawing");
+        const layout = sheet.kind === "reference-dol" ? undefined : sheet.document.printLayout;
+        const { svg, clipsContent } = snapshotSchematicSvg(drawing, "frame", layout);
+        if (clipsContent) clipped.push(sheet.name);
+        return { layout, svg: prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(svg)) };
+      });
+      if (clipped.length && !window.confirm(`The print frame clips drawing content on ${clipped.join(", ")}. Print the project frames anyway?`)) return;
+      openSchematicPrint(workbookPrintHtml(pages));
+    } catch {
+      setNotice("The project could not be prepared for printing.");
+    } finally {
+      root.unmount();
+      host.remove();
     }
   };
 
@@ -1936,7 +1967,7 @@ export function App() {
           }, 0);
         }
       }}>
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
         <details><summary>View</summary><div className="menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <><button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
