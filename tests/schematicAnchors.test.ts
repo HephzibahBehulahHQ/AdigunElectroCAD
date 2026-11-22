@@ -922,3 +922,16 @@ it.each([
   expect(part?.propertiesSchema).toMatchObject({ ratedCurrentA, curve });
   expect(part?.terminals.map(terminal => terminal.label)).toEqual(labels);
 });
+
+
+it.each([
+  ["faz-b1.5-1-na-sp", "277 VAC", 10, 2],
+  ["faz-c13-3-na", "480Y/277 VAC", 14, 6],
+  ["faz-c13-4-na", "480Y/277 VAC", 10, 8],
+  ["faz-d40-2-na", "240 VAC", 10, 4],
+] as const)("publishes the Eaton %s voltage and interruption rating", (code, voltageRating, interruptingRatingKa, terminalCount) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
+  expect(part?.manufacturerRecord?.series).toBe("FAZ-NA UL 489");
+  expect(part?.propertiesSchema).toMatchObject({ voltageRating, interruptingRatingKa });
+  expect(part?.terminals).toHaveLength(terminalCount);
+});
