@@ -89,6 +89,15 @@ const germanColumns = [
   { ...ic60h, curve: "B" }, { ...ic60h, curve: "C" }, { ...ic60h, curve: "D" },
 ] as const;
 
+const maCurrents = [[1.6, "72"], [2.5, "73"], [4, "04"], [6.3, "76"], [10, "10"], [12.5, "82"], [16, "16"], [25, "25"], [40, "40"]] as const;
+const c120nRows = [
+  [1, 63, [40, 56, 78]], [1, 80, [41, 57, 79]], [1, 100, [42, 58, 80]], [1, 125, [43, 59, 81]],
+  [2, 63, [44, 60, 82]], [2, 80, [45, 61, 83]], [2, 100, [46, 62, 84]], [2, 125, [47, 63, 85]],
+  [3, 63, [48, 64, 86]], [3, 80, [49, 65, 87]], [3, 100, [50, 67, 88]], [3, 125, [51, 69, 89]],
+  [4, 63, [52, 71, 90]], [4, 80, [53, 72, 91]], [4, 100, [54, 74, 92]], [4, 125, [55, 76, 93]],
+] as const;
+const c120nFrenchVariants = [[80, 73], [100, 75], [125, 77]] as const;
+
 export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const branches = Array.from({ length: poles }, (_, index) => ["l" + (index + 1) + "-in", "l" + (index + 1) + "-out"]);
   const terminals = branches.flatMap(([line, load], index): TerminalDefinition[] => {
@@ -111,7 +120,22 @@ export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3
       documentRevision: "ZXPRESI9ACTI9 (June 2025), iC60 order table; terminal numbering in Acti9 v2.0 (May 2017)",
     }]),
   );
-  return [...internationalParts, ...germanParts].map(({ curve, orderCode, ratedCurrentA, series, icnKa, sourceUrl, documentRevision }): ElectricalComponentDefinition => {
+  const maParts = poles === 2 || poles === 3 ? maCurrents.map(([ratedCurrentA, suffix]) => ({
+    ...ic60l, curve: "MA", ratedCurrentA, orderCode: "A9F90" + poles + suffix,
+    documentRevision: "Acti9 v2.0 (May 2017), iC60L MA order table and terminal diagrams DB12830/DB12831",
+  })) : [];
+  const c120n = {
+    series: "Acti9 C120N", icnKa: undefined, sourceUrl: acti9Catalogue,
+    documentRevision: "Acti9 v2.0 (May 2017), C120N order tables and terminal diagrams",
+  };
+  const c120nParts = c120nRows.filter(([poleCount]) => poleCount === poles).flatMap(([, ratedCurrentA, codes]) =>
+    codes.map((suffix, index) => ({ ...c120n, ratedCurrentA, curve: ["B", "C", "D"][index], orderCode: "A9N183" + suffix })),
+  );
+  const frenchParts = poles === 4 ? c120nFrenchVariants.map(([ratedCurrentA, suffix]) => ({
+    ...c120n, ratedCurrentA, curve: "C", orderCode: "A9N183" + suffix,
+    documentRevision: c120n.documentRevision + " (France-only order code)",
+  })) : [];
+  return [...internationalParts, ...germanParts, ...maParts, ...c120nParts, ...frenchParts].map(({ curve, orderCode, ratedCurrentA, series, icnKa, sourceUrl, documentRevision }): ElectricalComponentDefinition => {
     return {
       id: "schneider.acti9." + orderCode.toLowerCase(), name: "Schneider Electric " + orderCode + " · " + series.replace("Acti9 ", "") + " " + poles + "P " + curve + ratedCurrentA,
       category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
@@ -125,7 +149,7 @@ export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3
       propertiesSchema: { ratedCurrentA, curve, closed: true, ...(icnKa === undefined ? {} : { icnKa }) },
       simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
       documentation: "The manual Closed setting switches all documented poles together. No instantaneous trip, time-current curve, fault-current interruption or protection coordination is simulated." + (icnKa === undefined ? " Refer to the manufacturer table for voltage-dependent breaking capacities and approvals." : " Icn is specified at 230 V phase-neutral or 400 V phase-phase as applicable under IEC/EN 60898-1."),
-      standardsReferences: [...(icnKa === undefined ? [] : ["IEC/EN 60898-1"]), ...(series === k60n.series ? [] : ["IEC/EN 60947-2"]), sourceUrl, ...(series === ic60l.series ? ["https://download.se.com/files?p_Doc_Ref=UAM-HDOFFERCAT-HK&p_enDocType=Catalog"] : []), ...(sourceUrl === germanCatalogue ? [acti9Catalogue] : [])],
+      standardsReferences: [...(icnKa === undefined ? [] : ["IEC/EN 60898-1"]), ...(series === k60n.series ? [] : ["IEC/EN 60947-2"]), sourceUrl, ...(series === ic60l.series && curve !== "MA" ? ["https://download.se.com/files?p_Doc_Ref=UAM-HDOFFERCAT-HK&p_enDocType=Catalog"] : []), ...(sourceUrl === germanCatalogue ? [acti9Catalogue] : [])],
     };
   });
 });

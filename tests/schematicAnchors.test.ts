@@ -890,3 +890,17 @@ it("publishes iC60L fractional K-curve ratings without assigning Icn to the whol
   expect(part?.propertiesSchema).not.toHaveProperty("icnKa");
   expect(catalogById.has("schneider.acti9.a9f94272")).toBe(false);
 });
+
+
+it.each([
+  ["a9f90273", "MA", 2.5, 4],
+  ["a9f90382", "MA", 12.5, 6],
+  ["a9n18344", "B", 63, 4],
+  ["a9n18377", "C", 125, 8],
+  ["a9n18393", "D", 125, 8],
+] as const)("publishes Schneider %s with its documented curve and terminal count", (code, curve, ratedCurrentA, terminalCount) => {
+  const part = componentLibraryCatalog.find(entry => entry.id === "schneider.acti9." + code);
+  expect(part?.propertiesSchema).toMatchObject({ curve, ratedCurrentA });
+  expect(part?.terminals).toHaveLength(terminalCount);
+  expect(part?.manufacturerRecord?.orderCode).toBe(code.toUpperCase());
+});
