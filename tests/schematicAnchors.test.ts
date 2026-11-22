@@ -1119,3 +1119,14 @@ it("maps Siemens 5SP4 high-current codes and omits 125 A D-curve combinations", 
   expect(part("5sp4492-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "C" });
   expect(part("5sp4492-8")).toBeUndefined();
 });
+
+
+it("keeps Siemens 5SL3 pole-specific availability and numbered neutral terminals", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SL3");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(145);
+  expect(part("5sl3514-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.3, curve: "C", icnKa: 4.5 });
+  expect(part("5sl3514-7")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "1 N", "2 N"]);
+  expect(part("5sl3314-7")).toBeUndefined();
+  expect(part("5sl3406-6")).toBeUndefined();
+});

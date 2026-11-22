@@ -24,15 +24,28 @@ const curveCodes = { B: 6, C: 7, D: 8 } as const;
 
 const bCurve5sl6Currents = [6, 10, 13, 16, 20, 25, 32, 40, 50, 63];
 
-function sentronBreakerCatalog(family: "5SL4" | "5SL6", icnKa: number, diagrams: string): ElectricalComponentDefinition[] {
+const sl3CodeTable: Record<number, Record<keyof typeof curveCodes, string>> = {
+  1: { B: "06 10 13 16 20 25 32 40 50 63", C: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63", D: "" },
+  2: { B: "06 10 13 16 20 25 32 40 50 63", C: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63", D: "" },
+  3: { B: "06 10 16 20 25 32 40 50 63", C: "01 02 03 04 06 10 16 20 25 32 40 50 63", D: "" },
+  4: { B: "", C: "01 02 03 04 06 10 13 16 20 25 32 40 50 63", D: "" },
+  5: { B: "06 10 13 16 20 25 32 40 50 63", C: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63", D: "" },
+  6: { B: "06 10 13 16 20 25 32 40 50 63", C: "01 02 03 04 06 08 10 13 16 20 25 32 40 50 63", D: "" },
+};
+
+function sentronBreakerCatalog(family: "5SL3" | "5SL4" | "5SL6", icnKa: number, diagrams: string): ElectricalComponentDefinition[] {
   return poleVariants.flatMap(variant => {
     const { protectedPoles, switchedNeutral, voltageRating } = variant;
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
     const neutralTerminals = switchedNeutral ? branches.at(-1)! : [];
-    const labeledTerminals = terminals.map(terminal => neutralTerminals.includes(terminal.id) ? { ...terminal, label: "N" } : terminal);
+    const labeledTerminals = terminals.map(terminal => {
+      if (!neutralTerminals.includes(terminal.id)) return terminal;
+      const label = family === "5SL3" && protectedPoles === 1 ? (terminal.id.endsWith("-in") ? "1 N" : "2 N") : "N";
+      return { ...terminal, label };
+    });
     return [...wholeAmpOrderRows, ...fractionalOrderRows].flatMap(({ ratedCurrentA, code, curves }) =>
-      curves.filter(curve => family === "5SL4" || curve === "C" || (curve === "B" && (
+      curves.filter(curve => family === "5SL3" ? sl3CodeTable[variant.code][curve].split(" ").includes(code) : family === "5SL4" || curve === "C" || (curve === "B" && (
         bCurve5sl6Currents.includes(ratedCurrentA) || (variant.code === 1 && (ratedCurrentA === 2 || ratedCurrentA === 4))
       ))).map((curve): ElectricalComponentDefinition => {
         const orderCode = family + variant.code + code + "-" + curveCodes[curve];
@@ -60,3 +73,5 @@ function sentronBreakerCatalog(family: "5SL4" | "5SL6", icnKa: number, diagrams:
 
 export const siemens5sl4Catalog = sentronBreakerCatalog("5SL4", 10, terminalDiagrams);
 export const siemens5sl6Catalog = sentronBreakerCatalog("5SL6", 6, catalogue);
+
+export const siemens5sl3Catalog = sentronBreakerCatalog("5SL3", 4.5, catalogue);

@@ -1,6 +1,6 @@
 import { siemens5sp4Catalog } from "./siemens5sp4Catalog";
 import { siemens5sy4Catalog, siemens5sy6Catalog, siemens5sy7Catalog, siemens5sy8Catalog, siemens5sy5Catalog } from "./siemens5syCatalog";
-import { siemens5sl4Catalog, siemens5sl6Catalog } from "./siemens5slCatalog";
+import { siemens5sl4Catalog, siemens5sl6Catalog, siemens5sl3Catalog } from "./siemens5slCatalog";
 import { eatonFaz6Catalog } from "./eatonFaz6Catalog";
 import { eatonFaztCatalog } from "./eatonFaztCatalog";
 import { eatonFazCatalog, eatonFazNaCatalog, eatonFazNaDcCatalog, eatonFazRtDcCatalog, eatonFazNeutralCatalog } from "./eatonFazCatalog";
@@ -51,6 +51,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...eatonFaz6Catalog,
   ...siemens5sl4Catalog,
   ...siemens5sl6Catalog,
+  ...siemens5sl3Catalog,
   ...siemens5sy4Catalog,
   ...siemens5sy6Catalog,
   ...siemens5sy7Catalog,
