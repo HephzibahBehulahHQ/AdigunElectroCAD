@@ -1108,3 +1108,14 @@ it("shows the Siemens 5SY5 alternating polarity and DC series voltage", () => {
   expect(part("5sy5463-7")?.propertiesSchema.dcVoltageRating).toBe("880 VDC with poles in series");
   expect(part("5sy5463-7")?.terminals.map(terminal => terminal.label)).toEqual(["1 (−)", "2 (+)", "3 (+)", "4 (−)", "5 (−)", "6 (+)", "7 (+)", "8 (−)"]);
 });
+
+
+it("maps Siemens 5SP4 high-current codes and omits 125 A D-curve combinations", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SP4");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(32);
+  expect(part("5sp4191-8")?.propertiesSchema).toMatchObject({ ratedCurrentA: 100, curve: "D", icnKa: 10 });
+  expect(part("5sp4292-7")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4"]);
+  expect(part("5sp4492-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "C" });
+  expect(part("5sp4492-8")).toBeUndefined();
+});
