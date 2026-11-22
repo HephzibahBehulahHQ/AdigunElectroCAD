@@ -124,6 +124,7 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
     if (terminalId === "13" || terminalId === "21") return { x: -47, y: 0 };
     if (terminalId === "14" || terminalId === "22") return { x: 47, y: 0 };
   }
+  if (modelId === "sensor-current-transformer" && terminalId === "signal") return { x: 47, y: 0 };
   if (modelId === "catalog-panel-meter") {
     if (terminalId === "supply") return { x: -47, y: -14 };
     if (terminalId === "common") return { x: -47, y: 14 };

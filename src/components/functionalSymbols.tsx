@@ -269,7 +269,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "sensor-vibration") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 20} L ${x - 13} ${cy - 12} L ${x - 3} ${cy + 12} L ${x + 7} ${cy - 12} L ${x + 17} ${cy + 12} L ${x + 25} ${cy}`} /></g>;
   if (symbolId === "sensor-encoder") return <g className={mark}><circle cx={x} cy={cy} r="14" />{[0, 90, 180, 270].map((angle) => <path key={angle} d={`M ${x} ${cy - 14} V ${cy - 8}`} transform={`rotate(${angle} ${x} ${cy})`} />)}<circle cx={x} cy={cy} r="3" /></g>;
   if (symbolId === "sensor-load-cell") return <g className={mark}><path d={`M ${x - 25} ${cy - 10} H ${x + 25} M ${x - 16} ${cy + 10} H ${x + 16}`} /><path d={`M ${x - 12} ${cy - 10} L ${x - 6} ${cy + 10} M ${x + 12} ${cy - 10} L ${x + 6} ${cy + 10}`} /></g>;
-  if (symbolId === "sensor-ct") return <g className={mark}><circle cx={x} cy={cy} r="14" /><path d={`M ${x - 28} ${cy} H ${x + 28}`} /><text x={x} y={cy + 5} textAnchor="middle" className={text}>CT</text></g>;
+  if (symbolId === "sensor-ct") return <g className={mark} aria-label="Current transformer with simulated secondary current output"><circle cx={x} cy={cy} r="14" /><path d={`M ${x - 28} ${cy} H ${x + 28} M ${x + 14} ${cy + 7} H ${x + 27} V ${y} H ${x + 47}`} /><text x={x} y={cy + 5} textAnchor="middle" className={text}>CT</text></g>;
   if (symbolId === "signal-adc" || symbolId === "signal-dac") return <g className={mark} aria-label={symbolId === "signal-adc" ? "Analog to digital converter" : "Digital to analog converter"}>
     <rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />
     {["in", "out", "common"].map((terminalId) => {

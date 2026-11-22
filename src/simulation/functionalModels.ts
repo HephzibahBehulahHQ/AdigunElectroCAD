@@ -101,7 +101,12 @@ const models: Record<string, Model> = {
       ? { label: "Load-cell output", value: "ERROR: " + output.error, error: output.error }
       : { label: "Load-cell output", value: Number(output.value).toFixed(3) + " mV" };
   },
-  "sensor-current-transformer": (p) => ({ label: "CT secondary", value: `${currentTransformerSecondaryAmp(number(p, "primaryA"), number(p, "ratedPrimaryA", 100)).toFixed(3)} A` }),
+  "sensor-current-transformer": (p) => {
+    const output = currentTransformerSignal(p);
+    return output.error
+      ? { label: "CT secondary", value: "ERROR: " + output.error, error: output.error }
+      : { label: "CT secondary", value: Number(output.value).toFixed(3) + " A" };
+  },
   "signal-adc": (p) => {
     const converted = adcSignal(p);
     return converted.error
@@ -238,6 +243,19 @@ export function climateContactClosed(modelId: "hvac-thermostat" | "hvac-humidist
     : humidistatOn(number(p, "humidityPercent"), number(p, "setpointPercent"), number(p, "hysteresisPercent"), previous));
 }
 
+function currentTransformerSignal(properties: Properties): FunctionalSignal {
+  const rating = properties.ratedPrimaryA ?? 100;
+  const primary = properties.primaryA ?? 0;
+  if (typeof rating !== "number" || !Number.isFinite(rating) || rating <= 0) {
+    return fault("CT primary rating must be finite and positive.");
+  }
+  if (typeof primary !== "number" || !Number.isFinite(primary) || primary < 0) {
+    return fault("CT primary current must be finite and nonnegative.");
+  }
+  const current = currentTransformerSecondaryAmp(primary, rating);
+  return Number.isFinite(current) ? signal("ampere", current) : fault("CT secondary calculation is outside the numerical range.");
+}
+
 function loadCellSignal(properties: Properties): FunctionalSignal {
   const capacity = properties.capacityN ?? 1000;
   const force = properties.forceN ?? 0;
@@ -344,7 +362,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));
   if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
   if (modelId === "sensor-load-cell") return loadCellSignal(properties);
-  if (modelId === "sensor-current-transformer") return signal("ampere", currentTransformerSecondaryAmp(number(properties, "primaryA"), number(properties, "ratedPrimaryA", 100)));
+  if (modelId === "sensor-current-transformer" && terminalId === "signal") return currentTransformerSignal(properties);
   if (modelId === "signal-adc") return adcSignal(properties);
   if (modelId === "signal-dac") return signal("milliamp", dacMilliamp(number(properties, "raw")));
   if (modelId === "signal-resistance-transmitter") return resistanceTransmitterSignal(properties);
