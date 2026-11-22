@@ -32,9 +32,9 @@ const records = catalog.componentCatalog.map(definition => {
     recordKind: verified ? "manufacturer-part" : orderCode ? "manufacturer-candidate" : id.startsWith("user.") ? "custom-profile" : visible.has(id) ? "engineering-profile" : "legacy-definition",
     manufacturer: manufacturer ?? null, series: series ?? null, orderCode: orderCode ?? null,
     sources: links, references: standardsReferences, symbolFamily: symbolId,
-    terminals, verifiedPhysicalTerminalMap: !!verified, internalTopology: verified ? { nodes: [], branches: [], reason: verified.terminalMap } : null,
+    terminals, verifiedPhysicalTerminalMap: !!verified, internalTopology: verified?.topology ?? (verified ? { nodes: [], branches: [], reason: verified.terminalMap } : null), sourceRevision: verified?.documentRevision ?? null,
     model: simulationModelId, support: simulationSupport, simulationNotes: documentation, properties: propertiesSchema,
-    status: verified ? "source-verified mechanical CAD part" : orderCode ? "source-referenced; full acceptance pending" : "engineering profile; no manufacturer order code",
+    status: verified ? (verified.terminalMap === "none-mechanical" ? "source-verified mechanical CAD part" : "source-verified physical terminal map") : orderCode ? "source-referenced; full acceptance pending" : "engineering profile; no manufacturer order code",
   };
 });
 if (new Set(records.map(({ id }) => id)).size !== records.length) throw new Error("Duplicate component definition IDs");
@@ -52,7 +52,8 @@ const summary = {
   simulationModels: new Set(records.filter(record => record.model !== "none").map(record => record.model)).size,
   manufacturerCandidateDefinitions: records.filter(record => record.recordKind === "manufacturer-candidate").length,
   distinctCandidateOrderCodes: new Set(records.filter(record => record.recordKind === "manufacturer-candidate").map(record => record.manufacturer + ":" + record.orderCode)).size,
-  sourceVerifiedMechanicalParts: records.filter(record => record.recordKind === "manufacturer-part").length,
+  sourceVerifiedManufacturerParts: verifiedParts.length,
+  sourceVerifiedMechanicalParts: verifiedParts.filter(record => record.support === "symbol-only").length,
   verifiedPhysicalTerminalMaps: records.filter(record => record.verifiedPhysicalTerminalMap).length,
   customProfiles: records.filter(record => record.recordKind === "custom-profile").length,
   nonSelectableDefinitions: records.filter(record => !record.visible).length,

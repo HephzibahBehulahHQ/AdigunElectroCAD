@@ -1,3 +1,4 @@
+import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 
 const phoenixRails = [
@@ -8,6 +9,7 @@ const phoenixRails = [
 ] as const;
 
 export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
+  ...hbkLoadCellCatalog,
   ...phoenixRails.map(({ orderCode, depthMm, perforated, slug }): ElectricalComponentDefinition => {
     const sourceUrl = "https://www.phoenixcontact.com/en-pc/products/" + slug;
     return {
