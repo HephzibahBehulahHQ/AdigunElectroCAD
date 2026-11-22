@@ -1431,6 +1431,7 @@ export function App() {
       setSelectedWireId(wire.id);
       setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
     }
+    if (!continueBranch || reconnectingWire) setWireMode(false);
     setWireStart(continueBranch && !reconnectingWire ? wireStart : null);
     setWireBends([]);
     setWireBranchStart(continueBranch && !reconnectingWire ? wireBranchStart : null);
