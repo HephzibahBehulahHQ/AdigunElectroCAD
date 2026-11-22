@@ -1,3 +1,4 @@
+import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
 import { DraftingLayerFields } from "../components/DraftingLayerFields";
@@ -2139,11 +2140,6 @@ function TerminalLabelField({ instance, terminalId, defaultLabel, onChange }: { 
   const [draft, setDraft] = useState(current);
   useEffect(() => setDraft(current), [current]);
   return <label className="terminal-label-field">{terminalId}<input aria-label={`Terminal display label ${terminalId}`} maxLength={8} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => { onChange(terminalId, draft); if (!draft.trim()) setDraft(current); }} /></label>;
-}
-
-function displayTerminalLabel(properties: ComponentInstance["properties"], index: number, fallback: string) {
-  const label = properties[`terminalLabel${index + 1}`];
-  return typeof label === "string" && label.trim() ? label.slice(0, 8) : fallback;
 }
 
 function CustomComponentData({ instance, onAdd, onRename, onChange, onRemove }: { instance: ComponentInstance; onAdd: (name: string, value: string) => boolean; onRename: (previousName: string, name: string) => boolean; onChange: (name: string, value: string) => void; onRemove: (name: string) => void }) {
