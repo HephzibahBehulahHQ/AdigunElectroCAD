@@ -28,7 +28,7 @@ describe("functional component catalog", () => {
     expect(markup).toContain("<rect");
   });
   it("contains only executable requested component definitions", () => {
-    expect(functionalCatalog.length).toBe(68);
+    expect(functionalCatalog.length).toBe(69);
     expect(Object.fromEntries(Array.from(new Set(functionalCatalog.map((definition) => definition.category))).map((category) => [category, functionalCatalog.filter((definition) => definition.category === category).length]))).toMatchObject({ "Logic & Control": 20, "Advanced Sensors & Instrumentation": 11, "Pneumatics & Hydraulics": 9, HVAC: 6, "Solar & Renewable Energy": 5, "Safety & Monitoring Devices": 6, "Distribution & Panel Hardware": 7, "Wiring & Cables": 4 });
     for (const definition of functionalCatalog) {
       expect(definition.simulationSupport).not.toBe("symbol-only");
