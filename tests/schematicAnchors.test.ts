@@ -1046,3 +1046,13 @@ it("maps SENTRON 5SL4 fractional and switched-neutral order codes to the correct
   expect(part("5sl4515-8")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "N", "N"]);
   expect(part("5sl4663-6")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
 });
+
+
+it("preserves the Siemens 5SL6 B-curve ordering exceptions and neutral terminals", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SL6");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(170);
+  expect(part("5sl6102-6")?.propertiesSchema).toMatchObject({ ratedCurrentA: 2, curve: "B", icnKa: 6 });
+  expect(part("5sl6202-6")).toBeUndefined();
+  expect(part("5sl6614-7")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+});
