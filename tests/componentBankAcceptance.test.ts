@@ -23,8 +23,8 @@ it.each(componentLibraryCatalog)("places, transforms, wires and reloads $id", (d
   if (!position) throw new Error(`No initial placement for ${definition.id}`);
   const placed = place(definition, document, "device", position);
   document.components.push(placed);
-  let wired: CircuitDocument | undefined;
-  for (const peerDefinition of componentLibraryCatalog) {
+  let wired: CircuitDocument | undefined = definition.terminals.length === 0 ? document : undefined;
+  for (const peerDefinition of definition.terminals.length ? componentLibraryCatalog : []) {
     const peer = place(peerDefinition, document, "peer", { x: 800, y: 500 });
     const candidate = { ...document, components: [placed, peer] };
     for (const terminal of definition.terminals) {
@@ -59,6 +59,7 @@ it.each(componentLibraryCatalog)("places, transforms, wires and reloads $id", (d
   expect(validateCircuit(restored, catalogById)).toEqual([]);
   expect(restored.wires.map(({ from, to }) => ({ from, to }))).toEqual(wired.wires.map(({ from, to }) => ({ from, to })));
   expect(terminalAnchors(restored).filter(({ endpoint }) => endpoint.componentId === placed.id).map(({ endpoint }) => endpoint.terminalId)).toEqual(definition.terminals.map(({ id }) => id));
+  if (!definition.terminals.length) expect(executeCircuitModels(restored, catalogById)).toEqual([]);
   if (definition.simulationSupport !== "symbol-only") {
     expect(executeCircuitModels(document, catalogById).find(({ componentId }) => componentId === placed.id)?.output).toMatchObject({ label: expect.any(String), value: expect.any(String) });
   }

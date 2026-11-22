@@ -21,6 +21,7 @@ export interface ElectricalComponentDefinition {
   simulationSupport: SimulationSupport;
   documentation: string;
   standardsReferences: string[];
+  manufacturerRecord?: { manufacturer: string; series: string; orderCode: string; sourceUrl: string; terminalMap: "none-mechanical" };
 }
 
 export type DraftingLineType = "solid" | "dashed" | "dotted";

@@ -1,3 +1,4 @@
+import { physicalComponentCatalog } from "./physicalComponentCatalog";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 import { functionalCatalog } from "./functionalCatalog";
 import { modeledCatalog } from "./modeledCatalog";
@@ -110,7 +111,8 @@ export const genericThreePhaseMotor: ElectricalComponentDefinition = {
 
 export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
   ...dolCatalog,
-  ...functionalCatalog,
+  ...functionalCatalog.filter(({ id }) => !["panel.din-rail", "cable.tray", "sensor.thermocouple"].includes(id)),
+  ...physicalComponentCatalog,
   ...genericComponentProfiles,
   genericThreePhaseMotor,
   ...modeledCatalog.filter((definition) => sourceBackedCatalogIds.has(definition.id)),
@@ -120,6 +122,6 @@ export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
 ];
 export const componentLibraryById = new Map(componentLibraryCatalog.map((definition) => [definition.id, definition]));
 /** All current and legacy definitions remain resolvable when loading existing projects. */
-export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor, ...genericComponentProfiles, genericThreePhaseMotor];
+export const componentCatalog: ElectricalComponentDefinition[] = [...dolCatalog, ...functionalCatalog, ...physicalComponentCatalog, ...modeledCatalog, ...windingCatalog, ...userSymbolCatalog, interlockedContactor, ...genericComponentProfiles, genericThreePhaseMotor];
 export const catalogById = new Map(componentCatalog.map((definition) => [definition.id, definition]));
 

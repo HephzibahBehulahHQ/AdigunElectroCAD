@@ -2,6 +2,8 @@
 
 Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 
+[Component inventory](docs/component-inventory.json) distinguishes selectable profiles, legacy definitions, and individually sourced manufacturer records.
+
 ## Current verified increment
 
 - Typed IEC-oriented DOL component definitions with terminals.

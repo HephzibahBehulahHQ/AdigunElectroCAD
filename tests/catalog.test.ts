@@ -153,6 +153,12 @@ describe("IEC-oriented component catalog", () => {
   it("provides terminal and standards metadata for every entry", () => {
     for (const definition of componentCatalog) {
       expect(definition.referencePrefix).not.toBe("");
+      if (definition.simulationModelId === "none") {
+        expect(definition.terminals).toEqual([]);
+        expect(definition.simulationSupport).toBe("symbol-only");
+        expect(evaluateFunctionalModel(definition.simulationModelId, definition.propertiesSchema)).toBeUndefined();
+        continue;
+      }
       expect(definition.terminals.length).toBeGreaterThan(0);
       expect(new Set(definition.terminals.map((terminal) => terminal.id)).size).toBe(definition.terminals.length);
       if (definition.simulationSupport === "symbol-only") {
