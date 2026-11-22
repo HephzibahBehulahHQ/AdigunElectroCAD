@@ -1,3 +1,4 @@
+import { createPackagingBatchCounterProject } from "./packagingBatchCounterProject";
 import { createReservoirTransferPermitProject } from "./reservoirTransferPermitProject";
 import { createDuplexPumpAlternatorProject } from "./duplexPumpAlternatorProject";
 import { createBlendRatioPermitProject } from "./blendRatioPermitProject";
@@ -142,6 +143,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
   createReservoirTransferPermitProject(),
+  createPackagingBatchCounterProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
