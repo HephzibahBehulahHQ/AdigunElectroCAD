@@ -282,7 +282,15 @@ function loadCellSignal(properties: Properties): FunctionalSignal {
   if (typeof force !== "number" || !Number.isFinite(force) || force < 0 || force > capacity) {
     return fault("Load-cell force is outside the configured measuring range.");
   }
-  return signal("millivolt", loadCellMillivolt(force, capacity));
+  const sensitivity = properties.sensitivityMvPerV ?? 2;
+  const excitation = properties.excitationV ?? 5;
+  if (typeof excitation !== "number" || !Number.isFinite(excitation) || excitation < .5 || excitation > 12) {
+    return fault("Load-cell excitation must be between 0.5 and 12 V.");
+  }
+  if (typeof sensitivity !== "number" || !Number.isFinite(sensitivity) || sensitivity <= 0) {
+    return fault("Load-cell sensitivity must be finite and positive.");
+  }
+  return signal("millivolt", loadCellMillivolt(force, capacity, sensitivity, excitation));
 }
 
 function climateContactSignal(modelId: "hvac-thermostat" | "hvac-humidistat", properties: Properties): FunctionalSignal {

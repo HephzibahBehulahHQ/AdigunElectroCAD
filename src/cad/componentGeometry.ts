@@ -1,3 +1,4 @@
+import { catalogById } from "../catalog/dolCatalog";
 import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
@@ -212,6 +213,9 @@ export function instanceFootprint(component: ComponentInstance) {
   for (const graphic of component.customSymbolGraphics ?? []) {
     const margin = Math.max(graphic.strokeWidth, component.lineWeight ?? 0) * size / 2 + 4;
     for (const point of graphic.points ?? [{ x: graphic.x1, y: graphic.y1 }, { x: graphic.x2, y: graphic.y2 }]) include(point, margin);
+  }
+  for (const terminal of catalogById.get(definitionId)?.terminals ?? []) {
+    if (terminal.position) include(terminal.position, 8);
   }
   for (const point of Object.values(component.customTerminalOffsets ?? {})) include(point, 8);
   return bounds;

@@ -1,11 +1,13 @@
 export type SimulationSupport = "symbol-only" | "connectivity" | "control-logic" | "numerical" | "validated";
-export type TerminalKind = "power" | "control" | "protective-earth";
+export type TerminalKind = "power" | "control" | "protective-earth" | "shield";
 
 export interface TerminalDefinition {
   id: string;
   label: string;
   kind: TerminalKind;
   direction: "input" | "output" | "bidirectional";
+  leadColor?: string;
+  position?: { x: number; y: number };
 }
 
 export interface ElectricalComponentDefinition {
@@ -21,7 +23,7 @@ export interface ElectricalComponentDefinition {
   simulationSupport: SimulationSupport;
   documentation: string;
   standardsReferences: string[];
-  manufacturerRecord?: { manufacturer: string; series: string; orderCode: string; sourceUrl: string; terminalMap: "none-mechanical" };
+  manufacturerRecord?: { manufacturer: string; series: string; orderCode: string; sourceUrl: string; terminalMap: "none-mechanical" | "verified"; documentRevision?: string; topology?: Record<string, unknown> };
 }
 
 export type DraftingLineType = "solid" | "dashed" | "dotted";

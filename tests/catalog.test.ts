@@ -200,3 +200,15 @@ describe("source-backed Siemens SIMOTICS motor", () => {
   });
 });
 
+
+it("verifies the HBK Z6F C3 family lead maps and confines the ideal result to SIG+", () => {
+  const parts = componentLibraryCatalog.filter(part => part.manufacturerRecord?.manufacturer === "HBK");
+  expect(parts).toHaveLength(8);
+  expect(new Set(parts.map(part => part.manufacturerRecord?.orderCode)).size).toBe(8);
+  for (const part of parts) {
+    expect(part.terminals.map(({ label }) => label)).toEqual(["EXC+", "EXC−", "SEN+", "SEN−", "SIG+", "SIG−", "SH"]);
+    expect(part.terminals.at(-1)?.kind).toBe("shield");
+    expect(functionalOutputTerminals(part).map(({ id }) => id)).toEqual(["signal"]);
+    expect(evaluateFunctionalModel(part.simulationModelId, { ...part.propertiesSchema, forceN: Number(part.propertiesSchema.capacityN) / 2, excitationV: 8 })?.value).toContain("8.00");
+  }
+});

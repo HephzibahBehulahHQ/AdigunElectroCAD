@@ -17,6 +17,7 @@ export function panelMeterSignalUnits(kind: string | number | boolean | undefine
 export function functionalOutputTerminal(definition: ElectricalComponentDefinition): TerminalDefinition | undefined {
   const model = definition.simulationModelId;
   if (model === "catalog-selector-switch") return definition.terminals.find((terminal) => terminal.id === "14" || terminal.id === "22");
+  if (model === "sensor-load-cell") return definition.terminals.find(terminal => terminal.id === "signal");
   const outputId = model === "catalog-circuit-breaker" ? "aux-closed" : model === "catalog-on-delay-timer" ? "18" : model === "catalog-interface-relay" || model === "catalog-safety-relay" ? "14" : model === "catalog-feed-through-terminal" ? "2" : model === "thermal-overload-dol-v1" ? "aux-96" : undefined;
   return definition.terminals.find((terminal) => outputId ? terminal.id === outputId : terminal.direction === "output");
 }

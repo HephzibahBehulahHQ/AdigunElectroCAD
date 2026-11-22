@@ -37,7 +37,7 @@ export function terminalAnchors(document: CircuitDocument): TerminalAnchor[] {
       const power = powerTerminalOffset(definition.simulationModelId, terminal.id, Number(component.properties.poles) || 3);
       const control = power ?? controlTerminalOffset(definition.simulationModelId, terminal.id);
       const size = component.size ?? 1;
-      const terminalOffset = component.customTerminalOffsets?.[terminal.id] ?? control ?? { x, y };
+      const terminalOffset = component.customTerminalOffsets?.[terminal.id] ?? terminal.position ?? control ?? { x, y };
       const offset = rotateOffset(terminalOffset.x * size, terminalOffset.y * size, component.rotation);
       anchors.push({ ...anchor(component.id, terminal.id, component.x + offset.x, component.y + offset.y), power: terminal.kind === "power", vertical: Boolean(power && terminal.kind === "power" && component.rotation % 180 === 0) });
     });
