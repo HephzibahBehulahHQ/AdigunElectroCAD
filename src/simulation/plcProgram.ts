@@ -5,6 +5,18 @@ export type PlcNumericOperation = typeof plcNumericOperations[number];
 export const isPlcNumericOperation = (value: string): value is PlcNumericOperation => plcNumericOperations.some((operation) => operation === value);
 const validNumber = (value: number) => Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER;
 const registerIndex = (address: string) => /^D[0-7]$/.test(address) ? Number(address.slice(1)) : -1;
+const comparisons = ["GT", "GE", "LT", "LE", "EQ", "NE"] as const;
+export type PlcComparison = typeof comparisons[number];
+const isComparison = (operation: string): operation is PlcComparison => comparisons.some((comparison) => comparison === operation);
+const analogAddress = (operand: string) => operand === "AI0" || operand === "AI1";
+const comparisonError = "Comparisons require AI0, AI1 or D0–D7 and a numeric operand; direct analog thresholds must be integer raw values in 0–27648.";
+
+export function evaluatePlcComparison(operation: PlcComparison, leftOperand: string, rightOperand: string, left: number, right: number): boolean | string {
+  const directRawThreshold = analogAddress(leftOperand) && !analogAddress(rightOperand) && registerIndex(rightOperand) < 0;
+  if ((!analogAddress(leftOperand) && registerIndex(leftOperand) < 0) || !validNumber(left) || !validNumber(right) ||
+      (directRawThreshold && (!Number.isInteger(right) || right < 0 || right > 27648))) return comparisonError;
+  return operation === "GT" ? left > right : operation === "GE" ? left >= right : operation === "LT" ? left < right : operation === "LE" ? left <= right : operation === "EQ" ? left === right : left !== right;
+}
 
 export function readPlcNumericOperand(operand: string, registers: readonly number[], analogInput0: number, analogInput1: number): number {
   const index = registerIndex(operand);
@@ -81,12 +93,11 @@ export function scanPlcProgram(program: string, inputA: boolean, inputB: boolean
       usesRegisters = true;
       continue;
     }
-    if (["GT", "GE", "LT", "LE", "EQ", "NE"].includes(operation)) {
-      const left = readNumber(address);
-      const right = readNumber(parts[2] ?? "");
-      const directRawThreshold = (address === "AI0" || address === "AI1") && parts[2] !== "AI0" && parts[2] !== "AI1" && registerIndex(parts[2] ?? "") < 0;
-      if (parts.length !== 3 || (address !== "AI0" && address !== "AI1" && registerIndex(address) < 0) || !validNumber(left) || !validNumber(right) || (directRawThreshold && (!Number.isInteger(right) || right < 0 || right > 27648))) return fail("Comparisons require AI0, AI1 or D0–D7 and a numeric operand; direct analog thresholds must be integer raw values in 0–27648.");
-      accumulator = operation === "GT" ? left > right : operation === "GE" ? left >= right : operation === "LT" ? left < right : operation === "LE" ? left <= right : operation === "EQ" ? left === right : left !== right;
+    if (isComparison(operation)) {
+      if (parts.length !== 3) return fail(comparisonError);
+      const result = evaluatePlcComparison(operation, address, parts[2], readNumber(address), readNumber(parts[2]));
+      if (typeof result === "string") return fail(result);
+      accumulator = result;
       continue;
     }
     if (operation === "TON") {

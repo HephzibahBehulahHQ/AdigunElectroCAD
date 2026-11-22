@@ -1,9 +1,9 @@
-import { calculatePlcNumber, isPlcNumericOperation, readPlcNumericOperand, type PlcNumericOperation } from "./plcProgram";
+import { calculatePlcNumber, evaluatePlcComparison, isPlcNumericOperation, readPlcNumericOperand, type PlcComparison, type PlcNumericOperation } from "./plcProgram";
 
 export type LadderAddress = "I0" | "I1" | "Q0" | "Q1" | `T${0 | 1 | 2 | 3}` | `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type LadderMemoryAddress = `M${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export interface LadderBooleanContact { address: LadderAddress; inverted: boolean; edge?: "positive" | "negative"; }
-export interface LadderComparisonContact { comparison: "GT" | "GE" | "LT" | "LE" | "EQ" | "NE"; left: "AI0" | "AI1" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
+export interface LadderComparisonContact { comparison: PlcComparison; left: "AI0" | "AI1" | `D${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`; right: string; }
 export type LadderContact = LadderBooleanContact | LadderComparisonContact;
 export type LadderArithmetic = { type: "ARITHMETIC"; operation: PlcNumericOperation; left: string; right: string; destination: string };
 export type LadderCoil = "OUT" | "SET" | "RESET" | { type: "OUTPUT"; address: "Q0" | "Q1"; operation: "OUT" | "SET" | "RESET" } | { type: "TON"; timer: `T${0 | 1 | 2 | 3}`; presetSeconds: number } | { type: "MEMORY"; address: LadderMemoryAddress; operation: "OUT" | "SET" | "RESET" } | LadderArithmetic;
@@ -54,12 +54,13 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
   const contactEnergized: boolean[][][] = [];
   const registers = Array.from({ length: 8 }, (_, index) => inputs.registers[index] ?? 0);
   const read = (operand: string) => readPlcNumericOperand(operand, registers, inputs.analogInput0, inputs.analogInput1 ?? 0);
+  const fail = (error: string): LadderPreview => ({ rungEnergized: [], contactEnergized: [], output: false, output1: false, memory: Array.from({ length: 8 }, (_, index) => inputs.memory?.[index] === true), error });
   for (const rung of rungs) {
     if (typeof rung.coil === "object" && rung.coil.type === "ARITHMETIC") {
       const { operation, left, right, destination } = rung.coil;
       const result = calculatePlcNumber(operation, read(left), operation === "MOV" ? 0 : read(right));
       if (typeof result === "string") {
-        return { rungEnergized: [], contactEnergized: [], output: false, output1: false, memory: Array.from({ length: 8 }, (_, index) => inputs.memory?.[index] === true), error: result };
+        return fail(result);
       }
       registers[Number(destination.slice(1))] = result;
       rungEnergized.push(true);
@@ -73,16 +74,17 @@ export function previewLadder(rungs: readonly LadderRung[], inputs: LadderPrevie
       const operation = rung.stageOperators?.[stageIndex] ?? "OR";
       const conditions = contacts.map((contact) => {
         if ("comparison" in contact) {
-          const left = read(contact.left), right = read(contact.right);
-          return contact.comparison === "GT" ? left > right : contact.comparison === "GE" ? left >= right : contact.comparison === "LT" ? left < right : contact.comparison === "LE" ? left <= right : contact.comparison === "EQ" ? left === right : left !== right;
+          return evaluatePlcComparison(contact.comparison, contact.left, contact.right, read(contact.left), read(contact.right));
         }
         const value = contact.address === "I0" ? inputs.input0 : contact.address === "I1" ? inputs.input1 : contact.address === "Q0" ? output : contact.address === "Q1" ? output1 : contact.address.startsWith("T") ? timers[contact.address as `T${0 | 1 | 2 | 3}`]?.done === true : memory[Number(contact.address.slice(1))];
         if (contact.edge === "positive") return value && !(contact.address === "I0" ? inputs.previousInput0 : inputs.previousInput1);
         if (contact.edge === "negative") return !value && (contact.address === "I0" ? inputs.previousInput0 : inputs.previousInput1);
         return contact.inverted ? !value : value;
       });
+      const fault = conditions.find((condition) => typeof condition === "string");
+      if (typeof fault === "string") return fail(fault);
       const stageCondition = operation === "XOR" ? conditions.filter(Boolean).length % 2 === 1 : conditions.some(Boolean);
-      poweredStages.push(conditions.map((condition) => precedingStages && condition && (operation !== "XOR" || stageCondition)));
+      poweredStages.push(conditions.map((condition) => precedingStages && condition === true && (operation !== "XOR" || stageCondition)));
       precedingStages = precedingStages && stageCondition;
     }
     rungEnergized.push(precedingStages);
