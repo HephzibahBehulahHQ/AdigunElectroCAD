@@ -988,3 +988,14 @@ it("preserves the Eaton FAZ-RT-DC per-pole voltage exception and polarity", () =
   expect(twoPole?.propertiesSchema).toMatchObject({ voltagePerPoleV: 250, breakingCapacityKa: 10 });
   expect(twoPole?.terminals.map(terminal => terminal.label)).toEqual(["1 (+)", "2 (−)", "3 (−)", "4 (+)"]);
 });
+
+
+it("preserves Eaton FAZ K, Z and S curve pole and order-code limits", () => {
+  const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "eaton." + code);
+  expect(part("faz-k1.6-1")?.manufacturerRecord?.orderCode).toBe("FAZ-K1.6/1");
+  expect(part("faz-k63-4")?.terminals).toHaveLength(8);
+  expect(part("faz-z63-2")?.propertiesSchema).toMatchObject({ ratedCurrentA: 63, curve: "Z" });
+  expect(part("faz-z63-4")).toBeUndefined();
+  expect(part("faz-s40-2")?.terminals).toHaveLength(4);
+  expect(part("faz-s40-3")).toBeUndefined();
+});
