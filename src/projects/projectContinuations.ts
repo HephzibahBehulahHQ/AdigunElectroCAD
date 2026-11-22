@@ -4,7 +4,7 @@ import { canConnectTerminals } from "../electrical/topology";
 import { terminalGridReference } from "../cad/terminalAnchors";
 
 /** Validate sheet membership, real local terminals, and the retained source of every cross-sheet net. */
-export function validateProjectContinuations(project: ElectricalProject): string[] {
+export function validateProjectContinuations(project: Pick<ElectricalProject, "sheets" | "continuations">): string[] {
   const issues: string[] = [];
   const sheetIds = new Set(project.sheets.map((sheet) => sheet.id));
   const seenIds = new Set<string>();

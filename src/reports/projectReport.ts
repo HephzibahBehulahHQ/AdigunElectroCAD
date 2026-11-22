@@ -1,4 +1,6 @@
 import type { ElectricalComponentDefinition, ElectricalProject, CircuitDocument, ProjectContinuation, ProjectContinuationPoint } from "../types/electrical";
+import { validateCircuit, type TopologyIssue } from "../electrical/topology";
+import { validateProjectContinuations } from "../projects/projectContinuations";
 
 export interface BomLine {
   definitionId: string;
@@ -35,9 +37,10 @@ export interface ProjectReport {
   bom: BomLine[];
   wires: WireLine[];
   terminals: TerminalLine[];
+  validation: Array<TopologyIssue & { sheet?: string }>;
 }
 
-export type ReportSection = "bom" | "wires" | "terminals" | "cables";
+export type ReportSection = "bom" | "wires" | "terminals" | "cables" | "validation";
 
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
@@ -71,6 +74,7 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
     bom: [...bomByDefinition.values()].sort((left, right) => left.category.localeCompare(right.category) || left.component.localeCompare(right.component)),
     wires: document.wires.map((wire) => ({ id: wire.id, netName: wire.netName ?? "—", from: endpointLabel(wire.from.componentId, wire.from.terminalId), to: endpointLabel(wire.to.componentId, wire.to.terminalId) })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
+    validation: validateCircuit(document, definitions),
   };
 }
 
@@ -84,7 +88,21 @@ export function reportCsv(report: ProjectReport, section: ReportSection): string
     const { headers, rows } = cableScheduleTable(report);
     return toCsv(headers, rows);
   }
+  if (section === "validation") {
+    const { headers, rows } = electricalValidationTable(report);
+    return toCsv(headers, rows);
+  }
   return report.terminals.some((line) => line.sheet) ? toCsv(["Sheet", "Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction])) : toCsv(["Reference", "Terminal", "Kind", "Direction"], report.terminals.map((line) => [line.reference, line.terminal, line.kind, line.direction]));
+}
+
+export function electricalValidationTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
+  const columns = ["Severity", "Code", "Finding"];
+  return {
+    headers: report.projectWide ? ["Scope", ...columns] : columns,
+    rows: report.validation.map(({ sheet, severity, code, message }) => report.projectWide
+      ? [sheet ?? "Cross-sheet continuations", severity, code, message]
+      : [severity, code, message]),
+  };
 }
 
 export function cableScheduleTable(report: ProjectReport): { headers: string[]; rows: string[][] } {
@@ -128,10 +146,12 @@ function toCsv(headers: string[], rows: string[][]): string {
   return [headers, ...rows].map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(",")).join("\n");
 }
 
-export function createProjectWideReport({ sheets, continuations }: Pick<ElectricalProject, "sheets" | "continuations">, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
+export function createProjectWideReport(project: Pick<ElectricalProject, "sheets" | "continuations">, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
+  const { sheets, continuations } = project;
   const bomByDefinition = new Map<string, BomLine>();
   const wires: WireLine[] = [];
   const terminals: TerminalLine[] = [];
+  const validation: ProjectReport["validation"] = [];
   const sheetLocations = new Map(sheets.map((sheet, index) => [sheet.id, {
     name: `${sheet.name} · Sheet ${index + 1}`,
     components: new Map(sheet.document.components.map((component) => [component.id, component])),
@@ -147,6 +167,7 @@ export function createProjectWideReport({ sheets, continuations }: Pick<Electric
     }
     wires.push(...report.wires.map((wire) => ({ ...wire, sheet: name })));
     terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: name })));
+    validation.push(...report.validation.map((issue) => ({ ...issue, sheet: name })));
   }
 
   const describePoint = ({ sheetId, endpoint, gridReference }: ProjectContinuationPoint) => {
@@ -183,5 +204,6 @@ export function createProjectWideReport({ sheets, continuations }: Pick<Electric
     bom: [...bomByDefinition.values()].sort((left, right) => left.category.localeCompare(right.category) || left.component.localeCompare(right.component)),
     wires,
     terminals,
+    validation: [...validation, ...validateProjectContinuations(project).map((message): TopologyIssue => ({ severity: "error", code: "invalid-project-continuation", message }))],
   };
 }
