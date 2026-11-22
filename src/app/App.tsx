@@ -1,3 +1,4 @@
+import { automaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
@@ -1526,8 +1527,10 @@ export function App() {
     const from = anchors.find((anchor) => anchor.endpoint.componentId === selectedWire.from.componentId && anchor.endpoint.terminalId === selectedWire.from.terminalId);
     const to = anchors.find((anchor) => anchor.endpoint.componentId === selectedWire.to.componentId && anchor.endpoint.terminalId === selectedWire.to.terminalId);
     if (!from || !to) { setNotice("Could not find the selected wire's catalog terminal positions."); return; }
-    const points = appendWireRoutePoint(from, to, selectedWire.points, from.vertical ?? false, to.vertical ?? false);
-    if (points.length === selectedWire.points.length) { setNotice("This route already has a point at the available position."); return; }
+    const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map((layer) => layer.id));
+    const currentPoints = selectedWire.points.length ? selectedWire.points : automaticWireBends(from, to, wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? ""))));
+    const points = appendWireRoutePoint(from, to, currentPoints, from.vertical ?? false, to.vertical ?? false);
+    if (points.length === currentPoints.length) { setNotice("This route already has a point at the available position."); return; }
     updateWireRoute(selectedWire.id, points);
     setWireRouteEditId(selectedWire.id);
     setNotice("Route point added. Drag its handle to edit the wire path.");

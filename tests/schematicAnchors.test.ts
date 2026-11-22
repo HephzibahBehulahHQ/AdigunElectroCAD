@@ -827,3 +827,31 @@ it.each([
   };
   expect(new Set([path(document), path(movedFrom), path(movedBoth)]).size).toBe(3);
 });
+
+it("reroutes automatic wires around unrelated symbols and preserves hand-routed bends", () => {
+  const project = createStarterProject();
+  const drawing = addFreeSchematicSheet(project).sheets.at(-1)!.document;
+  const document = {
+    ...drawing,
+    components: [
+      { id: "start", definitionId: "logic.no-contact", reference: "S1", x: 170, y: 300, rotation: 0 as const, properties: { input: true } },
+      { id: "obstacle", definitionId: "logic.no-contact", reference: "S2", x: 480, y: 300, rotation: 0 as const, properties: { input: false } },
+      { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 790, y: 300, rotation: 0 as const, properties: { input: false } },
+    ],
+    wires: [{ id: "control", netName: "CONTROL", from: { componentId: "start", terminalId: "out" }, to: { componentId: "coil", terminalId: "in" }, points: [] }],
+  };
+  const render = (input: typeof document) => renderToStaticMarkup(createElement(Schematic, {
+    document: input, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  const wire = document.wires[0];
+  const anchors = terminalAnchors(document);
+  const from = anchors.find(({ endpoint }) => endpoint.componentId === "start" && endpoint.terminalId === "out")!;
+  const to = anchors.find(({ endpoint }) => endpoint.componentId === "coil" && endpoint.terminalId === "in")!;
+  const direct = orthogonalWirePath(from, to);
+  expect(render(document)).not.toContain('d="' + direct + '"');
+  expect(render(moveComponent(document, "obstacle", 0, 180))).toContain('d="' + direct + '"');
+  const points = [{ x: 450, y: 300 }];
+  expect(render({ ...document, wires: [{ ...wire, points }] })).toContain('d="' + orthogonalWirePath(from, to, points, from.vertical, to.vertical) + '"');
+  expect(document.wires[0].points).toEqual([]);
+});
