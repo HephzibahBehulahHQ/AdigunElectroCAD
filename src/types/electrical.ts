@@ -150,6 +150,7 @@ export interface CircuitDocument {
   graphics?: SchematicGraphic[];
   /** Optional named layers shared by wire and component drafting styles. */
   draftingLayers?: DraftingLayer[];
+  useDraftingLayerOrder?: boolean;
   guides?: DrawingGuide[];
   printLayout?: import("../cad/printLayout").PrintLayout;
   drawingGrid?: import("../cad/drawingGrid").DrawingGrid;
