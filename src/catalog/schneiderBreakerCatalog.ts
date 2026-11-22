@@ -1,4 +1,5 @@
-import type { ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
+import { numberedBreakerPoles } from "./numberedBreakerPoles";
+import type { ElectricalComponentDefinition } from "../types/electrical";
 
 const catalogue = "https://download.se.com/files?p_Doc_Ref=CA909006NL&p_File_Ext=.PDF";
 const acti9Catalogue = "https://download.se.com/files?p_Doc_Ref=Acti9_Catalogue_2017&p_File_Ext=.pdf";
@@ -114,14 +115,7 @@ const c120hCurrents = [63, 80, 100, 125] as const;
 const c120Curves = ["B", "C", "D"] as const;
 
 export const schneiderBreakerCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
-  const branches = Array.from({ length: poles }, (_, index) => ["l" + (index + 1) + "-in", "l" + (index + 1) + "-out"]);
-  const terminals = branches.flatMap(([line, load], index): TerminalDefinition[] => {
-    const x = (index - (poles - 1) / 2) * 24;
-    return [
-      { id: line, label: String(index * 2 + 1), kind: "power", direction: "bidirectional", position: { x, y: -27, vertical: true } },
-      { id: load, label: String(index * 2 + 2), kind: "power", direction: "bidirectional", position: { x, y: 27, vertical: true } },
-    ];
-  });
+  const { branches, terminals } = numberedBreakerPoles(poles);
   const internationalParts = orderColumns.flatMap(({ prefix, currents, ...column }) =>
     currents.map(ratedCurrentA => ({
       ...column, ratedCurrentA,
