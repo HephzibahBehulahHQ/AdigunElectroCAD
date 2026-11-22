@@ -9,7 +9,7 @@ import { advanceCylinder, valve52Direction } from "./pneumaticState";
 import { timerParameterError } from "./functionalModels";
 
 const PLC_TRACE_LIMIT = 25;
-type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number; analogInput1?: number; output: boolean; output1?: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
+export type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number | null; analogInput1?: number | null; output: boolean; output1?: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
 
 function appendPlcTrace(properties: Record<string, string | number | boolean>, deltaSeconds: number, entry: Omit<PlcTraceEntry, "scan" | "elapsedSeconds">): string {
   let history: PlcTraceEntry[] = [];
@@ -95,7 +95,7 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
       const previousTimers = Object.fromEntries([0, 1, 2, 3].map((index) => [`T${index}`, { elapsedSeconds: Number(active[`runtimeT${index}Elapsed`] ?? 0), done: active[`runtimeT${index}Done`] === true }])) as PlcTimerStates;
       if (active.runtimeSignalError) {
         const message = String(active.runtimeSignalError);
-        const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: Number(active.analogInput0 ?? 0), analogInput1: Number(active.analogInput1 ?? 0), output: false, output1: false, registers: previousRegisters, status: "inhibited", message });
+        const trace = appendPlcTrace(active, deltaSeconds, { input0: active.inputA === true, input1: active.inputB === true, analogInput0: active.runtimeInvalidAi0 === true ? null : Number(active.analogInput0 ?? 0), analogInput1: active.runtimeInvalidAi1 === true ? null : Number(active.analogInput1 ?? 0), output: false, output1: false, registers: previousRegisters, status: "inhibited", message });
         return { ...component, properties: { ...component.properties, runtimeQ0: false, runtimeQ1: false, runtimeError: message, runtimeScanTrace: trace } };
       }
       const result = scanPlcProgram(component.properties.program, active.inputA === true, active.inputB === true, active.runtimeQ0 === true, Number(active.analogInput0 ?? 0), previousRegisters, [active.runtimeInput0Previous === true, active.runtimeInput1Previous === true], previousTimers, deltaSeconds, previousMemory, active.runtimeQ1 === true, Number(active.analogInput1 ?? 0));

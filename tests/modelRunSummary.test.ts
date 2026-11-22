@@ -65,6 +65,19 @@ it("shows the live PLC watch table and recent scan trace for I/O and retained re
 });
 
 
+it("displays an invalid PLC input in both the watch table and retained trace", () => {
+  const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
+    componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io",
+    output: { label: "I/O state", value: "Q0 OFF", error: "AI0 disconnected" },
+    evaluatedProperties: { program: "GT AI0 0; OUT Q0; GT AI1 0; OUT Q1", runtimeInvalidAi0: true, analogInput0: 999, analogInput1: 13824,
+      runtimeScanTrace: JSON.stringify([{ scan: 1, elapsedSeconds: 0.1, input0: false, input1: false, analogInput0: null, analogInput1: 13824, output: false, registers: Array(8).fill(0), status: "inhibited" }]),
+    },
+  }] }));
+  expect(summary).toContain('<th scope="row">AI0</th><td>INVALID</td>');
+  expect(summary).toContain("INVALID / 13824");
+  expect(summary).not.toContain("999");
+});
+
 it("shows Q1 state in the PLC watch table and retained scan trace", () => {
   const summary = renderToStaticMarkup(createElement(ModelRunSummary, { runs: [{
     componentId: "plc1", reference: "PLC1", modelId: "catalog-plc-digital-io",
