@@ -49,6 +49,15 @@ describe("circuit simulation clock", () => {
       runtime = advanceCircuitClock(setCircuitClimateInput(runtime, catalogById, "sensor", value), catalogById, 0.1);
     };
     expect(coil()).toBe("ON");
+    const invalid = { ...runtime, components: runtime.components.map((component) => component.id === "sensor"
+      ? { ...component, properties: { ...component.properties, [measurement]: -274 } }
+      : component) };
+    const faulted = advanceCircuitClock(invalid, catalogById, 0.1);
+    const outputs = executeCircuitModels(faulted, catalogById);
+    expect(outputs.find(({ componentId }) => componentId === "sensor")?.output.error).toBeTruthy();
+    expect(outputs.find(({ componentId }) => componentId === "coil")?.evaluatedProperties.input).toBe(false);
+    expect(faulted.components[1].properties.runtimeClimateContact).toBe(true);
+    runtime = faulted;
     sample(deadband);
     expect(coil()).toBe("ON");
     sample(release);

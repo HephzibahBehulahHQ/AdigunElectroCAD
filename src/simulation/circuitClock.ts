@@ -6,7 +6,7 @@ import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { PLC_MEMORY_COUNT, PLC_REGISTER_COUNT, scanPlcProgram, type PlcMemoryState, type PlcTimerStates } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
 import { advanceCylinder, valve52Direction } from "./pneumaticState";
-import { climateContactClosed, damperParameterError, timerParameterError } from "./functionalModels";
+import { damperParameterError, evaluateFunctionalSignal, timerParameterError } from "./functionalModels";
 import { damperPosition } from "./industrialDevices";
 
 const PLC_TRACE_LIMIT = 25;
@@ -101,8 +101,9 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
     }
     if ((model === "hvac-thermostat" || model === "hvac-humidistat") && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;
-      if (active.runtimeSignalError) return component;
-      return { ...component, properties: { ...component.properties, runtimeClimateContact: climateContactClosed(model, active) } };
+      const contact = evaluateFunctionalSignal(model, active, "out");
+      if (!contact || contact.error) return component;
+      return { ...component, properties: { ...component.properties, runtimeClimateContact: contact.value === true } };
     }
     if (["contactor-dol-v1", "catalog-motor-starter"].includes(model ?? "")) return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
     if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
