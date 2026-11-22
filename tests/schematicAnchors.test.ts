@@ -6,7 +6,8 @@ import { Schematic } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference, terminalHitRadius } from "../src/cad/terminalAnchors";
 import { componentFootprint, instanceFootprint } from "../src/cad/componentGeometry";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
-import { transformComponent } from "../src/cad/documentOps";
+import { moveComponent, transformComponent } from "../src/cad/documentOps";
+import { orthogonalWirePath } from "../src/cad/wirePath";
 import { transformFromHandle } from "../src/components/ComponentTransformHandles";
 import { parseProjectJson } from "../src/projects/projectSerialization";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
@@ -783,4 +784,30 @@ it("draws damper blade travel from measured position rather than command", () =>
   expect(render(60)).toContain('Damper position 60.0%');
   expect(render(100)).toContain('d="M 80 87 L 120 87"');
   expect(render(NaN)).toContain('Damper position unavailable');
+});
+
+it.each([
+  { route: "automatic", points: [] },
+  { route: "custom", points: [{ x: 400, y: 450 }, { x: 600, y: 450 }] },
+])("keeps a $route wire attached after moving both ends", ({ points }) => {
+  const drawing = createReversingCircuit();
+  const existing = drawing.wires.find(({ from, to }) => from.componentId !== to.componentId)!;
+  const wire = { ...existing, points };
+  const document = { ...drawing, wires: [wire] };
+  const movedFrom = moveComponent(document, wire.from.componentId, 15, 27);
+  const movedBoth = moveComponent(movedFrom, wire.to.componentId, -22, 35);
+  const path = (sheet: typeof document) => {
+    const pins = terminalAnchors(sheet);
+    const from = pins.find(({ endpoint }) => endpoint.componentId === wire.from.componentId && endpoint.terminalId === wire.from.terminalId)!;
+    const to = pins.find(({ endpoint }) => endpoint.componentId === wire.to.componentId && endpoint.terminalId === wire.to.terminalId)!;
+    const expected = orthogonalWirePath(from, to, points, from.vertical, to.vertical);
+    const markup = renderToStaticMarkup(createElement(Schematic, {
+      document: sheet, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+      onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+    }));
+    expect(markup).toContain(`d="${expected}"`);
+    expect(sheet.wires[0]).toEqual(wire);
+    return expected;
+  };
+  expect(new Set([path(document), path(movedFrom), path(movedBoth)]).size).toBe(3);
 });
