@@ -14,7 +14,7 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; requiresWire?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
-  if (modelId === "hvac-damper" && terminalId === "in") return { property: "runtimeDamperOpenCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDamperCommandBound" };
+  if (modelId === "hvac-damper" && terminalId === "in") return { property: "runtimeDamperOpenCommand", acceptedUnits: ["boolean"], boundProperty: "runtimeDamperCommandBound", requiresWire: "requireWiredCommand" };
   if ((modelId === "hvac-thermostat" || modelId === "hvac-humidistat") && terminalId === "in") return { property: "enabled", acceptedUnits: ["boolean"] };
   if (modelId === "pneumatic-valve-5-2" && ["in-a", "in-b"].includes(terminalId)) return { property: terminalId === "in-a" ? "extendCoil" : "retractCoil", acceptedUnits: ["boolean"] };
   if (modelId === "pneumatic-valve-3-2" && terminalId === "in") return { property: "energized", acceptedUnits: ["boolean"] };
@@ -128,11 +128,13 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           const binding = inputBinding(definition.simulationModelId, terminal.id);
           const pairedUnit = binding?.pairedProperty ? inputUnits.get(`${component.id}.${binding.pairedProperty}`) : undefined;
           const unitError = incoming && binding ? !binding.acceptedUnits.includes(incoming.unit) ? `Signal unit ${incoming.unit} is not accepted at ${component.reference}.${terminal.id}.` : pairedUnit && pairedUnit !== incoming.unit ? `Mixed signal units ${pairedUnit}/${incoming.unit} at ${component.reference}.` : undefined : undefined;
-          const missingWire = binding?.requiresWire && activeProperties[binding.requiresWire] === true && !wiredTerminals.has(key);
-          if (binding?.requiresWire && activeProperties[binding.requiresWire] === true && wiredTerminals.has(key)) {
-            requiredSignals.set(key, `Required analog terminal ${component.reference}.${terminal.label} has no driving signal.`);
+          const required = binding?.requiresWire && activeProperties[binding.requiresWire] === true;
+          const wired = wiredTerminals.has(key);
+          const terminalType = binding?.acceptedUnits.includes("boolean") ? "control" : "analog";
+          if (required && wired) {
+            requiredSignals.set(key, `Required ${terminalType} terminal ${component.reference}.${terminal.label} has no driving signal.`);
           }
-          const inputError = missingWire ? `Required analog terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
+          const inputError = required && !wired ? `Required ${terminalType} terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
           if (inputError && binding) {
             if (plcInputErrors) plcInputErrors.add(inputError);
             else if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }

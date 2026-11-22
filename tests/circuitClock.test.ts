@@ -1,12 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { templateFixtures } from "../src/projects/templateLibrary";
+import { createHumidityDamperProject } from "../src/projects/humidityDamperProject";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput, setCircuitClimateInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { validateCircuit } from "../src/electrical/topology";
 import type { CircuitDocument } from "../src/types/electrical";
 
 describe("circuit simulation clock", () => {
+  it("holds damper position and inhibits proof on command loss, then resumes after reconnection", () => {
+    const { document } = createHumidityDamperProject();
+    let runtime = setCircuitClimateInput(document, catalogById, "humidity", 65);
+    runtime = advanceCircuitClock(runtime, catalogById, 6);
+    const workingWires = runtime.wires;
+    const position = (state: CircuitDocument) => state.components.find((item) => item.id === "damper")?.properties.runtimeDamperPositionPercent;
+    expect(position(runtime)).toBe(60);
+    runtime = advanceCircuitClock({ ...runtime, wires: workingWires.filter((wire) => wire.id !== "humidity-demand") }, catalogById, 1);
+    const faulted = executeCircuitModels(runtime, catalogById);
+    expect(faulted.find(({ reference }) => reference === "DA1")?.output.error).toBe("Required control terminal DA1.IN has no wire.");
+    expect(faulted.find(({ reference }) => reference === "K1")?.evaluatedProperties.input).toBe(false);
+    expect(position(runtime)).toBe(60);
+
+    const restored = advanceCircuitClock({ ...runtime, wires: workingWires }, catalogById, 1);
+    expect(position(restored)).toBe(70);
+    expect(executeCircuitModels(restored, catalogById).find(({ reference }) => reference === "K1")?.output.value).toBe("ON");
+  });
+
   it.each([
     ["hvac.thermostat", "temperatureC", 19, 21, 23],
     ["hvac.humidistat", "humidityPercent", 65, 60, 55],
