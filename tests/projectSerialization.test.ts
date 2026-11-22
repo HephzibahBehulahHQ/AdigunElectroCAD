@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
-import { encodeProject, parseProjectJson } from "../src/projects/projectSerialization";
+import { encodeCustomComponent, encodeProject, parseCustomComponentJson, parseProjectJson } from "../src/projects/projectSerialization";
 import { addFreeSchematicSheet, createStarterProject } from "../src/projects/starterProject";
 import { terminalGridReference } from "../src/cad/terminalAnchors";
 
@@ -12,6 +12,20 @@ function freeSheetWithComponent() {
 }
 
 describe("project JSON import validation", () => {
+  it("round-trips isolated custom symbols and rejects missing geometry", () => {
+    const component = freeSheetWithComponent().sheets[1].document.components[0];
+    component.definitionId = "user.drawn-symbol";
+    component.displayName = "Customer symbol";
+    component.rotation = 90;
+    component.layerId = "source-layer";
+    component.customSymbolGraphics = [{ kind: "rectangle", x1: -24, y1: -16, x2: 24, y2: 16, color: "#19324f", fillColor: "#cfe2f3", strokeWidth: 3 }];
+    const file = encodeCustomComponent(component);
+    expect(file.component).not.toHaveProperty("layerId");
+    expect(file.component).not.toHaveProperty("x");
+    const restored = parseCustomComponentJson(JSON.stringify(file));
+    expect(encodeCustomComponent(restored)).toEqual(file);
+    expect(() => parseCustomComponentJson(JSON.stringify({ ...file, component: { ...file.component, customSymbolGraphics: undefined } }))).toThrow("no drawing geometry");
+  });
   it("loads legacy and version 1 projects through the same validation and rejects unknown versions", () => {
     const legacy = createStarterProject();
     const encoded = encodeProject(legacy);

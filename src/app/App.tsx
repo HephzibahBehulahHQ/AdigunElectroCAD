@@ -49,7 +49,7 @@ import { isAnonymousUser, signOut } from "../services/auth";
 import { accountRequest, verifiedUser } from "../services/productAccount";
 import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from "../services/cloudProjects";
 import { supabaseClient } from "../services/supabase";
-import { encodeProject, parseProjectJson } from "../projects/projectSerialization";
+import { encodeCustomComponent, encodeProject, parseCustomComponentJson, parseProjectJson } from "../projects/projectSerialization";
 import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
@@ -102,6 +102,8 @@ export function App() {
   const latestProject = useRef(project);
   latestProject.current = project;
   const [activeSheetId, setActiveSheetId] = useState("sheet-1");
+  const latestActiveSheetId = useRef(activeSheetId);
+  latestActiveSheetId.current = activeSheetId;
   const [schematicZoom, setSchematicZoom] = useState(.85);
   const [freeCamera, setFreeCamera] = useState<DrawingCamera>({ center: { x: 550, y: 390 }, zoom: .85 });
   const [drawingViewport, setDrawingViewport] = useState({ width: 0, height: 0 });
@@ -926,6 +928,37 @@ export function App() {
   const exportProject = () => {
     downloadBlob(new Blob([JSON.stringify(encodeProject(project), null, 2)], { type: "application/json" }), "adigun-electro-cad-project.json");
     setNotice("Project JSON exported.");
+  };
+
+  const exportCustomComponent = () => {
+    if (!selectedComponent || !isUserSymbolDefinition(selectedComponent.definitionId)) return;
+    const text = JSON.stringify(encodeCustomComponent(selectedComponent), null, 2);
+    downloadBlob(new Blob([text], { type: "application/json" }), selectedComponent.reference + ".electrocad-component.json");
+    setNotice(selectedComponent.reference + " exported as a reusable component.");
+  };
+
+  const importCustomComponent = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file || isReferenceSheet) return;
+    try {
+      const source = parseCustomComponentJson(await file.text());
+      if (latestProject.current !== project || latestActiveSheetId.current !== activeSheetId || accessLocked.current) {
+        setNotice("The editor changed while reading the file. Import the component again on the target sheet.");
+        return;
+      }
+      const definition = catalogById.get(source.definitionId)!;
+      const id = "imported-component-" + crypto.randomUUID();
+      const instance = { ...source, id, reference: nextComponentReference(document.components, definition.referencePrefix) };
+      const view = freeView && unobstructedDrawingBounds(freeView, currentZoom);
+      const position = findOpenPlacement(document.components, "free", instance.definitionId, view, instance);
+      if (!position) { setNotice("No clear placement for this component. Pan to an open area and import again."); return; }
+      if (!updateDocument({ ...document, components: [...document.components, { ...instance, ...position }], revision: document.revision + 1 })) return;
+      selectComponent(id);
+      setNotice(instance.reference + " imported into the drawing.");
+    } catch (error) {
+      setNotice("Component import rejected: " + (error instanceof Error ? error.message : "Unable to read component."));
+    }
   };
 
   const downloadBlob = (blob: Blob, filename: string) => {
@@ -2044,7 +2077,7 @@ export function App() {
           }, 0);
         }
       }}>
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label></div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label>{!isReferenceSheet && <label className="menu-file-control">Import custom component<input aria-label="Import custom component" type="file" accept="application/json,.json" onChange={importCustomComponent} /></label>}{selectedComponent && isUserSymbolDefinition(selectedComponent.definitionId) && <button onClick={exportCustomComponent}>Export custom component</button>}</div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
         <details><summary>View</summary><div className="menu-popover view-menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <>{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={!layer.hidden} onClick={() => toggleDraftingLayerVisibility(layer)}>Layer visibility · {layer.name}</button>)}{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={layer.locked === true} onClick={() => { if (applyDraftingEdit(updateDraftingLayer(document, layer.id, { locked: !layer.locked }))) setNotice(layer.name + (layer.locked ? " unlocked." : " locked.")); }}>Layer lock · {layer.name}</button>)}<button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
