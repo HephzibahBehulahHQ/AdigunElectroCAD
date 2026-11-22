@@ -150,7 +150,11 @@ const models: Record<string, Model> = {
   "safety-light-curtain": (p) => ({ label: "Protected field", value: lightCurtainClear(bool(p, "interrupted")) ? "CLEAR" : "BLOCKED" }),
   "safety-pull-cord": (p) => ({ label: "Pull cord", value: pullCordHealthy(bool(p, "pulled")) ? "HEALTHY" : "TRIPPED" }),
   "safety-zero-speed": (p) => ({ label: "Zero speed", value: binary(zeroSpeedDetected(number(p, "rpm"), number(p, "thresholdRpm", 5))) }),
-  "safety-phase-failure": (p) => ({ label: "Phase monitor", value: (p.runtimePhaseSupplyValid ?? phaseHealthy(bool(p, "l1"), bool(p, "l2"), bool(p, "l3"))) ? "HEALTHY" : "FAILED" }),
+  "safety-phase-failure": (p) => {
+    const healthy = p.runtimePhaseSupplyValid ?? phaseHealthy(bool(p, "l1"), bool(p, "l2"), bool(p, "l3"));
+    const value = p.runtimePhaseFrequencyMismatch === true ? "FAILED · FREQUENCY MISMATCH" : healthy ? "HEALTHY" : "FAILED";
+    return { label: "Phase monitor", value };
+  },
   "safety-earth-leakage": (p) => ({ label: "Earth leakage", value: earthLeakageTripped(number(p, "residualMilliamp"), number(p, "settingMilliamp")) ? "TRIPPED" : "HEALTHY" }),
   "panel-busbar": (p) => ({ label: "Busbar utilization", value: `${busbarUtilizationPercent(number(p, "currentA"), number(p, "ratedCurrentA")).toFixed(1)}%` }),
   "panel-distribution-board": (p) => ({ label: "Board utilization", value: `${distributionBoardUtilizationPercent(number(p, "energizedWays"), number(p, "totalWays")).toFixed(1)}%` }),

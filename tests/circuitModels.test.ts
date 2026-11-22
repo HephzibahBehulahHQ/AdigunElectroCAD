@@ -1,3 +1,4 @@
+import { createVfdPhaseProofProject } from "../src/projects/vfdPhaseProofProject";
 import { canConnectTerminals } from "../src/electrical/topology";
 import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { describe, expect, it } from "vitest";
@@ -374,4 +375,21 @@ describe("placed functional component execution", () => {
       expect.objectContaining({ reference: "MTH1", output: { label: "Signal fault", error: "Mixed signal units milliamp/millivolt at MTH1.", value: "ERROR: Mixed signal units milliamp/millivolt at MTH1." } }),
     ]));
   });
+});
+
+it("rejects a mixed-frequency feed at a wired phase monitor", () => {
+  const { document } = createVfdPhaseProofProject();
+  const drive = document.components.find(({ id }) => id === "drive")!;
+  drive.properties.enabled = true;
+  drive.properties.commandHz = 25;
+  const monitor = () => executeCircuitModels(document, catalogById).find(({ reference }) => reference === "PF2")!;
+  expect(monitor().output.value).toBe("HEALTHY");
+
+  const l3 = document.wires.find(({ id }) => id === "output-proof-l3")!;
+  l3.from = { componentId: "supply", terminalId: "l3-out" };
+  expect(monitor().evaluatedProperties).toMatchObject({ l1: true, l2: true, l3: true });
+  expect(monitor().output.value).toBe("FAILED · FREQUENCY MISMATCH");
+
+  l3.from = { componentId: "drive", terminalId: "w1" };
+  expect(monitor().output.value).toBe("HEALTHY");
 });

@@ -275,17 +275,17 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     }));
     const phases = feeds.flat();
     const sources = new Set(phases.map((feed) => feed.slice(0, feed.lastIndexOf(":"))));
-    return { feeds, currentFeeds, valid: feeds.every((feed) => feed.length === 1) && new Set(phases).size === 3 && sources.size === 1, sourceId: [...sources][0] };
+    const inputFrequencies = terminals.map((terminal, index) => frequencies.get(`${terminal}|${feeds[index][0]}`));
+    const frequency = inputFrequencies[0];
+    const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && inputFrequencies.every((value) => value === frequency);
+    return { feeds, currentFeeds, valid: feeds.every((feed) => feed.length === 1) && new Set(phases).size === 3 && sources.size === 1, sourceId: [...sources][0], frequency, validFrequency };
   };
   const phaseSupplyError = (reference: string) => `${reference} does not have three distinct phases from one supply; unbalanced winding current is unavailable.`;
   for (const component of document.components) {
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     if (model !== "catalog-induction-motor" && model !== "induction-motor-educational-v1") continue;
     const p = properties.get(component.id)!;
-    const { feeds, currentFeeds, valid } = threePhaseSupply(component.id);
-    const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
-    const frequency = motorFrequencies[0];
-    const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
+    const { feeds, currentFeeds, valid, frequency, validFrequency } = threePhaseSupply(component.id);
     const requested = model === "induction-motor-educational-v1" || p.energized === true;
     p.energized = requested && valid && validFrequency;
     if (requested && currentFeeds.length && !p.energized) {
@@ -399,9 +399,10 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (definition.simulationModelId === "safety-phase-failure") {
       const inputs = ["l1", "l2", "l3"];
       if (active.requireWiredPhases === true || inputs.some((terminal) => wiredTerminals.has(endpointKey(component.id, terminal)))) {
-        const { feeds, valid } = threePhaseSupply(component.id, inputs);
+        const { feeds, valid, validFrequency } = threePhaseSupply(component.id, inputs);
         inputs.forEach((terminal, index) => { active[terminal] = feeds[index].length === 1; });
-        active.runtimePhaseSupplyValid = valid;
+        active.runtimePhaseSupplyValid = valid && validFrequency;
+        active.runtimePhaseFrequencyMismatch = valid && !validFrequency;
       }
     }
     if (definition.simulationModelId === "power-junction") active.connectedConductors = document.wires.filter((wire) => wire.from.componentId === component.id || wire.to.componentId === component.id).length;
