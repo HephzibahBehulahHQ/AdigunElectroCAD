@@ -48,7 +48,7 @@ import { editCustomTerminalContract } from "../projects/customTerminalEdit";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml } from "../projects/schematicPrint";
-import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
+import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable, type ProjectReport, type ReportSection } from "../reports/projectReport";
 import { initialDolState, transitionDol, type DolAction, type DolSimulationState } from "../simulation/dolSimulator";
 import { compare, dacMilliamp, edgeTrigger, levelToMilliamp, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, setResetLatch, type Comparator, type LogicGate, type MathOperation } from "../simulation/controlLogic";
 import { batteryStateOfCharge, compressorDeliveryLpm, cylinderPosition, damperPosition, directionalValve52, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, phaseHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, solarPowerW, thermostatOn, thermalStep, threePhaseCableLossW, threePhaseVoltageDropV, type Direction } from "../simulation/industrialDevices";
@@ -1242,15 +1242,20 @@ export function App() {
 
   const exportReport = (section: ReportSection, scope: "sheet" | "project") => {
     const selectedReport = scope === "project" ? projectReport : report;
-    const blob = new Blob([reportCsv(selectedReport, section)], { type: "text/csv;charset=utf-8" });
+    const simulation = section === "simulation" ? simulationReportFor(scope) : undefined;
+    const blob = new Blob([reportCsv({ ...selectedReport, simulation }, section)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = window.document.createElement("a");
     anchor.href = url;
     anchor.download = `adigun-electro-cad-${scope}-${section}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
-    setNotice(`${scope === "project" ? "Project " : "Active-sheet "}${section === "bom" ? "BOM" : section === "wires" ? "wire list" : "terminal list"} CSV exported.`);
+    const name = { bom: "BOM", wires: "wire list", terminals: "terminal list", cables: "cable schedule", validation: "electrical validation", simulation: "simulation results" }[section];
+    setNotice(`${scope === "project" ? "Project" : "Active-sheet"} ${name} CSV exported.`);
   };
+
+  const simulationReportFor = (scope: "sheet" | "project") => simulationResultsTable(circuitModelRuns, sheets,
+    isRunning ? "running" : runtimeDocument ? "paused" : "stopped", scope === "sheet" ? activeSheet.id : undefined);
 
   const toggleWireMode = () => {
     setPlacementDefinitionId("");
@@ -2083,7 +2088,7 @@ export function App() {
         </div>
       </section>
 
-      {reportsOpen && <ProjectReports projectName={project.name} sheetName={activeSheet.name} sheetReport={report} projectReport={projectReport} onExport={exportReport} onClose={() => setReportsOpen(false)} />}
+      {reportsOpen && <ProjectReports projectName={project.name} sheetName={activeSheet.name} sheetReport={report} projectReport={projectReport} simulationReportFor={simulationReportFor} onExport={exportReport} onClose={() => setReportsOpen(false)} />}
 
       <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span>{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
     </main>
@@ -2236,7 +2241,7 @@ function StackControls({ capabilities, onChange, groupHint }: { capabilities: Gr
   </fieldset>;
 }
 
-function ProjectReports({ projectName, sheetName, sheetReport, projectReport, onExport, onClose }: { projectName: string; sheetName: string; sheetReport: ProjectReport; projectReport: ProjectReport; onExport: (section: ReportSection, scope: "sheet" | "project") => void; onClose: () => void }) {
+function ProjectReports({ projectName, sheetName, sheetReport, projectReport, simulationReportFor, onExport, onClose }: { projectName: string; sheetName: string; sheetReport: ProjectReport; projectReport: ProjectReport; simulationReportFor: (scope: "sheet" | "project") => ReturnType<typeof simulationResultsTable>; onExport: (section: ReportSection, scope: "sheet" | "project") => void; onClose: () => void }) {
   const [scope, setScope] = useState<"sheet" | "project">("sheet");
   const report = scope === "project" ? projectReport : sheetReport;
   const projectScope = scope === "project";
@@ -2251,6 +2256,7 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, on
         <button onClick={() => onExport("terminals", scope)}>Export terminals CSV</button>
         {projectScope && <button onClick={() => onExport("cables", "project")}>Export cable schedule CSV</button>}
         <button onClick={() => onExport("validation", scope)}>Export validation CSV</button>
+        <button onClick={() => onExport("simulation", scope)}>Export simulation CSV</button>
         <button onClick={onClose}>Close reports</button>
       </div>
     </div>
@@ -2259,6 +2265,7 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, on
       <ReportTable title="Wire list" {...wireReportTable(report)} />
       {projectScope && <ReportTable title="Cable schedule" {...cableScheduleTable(report)} />}
       <ReportTable title="Electrical validation" emptyMessage="No topology findings in this scope." {...electricalValidationTable(report)} />
+      <ReportTable title="Simulation results" emptyMessage="No placed model results in this scope." {...simulationReportFor(scope)} />
       <ReportTable title="Terminal list" headers={projectScope ? ["Sheet", "Reference", "Terminal", "Kind", "Direction"] : ["Reference", "Terminal", "Kind", "Direction"]} rows={report.terminals.map((line) => projectScope ? [line.sheet ?? "", line.reference, line.terminal, line.kind, line.direction] : [line.reference, line.terminal, line.kind, line.direction])} />
     </div>
   </section>;

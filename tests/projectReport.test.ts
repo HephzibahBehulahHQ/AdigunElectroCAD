@@ -4,9 +4,25 @@ import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
 import { createBlankProject } from "../src/projects/starterProject";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { assignProjectCableCore } from "../src/projects/projectContinuations";
-import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, wireReportTable } from "../src/reports/projectReport";
+import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable } from "../src/reports/projectReport";
+import { executeProjectCircuitModels } from "../src/simulation/projectCircuitModels";
+import { createFourSheetAnalogLevelWorkbook } from "../src/projects/fourSheetAnalogLevelWorkbook";
 
 describe("engineering project reports", () => {
+  it("scopes reported model results by sheet and retains faults in the project CSV", () => {
+    const project = createFourSheetAnalogLevelWorkbook();
+    project.continuations = [];
+    const runs = executeProjectCircuitModels(project, catalogById);
+    const plc = runs.find(({ modelId }) => modelId === "catalog-plc-digital-io")!;
+    expect(plc.output.error).toContain("has no wire");
+    const local = simulationResultsTable(runs, project.sheets, "stopped", plc.sheetId);
+    const projectWide = simulationResultsTable(runs, project.sheets, "stopped");
+    expect(local.rows).toHaveLength(runs.filter(({ sheetId }) => sheetId === plc.sheetId).length);
+    expect(local.rows).toContainEqual(["stopped", plc.reference, plc.modelId, plc.output.label, plc.output.value, plc.output.error]);
+    expect(projectWide.rows).toHaveLength(runs.length);
+    expect(reportCsv({ ...createProjectWideReport(project, catalogById), simulation: projectWide }, "simulation")).toContain(plc.output.error!);
+  });
+
   it("exports local topology findings and cross-sheet continuation findings with their scope", () => {
     const project = createMotorFeederWorkbook();
     expect(createProjectWideReport(project, catalogById).validation).toEqual([]);
