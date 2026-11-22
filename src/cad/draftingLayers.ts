@@ -62,12 +62,13 @@ export function createEntityLayer(document: CircuitDocument, selection: Drafting
   return updateEntityDrafting(document, selection, { layerId: layer.id }, layer);
 }
 
-export function updateDraftingLayer(document: CircuitDocument, id: string, patch: DraftingStyle): DraftingEditResult {
+export function updateDraftingLayer(document: CircuitDocument, id: string, patch: DraftingStyle & Pick<DraftingLayer, "hidden">): DraftingEditResult {
   const layers = document.draftingLayers ?? [];
   const existing = layers.find((layer) => layer.id === id);
   if (!existing) return { ok: false, reason: "Choose an existing drafting layer." };
   const next = { ...existing, ...patch };
   if (!validDraftingStyle(next)) return { ok: false, reason: "Choose a valid color, line type and lineweight from 0.5 to 12 drawing units." };
-  if (next.draftingColor === existing.draftingColor && next.lineType === existing.lineType && next.lineWeight === existing.lineWeight) return { ok: true, document };
+  if (next.hidden !== undefined && typeof next.hidden !== "boolean") return { ok: false, reason: "Choose a valid layer visibility." };
+  if (next.hidden === existing.hidden && next.draftingColor === existing.draftingColor && next.lineType === existing.lineType && next.lineWeight === existing.lineWeight) return { ok: true, document };
   return { ok: true, document: { ...document, revision: document.revision + 1, draftingLayers: layers.map((layer) => layer.id === id ? next : layer) } };
 }

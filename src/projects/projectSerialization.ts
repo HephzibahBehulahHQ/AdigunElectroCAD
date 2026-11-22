@@ -176,10 +176,12 @@ function parseDraftingLayers(value: unknown): DraftingLayer[] {
   if (layers.length > MAX_DRAFTING_LAYERS) throw new Error("A sheet cannot have more than 64 named drafting layers.");
   const parsed = layers.map((item) => {
     const layer = object(item, "Drafting layer is invalid.");
+    if (layer.hidden !== undefined && typeof layer.hidden !== "boolean") throw new Error("Invalid drafting layer visibility.");
     return {
       id: textValue(layer.id, "drafting layer id", 64),
       name: textValue(layer.name, "drafting layer name", 64),
       ...parseDraftingStyle(layer, "Layer"),
+      ...(layer.hidden !== undefined && { hidden: layer.hidden }),
     };
   });
   if (new Set(parsed.map((layer) => layer.id)).size !== parsed.length || new Set(parsed.map((layer) => layer.name.toLowerCase())).size !== parsed.length) {

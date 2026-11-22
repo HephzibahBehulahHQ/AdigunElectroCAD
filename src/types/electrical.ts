@@ -34,6 +34,7 @@ export interface DraftingStyle {
 export interface DraftingLayer extends DraftingStyle {
   id: string;
   name: string;
+  hidden?: boolean;
 }
 
 export interface DraftingEntity extends DraftingStyle {
