@@ -15,7 +15,7 @@ Professional Electrical CAD & Industrial Circuit Simulator by HB Elektroniker.
 - Live PLC Control & Analog Lab covering NO/NC contacts, output and set/reset coils, edges, six logic gates, comparators, four math blocks, and a level-sensor → 4–20 mA → ADC → PLC/DAC signal path.
 - Live Industrial Device Lab for pneumatic/hydraulic actuation, HVAC thermal control, renewable energy, safety monitoring and three-phase cable calculations; these models are intentionally not represented as runnable catalog items until their symbol-level circuit integration is complete.
 - Deterministic breaker, START/STOP, overload, contactor holding-contact and simplified three-phase motor model.
-- SVG schematic workspace, debounced local autosave and recovery, JSON/SVG/PNG export and print stylesheet, English/German UI and light/dark themes.
+- SVG schematic workspace, explicit local save and recovery, JSON/SVG/PNG export and print stylesheet, English/German UI and light/dark themes.
 - Validated JSON project import that rejects malformed, unknown-device, invalid-topology and label-overflow input.
 - Validated local save restoration for multi-sheet projects.
 - Supabase-backed authenticated project save/load and synchronized user preferences, scoped exclusively to the `adigunelectrocad` schema. Anonymous previews are an informational UX path; their data permissions are enforced by RLS, with inserts restricted to confirmed accounts.

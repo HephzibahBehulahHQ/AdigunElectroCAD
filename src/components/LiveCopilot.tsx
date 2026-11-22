@@ -94,7 +94,7 @@ export function LiveCopilot({ canvas, projectId, catalog, selectedId, simulation
     if (!preview) return;
     const result = acceptCopilotPreview(canvas, catalog, preview);
     if (!result.ok) { setMessage(result.error); return; }
-    try { onApply(result.document); dismiss(); setMessage("Wire applied to the canvas only. Undo rolls it back. Autosave is paused; sign in and explicitly save to keep Bot edits."); }
+    try { onApply(result.document); dismiss(); setMessage("Wire applied to the canvas only. Undo rolls it back. Sign in to a permanent account and save to keep Bot edits."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "The fix could not be committed; the original sheet was retained."); }
   };
 

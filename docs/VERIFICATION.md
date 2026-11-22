@@ -19,7 +19,7 @@
 | Local wiring session at sheet changes | Release `4743977` passed GitHub Verify and Pages deployment run `44959843076`. The served JavaScript asset `index-43_jDdpT.js` matched the local production build. Live reconnection cancellation across sheet tabs still requires verification. | CI + deployed |
 | Project JSON import | Valid project round-trip plus malformed device and overlong-label rejection | Automated |
 | Local project restore | Uses the same project parser; invalid saved data is not loaded or overwritten | Build validation |
-| Local autosave | Debounced browser-local persistence records dirty project edits; persistence failures expose an export fallback notice | Build validation |
+| Local save and recovery | Explicit Save locally validates the drawing and keeps a previous copy. Unsaved work triggers an exit warning. | Local storage and exit tests, plus headless Chrome verification on 2026-11-22. See [local recovery](LOCAL-RECOVERY.md). |
 | Supabase cloud persistence | `adigunelectrocad.projects` and `adigunelectrocad.user_preferences` exist with RLS, ownership policies, permanent-user insert restrictions, and authenticated API grants | Database query + build validation |
 | Schematic export | On production release `e633ede`, downloaded the pilot indicator as SVG and PNG at 95% zoom with X1 selected. Both files measured 1100 × 780. The parsed SVG retained the four wires and four references with no editing overlays, and the rendered PNG showed the circuit without selection handles. Undo restored the test sheet. | Browser + automated |
 | Schematic print | The print command exposes only the active schematic and a compact product heading through print CSS | Build validation |
