@@ -1097,3 +1097,14 @@ it("keeps Siemens 5SY8 models within the published C/D selection table", () => {
   expect(part("5sy8163-6")).toBeUndefined();
   expect(part("5sy8663-8")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
 });
+
+
+it("shows the Siemens 5SY5 alternating polarity and DC series voltage", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SY5");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(90);
+  expect(part("5sy5114-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.3, dcVoltageRating: "220 VDC" });
+  expect(part("5sy5404-6")).toBeUndefined();
+  expect(part("5sy5463-7")?.propertiesSchema.dcVoltageRating).toBe("880 VDC with poles in series");
+  expect(part("5sy5463-7")?.terminals.map(terminal => terminal.label)).toEqual(["1 (−)", "2 (+)", "3 (+)", "4 (−)", "5 (−)", "6 (+)", "7 (+)", "8 (−)"]);
+});
