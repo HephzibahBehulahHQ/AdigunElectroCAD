@@ -1,3 +1,4 @@
+import { createSortingDecisionLatchProject } from "./sortingDecisionLatchProject";
 import { createCompressorRestartDelayProject } from "./compressorRestartDelayProject";
 import { createTestBenchSourceSelectorProject } from "./testBenchSourceSelectorProject";
 import { createShaftMotionMonitorProject } from "./shaftMotionMonitorProject";
@@ -152,6 +153,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createShaftMotionMonitorProject(),
   createTestBenchSourceSelectorProject(),
   createCompressorRestartDelayProject(),
+  createSortingDecisionLatchProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
