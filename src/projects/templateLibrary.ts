@@ -1,3 +1,4 @@
+import { createTransferProofWatchdogProject } from "./transferProofWatchdogProject";
 import { createEncoderIndexInspectionProject } from "./encoderIndexInspectionProject";
 import { createThermalOverloadTemplate } from "./thermalOverloadCircuit";
 import { createThermalWiredReversingTemplate, createWiredReversingTemplate } from "./wiredReversingCircuit";
@@ -134,6 +135,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createCurrentLoopInterlockProject(),
   createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
+  createTransferProofWatchdogProject(),
   createTimedRelayTransferProject(),
   createTransformerPilotProject(),
   createPneumaticTemplate(false),
