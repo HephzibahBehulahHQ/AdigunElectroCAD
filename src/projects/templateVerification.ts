@@ -11,6 +11,7 @@ export interface TemplateVerification {
   topologyIssues: TopologyIssue[];
   runs: CircuitModelRun[];
   failedExpectations: string[];
+  sequenceResults: ReturnType<typeof verifyCircuitSequence>;
 }
 
 export interface CircuitSequenceStep {
@@ -80,12 +81,10 @@ export function verifyProjectTemplate(template: ProjectTemplate, catalog: Map<st
   for (const { reference, output } of runs) {
     if (output.error) failedExpectations.push(`Unexpected baseline fault at ${reference}: ${output.error}`);
   }
-  if (!template.operatingSequence?.length) {
-    failedExpectations.push("Project has no checked operating sequence");
-  } else {
-    for (const step of verifyCircuitSequence(template.document, template.operatingSequence, catalog)) {
-      failedExpectations.push(...step.failures.map((failure) => `${step.name}: ${failure}`));
-    }
+  const sequenceResults = verifyCircuitSequence(template.document, template.operatingSequence ?? [], catalog);
+  if (sequenceResults.length === 0) failedExpectations.push("Project has no checked operating sequence");
+  for (const step of sequenceResults) {
+    failedExpectations.push(...step.failures.map((failure) => step.name + ": " + failure));
   }
-  return { passed: topologyIssues.length === 0 && failedExpectations.length === 0, topologyIssues, runs, failedExpectations };
+  return { passed: topologyIssues.length === 0 && failedExpectations.length === 0, topologyIssues, runs, failedExpectations, sequenceResults };
 }
