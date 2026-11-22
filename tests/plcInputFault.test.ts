@@ -24,13 +24,20 @@ it.each([
   const transmitter = design.components.find((component) => component.id === "level")!;
   transmitter.properties.levelPercent = 75;
   const sourceWire = { ...original, id: "test-source-link", to: junction };
-  design.wires = [{ ...original, from: junction }, ...design.wires.filter((wire) => wire.id !== wireId)];
+  const terminalComponent = design.components.find(({ id }) => id === original.to.componentId)!;
+  terminalComponent.terminalLabels = { [original.to.terminalId]: "Tank level" };
+  design.wires = design.wires.filter((wire) => wire.id !== wireId);
+  const disconnected = executeCircuitModels(advanceCircuitClock(design, catalog, 0.1), catalog);
+  expect(disconnected.find(({ reference }) => reference === "PLC1")?.output.error).toBe(
+    `Required analog terminal ${terminalReference}.Tank level has no wire.`,
+  );
+  design.wires = [{ ...original, from: junction }, ...design.wires];
   expect(validateCircuit(design, catalog)).toEqual([]);
 
   const faulted = advanceCircuitClock(design, catalog, 0.1);
   const plc = faulted.components.find((component) => component.id === "plc")!;
   expect(plc.properties.runtimeQ0).toBe(false);
-  expect(plc.properties.runtimeError).toMatch(new RegExp(`Required analog terminal ${terminalReference}\\..*has no driving signal`));
+  expect(plc.properties.runtimeError).toBe(`Required analog terminal ${terminalReference}.Tank level has no driving signal.`);
   expect(executeCircuitModels(faulted, catalog).find((run) => run.reference === "PLC1")?.output.value).toContain("AI0 INVALID");
 
   const restored = { ...faulted, wires: [...faulted.wires, sourceWire] };

@@ -4,6 +4,7 @@ import { evaluateWiredControl } from "./wiredControl";
 import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurrent";
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
+import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { windingConnection } from "../electrical/windingConnections";
 import { functionalOutputTerminals, panelMeterSignalUnits } from "../electrical/signalContracts";
 import { inductionMotorOperatingPoint } from "./inductionMotor";
@@ -131,7 +132,8 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const activeProperties = properties.get(component.id);
         if (!definition || !activeProperties) continue;
         const inputErrors = new Set<string>();
-        for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
+        for (const [index, terminal] of definition.terminals.entries()) {
+          if (terminal.direction === "output") continue;
           const key = endpointKey(component.id, terminal.id);
           const incoming = signals.get(key);
           const binding = inputBinding(definition.simulationModelId, terminal.id, activeProperties.measurementKind);
@@ -140,10 +142,11 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           const required = binding?.requiresWire && activeProperties[binding.requiresWire] === true;
           const wired = wiredTerminals.has(key);
           const terminalType = binding?.acceptedUnits.includes("boolean") ? "control" : "analog";
+          const terminalLabel = component.terminalLabels?.[terminal.id] ?? displayTerminalLabel(component.properties, index, terminal.label);
           if (required && wired) {
-            requiredSignals.set(key, `Required ${terminalType} terminal ${component.reference}.${terminal.label} has no driving signal.`);
+            requiredSignals.set(key, `Required ${terminalType} terminal ${component.reference}.${terminalLabel} has no driving signal.`);
           }
-          const inputError = required && !wired ? `Required ${terminalType} terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
+          const inputError = required && !wired ? `Required ${terminalType} terminal ${component.reference}.${terminalLabel} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
           if (inputError && binding) {
             inputErrors.add(inputError);
             if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
