@@ -11,6 +11,7 @@ function splitTimerAcrossSheets(): ElectricalProject {
   timer.properties = { energized: true, delaySeconds: 1, elapsedSeconds: 0 };
   design.components[2].properties.returnSpring = true;
   design.components.push({ id: "timer-enable", definitionId: "logic.no-contact", reference: "S2", x: 100, y: 600, rotation: 0, properties: { input: false } });
+  design.wires = design.wires.filter(({ to }) => to.componentId !== timer.id || to.terminalId !== "a1");
   design.wires.push({ id: "timer-enable-wire", from: { componentId: "timer-enable", terminalId: "out" }, to: { componentId: timer.id, terminalId: "a1" }, points: [], netName: "ENABLE" });
 
   const sheetFor = (componentId: string) => componentId === timer.id ? "sheet-2" : "sheet-1";
