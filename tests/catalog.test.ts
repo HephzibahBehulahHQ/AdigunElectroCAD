@@ -200,10 +200,13 @@ describe("source-backed Siemens SIMOTICS motor", () => {
 });
 
 
-it("verifies the HBK Z6F C3 family lead maps and confines the ideal result to SIG+", () => {
+it("verifies the HBK Z6 family lead maps and confines the ideal result to SIG+", () => {
   const parts = componentLibraryCatalog.filter(part => part.manufacturerRecord?.manufacturer === "HBK");
-  expect(parts).toHaveLength(8);
-  expect(new Set(parts.map(part => part.manufacturerRecord?.orderCode)).size).toBe(8);
+  expect(parts).toHaveLength(80);
+  expect(new Set(parts.map(part => part.manufacturerRecord?.orderCode)).size).toBe(parts.length);
+  expect(catalogById.get("hbk.z6fc6.500kg")).toBeUndefined();
+  expect(catalogById.get("hbk.z6fd1.100kg.dc3")?.manufacturerRecord?.orderCode).toBe("K-Z6-F-D1-100-N-DC3-N");
+  expect(catalogById.get("hbk.z6gc3.500kg")?.manufacturerRecord?.orderCode).toBe("1-Z6GC3/500KG");
   for (const part of parts) {
     expect(part.terminals.map(({ label }) => label)).toEqual(["EXC+", "EXC−", "SEN+", "SEN−", "SIG+", "SIG−", "SH"]);
     expect(part.terminals.at(-1)?.kind).toBe("shield");
