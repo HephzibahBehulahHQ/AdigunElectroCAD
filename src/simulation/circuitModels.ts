@@ -121,6 +121,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   ]));
   const inputUnits = new Map<string, SignalUnit>();
   const requiredSignals = new Map<string, string>();
+  const modelErrors = new Map([...properties].map(([id, values]) => [id, values.runtimeSignalError]));
   const settleSignals = (undriven: ReadonlyMap<string, string>) => {
     for (let iteration = 0; iteration < Math.max(12, document.components.length + 1); iteration += 1) {
       let changed = false;
@@ -128,7 +129,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
         const definition = definitionsByComponent.get(component.id);
         const activeProperties = properties.get(component.id);
         if (!definition || !activeProperties) continue;
-        const plcInputErrors = definition.simulationModelId === "catalog-plc-digital-io" ? new Set<string>() : undefined;
+        const inputErrors = new Set<string>();
         for (const terminal of definition.terminals.filter((item) => item.direction !== "output")) {
           const key = endpointKey(component.id, terminal.id);
           const incoming = signals.get(key);
@@ -143,8 +144,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
           }
           const inputError = required && !wired ? `Required ${terminalType} terminal ${component.reference}.${terminal.label} has no wire.` : undriven.get(key) ?? incoming?.error ?? unitError;
           if (inputError && binding) {
-            if (plcInputErrors) plcInputErrors.add(inputError);
-            else if (activeProperties.runtimeSignalError !== inputError) { activeProperties.runtimeSignalError = inputError; changed = true; }
+            inputErrors.add(inputError);
             if (binding.property === "analogInput0") activeProperties.runtimeInvalidAi0 = true;
             if (binding.property === "analogInput1") activeProperties.runtimeInvalidAi1 = true;
             if (binding.acceptedUnits.includes("boolean") && activeProperties[binding.property] !== false) { activeProperties[binding.property] = false; changed = true; }
@@ -164,13 +164,13 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
             changed = true;
           }
         }
-        if (plcInputErrors) {
-          const message = [...plcInputErrors].join(" · ");
-          if (message !== (activeProperties.runtimeSignalError ?? "")) {
-            if (message) activeProperties.runtimeSignalError = message;
-            else delete activeProperties.runtimeSignalError;
-            changed = true;
-          }
+        const message = definition.simulationModelId === "catalog-plc-digital-io"
+          ? [...inputErrors].join(" · ")
+          : [...inputErrors].at(-1) ?? modelErrors.get(component.id) ?? "";
+        if (message !== (activeProperties.runtimeSignalError ?? "")) {
+          if (message) activeProperties.runtimeSignalError = message;
+          else delete activeProperties.runtimeSignalError;
+          changed = true;
         }
         const outputs = functionalOutputTerminals(definition);
         for (const output of outputs) {
