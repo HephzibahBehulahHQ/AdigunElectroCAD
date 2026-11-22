@@ -3,7 +3,7 @@ import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicG
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint, CircuitSheet, ProjectContinuation } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
-import { draftingDashArray, resolveDraftingStyle } from "../cad/draftingLayers";
+import { draftingDashArray, entitiesInDraftingLayerOrder, resolveDraftingStyle } from "../cad/draftingLayers";
 import { componentsInStackOrder } from "../cad/componentStack";
 import { componentsInMarquee, previewComponentMove } from "../cad/componentSelection";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
@@ -391,8 +391,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   const previewDocument = previewMove ? previewComponentMove(transformed, previewMove.ids, previewMove.delta.x, previewMove.delta.y) : transformed;
   const lockedLayers = new Set(document.draftingLayers?.filter(({ locked }) => locked).map(({ id }) => id));
   const hiddenLayers = new Set(document.draftingLayers?.filter(({ hidden }) => hidden).map(({ id }) => id));
-  const paintOrder = componentsInStackOrder(transformed.components);
-  const anchors = terminalAnchors({ ...previewDocument, components: previewMove ? componentsInStackOrder(previewDocument.components) : paintOrder });
+  const paintOrder = entitiesInDraftingLayerOrder(componentsInStackOrder(transformed.components), document);
+  const anchors = terminalAnchors({ ...previewDocument, components: previewMove ? entitiesInDraftingLayerOrder(componentsInStackOrder(previewDocument.components), document) : paintOrder });
   const visibleComponents = paintOrder.filter(({ layerId }) => !hiddenLayers.has(layerId ?? ""));
   const visibleIds = new Set(visibleComponents.map(({ id }) => id));
   const visibleAnchors = anchors.filter(({ endpoint }) => visibleIds.has(endpoint.componentId));
@@ -599,7 +599,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       </g>
       {document.printLayout && <PrintFrame layout={document.printLayout} />}
       <g data-drawing-content="">
-      {document.wires.map((wire) => {
+      {entitiesInDraftingLayerOrder(document.wires, document).map((wire) => {
         if (hiddenLayers.has(wire.layerId ?? "")) return null;
         const from = anchorIndex.get(endpointKey(wire.from));
         const to = anchorIndex.get(endpointKey(wire.to));

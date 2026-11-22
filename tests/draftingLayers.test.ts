@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { createEntityLayer, lockedDraftingEditReason, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting } from "../src/cad/draftingLayers";
+import { createEntityLayer, lockedDraftingEditReason, moveDraftingLayer, resolveDraftingStyle, updateDraftingLayer, updateEntityDrafting } from "../src/cad/draftingLayers";
 import { Schematic } from "../src/components/Schematic";
 import { initialDolState } from "../src/simulation/dolSimulator";
 import { createAnalogLevelProject } from "../src/projects/analogLevelProject";
@@ -110,4 +110,34 @@ it("rejects locked component and wire mutations atomically and unlocks after rel
   if (!unlocked.ok) throw Error(unlocked.reason);
   expect(lockedDraftingEditReason(restored, unlocked.document)).toBeUndefined();
   expect(lockedDraftingEditReason(unlocked.document, { ...unlocked.document, wires: [] })).toBeUndefined();
+});
+
+it("persists explicit layer order without changing topology or older canvas stacking", () => {
+  const project = createBlankProject();
+  const [sheet] = project.sheets;
+  const document = createAnalogLevelProject().document;
+  const adc = document.components.find(({ id }) => id === "adc")!;
+  const plc = document.components.find(({ id }) => id === "plc")!;
+  document.draftingLayers = [{ id: "adc-layer", name: "ADC" }, { id: "plc-layer", name: "PLC" }];
+  adc.layerId = "adc-layer";
+  plc.layerId = "plc-layer";
+  document.wires[0].layerId = "adc-layer";
+  document.wires[1].layerId = "plc-layer";
+  const before = replaceSheetDocument(project, sheet.id, document);
+  const render = (drawing: typeof document) => renderToStaticMarkup(createElement(Schematic, {
+    document: drawing, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(),
+    wireMode: false, wireStart: null, onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  const orderedBefore = render(document);
+  expect(orderedBefore.indexOf('data-wire-terminal="adc.')).toBeLessThan(orderedBefore.indexOf('data-wire-terminal="plc.'));
+  const moved = moveDraftingLayer(document, "adc-layer", 1);
+  if (!moved.ok) throw Error(moved.reason);
+  const after = replaceSheetDocument(before, sheet.id, moved.document);
+  const restored = parseProjectJson(JSON.stringify(after)).sheets[0].document;
+  expect(restored.useDraftingLayerOrder).toBe(true);
+  const orderedAfter = render(restored);
+  expect(orderedAfter.indexOf('data-wire-terminal="plc.')).toBeLessThan(orderedAfter.indexOf('data-wire-terminal="adc.'));
+  expect(orderedAfter.indexOf('aria-label="Select wire ' + document.wires[1].netName)).toBeLessThan(orderedAfter.indexOf('aria-label="Select wire ' + document.wires[0].netName));
+  expect(restored.wires).toEqual(document.wires);
+  expect(undoProject(recordProjectEdit({ undo: [], redo: [] }, before), after).project).toBe(before);
 });

@@ -99,6 +99,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const annotationsValue = document.annotations === undefined ? [] : array(document.annotations, `Sheet ${sheetIndex + 1} annotations are invalid.`);
   const graphicsValue = document.graphics === undefined ? [] : array(document.graphics, `Sheet ${sheetIndex + 1} graphics are invalid.`);
   if (componentsValue.length > 2000 || wiresValue.length > 5000 || annotationsValue.length > 1000 || graphicsValue.length > 2000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
+  if (document.useDraftingLayerOrder !== undefined && typeof document.useDraftingLayerOrder !== "boolean") throw new Error("Invalid drafting layer order setting.");
   const parsed: CircuitDocument = {
     id: textValue(document.id, `sheet ${sheetIndex + 1} document id`, 96),
     name: textValue(document.name, `sheet ${sheetIndex + 1} document name`, 80),
@@ -109,6 +110,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
     ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
     ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
+    ...(typeof document.useDraftingLayerOrder === "boolean" && { useDraftingLayerOrder: document.useDraftingLayerOrder }),
     ...(document.guides === undefined ? {} : { guides: parseDrawingGuides(document.guides) }),
     ...(document.printLayout === undefined ? {} : { printLayout: parsePrintLayout(document.printLayout) }),
     ...(document.drawingGrid === undefined ? {} : { drawingGrid: parseDrawingGrid(document.drawingGrid) }),

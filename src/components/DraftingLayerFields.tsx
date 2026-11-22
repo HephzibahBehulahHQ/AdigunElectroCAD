@@ -2,12 +2,13 @@ import { useState } from "react";
 import { draftingLineTypes } from "../cad/draftingLayers";
 import type { DraftingEntity, DraftingLayer, DraftingLineType, DraftingStyle } from "../types/electrical";
 
-export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, onLayerChange }: {
+export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, onLayerChange, onMoveLayer }: {
   entity: DraftingEntity;
   layers: DraftingLayer[];
   onChange: (patch: Partial<DraftingEntity>) => boolean;
   onCreateLayer: (name: string) => boolean;
   onLayerChange: (id: string, patch: DraftingStyle) => boolean;
+  onMoveLayer?: (id: string, offset: -1 | 1) => void;
 }) {
   const [name, setName] = useState("");
   const layer = layers.find((item) => item.id === entity.layerId);
@@ -21,6 +22,10 @@ export function DraftingLayerFields({ entity, layers, onChange, onCreateLayer, o
     <button type="button" disabled={!name.trim()} onClick={() => { if (onCreateLayer(name)) setName(""); }}>Create and assign layer</button>
     {layer && <fieldset className="graphic-geometry drafting-layer-defaults" key={layer.id}>
       <legend>{layer.name} defaults</legend>
+      {onMoveLayer && <>
+        <button type="button" disabled={layer === layers[0]} onClick={() => onMoveLayer(layer.id, -1)}>Move layer back</button>
+        <button type="button" disabled={layer === layers.at(-1)} onClick={() => onMoveLayer(layer.id, 1)}>Move layer forward</button>
+      </>}
       <label>Layer color<input type="color" value={layer.draftingColor ?? "#68788b"} onInput={(event) => onLayerChange(layer.id, { draftingColor: event.currentTarget.value })} /></label>
       {layer.draftingColor && <button type="button" onClick={() => onLayerChange(layer.id, { draftingColor: undefined })}>Reset layer color</button>}
       <StrokeFields prefix="Layer" style={layer} onChange={(patch) => onLayerChange(layer.id, patch)} />

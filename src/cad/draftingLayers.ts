@@ -92,3 +92,20 @@ export function lockedDraftingEditReason(before: CircuitDocument, after: Circuit
     }
   }
 }
+
+export function entitiesInDraftingLayerOrder<T extends DraftingEntity>(entities: T[], document: CircuitDocument): T[] {
+  if (!document.useDraftingLayerOrder) return entities;
+  const rank = new Map(document.draftingLayers?.map(({ id }, index) => [id, index]));
+  return [...entities].sort((left, right) => (rank.get(left.layerId ?? "") ?? Infinity) - (rank.get(right.layerId ?? "") ?? Infinity));
+}
+
+export function moveDraftingLayer(document: CircuitDocument, id: string, offset: -1 | 1): DraftingEditResult {
+  const layers = document.draftingLayers ?? [];
+  const index = layers.findIndex((layer) => layer.id === id);
+  if (index < 0) return { ok: false, reason: "Choose an existing drafting layer." };
+  const destination = index + offset;
+  if (destination < 0 || destination >= layers.length) return { ok: true, document };
+  const ordered = [...layers];
+  [ordered[index], ordered[destination]] = [ordered[destination], ordered[index]];
+  return { ok: true, document: { ...document, draftingLayers: ordered, useDraftingLayerOrder: true, revision: document.revision + 1 } };
+}
