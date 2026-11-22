@@ -3,7 +3,7 @@ import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurren
 import { evaluateFunctionalModel, evaluateFunctionalSignal, type FunctionalModelResult, type FunctionalSignal, type SignalUnit } from "./functionalModels";
 import type { CircuitDocument, ElectricalComponentDefinition, TerminalDefinition } from "../types/electrical";
 import { windingConnection } from "../electrical/windingConnections";
-import { functionalOutputTerminals } from "../electrical/signalContracts";
+import { functionalOutputTerminals, panelMeterSignalUnits } from "../electrical/signalContracts";
 import { inductionMotorOperatingPoint } from "./inductionMotor";
 
 export interface CircuitModelRun { componentId: string; reference: string; modelId: string; output: FunctionalModelResult; evaluatedProperties: Readonly<Record<string, string | number | boolean>>; }
@@ -11,12 +11,6 @@ export interface CircuitModelRun { componentId: string; reference: string; model
 const endpointKey = (componentId: string, terminalId: string) => `${componentId}.${terminalId}`;
 
 const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt", "hertz", "acceleration", "pulse-count", "ampere", "scalar"];
-const panelMeterUnits = new Map<string, SignalUnit[]>([
-  ["Voltage", ["millivolt", "scalar"]],
-  ["Current", ["ampere", "milliamp", "scalar"]],
-  ["Frequency", ["hertz", "scalar"]],
-  ["Power", ["scalar"]],
-]);
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; requiresWire?: string; };
 
 function inputBinding(modelId: string, terminalId: string, measurementKind?: string | number | boolean): InputBinding | undefined {
@@ -47,7 +41,7 @@ function inputBinding(modelId: string, terminalId: string, measurementKind?: str
   if (modelId === "catalog-on-delay-timer" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-on-delay-timer" && terminalId === "15") return { property: "timerContactCommon", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-panel-meter" && terminalId === "signal") {
-    return { property: "measuredValue", acceptedUnits: panelMeterUnits.get(String(measurementKind)) ?? numericalUnits, requiresWire: "requireWiredInput" };
+    return { property: "measuredValue", acceptedUnits: panelMeterSignalUnits(measurementKind), requiresWire: "requireWiredInput" };
   }
   if (modelId === "catalog-feed-through-terminal" && terminalId === "1") return { property: "inputSignal", acceptedUnits: ["boolean"] };
   if (modelId === "catalog-interface-relay" && terminalId === "a1") return { property: "energized", acceptedUnits: ["boolean"] };

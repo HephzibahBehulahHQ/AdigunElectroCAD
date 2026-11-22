@@ -121,7 +121,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   }
   if (parsed.annotations && new Set(parsed.annotations.map((annotation) => annotation.id)).size !== parsed.annotations.length) throw new Error(`Sheet ${sheetIndex + 1} annotations must have unique ids.`);
   if (parsed.graphics && new Set(parsed.graphics.map((graphic) => graphic.id)).size !== parsed.graphics.length) throw new Error(`Sheet ${sheetIndex + 1} graphics must have unique ids.`);
-  const issues = validateCircuit(parsed, catalogById);
+  const issues = validateCircuit(parsed, catalogById).filter(({ severity }) => severity === "error");
   if (issues.length) throw new Error(`Sheet ${sheetIndex + 1} has invalid terminal topology: ${issues[0].message}`);
   return parsed;
 }
