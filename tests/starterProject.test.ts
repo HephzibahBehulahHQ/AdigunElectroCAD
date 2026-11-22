@@ -58,7 +58,7 @@ it("starts with a ten-sheet motor-feeder project linked by source and destinatio
   expect(validateProjectContinuations(project)).toEqual([]);
   for (const sheet of project.sheets) expect(validateCircuit(sheet.document, catalogById).filter((issue) => issue.severity === "error")).toEqual([]);
   for (let ordinal = 1; ordinal <= 9; ordinal++) {
-    for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G17", "S10"], ["L2", "I17", "U10"], ["L3", "K17", "V10"]] as const) {
+    for (const [conductor, sourceGrid, breakerGrid] of [["L1", "G17", "S8"], ["L2", "I17", "U8"], ["L3", "K17", "V8"]] as const) {
       const continuation = project.continuations!.find((item) => item.id === `feed-m${ordinal}-${conductor.toLowerCase()}`)!;
       expect(continuation.points[0].gridReference).toBe(sourceGrid);
       expect(continuation.points.at(-1)?.gridReference).toBe(breakerGrid);
