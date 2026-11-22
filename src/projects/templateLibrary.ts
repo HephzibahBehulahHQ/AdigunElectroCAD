@@ -6,6 +6,7 @@ import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampP
 import { createCascadedTimerStartProject } from "./cascadedTimerStartProject";
 import { createPoweredTimerPilotTransferProject } from "./poweredTimerPilotTransferProject";
 import { createRelayControlFeedLossProject } from "./relayControlFeedLossProject";
+import { createIsolatedDcSourceSelectorProject } from "./isolatedDcSourceSelectorProject";
 import { createMixedVoltageRelayPanelProject } from "./mixedVoltageRelayPanelProject";
 import { createContactorStatusPanelProject } from "./contactorStatusPanelProject";
 import { createDcPilotSharedReturnProject } from "./dcPilotSharedReturnProject";
@@ -166,6 +167,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createDcPilotSharedReturnProject(),
   createContactorStatusPanelProject(),
   createMixedVoltageRelayPanelProject(),
+  createIsolatedDcSourceSelectorProject(),
   createRelayControlFeedLossProject(),
   createPoweredTimerPilotTransferProject(),
   createCascadedTimerStartProject(),
