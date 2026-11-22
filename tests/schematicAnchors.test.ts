@@ -863,6 +863,9 @@ it.each([
   ["a9f74313", 13, "C", 6, ["1", "2", "3", "4", "5", "6"]],
   ["a9f85213", 13, "D", 10, ["1", "2", "3", "4"]],
   ["a9f85463", 63, "D", 10, ["1", "2", "3", "4", "5", "6", "7", "8"]],
+  ["a9f04170", 0.5, "C", 6, ["1", "2"]],
+  ["a9f06213", 13, "B", 10, ["1", "2", "3", "4"]],
+  ["a9f08304", 4, "D", 10, ["1", "2", "3", "4", "5", "6"]],
 ] as const)("publishes the exact ratings and anchors for Schneider %s", (code, ratedCurrentA, curve, icnKa, labels) => {
   const id = "schneider.acti9." + code;
   const definition = componentLibraryCatalog.find(entry => entry.id === id);
@@ -870,4 +873,10 @@ it.each([
   expect(definition?.propertiesSchema).toMatchObject({ ratedCurrentA, curve, icnKa });
   expect(definition?.manufacturerRecord?.orderCode).toBe(code.toUpperCase());
   expect(definition?.terminals.map(terminal => terminal.label)).toEqual(labels);
+});
+
+
+it("omits unavailable combinations from the German Acti9 order table", () => {
+  expect(catalogById.has("schneider.acti9.a9f03170")).toBe(false);
+  expect(catalogById.has("schneider.acti9.a9f08225")).toBe(false);
 });
