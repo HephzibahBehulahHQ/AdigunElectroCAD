@@ -6,7 +6,7 @@ import { edgeTrigger, setResetLatch } from "./controlLogic";
 import { PLC_MEMORY_COUNT, PLC_REGISTER_COUNT, scanPlcProgram, type PlcMemoryState, type PlcTimerStates } from "./plcProgram";
 import { scanSafetyReset } from "./safetyReset";
 import { advanceCylinder, valve52Direction } from "./pneumaticState";
-import { timerParameterError } from "./functionalModels";
+import { climateContactClosed, timerParameterError } from "./functionalModels";
 
 const PLC_TRACE_LIMIT = 25;
 export type PlcTraceEntry = { scan: number; elapsedSeconds: number; input0: boolean; input1: boolean; analogInput0: number | null; analogInput1?: number | null; output: boolean; output1?: boolean; registers: number[]; status: "ok" | "error" | "inhibited"; message?: string };
@@ -53,6 +53,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     delete properties.runtimeCoilEnergized;
     delete properties.runtimeThermalLevel; delete properties.runtimeThermalTripped; delete properties.runtimeThermalResetPrevious; delete properties.runtimeThermalError; delete properties.runtimeLoadCurrentA;
     delete properties.runtimeRotorSpeedRpm; delete properties.runtimeMotorModelError;
+    delete properties.runtimeClimateContact;
     delete properties.runtimeQ0; delete properties.runtimeQ1; delete properties.runtimeError;
     for (let index = 0; index < PLC_MEMORY_COUNT; index++) delete properties[`runtimeM${index}`];
     for (let index = 0; index < 4; index++) { delete properties[`runtimeT${index}Elapsed`]; delete properties[`runtimeT${index}Done`]; }
@@ -74,6 +75,11 @@ export function advanceCircuitClock(document: CircuitDocument, catalog: Map<stri
   return { ...document, components: document.components.map((component) => {
     const definition = catalog.get(component.definitionId);
     const model = definition?.simulationModelId;
+    if ((model === "hvac-thermostat" || model === "hvac-humidistat") && deltaSeconds > 0) {
+      const active = evaluated.get(component.id)!;
+      if (active.runtimeSignalError) return component;
+      return { ...component, properties: { ...component.properties, runtimeClimateContact: climateContactClosed(model, active) } };
+    }
     if (["contactor-dol-v1", "catalog-motor-starter"].includes(model ?? "")) return { ...component, properties: { ...component.properties, runtimeCoilEnergized: evaluated.get(component.id)?.energized === true } };
     if (model && ["pneumatic-valve-5-2", "pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(model) && deltaSeconds > 0) {
       const active = evaluated.get(component.id)!;

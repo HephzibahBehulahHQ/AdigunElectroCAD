@@ -14,6 +14,7 @@ const numericalUnits: SignalUnit[] = ["milliamp", "plc-raw", "ohm", "millivolt",
 type InputBinding = { property: string; acceptedUnits: SignalUnit[]; pairedProperty?: string; boundProperty?: string; requiresWire?: string; };
 
 function inputBinding(modelId: string, terminalId: string): InputBinding | undefined {
+  if ((modelId === "hvac-thermostat" || modelId === "hvac-humidistat") && terminalId === "in") return { property: "enabled", acceptedUnits: ["boolean"] };
   if (modelId === "pneumatic-valve-5-2" && ["in-a", "in-b"].includes(terminalId)) return { property: terminalId === "in-a" ? "extendCoil" : "retractCoil", acceptedUnits: ["boolean"] };
   if (modelId === "pneumatic-valve-3-2" && terminalId === "in") return { property: "energized", acceptedUnits: ["boolean"] };
   if (["pneumatic-cylinder-single", "pneumatic-cylinder-double"].includes(modelId)) {

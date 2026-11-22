@@ -3,8 +3,46 @@ import { catalogById } from "../src/catalog/dolCatalog";
 import { templateFixtures } from "../src/projects/templateLibrary";
 import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
+import { validateCircuit } from "../src/electrical/topology";
+import type { CircuitDocument } from "../src/types/electrical";
 
 describe("circuit simulation clock", () => {
+  it.each([
+    ["hvac.thermostat", "temperatureC", 19, 21, 23],
+    ["hvac.humidistat", "humidityPercent", 65, 60, 55],
+  ] as const)("wires %s to a coil and retains its deadband across scans", (definitionId, measurement, demand, deadband, release) => {
+    const design: CircuitDocument = {
+      id: "climate-control", name: "Climate control", description: "Wired enable and demand", revision: 1,
+      components: [
+        { id: "enable", reference: "S1", definitionId: "logic.no-contact", x: 150, y: 200, rotation: 0, properties: { input: true } },
+        { id: "sensor", reference: "B1", definitionId, x: 350, y: 200, rotation: 0, properties: { [measurement]: demand } },
+        { id: "coil", reference: "K1", definitionId: "logic.output-coil", x: 550, y: 200, rotation: 0, properties: { input: false } },
+      ],
+      wires: [
+        { id: "enable-wire", from: { componentId: "enable", terminalId: "out" }, to: { componentId: "sensor", terminalId: "in" }, points: [] },
+        { id: "demand-wire", from: { componentId: "sensor", terminalId: "out" }, to: { componentId: "coil", terminalId: "in" }, points: [] },
+      ],
+    };
+    expect(validateCircuit(design, catalogById)).toEqual([]);
+    let runtime = advanceCircuitClock(design, catalogById, 0.1);
+    const coil = () => executeCircuitModels(runtime, catalogById).find(({ componentId }) => componentId === "coil")?.output.value;
+    const sample = (value: number) => {
+      runtime = advanceCircuitClock({ ...runtime, components: runtime.components.map((component) => component.id === "sensor"
+        ? { ...component, properties: { ...component.properties, [measurement]: value } } : component) }, catalogById, 0.1);
+    };
+    expect(coil()).toBe("ON");
+    sample(deadband);
+    expect(coil()).toBe("ON");
+    sample(release);
+    sample(deadband);
+    expect(coil()).toBe("OFF");
+    runtime = setCircuitBooleanInput(runtime, catalogById, "enable", "input", false);
+    sample(demand);
+    expect(coil()).toBe("OFF");
+    expect(design.components[1].properties).toEqual({ [measurement]: demand });
+    expect(resetCircuitClock(runtime, catalogById).components[1].properties.runtimeClimateContact).toBeUndefined();
+  });
+
   it("scans wired PLC inputs, retains Q0, and fails closed on a program error", () => {
     const design = structuredClone(templateFixtures[2].document);
     const plc = design.components[1];
