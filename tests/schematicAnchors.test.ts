@@ -1133,7 +1133,7 @@ it("keeps Siemens 5SL3 pole-specific availability and numbered neutral terminals
 
 
 it("uses the ABB S200M ordering codes, including the fractional-current suffixes", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M");
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M" && !entry.propertiesSchema.switchedNeutral);
   const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
   expect(parts).toHaveLength(176);
   expect(part("2cds271001r0984")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "C", icnKa: 10 });
@@ -1143,7 +1143,7 @@ it("uses the ABB S200M ordering codes, including the fractional-current suffixes
 
 
 it("distinguishes ABB S200 and S200M order codes and breaking capacities", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200");
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200" && !entry.propertiesSchema.switchedNeutral);
   const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "abb." + code);
   expect(parts).toHaveLength(176);
   expect(part("2cds251001r0981")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "D", icnKa: 6 });
@@ -1159,4 +1159,14 @@ it("preserves the ABB S200P rating change above 25 A", () => {
   expect(part("2cds281001r0255")?.propertiesSchema).toMatchObject({ ratedCurrentA: 25, curve: "B", icnKa: 25 });
   expect(part("2cds284001r0321")?.propertiesSchema).toMatchObject({ ratedCurrentA: 32, curve: "D", icnKa: 15 });
   expect(part("2cds284001r0321")?.terminals).toHaveLength(8);
+});
+
+
+it("places the ABB NA neutral on its documented numbered terminal pair", () => {
+  const part = (code: string) => componentLibraryCatalog.find(entry => entry.id === "abb." + code);
+  const single = part("2cds251103r0105");
+  const triple = part("2cds273103r0104");
+  expect(single?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3N", "4N"]);
+  expect(triple?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7N", "8N"]);
+  expect(triple?.manufacturerRecord?.topology).toMatchObject({ neutralTerminals: ["l4-in", "l4-out"], protectedPoles: 3 });
 });
