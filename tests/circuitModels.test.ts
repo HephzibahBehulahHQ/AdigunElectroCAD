@@ -190,6 +190,30 @@ describe("placed functional component execution", () => {
     expect(Number(meter.evaluatedProperties.measuredValue)).toBeGreaterThan(0);
   });
 
+  it("inhibits wired weighing control on overload or invalid calibration and recovers", () => {
+    const document = createDolMotorStarter();
+    document.components = [
+      { id: "load-cell", definitionId: "sensor.load-cell", reference: "B1", x: 140, y: 240, rotation: 0, properties: { forceN: 0.4, capacityN: 0.5 } },
+      { id: "comparator", definitionId: "logic.comparator-greater-than", reference: "G1", x: 400, y: 240, rotation: 0, properties: { left: 0, right: 7 } },
+      { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 660, y: 240, rotation: 0, properties: { input: false } },
+    ];
+    document.wires = [
+      { id: "weight-mv", from: { componentId: "load-cell", terminalId: "signal" }, to: { componentId: "comparator", terminalId: "in-a" }, points: [] },
+      { id: "weight-high", from: { componentId: "comparator", terminalId: "out" }, to: { componentId: "coil", terminalId: "in" }, points: [] },
+    ];
+    const cell = document.components[0];
+    const read = (reference: string) => executeCircuitModels(document, catalogById).find((run) => run.reference === reference)!;
+    expect(read("B1").output.value).toBe("8.000 mV");
+    expect(read("K1").output.value).toBe("ON");
+    cell.properties.forceN = 0.6;
+    expect(read("K1").output.error).toContain("outside the configured measuring range");
+    expect(read("K1").evaluatedProperties.input).toBe(false);
+    cell.properties.forceN = 0.3;
+    expect(read("K1").output.value).toBe("OFF");
+    cell.properties.capacityN = 0;
+    expect(read("B1").output.error).toContain("capacity must be finite and positive");
+  });
+
   it("scales motor speed with drive frequency and stops at zero command", () => {
     const document = structuredClone(templateFixtures[1].document);
     document.components[3].properties.nominalSpeedRpm = 1500;

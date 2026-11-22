@@ -53,5 +53,5 @@ export function vibrationRms(accelerationSamples: number[]) {
   return Math.sqrt(accelerationSamples.reduce((sum, value) => sum + value ** 2, 0) / accelerationSamples.length);
 }
 export function encoderPulses(revolutions: number, pulsesPerRevolution: number) { return Math.round(revolutions * Math.max(1, pulsesPerRevolution)); }
-export function loadCellMillivolt(forceN: number, capacityN: number, sensitivityMvPerV = 2, excitationV = 5) { return clamp(forceN / Math.max(1, capacityN), 0, 1) * sensitivityMvPerV * excitationV; }
+export function loadCellMillivolt(forceN: number, capacityN: number, sensitivityMvPerV = 2, excitationV = 5) { return clamp(forceN / (capacityN > 0 ? capacityN : 1), 0, 1) * sensitivityMvPerV * excitationV; }
 export function currentTransformerSecondaryAmp(primaryAmp: number, primaryRatedAmp: number, secondaryRatedAmp = 5) { return Math.max(0, primaryAmp) / Math.max(1, primaryRatedAmp) * Math.max(0, secondaryRatedAmp); }
