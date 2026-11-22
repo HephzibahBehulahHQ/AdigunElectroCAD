@@ -1150,3 +1150,13 @@ it("distinguishes ABB S200 and S200M order codes and breaking capacities", () =>
   expect(part("2cds271001r0981")?.propertiesSchema.icnKa).toBe(10);
   expect(part("2cds254001r0034")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
 });
+
+
+it("preserves the ABB S200P rating change above 25 A", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200P");
+  const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
+  expect(parts).toHaveLength(172);
+  expect(part("2cds281001r0255")?.propertiesSchema).toMatchObject({ ratedCurrentA: 25, curve: "B", icnKa: 25 });
+  expect(part("2cds284001r0321")?.propertiesSchema).toMatchObject({ ratedCurrentA: 32, curve: "D", icnKa: 15 });
+  expect(part("2cds284001r0321")?.terminals).toHaveLength(8);
+});
