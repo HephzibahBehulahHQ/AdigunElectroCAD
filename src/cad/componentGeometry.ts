@@ -2,7 +2,12 @@ import type { ComponentInstance } from "../types/electrical";
 
 /** Three-phase terminals run top to bottom; Boolean coil/position feedback stays at the sides. */
 export function powerTerminalOffset(modelId: string, terminalId: string, poles = 3): { x: number; y: number } | undefined {
-  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-fuse-switch", "catalog-variable-frequency-drive", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1"].includes(modelId)) return undefined;
+  if (!["catalog-ac-supply", "catalog-circuit-breaker", "catalog-fuse-switch", "catalog-variable-frequency-drive", "breaker-3p-v1", "catalog-motor-starter", "catalog-induction-motor", "three-phase-source-v1", "induction-motor-educational-v1", "thermal-overload-dol-v1", "contactor-dol-v1", "safety-phase-failure"].includes(modelId)) return undefined;
+  if (modelId === "safety-phase-failure") {
+    const phase = /^l([123])$/.exec(terminalId);
+    if (phase) return { x: [-24, 0, 24][Number(phase[1]) - 1], y: -27 };
+    if (terminalId === "pe") return { x: 47, y: 0 };
+  }
   if (modelId === "three-phase-source-v1") {
     const sourcePhase = /^l([123])$/.exec(terminalId);
     if (sourcePhase) return { x: [-24, 0, 24][Number(sourcePhase[1]) - 1], y: -35 };

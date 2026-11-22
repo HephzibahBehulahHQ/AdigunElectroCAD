@@ -266,8 +266,8 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   }
   propagatePower();
   const currentLoads: NominalCurrentLoad[] = [];
-  const motorSupply = (componentId: string) => {
-    const terminals = ["u1", "v1", "w1"].map((terminal) => endpointKey(componentId, terminal));
+  const threePhaseSupply = (componentId: string, terminalIds = ["u1", "v1", "w1"]) => {
+    const terminals = terminalIds.map((terminal) => endpointKey(componentId, terminal));
     const feeds = terminals.map((terminal) => [...(powered.get(terminal) ?? [])]);
     const currentFeeds = terminals.flatMap((terminal, index) => feeds[index].map((feed) => {
       const separator = feed.lastIndexOf(":");
@@ -282,7 +282,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const model = definitionsByComponent.get(component.id)?.simulationModelId;
     if (model !== "catalog-induction-motor" && model !== "induction-motor-educational-v1") continue;
     const p = properties.get(component.id)!;
-    const { feeds, currentFeeds, valid } = motorSupply(component.id);
+    const { feeds, currentFeeds, valid } = threePhaseSupply(component.id);
     const motorFrequencies = ["u1", "v1", "w1"].map((terminal, index) => frequencies.get(`${endpointKey(component.id, terminal)}|${feeds[index][0]}`));
     const frequency = motorFrequencies[0];
     const validFrequency = frequency !== undefined && Number.isFinite(frequency) && frequency > 0 && motorFrequencies.every((value) => value === frequency);
@@ -310,7 +310,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const p = properties.get(component.id)!;
     const contacts = document.components.filter(item => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap(item => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
     const connection = windingConnection(document, component.id, contacts);
-    const { feeds, currentFeeds, valid, sourceId } = motorSupply(component.id);
+    const { feeds, currentFeeds, valid, sourceId } = threePhaseSupply(component.id);
     if (!valid) {
       if (connection !== "open" && currentFeeds.length) {
         const error = phaseSupplyError(component.reference);
@@ -374,7 +374,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
   }
   const overloads = document.components.filter(c => definitionsByComponent.get(c.id)?.simulationModelId === "thermal-overload-dol-v1").map(c => ({ id: c.id, poles: [1, 2, 3].map(phase => ({ input: endpointKey(c.id, `l${phase}-in`), output: endpointKey(c.id, `t${phase}`) })) }));
   // Do not silently treat connected but unsupported load families as zero current.
-  const supportedPowerModels = new Set(["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "contactor-dol-v1", "thermal-overload-dol-v1", "catalog-induction-motor", "six-terminal-windings", "power-junction"]);
+  const supportedPowerModels = new Set(["catalog-ac-supply", "catalog-circuit-breaker", "catalog-motor-starter", "contactor-dol-v1", "thermal-overload-dol-v1", "catalog-induction-motor", "six-terminal-windings", "power-junction", "safety-phase-failure"]);
   for (const c of document.components) {
     const definition = definitionsByComponent.get(c.id);
     if (!definition || supportedPowerModels.has(definition.simulationModelId)) continue;
@@ -396,6 +396,14 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     if (!definition) return [];
     if (document.id === "reference-dol-motor-starter" && definition.simulationModelId === "contactor-dol-v1") return [];
     const active = properties.get(component.id) ?? component.properties;
+    if (definition.simulationModelId === "safety-phase-failure") {
+      const inputs = ["l1", "l2", "l3"];
+      if (active.requireWiredPhases === true || inputs.some((terminal) => wiredTerminals.has(endpointKey(component.id, terminal)))) {
+        const { feeds, valid } = threePhaseSupply(component.id, inputs);
+        inputs.forEach((terminal, index) => { active[terminal] = feeds[index].length === 1; });
+        active.runtimePhaseSupplyValid = valid;
+      }
+    }
     if (definition.simulationModelId === "power-junction") active.connectedConductors = document.wires.filter((wire) => wire.from.componentId === component.id || wire.to.componentId === component.id).length;
     if (definition.simulationModelId === "six-terminal-windings") {
       const contacts = document.components.filter((item) => ["catalog-motor-starter", "contactor-dol-v1"].includes(definitionsByComponent.get(item.id)?.simulationModelId ?? "") && properties.get(item.id)?.energized === true).flatMap((item) => ["l1", "l2", "l3"].map((phase): [{ componentId: string; terminalId: string }, { componentId: string; terminalId: string }] => [{ componentId: item.id, terminalId: `${phase}-in` }, { componentId: item.id, terminalId: `${phase}-out` }]));
