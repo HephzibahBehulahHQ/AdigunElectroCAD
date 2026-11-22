@@ -1,7 +1,9 @@
+import { endpointKey } from "../cad/terminalAnchors";
+import { removeWire } from "../cad/documentOps";
 import { validateCircuit, type TopologyIssue } from "../electrical/topology";
 import { executeCircuitModels, type CircuitModelRun } from "../simulation/circuitModels";
 import { advanceCircuitClock } from "../simulation/circuitClock";
-import type { CircuitDocument, ElectricalComponentDefinition, ComponentInstance } from "../types/electrical";
+import type { CircuitDocument, ElectricalComponentDefinition, ComponentInstance, TerminalEndpoint } from "../types/electrical";
 import type { ProjectTemplate } from "./templateLibrary";
 
 export interface TemplateVerification {
@@ -14,14 +16,29 @@ export interface TemplateVerification {
 export interface CircuitSequenceStep {
   name: string;
   durationSeconds?: number;
+  wireChanges?: Array<{ from: TerminalEndpoint; to: TerminalEndpoint; connected: boolean }>;
   changes: Array<{ reference: string; properties: ComponentInstance["properties"] }>;
   expectations: Array<{ reference: string; label: string; exact?: string; numeric?: number; tolerance?: number }>;
 }
 
 export function verifyCircuitSequence(document: CircuitDocument, steps: CircuitSequenceStep[], catalog: Map<string, ElectricalComponentDefinition>) {
   let working = structuredClone(document);
+  const savedWires = working.wires;
+  const pairKey = (from: TerminalEndpoint, to: TerminalEndpoint) => JSON.stringify([endpointKey(from), endpointKey(to)].sort());
+  const savedWireIds = new Map(savedWires.map(({ id, from, to }) => [pairKey(from, to), id]));
+  const disconnected = new Set<string>();
   return steps.map((step) => {
     const failures: string[] = [];
+    if (step.wireChanges?.length) {
+      for (const { from, to, connected } of step.wireChanges) {
+        const wireId = savedWireIds.get(pairKey(from, to));
+        if (!wireId) { failures.push("Unknown wire " + endpointKey(from) + " to " + endpointKey(to)); continue; }
+        if (connected) disconnected.delete(wireId);
+        else disconnected.add(wireId);
+      }
+      working = { ...working, wires: savedWires };
+      for (const wireId of disconnected) working = removeWire(working, wireId);
+    }
     for (const change of step.changes) {
       const component = working.components.find((item) => item.reference === change.reference);
       if (!component) { failures.push(`Unknown component ${change.reference}`); continue; }

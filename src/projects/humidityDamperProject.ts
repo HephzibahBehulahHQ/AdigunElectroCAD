@@ -13,6 +13,8 @@ export function createHumidityDamperProject(): ProjectTemplate {
     ],
   });
   const invalidHumidity = "ERROR: Humidity and setpoint must be between 0 and 100 percent.";
+  const commandEndpoints = { from: { componentId: "humidity", terminalId: "out" }, to: { componentId: "damper", terminalId: "in" } };
+  const openCommand = "ERROR: Required control terminal DA1.IN has no wire.";
   const invalidTravel = "ERROR: Damper travel time must be finite and positive.";
   const operatingSequence: CircuitSequenceStep[] = [
     humidityStep("Set HU1 to 55% for 1 s. Verify DA1 at 0% and proof OFF.", 55, 1, "0.0%", "OFF"),
@@ -29,7 +31,21 @@ export function createHumidityDamperProject(): ProjectTemplate {
       ],
     },
     humidityStep("Restore HU1 to 60% for 1 s. DA1 resumes from 70%, reaches 80%, and proof returns.", 60, 1, "80.0%", "ON"),
-    humidityStep("Lower HU1 to 55% for 3 s. DA1 returns to 50% and proof switches OFF.", 55, 3, "50.0%", "OFF"),
+    {
+      name: "Disconnect OPEN_DEMAND for 2 s. Verify an open-command fault and unavailable proof.",
+      durationSeconds: 2,
+      changes: [],
+      wireChanges: [{ ...commandEndpoints, connected: false }],
+      expectations: [
+        { reference: "DA1", label: "Signal fault", exact: openCommand },
+        { reference: "K1", label: "Signal fault", exact: openCommand },
+      ],
+    },
+    {
+      ...humidityStep("Reconnect OPEN_DEMAND for 1 s. DA1 resumes from 80% and reaches 90%.", 60, 1, "90.0%", "ON"),
+      wireChanges: [{ ...commandEndpoints, connected: true }],
+    },
+    humidityStep("Lower HU1 to 55% for 4 s. DA1 returns to 50% and proof switches OFF.", 55, 4, "50.0%", "OFF"),
     humidityStep("Hold HU1 at 55% for 5 s. DA1 stops at 0% and proof remains OFF.", 55, 5, "0.0%", "OFF"),
     {
       name: "Set DA1 travel time to zero. Verify an actuator fault and unavailable proof.",
@@ -52,7 +68,7 @@ export function createHumidityDamperProject(): ProjectTemplate {
         { id: "coil", definitionId: "logic.output-coil", reference: "K1", x: 840, y: 320, rotation: 0, properties: { input: false } },
       ],
       wires: [
-        { id: "humidity-demand", netName: "OPEN_DEMAND", from: { componentId: "humidity", terminalId: "out" }, to: { componentId: "damper", terminalId: "in" }, points: [] },
+        { id: "humidity-demand", netName: "OPEN_DEMAND", ...commandEndpoints, points: [] },
         { id: "damper-feedback", netName: "POSITION_PERCENT", from: { componentId: "damper", terminalId: "out" }, to: { componentId: "proof", terminalId: "in-a" }, points: [] },
         { id: "damper-proof", netName: "OPEN_PROOF", from: { componentId: "proof", terminalId: "out" }, to: { componentId: "coil", terminalId: "in" }, points: [] },
       ],
