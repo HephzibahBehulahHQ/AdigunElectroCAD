@@ -1,4 +1,5 @@
 import { controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
+import { evaluateFunctionalSignal } from "../simulation/functionalModels";
 
 const mark = "generic-symbol-mark functional-symbol";
 const text = "functional-symbol-text";
@@ -289,7 +290,20 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
 
   if (symbolId === "hvac-heater" || symbolId === "panel-heater") return <g className={mark}><path d={`M ${x - 26} ${cy} H ${x - 17} L ${x - 9} ${cy - 12} L ${x} ${cy + 12} L ${x + 9} ${cy - 12} L ${x + 17} ${cy} H ${x + 26}`} /></g>;
   if (symbolId === "hvac-fan" || symbolId === "panel-fan") return <g className={mark}><circle cx={x} cy={cy} r="15" />{[0, 120, 240].map((angle) => <path key={angle} d={`M ${x} ${cy} C ${x + 14} ${cy - 3} ${x + 15} ${cy - 12} ${x + 4} ${cy - 13}`} transform={`rotate(${angle} ${x} ${cy})`} />)}</g>;
-  if (symbolId === "hvac-thermostat" || symbolId === "hvac-humidistat") return <g className={mark}><circle cx={x} cy={cy} r="14" /><text x={x} y={cy + 5} textAnchor="middle" className={text}>{symbolId.endsWith("thermostat") ? "T" : "H"}</text></g>;
+  if (symbolId === "hvac-thermostat" || symbolId === "hvac-humidistat") {
+    const thermostat = symbolId === "hvac-thermostat";
+    const signal = evaluateFunctionalSignal(symbolId, properties, "out");
+    const closed = signal?.value === true;
+    const state = signal?.error ? "fault" : closed ? "contact closed" : "contact open";
+    const label = `${thermostat ? "Thermostat" : "Humidistat"}: ${state}`;
+    const contactY = cy + 22;
+    return <g className={mark} aria-label={label}>
+      <title>{label}</title>
+      <circle cx={x} cy={cy} r="14" />
+      <text x={x} y={cy + 5} textAnchor="middle" className={text}>{thermostat ? "T" : "H"}</text>
+      <path d={closed ? `M ${x - 12} ${contactY} L ${x + 12} ${contactY}` : `M ${x - 12} ${contactY} L ${x + 5} ${contactY - 6} M ${x + 9} ${contactY} H ${x + 12}`} />
+    </g>;
+  }
   if (symbolId === "hvac-damper") {
     const position = properties.runtimeDamperPositionPercent ?? properties.positionPercent;
     const validPosition = typeof position === "number" && Number.isFinite(position) && position >= 0 && position <= 100;
