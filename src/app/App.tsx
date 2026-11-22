@@ -2123,7 +2123,7 @@ export function App() {
 
       {reportsOpen && <ProjectReports projectName={project.name} sheetName={activeSheet.name} sheetReport={report} projectReport={projectReport} simulationReportFor={simulationReportFor} onExport={exportReport} onClose={() => setReportsOpen(false)} />}
 
-      <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span>{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
+      <footer><span>© {new Date().getFullYear()} Hephzibah Behulah</span><span>HB Elektroniker · AdigunElectroCAD</span><span role="status" aria-atomic="true">{notice}</span><span>Languages in this foundation: English, German. Yoruba and Nigerian Pidgin await reviewed translations.</span></footer>
     </main>
   );
 }

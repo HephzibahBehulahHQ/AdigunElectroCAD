@@ -160,6 +160,18 @@ it("keeps connection pins visible on the sheet and larger in wire mode", () => {
   expect(renderFree(false).match(/class="terminal-pin"/g)).toHaveLength(motorDefinition.terminals.length);
 });
 
+it.each([
+  { sheet: "free sheet", document: createReversingCircuit() },
+  { sheet: "DOL reference", document: createDolMotorStarter() },
+])("exposes keyboard wiring controls in Select mode on the $sheet", ({ document }) => {
+  const markup = renderToStaticMarkup(createElement(Schematic, {
+    document, selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => {}, onWireSelect: () => {}, onTerminalSelect: () => {},
+  }));
+  expect(markup).toMatch(/<svg [^>]*role="group"[^>]*aria-description="Focus a terminal/);
+  expect(markup).toMatch(/data-wire-terminal="[^"]+" role="button" tabindex="0"/);
+});
+
 it("gives terminal hit targets priority and disables branch targets during a terminal wire draft", () => {
   const document = createReversingCircuit();
   const render = (wireStart: typeof document.wires[number]["from"] | null) => renderToStaticMarkup(createElement(Schematic, {
