@@ -204,7 +204,10 @@ export function evaluateFunctionalModel(modelId: string, properties: Properties)
       const windingVoltage = connection === "star" ? voltage / Math.sqrt(3) : connection === "delta" ? voltage : 0;
       const current = number(properties, "runtimeMotorLineCurrentA");
       const torque = number(properties, "runtimeElectromagneticTorqueNm");
-      const transient = bool(properties, "mechanicalTransientEnabled") ? ` · ${number(properties, "runtimeRotorSpeedRpm").toFixed(1)} rpm · ${number(properties, "runtimeSlip").toFixed(4)} slip` : "";
+      const speed = number(properties, "runtimeRotorSpeedRpm", number(properties, "initialRotorSpeedRpm"));
+      const transient = bool(properties, "mechanicalTransientEnabled")
+        ? ` · ${speed.toFixed(1)} rpm${voltage > 0 && connection !== "open" ? ` · ${number(properties, "runtimeSlip").toFixed(4)} slip` : speed > 0 ? " · COASTING" : ""}`
+        : "";
       return { label: "Winding operating point", value: `${connection.toUpperCase()} · ${windingVoltage.toFixed(2)} V/winding · ${current.toFixed(2)} A line · ${torque.toFixed(2)} N·m${transient}` };
     }
     const resistance = number(properties, "resistanceOhm");

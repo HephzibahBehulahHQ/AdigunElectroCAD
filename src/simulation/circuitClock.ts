@@ -52,6 +52,7 @@ export function resetCircuitClock(document: CircuitDocument, catalog: Map<string
     delete properties.runtimePrevious; delete properties.scanOutput;
     delete properties.runtimeCoilEnergized;
     delete properties.runtimeThermalLevel; delete properties.runtimeThermalTripped; delete properties.runtimeThermalResetPrevious; delete properties.runtimeThermalError; delete properties.runtimeLoadCurrentA;
+    delete properties.runtimeRotorSpeedRpm; delete properties.runtimeMotorModelError;
     delete properties.runtimeQ0; delete properties.runtimeQ1; delete properties.runtimeError;
     for (let index = 0; index < PLC_MEMORY_COUNT; index++) delete properties[`runtimeM${index}`];
     for (let index = 0; index < 4; index++) { delete properties[`runtimeT${index}Elapsed`]; delete properties[`runtimeT${index}Done`]; }

@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { validateCircuit } from "../src/electrical/topology";
 import { createWiredStarDeltaCircuit, createWiredStarDeltaTemplate } from "../src/projects/wiredStarDeltaCircuit";
-import { advanceCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
+import { advanceCircuitClock, resetCircuitClock, setCircuitBooleanInput } from "../src/simulation/circuitClock";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 import { evaluateWiredControl } from "../src/simulation/wiredControl";
 import { verifyProjectTemplate } from "../src/projects/templateVerification";
@@ -121,6 +121,17 @@ it("integrates editable inertia and load torque through wired motor current and 
   expect(runningMotor.output.value).toContain("slip");
   expect(Number(executeCircuitModels(runtime, catalogById).find(run => run.reference === "F1")!.evaluatedProperties.runtimeLoadCurrentA)).toBeCloseTo(Number(runningMotor.evaluatedProperties.runtimeMotorLineCurrentA));
 
+  const closeToTrip = { ...runtime, components: runtime.components.map((component) => component.id === "overload"
+    ? { ...component, properties: { ...component.properties, thermalEnabled: true, settingA: 1, overloadFactor: 1, heatingTimeSeconds: 1, runtimeThermalLevel: 0.99 } }
+    : component) };
+  const tripped = advanceCircuitClock(closeToTrip, catalogById, 0.1);
+  const trippedRuns = executeCircuitModels(tripped, catalogById);
+  const trippedMotor = trippedRuns.find(run => run.reference === "M1")!;
+  expect(trippedRuns.find(run => run.reference === "F1")?.evaluatedProperties).toMatchObject({ runtimeThermalTripped: true, runtimeLoadCurrentA: 0 });
+  expect(trippedMotor.evaluatedProperties.lineVoltageV).toBe(0);
+  expect(Number(trippedMotor.evaluatedProperties.runtimeRotorSpeedRpm)).toBeLessThan(runningSpeed);
+  expect(trippedMotor.output.value).toContain("COASTING");
+
   runtime = setCircuitBooleanInput(runtime, catalogById, "breaker", "closed", false);
   expect(runtime.components.find(component => component.id === "breaker")!.properties.closed).toBe(false);
   expect(Number(executeCircuitModels(runtime, catalogById).find(run => run.reference === "M1")!.evaluatedProperties.lineVoltageV)).toBe(0);
@@ -128,6 +139,15 @@ it("integrates editable inertia and load torque through wired motor current and 
   const coastedSpeed = Number(runtime.components.find(component => component.id === "motor")!.properties.runtimeRotorSpeedRpm);
   expect(coastedSpeed).toBeLessThan(runningSpeed);
   expect(coastedSpeed).toBeGreaterThanOrEqual(0);
+  const coastingOutput = motor(runtime);
+  expect(coastingOutput).toContain(`${coastedSpeed.toFixed(1)} rpm · COASTING`);
+  expect(coastingOutput).not.toContain("slip");
+
+  const reset = resetCircuitClock(runtime, catalogById);
+  const resetMotor = reset.components.find(component => component.id === "motor")!;
+  expect(resetMotor.properties.runtimeRotorSpeedRpm).toBeUndefined();
+  expect(resetMotor.properties.runtimeMotorModelError).toBeUndefined();
+  expect(motor(reset)).toContain("0.0 rpm");
 });
 
 it("reports invalid enabled motor parameters through the overload fault path", () => {
