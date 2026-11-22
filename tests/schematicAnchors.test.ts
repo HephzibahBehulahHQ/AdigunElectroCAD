@@ -1067,3 +1067,13 @@ it("uses the exact Siemens 5SY4 A/B/C/D order table including nonliteral current
   expect(part("5sy4505-5")).toBeUndefined();
   expect(part("5sy4604-5")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
 });
+
+
+it("uses the Siemens 5SY6 order limits and 6 kA rating", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "SENTRON 5SY6");
+  const part = (code: string) => parts.find(entry => entry.id === "siemens." + code);
+  expect(parts).toHaveLength(179);
+  expect(part("5sy6118-7")?.propertiesSchema).toMatchObject({ ratedCurrentA: 15, curve: "C", icnKa: 6 });
+  expect(part("5sy6518-7")).toBeUndefined();
+  expect(part("5sy6606-6")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+});
