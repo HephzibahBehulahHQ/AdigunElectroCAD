@@ -15,6 +15,13 @@ import { terminalAnchors } from "../src/cad/terminalAnchors";
 import { executeCircuitModels } from "../src/simulation/circuitModels";
 
 describe("project template library", () => {
+  it("requires every wire for the cold-room alarm sequence", () => {
+    const template = templateLibrary.find(({ id }) => id === "cold-room-freeze-alarm")!;
+    for (const wire of template.document.wires) {
+      const document = removeWire(template.document, wire.id);
+      expect(verifyProjectTemplate({ ...template, document }, catalogById).passed, wire.id).toBe(false);
+    }
+  });
   it("rejects a dedicated analog project with reversed threshold logic", () => {
     const template = structuredClone(templateLibrary.find((item) => item.id === "analog-level-plc-threshold")!);
     expect(template.category).toBe("Analog Instrumentation");
@@ -119,7 +126,7 @@ describe("project template library", () => {
     expect(JSON.stringify(document)).toBe(before);
   });
   it("contains the existing entries and a source-backed Siemens DOL starter", () => {
-    expect(templateLibrary).toHaveLength(24);
+    expect(templateLibrary).toHaveLength(25);
     expect(new Set(templateLibrary.map((template) => template.id)).size).toBe(templateLibrary.length);
     expect(templateLibrary.every((template) => !/^template-\d+$/.test(template.id))).toBe(true);
   });

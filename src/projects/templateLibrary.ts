@@ -12,6 +12,7 @@ import { createTankFillPermitProject } from "./tankFillPermitProject";
 import { createHumidityDamperProject } from "./humidityDamperProject";
 import { createPt100TemperatureAlarmProject } from "./pt100TemperatureAlarmProject";
 import { createPt100PlcTransmitterProject } from "./pt100PlcTransmitterProject";
+import { createFreezerAlarmProject } from "./freezerAlarmProject";
 import { createTypeKThermocoupleAlarmProject } from "./typeKThermocoupleAlarmProject";
 import { createPilotIndicatorProject } from "./pilotIndicatorProject";
 import { createPneumaticTemplate } from "./pneumaticCircuit";
@@ -122,6 +123,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createPt100TemperatureAlarmProject(),
   createPt100PlcTransmitterProject(),
   createTypeKThermocoupleAlarmProject(),
+  createFreezerAlarmProject(),
   createPilotIndicatorProject(),
   createPlcSensorActuatorProject(),
   createTimedRelayTransferProject(),
