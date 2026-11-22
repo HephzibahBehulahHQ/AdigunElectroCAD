@@ -1,4 +1,4 @@
-import { automaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
@@ -1458,6 +1458,18 @@ export function App() {
       const check = canConnectTerminals(document, catalogById, wireStart, endpoint);
       if (!check.ok) { setNotice(check.reason ?? "The selected terminals cannot be connected."); return; }
       const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
+      if (!wireBranchStart && !isReferenceSheet && wireBends.length === 0) {
+        const anchors = terminalAnchors(document);
+        const from = anchors.find((anchor) => anchor.endpoint.componentId === wireStart.componentId && anchor.endpoint.terminalId === wireStart.terminalId);
+        const to = anchors.find((anchor) => anchor.endpoint.componentId === endpoint.componentId && anchor.endpoint.terminalId === endpoint.terminalId);
+        if (!from || !to) { setNotice("Could not find both terminal positions."); return; }
+        const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
+        const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")));
+        if (findAutomaticWireBends(from, to, obstacles) === null) {
+          setNotice("No clear automatic route. Click the drawing to add bends, then choose the destination terminal again.");
+          return;
+        }
+      }
       if (!wireBranchStart) wire.points = wireBends;
       if (!updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 })) return;
       setSelectedWireId(wire.id);

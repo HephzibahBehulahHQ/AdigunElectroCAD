@@ -1,4 +1,4 @@
-import { automaticWireBends } from "../src/cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -114,4 +114,13 @@ it("finds a multi-corridor path around staggered obstacles", () => {
         Math.max(a.y, b.y) < box.top || Math.min(a.y, b.y) > box.bottom).toBe(true);
     }
   }
+});
+
+it("distinguishes a clear direct connection from a blocked automatic route", () => {
+  const from = { x: 100, y: 400, endpoint: { componentId: "source", terminalId: "out" } };
+  const to = { x: 900, y: 400, endpoint: { componentId: "load", terminalId: "in" } };
+  const barrier = { componentId: "barrier", left: 400, right: 600, top: 0, bottom: 780 };
+  expect(findAutomaticWireBends(from, to, [])).toEqual([]);
+  expect(findAutomaticWireBends(from, to, [barrier])).toBeNull();
+  expect(automaticWireBends(from, to, [barrier])).toEqual([]);
 });
