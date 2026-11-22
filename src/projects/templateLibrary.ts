@@ -1,3 +1,4 @@
+import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampProject";
 import { createCascadedTimerStartProject } from "./cascadedTimerStartProject";
 import { createPoweredTimerPilotTransferProject } from "./poweredTimerPilotTransferProject";
 import { createRelayControlFeedLossProject } from "./relayControlFeedLossProject";
@@ -164,6 +165,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createRelayControlFeedLossProject(),
   createPoweredTimerPilotTransferProject(),
   createCascadedTimerStartProject(),
+  createMarshallingTerminalLampProject(),
   createPlcSensorActuatorProject(),
   createTransferProofWatchdogProject(),
   createDuplexPumpAlternatorProject(),
