@@ -999,3 +999,12 @@ it("preserves Eaton FAZ K, Z and S curve pole and order-code limits", () => {
   expect(part("faz-s40-2")?.terminals).toHaveLength(4);
   expect(part("faz-s40-3")).toBeUndefined();
 });
+
+
+it("exposes Eaton FAZ neutral terminals as a separate switched pair", () => {
+  const one = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c16-1n");
+  const three = componentLibraryCatalog.find(entry => entry.id === "eaton.faz-c16-3n");
+  expect(one?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "N", "N"]);
+  expect(three?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "N", "N"]);
+  expect(three?.manufacturerRecord?.topology).toMatchObject({ protectedPoles: 3, neutralTerminals: ["l4-in", "l4-out"] });
+});

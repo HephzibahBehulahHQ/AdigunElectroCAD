@@ -394,10 +394,10 @@ it("rejects a mixed-frequency feed at a wired phase monitor", () => {
   expect(monitor().output.value).toBe("HEALTHY");
 });
 
-it("switches the fourth Acti9 pole without bridging it to an adjacent phase", () => {
+it.each(["schneider.acti9.a9f74416", "eaton.faz-c16-3n"])("switches the fourth contact of %s independently of adjacent phases", (definitionId) => {
   const { document } = createVfdPhaseProofProject();
   const breaker = {
-    id: "acti9", definitionId: "schneider.acti9.a9f74416", reference: "Q9",
+    id: "acti9", definitionId, reference: "Q9",
     x: 520, y: 250, rotation: 0 as const, properties: { closed: true },
   };
   document.components.push(breaker);

@@ -159,3 +159,38 @@ export const eatonFazRtDcCatalog: ElectricalComponentDefinition[] = [1, 2].flatM
     };
   });
 });
+
+
+const switchedNeutralRows = [
+  { curve: "B", currents: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13, 15, 16, 20, 25, 30, 32, 40, 50, 63] },
+  { curve: "C", currents: [0.5, 1, 1.6, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32, 40, 50, 63] },
+  { curve: "D", currents: [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 20, 25, 30, 32, 40, 50, 63] },
+  { curve: "K", currents: [0.5, 1, 1.6, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63] },
+] as const;
+
+export const eatonFazNeutralCatalog: ElectricalComponentDefinition[] = [1, 3].flatMap(protectedPoles => {
+  const { branches, terminals } = numberedBreakerPoles(protectedPoles + 1);
+  const neutralTerminals = branches.at(-1)!;
+  const labeledTerminals = terminals.map(terminal =>
+    neutralTerminals.includes(terminal.id) ? { ...terminal, label: "N" } : terminal,
+  );
+  return switchedNeutralRows.flatMap(({ curve, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    const orderCode = "FAZ-" + curve + ratedCurrentA + "/" + protectedPoles + "N";
+    return {
+      id: "eaton." + orderCode.toLowerCase().replace("/", "-"),
+      name: "Eaton " + orderCode + " · FAZ Switched Neutral",
+      category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + (protectedPoles + 1) + "pn",
+      description: "FAZ supplementary protector with " + protectedPoles + " protected phase pole(s) and a concurrently switched neutral.",
+      terminals: labeledTerminals,
+      manufacturerRecord: {
+        manufacturer: "Eaton", series: "FAZ UL 1077", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "CA08100005E, vol. 4 tab 1, section 1.3, 1N/3N B/C/D/K product selection",
+        topology: { type: "mechanically-linked-breaker-with-neutral", closed: branches, open: [], protectedPoles, neutralTerminals },
+      },
+      propertiesSchema: { ratedCurrentA, curve, protectedPoles, switchedNeutral: true, closed: true },
+      simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
+      documentation: "The Closed setting switches each protected pole and the electrically separate neutral simultaneously. Simulation covers manual continuity. Overcurrent tripping and contact timing are outside scope.",
+      standardsReferences: ["UL 1077", catalogue, "https://www.eaton.com/gb/en-gb/skuPage.278674.html"],
+    };
+  }));
+});
