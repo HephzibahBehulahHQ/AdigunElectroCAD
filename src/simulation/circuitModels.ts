@@ -1,3 +1,4 @@
+import { fusePoleClosed } from "./industrialDevices";
 import { conflictingSignalDrivers } from "../electrical/signalDrivers";
 import { evaluateWiredControl } from "./wiredControl";
 import { traceOverloadCurrents, type NominalCurrentLoad } from "./overloadCurrent";
@@ -228,7 +229,8 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
     const conducting = model === "catalog-circuit-breaker" || model === "breaker-3p-v1" ? p.closed === true
       : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
       : false;
-    if (conducting) for (const phase of ["l1", "l2", "l3"]) {
+    for (const phase of ["l1", "l2", "l3"] as const) {
+      if (!conducting && !(model === "catalog-fuse-switch" && fusePoleClosed(p, phase))) continue;
       link(endpointKey(component.id, `${phase}-in`), endpointKey(component.id, `${phase}-out`));
     }
     if (model === "thermal-overload-dol-v1") for (let phase = 1; phase <= 3; phase++) link(endpointKey(component.id, `l${phase}-in`), endpointKey(component.id, `t${phase}`));

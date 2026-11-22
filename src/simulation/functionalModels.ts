@@ -1,6 +1,6 @@
 import { compare, currentTransformerSecondaryAmp, dacMilliamp, edgeTrigger, encoderPulses, flowPulseHz, levelToMilliamp, loadCellMillivolt, logicGate, mathBlock, milliampToPlcRaw, normallyClosed, normallyOpen, outputCoil, pt100ResistanceOhm, setResetLatch, thermocoupleMillivolt, vibrationRms } from "./controlLogic";
 import { cylinderPositionPercent, valve52Direction } from "./pneumaticState";
-import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, damperPosition, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
+import { batteryStateOfCharge, busbarUtilizationPercent, cableTrayFillPercent, chargeControllerCurrentA, chillerCoolingW, compressorDeliveryLpm, damperPosition, dinRailFillPercent, distributionBoardUtilizationPercent, doorInterlockClosed, earthLeakageTripped, frlOutletPressureBar, fusePoleClosed, gridTieClosed, humidistatOn, hydraulicCylinderForceN, inverterAcPowerW, lightCurtainClear, panelFanCoolingW, panelHeaterPowerW, phaseHealthy, pullCordHealthy, pumpFlowLpm, reliefValveOpen, safetyRelayEnergized, shieldedCableInterferenceFactor, solarPowerW, stackLightChannels, thermostatOn, threePhaseCableLossW, threePhaseVoltageDropV, zeroSpeedDetected } from "./industrialDevices";
 
 export interface FunctionalModelResult { label: string; value: string; error?: string; }
 export type SignalUnit = "boolean" | "milliamp" | "plc-raw" | "ohm" | "millivolt" | "hertz" | "acceleration" | "pulse-count" | "ampere" | "scalar" | "motion";
@@ -172,7 +172,15 @@ const models: Record<string, Model> = {
   "indicator-lamp-v1": (p) => ({ label: "Indicator lamp", value: bool(p, "runtimeLampLit") ? `LIT · ${number(p, "runtimeLampVoltageV")} V ${bool(p, "dc") ? "DC" : "AC"}` : "OFF" }),
   "pushbutton-start-v1": (p) => ({ label: "Dry contact 13–14", value: bool(p, "pressed") ? "CLOSED" : "OPEN" }),
   "pushbutton-stop-v1": (p) => ({ label: "Dry contact 21–22", value: bool(p, "pressed") ? "OPEN" : "CLOSED" }),
-  "catalog-fuse-switch": (p) => ({ label: "Fuse check", value: bool(p, "fuseHealthy") && number(p, "loadCurrentA") <= number(p, "ratedCurrentA") ? `${(number(p, "loadCurrentA") / number(p, "ratedCurrentA", 1) * 100).toFixed(1)}% load` : "TRIPPED / OVERRATING" }),
+  "catalog-fuse-switch": (p) => {
+    const open = (["l1", "l2", "l3"] as const).filter((phase) => !fusePoleClosed(p, phase));
+    const load = number(p, "loadCurrentA");
+    const rating = number(p, "ratedCurrentA", 1);
+    const value = !bool(p, "fuseHealthy") || load > rating ? "TRIPPED / OVERRATING"
+      : open.length ? "OPEN · " + open.map((phase) => phase.toUpperCase()).join(", ")
+      : (load / rating * 100).toFixed(1) + "% load";
+    return { label: "Fuse check", value };
+  },
   "catalog-motor-starter": (p) => ({ label: "Starter contacts", value: bool(p, "energized") ? `CLOSED · ${number(p, "coilVoltageV")} V coil` : "OPEN" }),
   "catalog-interface-relay": (p) => ({ label: "Relay contacts", value: bool(p, "energized") ? `ENERGIZED · ${number(p, "changeoverContacts", 1)} CO` : "DE-ENERGIZED" }),
   "catalog-selector-switch": (p) => ({ label: "Switch state", value: `${bool(p, "closed") ? "CLOSED" : "OPEN"} · ${text(p, "contactForm", "NO")}` }),

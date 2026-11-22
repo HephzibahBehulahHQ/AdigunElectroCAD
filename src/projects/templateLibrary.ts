@@ -1,3 +1,4 @@
+import { createFusedMotorPhaseLossProject } from "./fusedMotorPhaseLossProject";
 import { createMarshallingTerminalLampProject } from "./marshallingTerminalLampProject";
 import { createCascadedTimerStartProject } from "./cascadedTimerStartProject";
 import { createPoweredTimerPilotTransferProject } from "./poweredTimerPilotTransferProject";
@@ -189,6 +190,7 @@ export const templateLibrary: ProjectTemplate[] = [
   createThermalWiredReversingTemplate(),
   createWiredStarDeltaTemplate(),
   createSourcedDolTemplate(),
+  createFusedMotorPhaseLossProject(),
   createVfdFeederProject(),
 ];
 
