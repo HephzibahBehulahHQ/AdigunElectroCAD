@@ -1,13 +1,14 @@
 import { useState } from "react";
-import type { ElectricalComponentDefinition } from "../types/electrical";
+import type { ComponentInstance, ElectricalComponentDefinition } from "../types/electrical";
 import { ComponentSymbolPreview } from "./ComponentSymbolPreview";
 
 export const CATALOG_CATEGORY_PAGE_SIZE = 40;
 
-export function CatalogTree({ definitions, selectedId, searching, onSelect, onDragPreview }: {
+export function CatalogTree({ definitions, selectedId, searching, customComponents, onSelect, onDragPreview }: {
   definitions: ElectricalComponentDefinition[];
   selectedId: string;
   searching: boolean;
+  customComponents?: ReadonlyMap<string, ComponentInstance>;
   onSelect: (id: string) => void;
   onDragPreview?: (id: string) => void;
 }) {
@@ -29,7 +30,7 @@ export function CatalogTree({ definitions, selectedId, searching, onSelect, onDr
       return <details className="catalog-category" key={category} open={searching || category === selectedCategory}>
         <summary><span>{category}</span><small>{members.length}</small></summary>
         {members.slice(page * size, (page + 1) * size).map((definition) => <button key={definition.id} draggable title="Drag onto the canvas to place at that position" className={definition.id === selectedId ? "catalog-item selected" : "catalog-item"} onClick={() => onSelect(definition.id)} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("application/x-adigun-electrocad-component", definition.id); onDragPreview?.(definition.id); }} onDragEnd={() => onDragPreview?.("")} aria-label={`${definition.name}; drag to place on the canvas`} aria-pressed={definition.id === selectedId}>
-          <ComponentSymbolPreview definition={definition} thumbnail />
+          <ComponentSymbolPreview definition={definition} instance={customComponents?.get(definition.id)} thumbnail />
           <span><strong>{definition.name}</strong><small>{definition.simulationSupport}</small></span>
         </button>)}
         {pageCount > 1 && <nav className="project-pagination" aria-label={`${category} component pages`}>

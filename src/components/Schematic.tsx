@@ -1,6 +1,6 @@
 import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
-import type { CircuitDocument, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
+import type { CircuitDocument, ComponentInstance, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
 import type { TerminalEndpoint, CircuitSheet, ProjectContinuation } from "../types/electrical";
 import { catalogById } from "../catalog/dolCatalog";
@@ -41,6 +41,7 @@ interface Props {
   symbolStates?: ReadonlyMap<string, CircuitDocument["components"][number]["properties"]>;
   onPlaceComponent?: (x: number, y: number) => void;
   placementPreviewDefinitionId?: string;
+  placementPreviewInstance?: ComponentInstance;
   placementDragging?: boolean;
   onComponentDrop?: (definitionId: string, x: number, y: number) => void;
   onComponentTransform?: (componentId: string, transform: ComponentTransform) => void;
@@ -246,7 +247,7 @@ export function SixTerminalWindings({ x, y, productName }: { x: number; y: numbe
   </g>;
 }
 
-function PlacedSymbol({ component, evaluatedProperties, indicatorLit, draftingStyle, selectedComponentId, selectedComponentIds = [], onSelect, onMove, onMovePreview, onOpenContextMenu, previewDelta, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; evaluatedProperties?: CircuitDocument["components"][number]["properties"]; indicatorLit?: boolean; draftingStyle: DraftingStyle; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; onMovePreview?: Props["onMovePreview"]; onOpenContextMenu?: Props["onComponentContextMenu"]; previewDelta?: { x: number; y: number }; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
+export function PlacedSymbol({ component, evaluatedProperties, indicatorLit, draftingStyle, selectedComponentId, selectedComponentIds = [], onSelect, onMove, onMovePreview, onOpenContextMenu, previewDelta, wireMode, terminalAnchorsForComponent }: { component: CircuitDocument["components"][number]; evaluatedProperties?: CircuitDocument["components"][number]["properties"]; indicatorLit?: boolean; draftingStyle: DraftingStyle; selectedComponentId: string; selectedComponentIds?: string[]; onSelect: Props["onSelect"]; onMove?: Props["onMove"]; onMovePreview?: Props["onMovePreview"]; onOpenContextMenu?: Props["onComponentContextMenu"]; previewDelta?: { x: number; y: number }; wireMode?: boolean; terminalAnchorsForComponent: TerminalAnchor[] }) {
   const definition = catalogById.get(component.definitionId);
   const labels = componentLabelOffsets(component.rotation, component.definitionId);
   const typeLabel = typeof component.properties.indication === "string" && component.properties.indication.trim() ? component.properties.indication.trim() : definition?.referencePrefix ?? "?";
@@ -292,9 +293,10 @@ function PlacedSymbol({ component, evaluatedProperties, indicatorLit, draftingSt
   </g>;
 }
 
-function ComponentPlacementPreview({ document, definitionId, resolvePoint, dragging }: {
+function ComponentPlacementPreview({ document, definitionId, instance, resolvePoint, dragging }: {
   document: CircuitDocument;
   definitionId: string;
+  instance?: ComponentInstance;
   resolvePoint: (point: { x: number; y: number }) => { x: number; y: number };
   dragging: boolean;
 }) {
@@ -328,17 +330,17 @@ function ComponentPlacementPreview({ document, definitionId, resolvePoint, dragg
     return () => events.abort();
   }, [dragging, resolvePoint]);
 
-  const definition = catalogById.get(definitionId);
-  const component = point && definition ? {
-    ...point, id: "placement-preview", definitionId, rotation: 0 as const,
-    reference: nextComponentReference(document.components, definition.referencePrefix), properties: definition.propertiesSchema,
+  const definition = catalogById.get(instance?.definitionId ?? definitionId);
+  const component: ComponentInstance | null = point && definition ? {
+    ...instance, ...point, id: "placement-preview", definitionId: definition.id, rotation: instance?.rotation ?? 0,
+    reference: nextComponentReference(document.components, definition.referencePrefix), properties: instance?.properties ?? definition.propertiesSchema,
   } : null;
-  const bounds = component ? componentFootprint(component.x, component.y, component.rotation, definitionId) : null;
-  const clear = component && canPlaceComponent(document.components, "", component.x, component.y, definitionId);
+  const bounds = component ? instanceFootprint(component) : null;
+  const clear = component && canPlaceComponent([...document.components, component], component.id, component.x, component.y);
   return <g ref={marker} className={clear ? "component-placement-preview" : "component-placement-preview blocked"} data-export-exclude="" pointerEvents="none" aria-hidden="true">
     {component && bounds && <>
       <rect className="component-placement-outline" x={bounds.left} y={bounds.top} width={bounds.right - bounds.left} height={bounds.bottom - bounds.top} />
-      <PlacedSymbol component={component} draftingStyle={{}} selectedComponentId="" onSelect={() => {}}
+      <PlacedSymbol component={component} draftingStyle={component} selectedComponentId="" onSelect={() => {}}
         terminalAnchorsForComponent={terminalAnchors({ ...document, components: [component], wires: [] })} />
     </>}
   </g>;
@@ -378,7 +380,7 @@ export function GenericSymbol({ symbolId, x, y }: { symbolId: string; x: number;
   return <path d={`M ${x - 25} ${y - 13} H ${x + 25}`} className="generic-symbol-mark" />;
 }
 
-function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, wireNotice, wireBends = [], onWireBend, onSelect, onComponentContextMenu, onComponentDrop, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId = "", onWireRouteChange, onTerminalSelect, onMove, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds = [], onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect }: Props) {
+function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementPreviewInstance, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, wireMode, wireStart, wireNotice, wireBends = [], onWireBend, onSelect, onComponentContextMenu, onComponentDrop, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId = "", onWireRouteChange, onTerminalSelect, onMove, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect = () => {}, onAnnotationPlace = () => {}, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds = [], onGraphicSelect = () => {}, onGraphicCreate = () => {}, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect }: Props) {
   const [transformPreview, setTransformPreview] = useState<{ id: string; action: ComponentTransform } | null>(null);
   const transformTarget = onComponentTransform && !wireMode && !graphicMode && !annotationMode && !wireRouteEditId && selectedComponentIds.length <= 1
     ? document.components.find((component) => component.id === selectedComponentId)
@@ -654,7 +656,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       <ProjectContinuationMarkers continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} anchors={visibleAnchors} componentClearances={previewDocument.components.map(instanceFootprint)} onNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onSelect={onContinuationSelect} />
       {(wireMode || (!onPlaceComponent && !placementDragging && !graphicMode && !annotationMode && !wireRouteEditId)) && <g className="terminal-anchors" data-export-exclude="">{visibleAnchors.map((item) => <TerminalHitTarget key={endpointKey(item.endpoint)} anchor={item} component={componentsById.get(item.endpoint.componentId)} radius={terminalHitRadius(item, pinsByComponent.get(item.endpoint.componentId) ?? [], zoom, wireMode)} markerRadius={4} wireMode={wireMode} wireStart={wireStart} onSelect={onTerminalSelect} />)}</g>}
       </g>
-      {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
+      {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} instance={placementPreviewInstance} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>
     {wireMode && wireNotice && <div className="wire-canvas-message">{wireNotice}</div>}
     {freeView && <><DrawingRulers bounds={drawingBounds} zoom={zoom} onAddGuide={onAddGuide} /><output ref={cursorReadout} aria-label="Drawing cursor coordinates" aria-live="off" className="drawing-cursor-readout">X —  Y —  du</output></>}
@@ -702,10 +704,10 @@ function ProjectContinuationMarkers({ continuations = [], projectSheets = [], ac
   })}</g>;
 }
 
-export function Schematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, wireNotice, wireBends = [], onWireBend, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId, onWireRouteChange, onTerminalSelect, onMove, onComponentDrop, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds, onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect, onComponentContextMenu }: Props) {
+export function Schematic({ document, symbolStates, onPlaceComponent, placementPreviewDefinitionId, placementPreviewInstance, placementDragging, litIndicatorIds, onComponentTransform, selectedComponentId, selectedComponentIds = [], selectedWireId, simulation, wireMode, wireStart, wireNotice, wireBends = [], onWireBend, onSelect, onGroupSelect, onWireSelect, onWireBranchStart, wireRouteEditId, onWireRouteChange, onTerminalSelect, onMove, onComponentDrop, zoom = .85, freeView, onAddGuide, showGrid = true, annotationMode = false, selectedAnnotationId = "", onAnnotationSelect, onAnnotationPlace, onAnnotationMove, graphicMode = null, selectedGraphicId = "", selectedGraphicIds, onGraphicSelect, onGraphicCreate, onGraphicMove, onGraphicResize, onGraphicVertexMove, onGraphicVertexInsert, onGraphicVertexDelete, continuations, projectSheets, activeSheetId, onContinuationNavigate, selectedContinuationId, onContinuationSelect, onComponentContextMenu }: Props) {
   const [wirePointer, setWirePointer] = useState<(SchematicGraphicPoint & { vertical?: boolean }) | null>(null);
   useEffect(() => { setWirePointer(null); }, [wireStart, document.id]);
-  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} symbolStates={symbolStates} onPlaceComponent={onPlaceComponent} placementPreviewDefinitionId={placementPreviewDefinitionId} placementDragging={placementDragging} litIndicatorIds={litIndicatorIds} onComponentTransform={onComponentTransform} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} wireNotice={wireNotice} wireBends={wireBends} onWireBend={onWireBend} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onWireBranchStart={onWireBranchStart} wireRouteEditId={wireRouteEditId} onWireRouteChange={onWireRouteChange} onTerminalSelect={onTerminalSelect} onMove={onMove} onComponentDrop={onComponentDrop} zoom={zoom} freeView={freeView} onAddGuide={onAddGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} onContinuationNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onContinuationSelect={onContinuationSelect} onComponentContextMenu={onComponentContextMenu} />;
+  if (document.id !== "reference-dol-motor-starter") return <FreeSchematic document={document} symbolStates={symbolStates} onPlaceComponent={onPlaceComponent} placementPreviewDefinitionId={placementPreviewDefinitionId} placementPreviewInstance={placementPreviewInstance} placementDragging={placementDragging} litIndicatorIds={litIndicatorIds} onComponentTransform={onComponentTransform} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} simulation={simulation} wireMode={wireMode} wireStart={wireStart} wireNotice={wireNotice} wireBends={wireBends} onWireBend={onWireBend} onSelect={onSelect} onGroupSelect={onGroupSelect} onWireSelect={onWireSelect} onWireBranchStart={onWireBranchStart} wireRouteEditId={wireRouteEditId} onWireRouteChange={onWireRouteChange} onTerminalSelect={onTerminalSelect} onMove={onMove} onComponentDrop={onComponentDrop} zoom={zoom} freeView={freeView} onAddGuide={onAddGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={onAnnotationSelect} onAnnotationPlace={onAnnotationPlace} onAnnotationMove={onAnnotationMove} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={onGraphicSelect} onGraphicCreate={onGraphicCreate} onGraphicMove={onGraphicMove} onGraphicResize={onGraphicResize} onGraphicVertexMove={onGraphicVertexMove} onGraphicVertexInsert={onGraphicVertexInsert} onGraphicVertexDelete={onGraphicVertexDelete} continuations={continuations} projectSheets={projectSheets} activeSheetId={activeSheetId} onContinuationNavigate={onContinuationNavigate} selectedContinuationId={selectedContinuationId} onContinuationSelect={onContinuationSelect} onComponentContextMenu={onComponentContextMenu} />;
   const references = new Map(document.components.map((component) => [component.id, component.reference]));
   const energized = simulation.breakerClosed && simulation.contactorEnergized && !simulation.overloadTripped;
   const switched = simulation.breakerClosed;

@@ -1,13 +1,24 @@
 import { terminalAnchors } from "../cad/terminalAnchors";
-import { componentFootprint } from "../cad/componentGeometry";
-import type { ElectricalComponentDefinition } from "../types/electrical";
+import { componentFootprint, instanceFootprint } from "../cad/componentGeometry";
+import type { ComponentInstance, ElectricalComponentDefinition } from "../types/electrical";
 import { FunctionalSymbol, hasDedicatedFunctionalSymbol } from "./functionalSymbols";
-import { GenericSymbol, SixTerminalWindings } from "./Schematic";
+import { GenericSymbol, PlacedSymbol, SixTerminalWindings } from "./Schematic";
 
-export function ComponentSymbolPreview({ definition, thumbnail = false }: {
+export function ComponentSymbolPreview({ definition, instance, thumbnail = false }: {
   definition: ElectricalComponentDefinition;
   thumbnail?: boolean;
+  instance?: ComponentInstance;
 }) {
+  if (instance) {
+    const component = { ...instance, x: 0, y: 0, reference: "" };
+    const { left, right, top, bottom } = instanceFootprint(component);
+    const anchors = terminalAnchors({ id: "custom-preview", name: "", description: "", revision: 1, components: [component], wires: [] });
+    return <svg className={thumbnail ? "component-symbol-thumbnail" : "component-symbol-preview"}
+      viewBox={[left - 4, top - 4, right - left + 8, bottom - top + 8].join(" ")}
+      role={thumbnail ? undefined : "img"} aria-hidden={thumbnail || undefined} aria-label={thumbnail ? undefined : definition.name + " schematic symbol"}>
+      <PlacedSymbol component={component} draftingStyle={component} selectedComponentId="" onSelect={() => {}} terminalAnchorsForComponent={anchors} />
+    </svg>;
+  }
   const { left, right, top, bottom } = componentFootprint(0, 0, 0, definition.id);
   const anchors = thumbnail ? [] : terminalAnchors({
     id: "catalog-preview", name: definition.name, description: "", revision: 1, wires: [],

@@ -91,6 +91,21 @@ const copy = {
   },
 } as const;
 
+const CUSTOM_COMPONENTS_STORAGE_KEY = "adigun-electro-cad.custom-components.v1";
+
+function readCustomComponents(): ComponentInstance[] {
+  try {
+    const entries: unknown = JSON.parse(window.localStorage.getItem(CUSTOM_COMPONENTS_STORAGE_KEY) ?? "[]");
+    if (!Array.isArray(entries)) return [];
+    return entries.flatMap(entry => {
+      try {
+        if (typeof entry.id !== "string" || !entry.id.startsWith("saved-component-")) return [];
+        return [{ ...parseCustomComponentJson(JSON.stringify(entry.file)), id: entry.id }];
+      } catch { return []; }
+    });
+  } catch { return []; }
+}
+
 const STORAGE_KEY = "adigun-electro-cad.project.v2";
 const fixedReferenceComponentIds = new Set(["supply", "breaker", "contactor", "overload", "motor", "control", "stop", "start"]);
 
@@ -115,6 +130,7 @@ export function App() {
   const [history, setHistory] = useState<ProjectHistory>({ undo: [], redo: [] });
   const [selectedComponentId, setSelectedComponentId] = useState("");
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
+  const [customComponents, setCustomComponents] = useState(readCustomComponents);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("supply.three-phase");
   const [componentPanelOpen, setComponentPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -322,7 +338,14 @@ export function App() {
   const selectedContinuation = project.continuations?.find((item) => item.id === selectedContinuationId);
   const selectedAnnotation = document.annotations?.find((annotation) => annotation.id === selectedAnnotationId);
   const selectedGraphic = document.graphics?.find((graphic) => graphic.id === selectedGraphicId);
-  const selectedDefinition = componentLibraryById.get(selectedDefinitionId) ?? componentLibraryCatalog[0];
+  const customComponentsById = useMemo(() => new Map(customComponents.map(component => [component.id, component])), [customComponents]);
+  const customDefinitions = useMemo(() => customComponents.map(component => {
+    const base = catalogById.get(component.definitionId)!;
+    return { ...base, id: component.id, name: component.displayName || base.name, category: "My Components",
+      terminals: component.customTerminals ?? base.terminals, propertiesSchema: component.properties };
+  }), [customComponents]);
+  const libraryDefinitions = useMemo(() => new Map([...componentLibraryById, ...customDefinitions.map(definition => [definition.id, definition] as const)]), [customDefinitions]);
+  const selectedDefinition = libraryDefinitions.get(selectedDefinitionId) ?? componentLibraryCatalog[0];
   const selectedTemplate = templateLibrary.find((template) => template.id === selectedTemplateId) ?? templateLibrary.find((template) => template.id === SOURCE_BACKED_DOL_TEMPLATE_ID)!;
   const selectedTemplateVerification = useMemo(() => verifyProjectTemplate(selectedTemplate, catalogById), [selectedTemplate]);
   const topologyIssues = useMemo(() => validateCircuit(document, catalogById), [document]);
@@ -352,7 +375,7 @@ export function App() {
       valve, cylinder: cylinderPosition(50, valve, 1, 4), pumpLpm: pumpFlowLpm(10, 1000), forceN: hydraulicCylinderForceN(industrialPressureBar, 50), reliefOpen: reliefValveOpen(industrialPressureBar, 180), frlBar: frlOutletPressureBar(8, 6, 0.4), compressorLpm: compressorDeliveryLpm(120, extend || retract), temperatureNext, thermostat: thermostatOn(industrialTemperatureC, 21, 2, false), humidistat: humidistatOn(65, 60, 4, false), damper: damperPosition(30, industrialTemperatureC > 23 ? 100 : 20, 1, 10), solarW, batterySoc: batteryStateOfCharge(60, solarW / 48, 100, 1 / 60), inverterW: inverterAcPowerW(solarW, 0.93, 1000), gridTie: gridTieClosed(true, 0.05), safety: safetyRelayEnergized(industrialSafetyA, industrialSafetyB, true), curtainClear: lightCurtainClear(false), phaseHealthy: phaseHealthy(true, true, true), leakageTrip: earthLeakageTripped(12, 30), voltageDrop: threePhaseVoltageDropV(industrialCableCurrentA, 100, 1.5), cableLoss: threePhaseCableLossW(industrialCableCurrentA, 100, 1.5),
     };
   }, [industrialCableCurrentA, industrialDirection, industrialPressureBar, industrialSafetyA, industrialSafetyB, industrialSolarIrradiance, industrialTemperatureC]);
-  const searchCatalog = useMemo(() => indexComponentCatalog(componentLibraryCatalog), []);
+  const searchCatalog = useMemo(() => indexComponentCatalog([...componentLibraryCatalog, ...customDefinitions]), [customDefinitions]);
   const filteredCatalog = useMemo(() => searchCatalog(search), [searchCatalog, search]);
 
   useEffect(() => {
@@ -937,6 +960,20 @@ export function App() {
     setNotice(selectedComponent.reference + " exported as a reusable component.");
   };
 
+  const saveCustomComponentToBank = (source: ComponentInstance): boolean => {
+    const encoded = JSON.stringify(encodeCustomComponent(source));
+    const existing = customComponents.find(component => JSON.stringify(encodeCustomComponent(component)) === encoded);
+    if (existing) { setSelectedDefinitionId(existing.id); return true; }
+    const saved = { ...parseCustomComponentJson(encoded), id: "saved-component-" + crypto.randomUUID() };
+    const next = [...customComponents, saved];
+    try {
+      window.localStorage.setItem(CUSTOM_COMPONENTS_STORAGE_KEY, JSON.stringify(next.map(component => ({ id: component.id, file: encodeCustomComponent(component) }))));
+    } catch { return false; }
+    setCustomComponents(next);
+    setSelectedDefinitionId(saved.id);
+    return true;
+  };
+
   const importCustomComponent = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
@@ -955,7 +992,8 @@ export function App() {
       if (!position) { setNotice("No clear placement for this component. Pan to an open area and import again."); return; }
       if (!updateDocument({ ...document, components: [...document.components, { ...instance, ...position }], revision: document.revision + 1 })) return;
       selectComponent(id);
-      setNotice(instance.reference + " imported into the drawing.");
+      const added = saveCustomComponentToBank(source);
+      setNotice(instance.reference + (added ? " imported and saved in My Components." : " imported. The browser could not save it to My Components."));
     } catch (error) {
       setNotice("Component import rejected: " + (error instanceof Error ? error.message : "Unable to read component."));
     }
@@ -1212,10 +1250,13 @@ export function App() {
   };
 
   const insertCatalogComponentAt = (definitionId: string, x: number, y: number) => {
-    const definition = componentLibraryById.get(definitionId);
+    const definition = libraryDefinitions.get(definitionId);
     if (!definition) return;
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
-    if (!canPlaceComponent(movableComponents, "", x, y, definition.id, undefined, isReferenceSheet ? "reference" : "free")) {
+    const saved = customComponentsById.get(definitionId);
+    if (saved && isReferenceSheet) { setNotice("Place custom components on a free sheet."); return; }
+    const candidate = saved ? [...movableComponents, saved] : movableComponents;
+    if (!canPlaceComponent(candidate, saved?.id ?? "", x, y, saved?.definitionId ?? definition.id, undefined, isReferenceSheet ? "reference" : "free")) {
       setNotice(`There is not enough clear space at that position for ${definition.name}. Drop it in another open area.`);
       return;
     }
@@ -1224,12 +1265,13 @@ export function App() {
     let suffix = 2;
     while (document.components.some((component) => component.id === id)) id = `${idBase}-${suffix++}`;
     const instance: ComponentInstance = {
+      ...saved,
       id,
-      definitionId: definition.id,
+      definitionId: saved?.definitionId ?? definition.id,
       reference: nextComponentReference(document.components, definition.referencePrefix),
       x,
       y,
-      rotation: 0,
+      rotation: saved?.rotation ?? 0,
       properties: { ...definition.propertiesSchema },
     };
     updateDocument({ ...document, components: [...document.components, instance], revision: document.revision + 1 });
@@ -1242,7 +1284,9 @@ export function App() {
   const addSelectedComponent = () => {
     const movableComponents = document.components.filter((component) => !(isReferenceSheet && fixedReferenceComponentIds.has(component.id)));
     const placementView = freeView && unobstructedDrawingBounds(freeView, currentZoom);
-    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", selectedDefinition.id, placementView);
+    const saved = customComponentsById.get(selectedDefinition.id);
+    if (saved && isReferenceSheet) { setNotice("Place custom components on a free sheet."); return; }
+    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", saved?.definitionId ?? selectedDefinition.id, placementView, saved);
     if (!placement) {
       if (!isReferenceSheet) {
         activateSelectTool();
@@ -2077,7 +2121,7 @@ export function App() {
           }, 0);
         }
       }}>
-        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label>{!isReferenceSheet && <label className="menu-file-control">Import custom component<input aria-label="Import custom component" type="file" accept="application/json,.json" onChange={importCustomComponent} /></label>}{selectedComponent && isUserSymbolDefinition(selectedComponent.definitionId) && <button onClick={exportCustomComponent}>Export custom component</button>}</div></details>
+        <details><summary>File</summary><div className="menu-popover"><button onClick={restoreDol}>{t.restore}</button><button onClick={saveLocally}>{t.save}</button><button onClick={() => void saveToCloud()}>Save to cloud</button><button onClick={loadLocalSave}>Load local save</button><button onClick={() => void loadFromCloud()}>Load cloud project</button><button onClick={exportProject}>{t.export}</button><button onClick={() => exportSchematicSvg()}>Export SVG</button><button onClick={() => exportSchematicSvg("frame")}>Export frame SVG</button><button onClick={exportSchematicPng}>Export PNG</button><button onClick={printSchematic}>Print schematic</button><button onClick={printWorkbook}>Print project PDF</button><label className="menu-file-control">Import JSON<input type="file" accept="application/json,.json" onChange={importProject} /></label>{!isReferenceSheet && <label className="menu-file-control">Import custom component<input aria-label="Import custom component" type="file" accept="application/json,.json" onChange={importCustomComponent} /></label>}{selectedComponent && isUserSymbolDefinition(selectedComponent.definitionId) && <><button onClick={exportCustomComponent}>Export custom component</button><button onClick={() => { try { setNotice(saveCustomComponentToBank(selectedComponent) ? "Component saved in My Components." : "The browser could not save the component bank."); } catch (error) { setNotice(error instanceof Error ? error.message : "The component could not be saved."); } }}>Save to My Components</button></>}</div></details>
         <details><summary>Edit</summary><div className="menu-popover"><button onClick={undo} disabled={!history.undo.length}>Undo</button><button onClick={redo} disabled={!history.redo.length}>Redo</button></div></details>
 
         <details><summary>View</summary><div className="menu-popover view-menu-popover"><button onClick={() => setShowGrid((value) => !value)} aria-pressed={showGrid}>Grid</button>{!isReferenceSheet && <button aria-pressed={showGuideEditor} onClick={() => { setShowGuideEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Drawing guides</button>}{!isReferenceSheet && <button aria-pressed={showGridEditor} onClick={() => { setShowGridEditor(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Grid settings</button>}{!isReferenceSheet && <button aria-pressed={showPrintLayout} onClick={() => { setShowPrintLayout(value => !value); setRightPanelOpen(true); setRightDockView("properties"); }}>Print layout</button>}{!isReferenceSheet && document.printLayout && <button onClick={fitPrintFrame}>Fit Print Frame</button>}{!isReferenceSheet && <>{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={!layer.hidden} onClick={() => toggleDraftingLayerVisibility(layer)}>Layer visibility · {layer.name}</button>)}{document.draftingLayers?.map((layer) => <button key={layer.id} type="button" aria-pressed={layer.locked === true} onClick={() => { if (applyDraftingEdit(updateDraftingLayer(document, layer.id, { locked: !layer.locked }))) setNotice(layer.name + (layer.locked ? " unlocked." : " locked.")); }}>Layer lock · {layer.name}</button>)}<button onClick={() => fitSchematicContent("selection")}>Fit Selection</button><button onClick={() => setFreeCamera(camera => ({ ...camera, center: { x: 0, y: 0 } }))}>Go to Origin</button></>}</div></details>
@@ -2132,10 +2176,10 @@ export function App() {
           <div className="panel-title"><strong hidden={!componentPanelOpen}>Component Library</strong><span hidden={!componentPanelOpen}>{componentLibraryCatalog.length} selectable models · source-backed and generic</span><button type="button" className="panel-toggle" aria-expanded={componentPanelOpen} aria-label={componentPanelOpen ? "Close component library" : "Open component library"} title={componentPanelOpen ? "Close component library" : "Open component library"} onClick={() => setComponentPanelOpen((open) => !open)}>{componentPanelOpen ? "‹" : "›"}</button></div>
           <div className="component-panel-content" hidden={!componentPanelOpen}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catalog" aria-label="Search component library" />
-          <CatalogTree onDragPreview={setCatalogDragId} key={search} definitions={filteredCatalog} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { activateSelectTool(); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedContinuationId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); if (!isReferenceSheet) { setPlacementDefinitionId(id); setNotice("Click a clear canvas position to place the component, or press Escape to cancel."); } }} />
+          <CatalogTree onDragPreview={setCatalogDragId} key={search} definitions={filteredCatalog} customComponents={customComponentsById} selectedId={selectedDefinitionId} searching={Boolean(search.trim())} onSelect={(id) => { activateSelectTool(); setSelectedDefinitionId(id); setComponentSelection(""); setSelectedWireId(""); setSelectedContinuationId(""); setSelectedAnnotationId(""); setSelectedGraphicId(""); setRightDockView("properties"); setRightPanelOpen(true); if (!isReferenceSheet) { setPlacementDefinitionId(id); setNotice("Click a clear canvas position to place the component, or press Escape to cancel."); } }} />
           <section className="component-card">
             <div className="card-heading"><strong>{selectedDefinition.name}</strong><button className={favorites.includes(selectedDefinition.id) ? "favorite active" : "favorite"} onClick={() => setFavorites((items) => items.includes(selectedDefinition.id) ? items.filter((id) => id !== selectedDefinition.id) : [...items, selectedDefinition.id])} aria-label="Toggle component favorite">★</button></div>
-            <ComponentSymbolPreview definition={selectedDefinition} />
+            <ComponentSymbolPreview instance={customComponentsById.get(selectedDefinition.id)} definition={selectedDefinition} />
             <p>{selectedDefinition.description}</p>
             <dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Support</dt><dd>{selectedDefinition.simulationSupport}</dd></dl>
             <button className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button>
@@ -2145,7 +2189,7 @@ export function App() {
 
         <section ref={drawingAreaRef} className="drawing-area" aria-label={`${activeSheet.name} schematic canvas`}>
           <div className="sheet-tabs" role="tablist" aria-label="Project sheets">{project.sheets.map((sheet, index) => <div key={sheet.id} className={`sheet-tab ${sheet.id === activeSheet.id ? "active" : ""} ${draggedSheetId === sheet.id ? "dragging" : ""}`} draggable onDragStart={(event) => { if ((event.target as HTMLElement).closest(".sheet-tab-remove")) { event.preventDefault(); return; } setDraggedSheetId(sheet.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", sheet.id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); const sourceId = event.dataTransfer.getData("text/plain") || draggedSheetId; moveSheetTab(sourceId, sheet.id); }} onDragEnd={() => setDraggedSheetId("")} title="Drag to reorder sheet"><button type="button" role="tab" aria-selected={sheet.id === activeSheet.id} className="sheet-tab-select" onClick={() => selectSheet(sheet.id)} onKeyDown={(event) => { if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return; event.preventDefault(); const target = project.sheets[index + (event.key === "ArrowLeft" ? -1 : 1)]; if (target) moveSheetTab(sheet.id, target.id); }}>{sheet.name} · Sheet {index + 1}</button><button type="button" className="sheet-tab-remove" aria-label={`Remove ${sheet.name}`} title="Remove sheet (Undo restores it)" disabled={project.sheets.length <= 1} onClick={(event) => { event.stopPropagation(); removeSheetTab(sheet.id); }}>×</button></div>)}<button className="add-sheet-tab" onClick={addSheet} aria-label="Add free schematic sheet">＋ Sheet</button></div>
-          <Schematic document={document} placementPreviewDefinitionId={isReferenceSheet || wireMode || graphicMode || annotationMode ? undefined : catalogDragId || placementDefinitionId} placementDragging={Boolean(catalogDragId)} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} wireNotice={notice} wireBends={wireBends} onWireBend={wireMode && wireStart && !wireBranchStart && !crossSheetContinuationMode && !reconnectingWireId ? (point) => setWireBends((bends) => { const last = bends.at(-1); return last?.x === point.x && last.y === point.y ? bends : [...bends, point]; }) : undefined} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={currentZoom} freeView={freeView} onAddGuide={isReferenceSheet ? undefined : addDrawingGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: snapDrawingCoordinate(x, snapSpacing), y: snapDrawingCoordinate(y, snapSpacing) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
+          <Schematic document={document} placementPreviewInstance={customComponentsById.get(catalogDragId || placementDefinitionId)} placementPreviewDefinitionId={isReferenceSheet || wireMode || graphicMode || annotationMode ? undefined : catalogDragId || placementDefinitionId} placementDragging={Boolean(catalogDragId)} symbolStates={symbolStates} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} selectedWireId={selectedWireId} wireRouteEditId={wireRouteEditId} onWireRouteChange={updateWireRoute} simulation={simulation} wireMode={wireMode} wireStart={wireStart} wireNotice={notice} wireBends={wireBends} onWireBend={wireMode && wireStart && !wireBranchStart && !crossSheetContinuationMode && !reconnectingWireId ? (point) => setWireBends((bends) => { const last = bends.at(-1); return last?.x === point.x && last.y === point.y ? bends : [...bends, point]; }) : undefined} onSelect={selectComponent} onGroupSelect={selectComponents} onWireSelect={selectWire} onWireBranchStart={selectWireBranch} onTerminalSelect={selectWireTerminal} onMove={isReferenceSheet ? undefined : dragComponent} onPlaceComponent={placementDefinitionId && !isReferenceSheet && !wireMode && !graphicMode && !annotationMode ? (x, y) => insertCatalogComponentAt(placementDefinitionId, x, y) : undefined} litIndicatorIds={litIndicatorIds} onComponentTransform={isReferenceSheet || reconnectingWireId || crossSheetContinuationMode ? undefined : applyComponentTransform} onComponentDrop={insertCatalogComponentAt} zoom={currentZoom} freeView={freeView} onAddGuide={isReferenceSheet ? undefined : addDrawingGuide} showGrid={showGrid} annotationMode={annotationMode} selectedAnnotationId={selectedAnnotationId} onAnnotationSelect={selectAnnotation} onAnnotationPlace={addAnnotationAt} onAnnotationMove={(id, x, y) => { const item = document.annotations?.find((annotation) => annotation.id === id); if (item) { selectAnnotation(id); updateDocument({ ...document, annotations: (document.annotations ?? []).map((annotation) => annotation.id === id ? { ...annotation, x: snapDrawingCoordinate(x, snapSpacing), y: snapDrawingCoordinate(y, snapSpacing) } : annotation), revision: document.revision + 1 }); } }} graphicMode={graphicMode} selectedGraphicId={selectedGraphicId} selectedGraphicIds={selectedGraphicIds} onGraphicSelect={selectGraphic} onGraphicCreate={addGraphic} onGraphicMove={moveGraphic} onGraphicResize={resizeGraphic} onGraphicVertexMove={moveGraphicVertex} onGraphicVertexInsert={insertGraphicVertex} onGraphicVertexDelete={deleteGraphicVertex} onComponentContextMenu={openComponentContextMenu} continuations={project.continuations ?? []} projectSheets={project.sheets} activeSheetId={activeSheet.id} onContinuationNavigate={(sheetId) => { setCrossSheetContinuationMode(false); setCrossSheetContinuationStart(null); setCrossSheetContinuationExtendId(""); selectSheet(sheetId); setWireMode(false); setComponentSelection(""); }} selectedContinuationId={selectedContinuationId} onContinuationSelect={selectContinuation} />
           <div className="canvas-caption">{isReferenceSheet ? <><strong>Editable reference project:</strong> breaker, START/STOP, overload and contactor states drive the simplified motor model. <button onClick={() => setNotice("This is an educational simplified model, not a real-world installation or protection-coordination calculation.")}>{t.limitations}</button></> : <><strong>Free schematic sheet:</strong> insert catalog components, connect compatible terminals and drag placed symbols freely.</>}</div>
         </section>
 
@@ -2436,6 +2480,3 @@ function ProjectReports({ projectName, sheetName, sheetReport, projectReport, si
 function ReportTable({ title, headers, rows, emptyMessage = "No entries in this scope." }: { title: string; headers: string[]; rows: string[][]; emptyMessage?: string }) {
   return <section className="report-table-section"><strong>{title}</strong><div className="report-table-wrap"><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}>{emptyMessage}</td></tr>}</tbody></table></div></section>;
 }
-
-
-
