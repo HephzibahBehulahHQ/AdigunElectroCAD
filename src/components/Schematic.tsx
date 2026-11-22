@@ -111,7 +111,7 @@ function TerminalHitTarget({ anchor, component, radius, markerRadius, wireMode, 
     : endpoint.terminalId;
   const label = "Wire terminal " + (component?.reference ?? endpoint.componentId) + " " + pin;
   const active = isSameEndpoint(wireStart, endpoint);
-  return <g data-wire-terminal={key} role="button" tabIndex={0} aria-label={label} aria-pressed={active}
+  return <g data-wire-terminal={key} data-wiring={wireMode || undefined} role="button" tabIndex={0} aria-label={label} aria-pressed={active}
     onClick={(event) => { event.stopPropagation(); onSelect(endpoint, event.shiftKey); }}
     onKeyDown={(event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
@@ -119,8 +119,8 @@ function TerminalHitTarget({ anchor, component, radius, markerRadius, wireMode, 
       event.stopPropagation();
       onSelect(endpoint, event.shiftKey);
     }}>
-    <circle cx={x} cy={y} r={radius} fill="transparent" />
-    {wireMode && <circle cx={x} cy={y} r={markerRadius} pointerEvents="none" vectorEffect="non-scaling-stroke" className={active ? "terminal-anchor active" : "terminal-anchor"} />}
+    <circle cx={x} cy={y} r={radius} fill="transparent" pointerEvents="all" />
+    <circle cx={x} cy={y} r={markerRadius} pointerEvents="none" vectorEffect="non-scaling-stroke" className={active ? "terminal-anchor active" : "terminal-anchor"} />
     <title>{label + " · Shift-click target to continue branch"}</title>
   </g>;
 }
@@ -569,7 +569,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     const format = (axis: "x" | "y") => snap.axes.has(axis) ? snap.point[axis] : grid ? snapDrawingCoordinate(point[axis], snapSpacing) : Math.round(point[axis] * 100) / 100;
     return { x: format("x"), y: format("y"), guideSnap: snap.axes.size > 0 };
   };
-  return <div className="schematic-wrap free-drawing-viewport" onPointerMoveCapture={(event) => {
+  return <div className="schematic-wrap free-drawing-viewport" data-wiring={wireMode || undefined} onPointerMoveCapture={(event) => {
     const svg = event.currentTarget.querySelector("svg.schematic");
     const matrix = svg instanceof SVGSVGElement ? svg.getScreenCTM() : null;
     const readout = cursorReadout.current;
