@@ -1,3 +1,5 @@
+import { conflictingSignalDrivers } from "../electrical/signalDrivers";
+import { createProjectRuntimeDocument } from "../simulation/projectCircuitModels";
 import { catalogById } from "../catalog/dolCatalog";
 import type { CircuitDocument, CircuitSheet, ElectricalProject, ProjectContinuation, TerminalEndpoint } from "../types/electrical";
 import { canConnectTerminals, connectionSignalIssue, type TopologyIssue } from "../electrical/topology";
@@ -67,6 +69,20 @@ export function projectContinuationSignalWarnings(project: Pick<ElectricalProjec
         return issue ? [{ severity: "warning", code: "incompatible-continuation-signal-unit", message: "Continuation " + continuation.label + ": " + issue }] : [];
       }));
   });
+}
+
+export function projectSignalDriverConflicts(project: Pick<ElectricalProject, "sheets" | "continuations">): string[] {
+  // Prefix sheet-local component IDs exactly as the project runtime does.
+  const runtime = createProjectRuntimeDocument({ id: "signal-check", name: "", description: "", revision: 1, ...project });
+  const origins = new Map(project.sheets.flatMap((sheet) => sheet.document.components.map(({ id }) => [sheet.id + "::" + id, sheet.id] as const)));
+  return conflictingSignalDrivers(runtime, catalogById)
+    .filter(({ endpoints }) => new Set(endpoints.map(({ componentId }) => origins.get(componentId))).size > 1)
+    .map(({ message }) => message);
+}
+
+function introducedDriverConflict(before: ElectricalProject, after: ElectricalProject): string | undefined {
+  const existing = new Set(projectSignalDriverConflicts(before));
+  return projectSignalDriverConflicts(after).find((message) => !existing.has(message));
 }
 
 export interface ProjectTerminalReference {
@@ -207,6 +223,8 @@ export function createProjectContinuation(
   const next = { ...project, revision: project.revision + 1, continuations: [...(project.continuations ?? []), continuation] };
   const issues = validateProjectContinuations(next);
   if (issues.length) return { ok: false, reason: issues[0] };
+  const conflict = introducedDriverConflict(project, next);
+  if (conflict) return { ok: false, reason: conflict };
   return { ok: true, project: next, continuation };
 }
 
@@ -267,6 +285,8 @@ export function extendProjectContinuation(
   };
   const issues = validateProjectContinuations(next);
   if (issues.length) return { ok: false, reason: issues[0] };
+  const conflict = introducedDriverConflict(project, next);
+  if (conflict) return { ok: false, reason: conflict };
   return { ok: true, project: next, continuation };
 }
 

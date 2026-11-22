@@ -247,3 +247,34 @@ it("uses the actual cross-sheet signal driver when extending a net and reports m
   }));
   expect(read(reloaded)?.output.error).toContain("milliamp is not accepted");
 });
+
+it("rejects cross-sheet driver collisions and faults old connected loads deterministically", () => {
+  const project = addFreeSchematicSheet(addFreeSchematicSheet(createBlankProject()));
+  const [first, middle, third] = project.sheets;
+  const driver = (reference: string, input: boolean): ComponentInstance => ({
+    id: "driver", reference, definitionId: "logic.no-contact", x: 140, y: 220, rotation: 0, properties: { input },
+  });
+  const load: ComponentInstance = { id: "coil", reference: "K1", definitionId: "logic.output-coil", x: 420, y: 220, rotation: 0, properties: { input: false } };
+  first.document.components = [driver("S1", true)];
+  middle.document.components = [load];
+  third.document.components = [driver("S2", false), { ...load, reference: "K2" }];
+  const from = { componentId: "driver", terminalId: "out" };
+  const to = { componentId: "coil", terminalId: "in" };
+  third.document.wires = [{ id: "local", from, to, points: [] }];
+  const joined = createProjectContinuation(project, { sheetId: first.id, endpoint: from }, { sheetId: middle.id, endpoint: to });
+  if (!joined.ok) throw Error(joined.reason);
+  expect(extendProjectContinuation(joined.project, joined.continuation.id, { sheetId: third.id, endpoint: to })).toMatchObject({ ok: false, reason: expect.stringContaining("S1.out, S2.out") });
+  const [source, destination] = joined.continuation.points;
+  const legacy = { ...joined.project, continuations: [{ ...joined.continuation, points: [
+    source, { ...destination, role: "continuation" as const },
+    { sheetId: third.id, endpoint: to, role: "destination" as const, gridReference: terminalGridReference(third.document, to) },
+  ] }] };
+  const saved = parseProjectJson(JSON.stringify(legacy));
+  expect(createProjectWideReport(saved, catalogById).validation).toContainEqual(expect.objectContaining({ code: "project-signal-driver-conflict" }));
+  const loads = executeProjectCircuitModels(saved, catalogById).filter(({ componentId }) => componentId === "coil");
+  expect(loads).toHaveLength(2);
+  for (const load of loads) {
+    expect(load.output.error).toContain("Multiple simulated signal outputs");
+    expect(load.evaluatedProperties.input).toBe(false);
+  }
+});
