@@ -469,3 +469,19 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .view-menu-popover { max-height: calc(100dvh - 110px); overflow: auto; }
 
 .electro-auth-lock { position: fixed !important; top: 50% !important; left: 50% !important; right: auto !important; transform: translate(-50%, -50%); width: min(420px, calc(100vw - 32px)); z-index: 10000; box-shadow: 0 0 0 100vmax rgb(4 12 23 / 75%); }
+
+.wire-canvas-message {
+  position: absolute;
+  z-index: 2;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 64px);
+  padding: 5px 10px;
+  background: #102744;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+}
