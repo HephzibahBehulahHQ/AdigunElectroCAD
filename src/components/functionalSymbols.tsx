@@ -273,6 +273,10 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
   if (symbolId === "sensor-level") return <g className={mark}><path d={`M ${x - 15} ${cy - 17} V ${cy + 17} H ${x + 15} V ${cy - 17}`} /><path d={`M ${x - 13} ${cy + 7} H ${x + 13}`} /></g>;
   if (symbolId === "sensor-vibration") return <g className={mark}><path d={`M ${x - 28} ${cy} H ${x - 20} L ${x - 13} ${cy - 12} L ${x - 3} ${cy + 12} L ${x + 7} ${cy - 12} L ${x + 17} ${cy + 12} L ${x + 25} ${cy}`} /></g>;
   if (symbolId === "sensor-encoder") return <g className={mark}><circle cx={x} cy={cy} r="14" />{[0, 90, 180, 270].map((angle) => <path key={angle} d={`M ${x} ${cy - 14} V ${cy - 8}`} transform={`rotate(${angle} ${x} ${cy})`} />)}<circle cx={x} cy={cy} r="3" /></g>;
+  if (symbolId === "sensor-encoder-abc") return <g className={mark}><circle cx={x} cy={y} r={17} />
+    <path d={[-22, 0, 22].map(offset => ["M",x-47,y+offset,"H",x-24,"M",x+24,y+offset,"H",x+47].join(" ")).join(" ")} />
+    <path d={["M",x-10,y+5,"v",-10,"h",7,"v",10,"h",7,"v",-10,"h",6].join(" ")} />
+  </g>;
   if (symbolId === "sensor-load-cell-bridge") return <g className={mark}>
     <path d={["M",x,y-20,"L",x+22,y,"L",x,y+20,"L",x-22,y,"Z",
       "M",x-47,y-26,"H",x,"V",y-20,"M",x-47,y+10,"H",x-34,"V",y-26,

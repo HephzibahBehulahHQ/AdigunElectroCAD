@@ -212,3 +212,15 @@ it("verifies the HBK Z6F C3 family lead maps and confines the ideal result to SI
     expect(evaluateFunctionalModel(part.simulationModelId, { ...part.propertiesSchema, forceN: Number(part.propertiesSchema.capacityN) / 2, excitationV: 8 })?.value).toContain("8.00");
   }
 });
+
+it("maps each Omron encoder channel and enforces its model speed limits", () => {
+  const part = catalogById.get("omron.e6b2-cwz6c.1000p-2m")!;
+  expect(part.terminals.map(({ id }) => id)).toEqual(["vcc", "zero", "shield", "phase-a", "phase-b", "phase-z"]);
+  expect(functionalOutputTerminals(part).map(({ id }) => id)).toEqual(["phase-a", "phase-b", "phase-z"]);
+  const running = { ...part.propertiesSchema, shaftSpeedRpm: 1200 };
+  for (const channel of ["phase-a", "phase-b"]) expect(evaluateFunctionalSignal(part.simulationModelId, running, channel)).toEqual({ unit: "hertz", value: 20000 });
+  expect(evaluateFunctionalSignal(part.simulationModelId, running, "phase-z")).toEqual({ unit: "hertz", value: 20 });
+  expect(evaluateFunctionalSignal(part.simulationModelId, running, "vcc")).toBeUndefined();
+  const highResolution = catalogById.get("omron.e6b2-cwz6c.2000p-2m")!;
+  expect(evaluateFunctionalSignal(part.simulationModelId, { ...highResolution.propertiesSchema, shaftSpeedRpm: 6000 }, "phase-a")?.error).toContain("100 kHz");
+});

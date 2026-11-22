@@ -1,3 +1,4 @@
+import { omronEncoderCatalog } from "./omronEncoderCatalog";
 import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 
@@ -10,6 +11,7 @@ const phoenixRails = [
 
 export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...hbkLoadCellCatalog,
+  ...omronEncoderCatalog,
   ...phoenixRails.map(({ orderCode, depthMm, perforated, slug }): ElectricalComponentDefinition => {
     const sourceUrl = "https://www.phoenixcontact.com/en-pc/products/" + slug;
     return {

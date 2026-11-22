@@ -29,6 +29,7 @@ export function functionalOutputTerminals(definition: ElectricalComponentDefinit
   if (definition.simulationModelId === "catalog-interface-relay") return definition.terminals.filter((terminal) => /^[1-3][24]$/.test(terminal.id));
   if (definition.simulationModelId === "catalog-safety-relay") return definition.terminals.filter((terminal) => ["14", "24", "34", "42"].includes(terminal.id));
   if (definition.simulationModelId === "thermal-overload-dol-v1") return definition.terminals.filter((terminal) => ["aux-96", "aux-98"].includes(terminal.id));
+  if (definition.simulationModelId === "sensor-encoder-frequency") return definition.terminals.filter(terminal => terminal.id.startsWith("phase-"));
   const output = functionalOutputTerminal(definition);
   return output ? [output] : [];
 }

@@ -101,6 +101,11 @@ const models: Record<string, Model> = {
   "sensor-flow": (p) => ({ label: "Pulse output", value: `${flowPulseHz(number(p, "flowLpm"), number(p, "pulsesPerLitre", 100)).toFixed(2)} Hz` }),
   "sensor-level-4-20": (p) => bool(p, "simulateOpenLoop") ? { label: "Signal fault", error: levelLoopOpenError, value: `ERROR: ${levelLoopOpenError}` } : ({ label: "Level signal", value: `${levelToMilliamp(number(p, "levelPercent", 50)).toFixed(2)} mA` }),
   "sensor-vibration": (p) => ({ label: "Vibration RMS", value: `${vibrationRms([number(p, "acceleration")]).toFixed(3)} m/s²` }),
+  "sensor-encoder-frequency": (p) => {
+    const result = encoderFrequencySignal(p, "phase-a");
+    return result.error ? { label: "Encoder channel frequency", value: "ERROR: " + result.error, error: result.error }
+      : { label: "Encoder channel frequency", value: "A/B " + Number(result.value).toFixed(2) + " Hz · Z " + (Math.abs(number(p, "shaftSpeedRpm")) / 60).toFixed(2) + " Hz" };
+  },
   "sensor-encoder": (p) => ({ label: "Encoder pulses", value: String(encoderPulses(number(p, "revolutions"), number(p, "pulsesPerRevolution", 1024))) }),
   "sensor-load-cell": (p) => {
     const output = loadCellSignal(p);
@@ -273,6 +278,17 @@ function currentTransformerSignal(properties: Properties): FunctionalSignal {
   return Number.isFinite(current) ? signal("ampere", current) : fault("CT secondary calculation is outside the numerical range.");
 }
 
+function encoderFrequencySignal(properties: Properties, terminalId?: string): FunctionalSignal {
+  const rpm = Math.abs(number(properties, "shaftSpeedRpm"));
+  const resolution = number(properties, "pulsesPerRevolution");
+  if (!Number.isFinite(rpm) || rpm > 6000 || !Number.isInteger(resolution) || resolution < 1) {
+    return fault("Encoder shaft speed or resolution is outside the model range.");
+  }
+  const phaseHz = rpm / 60 * resolution;
+  if (phaseHz > 100000) return fault("Encoder channel frequency exceeds 100 kHz.");
+  return signal("hertz", terminalId === "phase-z" ? rpm / 60 : phaseHz);
+}
+
 function loadCellSignal(properties: Properties): FunctionalSignal {
   const capacity = properties.capacityN ?? 1000;
   const force = properties.forceN ?? 0;
@@ -385,6 +401,7 @@ export function evaluateFunctionalSignal(modelId: string, properties: Properties
   if (modelId === "sensor-flow") return signal("hertz", flowPulseHz(number(properties, "flowLpm"), number(properties, "pulsesPerLitre", 100)));
   if (modelId === "sensor-level-4-20") return bool(properties, "simulateOpenLoop") ? fault(levelLoopOpenError) : signal("milliamp", levelToMilliamp(number(properties, "levelPercent", 50)));
   if (modelId === "sensor-vibration") return signal("acceleration", vibrationRms([number(properties, "acceleration")]));
+  if (modelId === "sensor-encoder-frequency" && terminalId?.startsWith("phase-")) return encoderFrequencySignal(properties, terminalId);
   if (modelId === "sensor-encoder") return signal("pulse-count", encoderPulses(number(properties, "revolutions"), number(properties, "pulsesPerRevolution", 1024)));
   if (modelId === "sensor-load-cell") return loadCellSignal(properties);
   if (modelId === "sensor-current-transformer" && terminalId === "signal") return currentTransformerSignal(properties);
