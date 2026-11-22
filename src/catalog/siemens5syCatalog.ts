@@ -29,16 +29,27 @@ const orderRows5sy8 = [
   { poleCodes: [1, 2, 3, 4, 5, 6], curve: "C", suffix: 7, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
   { poleCodes: [1, 2, 3, 4, 5, 6], curve: "D", suffix: 8, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
 ];
+const orderRows5sy5 = [
+  { poleCodes: [1, 2], curve: "B", suffix: 6, currentCodes: "02 04 06 08 10 13 16 20 25 32 40 50 63" },
+  { poleCodes: [1, 2, 4], curve: "C", suffix: 7, currentCodes: "01 02 03 04 05 06 08 10 13 14 15 16 20 25 32 40 50 63" },
+  { poleCodes: [4], curve: "B", suffix: 6, currentCodes: "06 10 13 16 20 25 32 40 50 63" },
+];
+const dcPolarityLabels = ["1 (−)", "2 (+)", "3 (+)", "4 (−)", "5 (−)", "6 (+)", "7 (+)", "8 (−)"];
+const dcInstallationGuide = "https://cache.industry.siemens.com/dl/files/792/45302792/att_1130140/v1/MAN_L1V30917375-01_de_de-DE.pdf";
 const specialCurrentCodes: Record<string, number> = { "05": 0.5, "11": 5, "14": 0.3, "15": 1.6, "18": 15 };
 
-function createSiemens5syCatalog(family: "5SY4" | "5SY6" | "5SY7" | "5SY8", icnKa: number, orderRows: typeof orderRows5sy4): ElectricalComponentDefinition[] {
+function createSiemens5syCatalog(family: "5SY4" | "5SY5" | "5SY6" | "5SY7" | "5SY8", icnKa: number, orderRows: typeof orderRows5sy4): ElectricalComponentDefinition[] {
   return [1, 2, 3, 4, 5, 6].flatMap(poleCode => {
     const switchedNeutral = poleCode >= 5;
     const protectedPoles = poleCode === 5 ? 1 : poleCode === 6 ? 3 : poleCode;
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
     const neutralTerminals = switchedNeutral ? branches.at(-1)! : [];
-    const labeledTerminals = terminals.map(terminal => neutralTerminals.includes(terminal.id) ? { ...terminal, label: "N" } : terminal);
+    const polarized = family === "5SY5";
+    const labeledTerminals = terminals.map((terminal, index) => {
+      if (polarized) return { ...terminal, label: dcPolarityLabels[index] };
+      return neutralTerminals.includes(terminal.id) ? { ...terminal, label: "N" } : terminal;
+    });
     const voltageRating = poleCode === 1 ? "230/400 VAC" : poleCode === 5 ? "230 VAC" : "400 VAC";
     return orderRows.filter(row => row.poleCodes.includes(poleCode)).flatMap(({ curve, suffix, currentCodes }) =>
       currentCodes.split(" ").map((currentCode): ElectricalComponentDefinition => {
@@ -55,10 +66,10 @@ function createSiemens5syCatalog(family: "5SY4" | "5SY6" | "5SY7" | "5SY8", icnK
             documentRevision: "Siemens LV 10 (10/2022), " + family + " selection tables and circuit diagrams",
             topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles, neutralTerminals },
           },
-          propertiesSchema: { ratedCurrentA, curve, voltageRating, icnKa, switchedNeutral, closed: true },
+          propertiesSchema: { ratedCurrentA, curve, voltageRating, icnKa, switchedNeutral, ...(polarized ? { dcVoltageRating: String(poles * 220) + " VDC" + (poles > 1 ? " with poles in series" : ""), polaritySensitive: true } : {}), closed: true },
           simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
-          documentation: "Manual switching controls the linked contacts. The documented Icn rating applies under IEC/EN 60898-1. Overcurrent timing and protection coordination are outside simulation scope.",
-          standardsReferences: ["IEC/EN 60898-1", catalogue],
+          documentation: "Manual switching controls the linked contacts. The documented Icn rating applies under IEC/EN 60898-1. Overcurrent timing and protection coordination are outside simulation scope." + (polarized ? " Follow the Siemens polarity diagram for DC operation. The manual contact simulation omits polarity validation." : ""),
+          standardsReferences: ["IEC/EN 60898-1", catalogue, ...(polarized ? [dcInstallationGuide] : [])],
         };
       }),
     );
@@ -71,3 +82,5 @@ export const siemens5sy6Catalog = createSiemens5syCatalog("5SY6", 6, orderRows5s
 export const siemens5sy7Catalog = createSiemens5syCatalog("5SY7", 15, orderRows5sy7);
 
 export const siemens5sy8Catalog = createSiemens5syCatalog("5SY8", 25, orderRows5sy8);
+
+export const siemens5sy5Catalog = createSiemens5syCatalog("5SY5", 10, orderRows5sy5);
