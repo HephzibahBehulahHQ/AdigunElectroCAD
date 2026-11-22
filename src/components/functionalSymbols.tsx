@@ -287,6 +287,10 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       <path d={cell(x+20, supplyOpen) + " " + cell(x-16, !supplyOpen)} />
     </g>;
   }
+  if (symbolId === "sensor-encoder-differential") return <g className={mark}><rect x={x-25} y={y-39} width={50} height={78} rx={3} />
+    <path d={[-22, 0, 22].map(offset => ["M",x-47,y+offset,"H",x-25].join(" ")).concat([-35,-21,-7,7,21,35].map(offset => ["M",x+25,y+offset,"H",x+47].join(" "))).join(" ")} />
+    <path d={["M",x-10,y+5,"v",-10,"h",7,"v",10,"h",7,"v",-10,"h",6].join(" ")} />
+  </g>;
   if (symbolId === "sensor-encoder-abc") return <g className={mark}><circle cx={x} cy={y} r={17} />
     <path d={[-22, 0, 22].map(offset => ["M",x-47,y+offset,"H",x-24,"M",x+24,y+offset,"H",x+47].join(" ")).join(" ")} />
     <path d={["M",x-10,y+5,"v",-10,"h",7,"v",10,"h",7,"v",-10,"h",6].join(" ")} />
