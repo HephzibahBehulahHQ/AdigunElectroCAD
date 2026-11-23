@@ -1261,3 +1261,13 @@ it("limits ABB S800C to its published currents and 25 kA rating", () => {
   expect(part.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2"]);
   expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 10)).toBe(true);
 });
+
+it("preserves the ABB S800B locked-cage range and 16 kA rating", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800B");
+  expect(parts).toHaveLength(112);
+  const part = parts.find(entry => entry.manufacturerRecord?.orderCode === "2CCS814001R0647")!;
+  expect(part.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "K", icuKa: 16 });
+  expect(part.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+  expect(part.description).toContain("locked cage");
+  expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 32)).toBe(true);
+});
