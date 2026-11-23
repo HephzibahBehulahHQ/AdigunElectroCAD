@@ -33,9 +33,14 @@ const industrialOrders = kOrders.flatMap(order => [
   { ...order, curve: "K" },
   ...(zCurrents.has(order.ratedCurrentA) ? [{ ...order, curve: "Z", code: order.code.slice(0, -1) + "8" }] : []),
 ]);
-const cdOrders = curves.flatMap(({ curve, suffix }) => currents.map(ratedCurrentA => {
+const standardOrders = curves.flatMap(({ curve, suffix }) => currents.map(ratedCurrentA => {
   const currentCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
   return { curve, ratedCurrentA, code: currentCode + suffix };
+}));
+const bOrders = [6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63].map(ratedCurrentA => ({
+  curve: "B",
+  ratedCurrentA,
+  code: String(ratedCurrentA).padStart(3, "0") + "5",
 }));
 const poleConfigurations = [
   ...[1, 2, 3, 4].map(protectedPoles => ({ protectedPoles, switchedNeutral: false })),
@@ -49,7 +54,7 @@ export const abbS300pCatalog: ElectricalComponentDefinition[] = poleConfiguratio
   const physicalTerminals = terminals.map(terminal =>
     neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal,
   );
-  const orders = [...cdOrders, ...industrialOrders];
+  const orders = [...bOrders, ...standardOrders, ...industrialOrders];
   return orders.map(({ curve, ratedCurrentA, code }): ElectricalComponentDefinition => {
     const orderCode = "2CDS38" + protectedPoles + (switchedNeutral ? "103R" : "001R") + code;
     return {
