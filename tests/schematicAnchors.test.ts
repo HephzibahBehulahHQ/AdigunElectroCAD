@@ -730,7 +730,7 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
   const breakerSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: breaker.symbolId, x: 100, y: 100, properties: breaker.propertiesSchema }));
   const starterSvg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: starter.symbolId, x: 100, y: 100, properties: starter.propertiesSchema }));
   expect(breakerSvg).toContain('aria-label="4-pole circuit breaker, open"');
-  expect(breakerSvg.match(/<path /g)).toHaveLength(4);
+  expect(breakerSvg.match(/data-pole="protected"/g)).toHaveLength(4);
   expect(starterSvg).toContain("three main poles, one NO auxiliary and one NC auxiliary");
   expect(starterSvg).toContain('data-state="de-energized"');
 });
