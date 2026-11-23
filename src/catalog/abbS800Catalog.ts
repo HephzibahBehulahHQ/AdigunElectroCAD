@@ -198,3 +198,58 @@ export const abbS800pCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fla
     });
   }));
 });
+
+const ucLowCurrents = [...lowCurrents, 6, 8];
+const ucHighCurrents = standardCurrents.slice(2);
+const ucOrders = [
+  { curve: "UCB", lowReferences: [
+    [19969, 19970, 19971, 19972, 19973, 19974, 19975, 19976, 19977, 19978],
+    [19989, 19990, 19991, 19992, 19993, 19994, 19995, 19996, 19997, 19998],
+    [30040, 30041, 30056, 30042, 30043, 30057, 30044, 30045, 30058, 20018],
+    [20029, 20030, 20031, 20032, 20033, 20034, 20035, 30046, 30047, 30059],
+  ], highCodes: ["1105", "1135", "1165", "1205", "1255", "1325", "1405", "1505", "1635", "1805", "1825", "1845"] },
+  { curve: "UCK", lowReferences: [
+    [19979, 19980, 19981, 19982, 19983, 19984, 19985, 19986, 19987, 19988],
+    [19999, 30034, 30035, 30053, 30036, 30037, 30054, 30038, 30039, 30055],
+    [20019, 20020, 20021, 20022, 20023, 20024, 20025, 20026, 20027, 20028],
+    [30048, 30049, 30060, 30050, 30051, 30061, 30052, 30020, 30029, 20048],
+  ], highCodes: ["1427", "1447", "1467", "1487", "1517", "1537", "1557", "1577", "1597", "1627", "1637", "1647"] },
+];
+
+export const abbS800sUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  return ucOrders.flatMap(({ curve, lowReferences, highCodes }) => {
+    const orders = [
+      ...ucLowCurrents.map((ratedCurrentA, index) => ({
+        ratedCurrentA,
+        orderCode: "2CCF" + String(lowReferences[poles - 1][index]).padStart(6, "0") + "R0001",
+      })),
+      ...ucHighCurrents.map((ratedCurrentA, index) => ({
+        ratedCurrentA,
+        orderCode: "2CCS86" + poles + "001R" + highCodes[index],
+      })),
+    ];
+    return orders.map(({ ratedCurrentA, orderCode }): ElectricalComponentDefinition => {
+      const ratedDcVoltageV = poles < 4 ? poles * 250 : ratedCurrentA < 10 ? undefined : ratedCurrentA <= 50 ? 1000 : 750;
+      return {
+        id: "abb." + orderCode.toLowerCase(),
+        name: "ABB S80" + poles + "S-" + curve + ratedCurrentA + " · " + orderCode,
+        category: "Protection Devices",
+        referencePrefix: "Q",
+        symbolId: "breaker-acti9-" + poles + "p",
+        description: "ABB S800S-UC breaker with interchangeable cage terminals.",
+        terminals,
+        manufacturerRecord: {
+          manufacturer: "ABB", series: "S800S-UC", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+          documentRevision: "ABB S800 High Performance MCBs 2019 v2, UCB/UCK ordering tables, DC ratings and terminal diagrams",
+          topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+        },
+        propertiesSchema: { ratedCurrentA, curve, ...(ratedDcVoltageV === undefined ? {} : { ratedDcVoltageV, icuDcKa: 50 }), closed: true },
+        simulationModelId: "catalog-circuit-breaker",
+        simulationSupport: "connectivity",
+        documentation: "The DC rating applies to the manufacturer’s specified pole connection and operating conditions. Refer to ABB for the wiring diagrams. Simulation represents manual contact continuity.",
+        standardsReferences: ["IEC/EN 60947-2", catalogue],
+      };
+    });
+  });
+});
