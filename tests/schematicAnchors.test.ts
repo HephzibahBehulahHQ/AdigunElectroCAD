@@ -1252,3 +1252,12 @@ it("preserves ABB S800N ordering and its 36 kA rating", () => {
   expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
   expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 6)).toBe(true);
 });
+
+it("limits ABB S800C to its published currents and 25 kA rating", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800C");
+  expect(parts).toHaveLength(192);
+  const part = parts.find(entry => entry.manufacturerRecord?.orderCode === "2CCS881001R0427")!;
+  expect(part.propertiesSchema).toMatchObject({ ratedCurrentA: 10, curve: "K", icuKa: 25 });
+  expect(part.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2"]);
+  expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 10)).toBe(true);
+});
