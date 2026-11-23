@@ -47,15 +47,15 @@ const pIndustrialOrderRows = [
 function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutral = false): ElectricalComponentDefinition[] {
   const prefix = { S200: "2CDS25", S200M: "2CDS27", S200P: "2CDS28" }[series];
   const sourceUrl = switchedNeutral ? neutralCatalogue : series === "S200P" ? pCatalogue : catalogue;
-  const availableRows = switchedNeutral ? orderRows.filter(row => row.curve !== "D") : [...orderRows, ...(series === "S200P" ? pIndustrialOrderRows : industrialOrderRows)];
+  const availableRows = series === "S200P" ? [...orderRows, ...pIndustrialOrderRows] : switchedNeutral ? orderRows.filter(row => row.curve !== "D") : [...orderRows, ...industrialOrderRows];
   return (switchedNeutral ? [1, 3] : [1, 2, 3, 4]).flatMap(protectedPoles => {
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
     const neutralTerminals = switchedNeutral ? branches.at(-1)! : [];
     const labeledTerminals = terminals.map(terminal => neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal);
-    return availableRows.flatMap(({ curve, suffix, currents }) => currents.filter(ratedCurrentA => series !== "S200P" || curve !== "C" || ratedCurrentA !== 13).map((ratedCurrentA): ElectricalComponentDefinition => {
+    return availableRows.flatMap(({ curve, suffix, currents }) => currents.filter(ratedCurrentA => series !== "S200P" || switchedNeutral || curve !== "C" || ratedCurrentA !== 13).map((ratedCurrentA): ElectricalComponentDefinition => {
       const industrialCurve = curve === "K" || curve === "Z";
-      const partSource = series === "S200P" && industrialCurve ? pIndustrialCatalogue : sourceUrl;
+      const partSource = series === "S200P" && (industrialCurve || switchedNeutral) ? pIndustrialCatalogue : sourceUrl;
       const ratingCode = industrialCurve ? (industrialCurrentCodes.get(ratedCurrentA) ?? pOnlyCurrentCodes.get(ratedCurrentA)!) : ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
       const orderCode = prefix + protectedPoles + (switchedNeutral ? "103R" : "001R") + ratingCode + suffix;
       const model = "S20" + protectedPoles + series.slice(4) + "-" + curve + ratedCurrentA + (switchedNeutral ? "NA" : "");
@@ -68,7 +68,7 @@ function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutra
         terminals: labeledTerminals,
         manufacturerRecord: {
           manufacturer: "ABB", series, orderCode, sourceUrl: partSource, terminalMap: "verified",
-          documentRevision: switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : partSource === pIndustrialCatalogue ? "ABB ELSB 2022 second edition, appendix S200P K/Z ordering index" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " " + curve + " ordering details and diagrams",
+          documentRevision: partSource === pIndustrialCatalogue ? "ABB ELSB 2022 second edition, appendix S200P " + curve + " ordering index" : switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " " + curve + " ordering details and diagrams",
           topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles, ...(switchedNeutral ? { neutralTerminals } : {}) },
         },
         propertiesSchema: { ratedCurrentA, curve, ...(industrialCurve ? {} : { icnKa }), ...(switchedNeutral ? { switchedNeutral } : {}), closed: true },
@@ -85,4 +85,4 @@ export const abbS200Catalog = createAbbS200Catalog("S200");
 
 export const abbS200pCatalog = createAbbS200Catalog("S200P");
 
-export const abbS200NeutralCatalog = [...createAbbS200Catalog("S200", true), ...createAbbS200Catalog("S200M", true)];
+export const abbS200NeutralCatalog = [...createAbbS200Catalog("S200", true), ...createAbbS200Catalog("S200M", true), ...createAbbS200Catalog("S200P", true)];
