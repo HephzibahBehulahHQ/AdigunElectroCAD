@@ -2,6 +2,8 @@ import type { ElectricalComponentDefinition } from "../types/electrical";
 import { numberedBreakerPoles } from "./numberedBreakerPoles";
 
 const datasheet = "https://library.e.abb.com/public/5b68bd3ae4c34dd6841713412734e8ff/9AKK108467A8295_Rev_C_S200MT_DE_Datenblatt_0224_72dpi.pdf";
+const legacyCatalogue = "https://library.e.abb.com/public/2d3dddc251c8433786802098a6940a8d/9AKK107991A7821%20-%20Rev%20A_DIN-Rail_components_EN.pdf";
+const legacyCurrents = new Set([0.5, 1, 1.6, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63]);
 const kOrders = [
   { ratedCurrentA: 0.2, code: "0087" },
   { ratedCurrentA: 0.3, code: "0117" },
@@ -49,8 +51,12 @@ export const abbS200mtCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fl
     ...terminal,
     label: (index % 2 === 0 ? "Upper " : "Lower ") + (Math.floor(index / 2) + 1),
   }));
-  return orders.map(({ ratedCurrentA, code, curve }): ElectricalComponentDefinition => {
-    const orderCode = "2CDS27" + poles + "445R" + code;
+  const sourcedOrders = [
+    ...orders.map(order => ({ ...order, legacy: false })),
+    ...orders.filter(order => order.curve === "C" && legacyCurrents.has(order.ratedCurrentA)).map(order => ({ ...order, legacy: true })),
+  ];
+  return sourcedOrders.map(({ ratedCurrentA, code, curve, legacy }): ElectricalComponentDefinition => {
+    const orderCode = "2CDS27" + poles + (legacy ? "006R" : "445R") + code;
     return {
       id: "abb." + orderCode.toLowerCase(),
       name: "ABB S20" + poles + "MT-" + curve + ratedCurrentA + " · " + orderCode,
@@ -60,15 +66,15 @@ export const abbS200mtCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fl
       description: "ABB S200MT miniature circuit breaker for rolling stock applications.",
       terminals: physicalTerminals,
       manufacturerRecord: {
-        manufacturer: "ABB", series: "S200MT", orderCode, sourceUrl: datasheet, terminalMap: "verified",
-        documentRevision: "ABB 9AKK108467A8295 Rev C, S200MT " + curve + " ordering tables and terminal construction",
+        manufacturer: "ABB", series: "S200MT", orderCode, sourceUrl: legacy ? legacyCatalogue : datasheet, terminalMap: "verified",
+        documentRevision: legacy ? "ABB 9AKK107991A7821 Rev A, S200MT C ordering and terminal construction" : "ABB 9AKK108467A8295 Rev C, S200MT " + curve + " ordering tables and terminal construction",
         topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
       },
       propertiesSchema: { ratedCurrentA, curve, closed: true },
       simulationModelId: "catalog-circuit-breaker",
       simulationSupport: "connectivity",
       documentation: "CAD labels identify the physical upper and lower positions of each pole. Simulation represents linked manual switching continuity.",
-      standardsReferences: ["IEC/EN 60947-2", datasheet],
+      standardsReferences: ["IEC/EN 60947-2", legacy ? legacyCatalogue : datasheet],
     };
   });
 });
