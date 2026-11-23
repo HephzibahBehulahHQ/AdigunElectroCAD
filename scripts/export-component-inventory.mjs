@@ -52,9 +52,10 @@ const summary = {
   simulationModels: new Set(records.filter(record => record.model !== "none").map(record => record.model)).size,
   manufacturerCandidateDefinitions: records.filter(record => record.recordKind === "manufacturer-candidate").length,
   distinctCandidateOrderCodes: new Set(records.filter(record => record.recordKind === "manufacturer-candidate").map(record => record.manufacturer + ":" + record.orderCode)).size,
-  sourceVerifiedManufacturerParts: verifiedParts.length,
-  sourceVerifiedMechanicalParts: verifiedParts.filter(record => record.support === "symbol-only").length,
-  verifiedPhysicalTerminalMaps: records.filter(record => record.verifiedPhysicalTerminalMap).length,
+  sourceVerifiedManufacturerParts: verifiedParts.filter(record => record.visible).length,
+  sourceVerifiedLegacyManufacturerRecords: verifiedParts.filter(record => !record.visible).length,
+  sourceVerifiedMechanicalParts: verifiedParts.filter(record => record.visible && record.support === "symbol-only").length,
+  verifiedPhysicalTerminalMaps: verifiedParts.filter(record => record.visible && record.terminals.length > 0).length,
   customProfiles: records.filter(record => record.recordKind === "custom-profile").length,
   nonSelectableDefinitions: records.filter(record => !record.visible).length,
 };

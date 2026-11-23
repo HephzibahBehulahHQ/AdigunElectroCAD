@@ -1,3 +1,4 @@
+import { abbSd200Catalog } from "./abbSd200Catalog";
 import { abbS200mtCatalog } from "./abbS200mtCatalog";
 import { abbSn201Catalog } from "./abbSn201Catalog";
 import { abbSh200Catalog, abbSh200lCatalog, abbSh200mCatalog, abbSh200tCatalog } from "./abbSh200Catalog";
@@ -72,6 +73,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...abbS200sCatalog,
   ...abbS200mrCatalog,
   ...abbS200mtCatalog,
+  ...abbSd200Catalog,
   ...abbSh200lCatalog,
   ...abbSh200Catalog,
   ...abbSh200tCatalog,

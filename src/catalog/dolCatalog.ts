@@ -112,7 +112,9 @@ export const genericThreePhaseMotor: ElectricalComponentDefinition = {
 export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
   ...dolCatalog,
   ...functionalCatalog.filter(({ id }) => !["panel.din-rail", "cable.tray", "sensor.thermocouple"].includes(id)),
-  ...physicalComponentCatalog,
+  ...physicalComponentCatalog.filter(({ manufacturerRecord }) =>
+    !(manufacturerRecord?.series === "S200MT" && /^2CDS27[1-4]006R/.test(manufacturerRecord.orderCode)),
+  ),
   ...genericComponentProfiles,
   genericThreePhaseMotor,
   ...modeledCatalog.filter((definition) => sourceBackedCatalogIds.has(definition.id)),

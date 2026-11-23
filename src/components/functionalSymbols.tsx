@@ -190,7 +190,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       })}
     </g>;
   }
-  const disconnector = /^switch-disconnector-([2-4])p$/.exec(symbolId);
+  const disconnector = /^switch-disconnector-([1-4])p$/.exec(symbolId);
   if (disconnector) {
     const poles = Number(disconnector[1]);
     const closed = properties.closed === true;
