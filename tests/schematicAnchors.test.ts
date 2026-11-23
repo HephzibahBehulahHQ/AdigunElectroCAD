@@ -1243,3 +1243,12 @@ it("publishes S800S D/K cage-terminal variants with the correct current codes", 
   expect(lookup("2CCS862001R0597").propertiesSchema).toMatchObject({ ratedCurrentA: 63, curve: "K" });
   expect(lookup("2CCS863001R0251").propertiesSchema).toMatchObject({ ratedCurrentA: 25, curve: "D" });
 });
+
+it("preserves ABB S800N ordering and its 36 kA rating", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800N");
+  expect(parts).toHaveLength(168);
+  const fourPole = parts.find(entry => entry.manufacturerRecord?.orderCode === "2CCS894001R0845")!;
+  expect(fourPole.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "B", icuKa: 36 });
+  expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+  expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 6)).toBe(true);
+});
