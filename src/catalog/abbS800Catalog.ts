@@ -5,21 +5,30 @@ const catalogue = "https://library.e.abb.com/public/69d2fecb91064374b58fb8d7a769
 const lowCurrents = [0.5, 1, 1.6, 2, 2.5, 3, 4, 5];
 const standardCurrents = [6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125];
 const highCurrentCodes = new Map([[100, 82], [125, 84]]);
-const standardCurves = [{ curve: "B", code: "5" }, { curve: "C", code: "4" }];
+const kCurrentCodes = new Map([
+  [6, 6], [8, 40], [10, 42], [13, 44], [16, 46], [20, 48], [25, 51],
+  [32, 53], [40, 55], [50, 57], [63, 59], [80, 62], [100, 63], [125, 64],
+]);
+const curveOrders = [
+  { curve: "B", code: "5", firstLowCurrentReference: 19841, poleStride: 24 },
+  { curve: "C", code: "4", firstLowCurrentReference: 19849, poleStride: 24 },
+  { curve: "D", code: "1", firstLowCurrentReference: 19857, poleStride: 24 },
+  { curve: "K", code: "7", firstLowCurrentReference: 19937, poleStride: 8 },
+];
 
 export const abbS800sCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
-  return standardCurves.flatMap(({ curve, code }, curveIndex) => {
+  return curveOrders.flatMap(({ curve, code, firstLowCurrentReference, poleStride }) => {
     // ABB uses sequential 2CCF references for the eight low-current variants.
-    const firstLowCurrentReference = 19841 + (poles - 1) * 24 + curveIndex * 8;
+    const firstReference = firstLowCurrentReference + (poles - 1) * poleStride;
     const orders = [
       ...lowCurrents.map((ratedCurrentA, index) => ({
         ratedCurrentA,
-        orderCode: "2CCF" + String(firstLowCurrentReference + index).padStart(6, "0") + "R0001",
+        orderCode: "2CCF" + String(firstReference + index).padStart(6, "0") + "R0001",
       })),
       ...standardCurrents.map(ratedCurrentA => ({
         ratedCurrentA,
-        orderCode: "2CCS86" + poles + "001R" + String(highCurrentCodes.get(ratedCurrentA) ?? ratedCurrentA).padStart(3, "0") + code,
+        orderCode: "2CCS86" + poles + "001R" + String((curve === "K" ? kCurrentCodes : highCurrentCodes).get(ratedCurrentA) ?? ratedCurrentA).padStart(3, "0") + code,
       })),
     ];
     return orders.map(({ ratedCurrentA, orderCode }): ElectricalComponentDefinition => ({
@@ -32,7 +41,7 @@ export const abbS800sCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fla
       terminals,
       manufacturerRecord: {
         manufacturer: "ABB", series: "S800S", orderCode, sourceUrl: catalogue, terminalMap: "verified",
-        documentRevision: "ABB S800 High Performance MCBs 2019 v2, S800S B/C ordering tables and wiring diagrams",
+        documentRevision: "ABB S800 High Performance MCBs 2019 v2, S800S " + curve + " ordering tables and wiring diagrams",
         topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
       },
       propertiesSchema: { ratedCurrentA, curve, icuKa: 50, closed: true },
