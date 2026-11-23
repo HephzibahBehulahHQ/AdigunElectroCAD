@@ -69,3 +69,50 @@ export const abbS800sCatalog = createAbbS800Catalog("S800S");
 export const abbS800nCatalog = createAbbS800Catalog("S800N");
 export const abbS800cCatalog = createAbbS800Catalog("S800C");
 export const abbS800bCatalog = createAbbS800Catalog("S800B");
+
+const hvTechnicalCatalogue = "https://library.e.abb.com/public/59e584dd24424db88c9f54a85a4d6dfe/High%20Performance%20Circuit%20Breaker%20S800HV%20final.pdf";
+const hvLowCurrentReferences = [
+  [20049, 20050, 30021, 30022, 30030, 30023, 30024, 30031],
+  [30025, 30026, 30032, 30027, 30028, 30033, 20063, 20064],
+  [20065, 20066, 20067, 20068, 20069, 20070, 20071, 20072],
+];
+
+export const abbS800hvCatalog: ElectricalComponentDefinition[] = hvLowCurrentReferences.flatMap((references, poleIndex) => {
+  const poles = poleIndex + 1;
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  const physicalTerminals = terminals.map((terminal, index) => ({
+    ...terminal,
+    label: (index % 2 === 0 ? "Upper " : "Lower ") + (Math.floor(index / 2) + 1),
+  }));
+  const orders = [
+    ...lowCurrents.map((ratedCurrentA, index) => ({ ratedCurrentA, curve: "K", reference: references[index] })),
+    ...standardCurrents.map((ratedCurrentA, index) => ({ ratedCurrentA, curve: "K", reference: 19005 + poleIndex * 14 + index })),
+    ...(poles === 3 ? [
+      { ratedCurrentA: 10, curve: "C", reference: 19650 },
+      { ratedCurrentA: 32, curve: "C", reference: 19651 },
+    ] : []),
+  ];
+  return orders.map(({ ratedCurrentA, curve, reference }): ElectricalComponentDefinition => {
+    const orderCode = "2CCF" + String(reference).padStart(6, "0") + "R0001";
+    const icuKa = ratedCurrentA < 6 ? 1.5 : ratedCurrentA <= 63 ? 4 : 3;
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB S80" + poles + "HV-" + curve + ratedCurrentA + " · " + orderCode,
+      category: "Protection Devices",
+      referencePrefix: "Q",
+      symbolId: "breaker-acti9-" + poles + "p",
+      description: "ABB S800HV high-voltage miniature AC circuit breaker with cage terminals.",
+      terminals: physicalTerminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S800HV", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "ABB S800 High Performance MCBs 2019 v2 and S800HV technical information 2CCC457096D0201",
+        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+      },
+      propertiesSchema: { ratedCurrentA, curve, icuKa, closed: true },
+      simulationModelId: "catalog-circuit-breaker",
+      simulationSupport: "connectivity",
+      documentation: "Terminal labels identify physical top and bottom cage positions. Icu is the ABB IEC/EN 60947-2 rating for the 580/1000 VAC system. Simulation represents manual contact continuity.",
+      standardsReferences: ["IEC/EN 60947-2", catalogue, hvTechnicalCatalogue],
+    };
+  });
+});
