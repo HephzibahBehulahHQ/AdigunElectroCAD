@@ -15,6 +15,16 @@ export function hasDedicatedFunctionalSymbol(symbolId: string) {
 }
 
 export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentName }: { symbolId: string; x: number; y: number; properties?: Record<string, string | number | boolean>; componentName?: string }) {
+  const disconnector = /^switch-disconnector-([1-4])p$/.exec(symbolId);
+  if (disconnector) {
+    const poles = Number(disconnector[1]);
+    const closed = properties.closed === true;
+    const offsets = Array.from({ length: poles }, (_, index) => (index - (poles - 1) / 2) * 24);
+    return <g className={mark} aria-label={`${poles}-pole switch-disconnector, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+      {poles > 1 && <path d={`M ${x + offsets[0]} ${y - 7} H ${x + offsets.at(-1)!}`} strokeDasharray="3 4" data-mechanical-link="" />}
+      {offsets.map(offset => <path key={offset} d={poleContactPath(x + offset, y, closed)} />)}
+    </g>;
+  }
   const cy = y - 13;
   if (!hasDedicatedFunctionalSymbol(symbolId)) return null;
 
@@ -190,16 +200,6 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       })}
     </g>;
   }
-  const disconnector = /^switch-disconnector-([1-4])p$/.exec(symbolId);
-  if (disconnector) {
-    const poles = Number(disconnector[1]);
-    const closed = properties.closed === true;
-    const offsets = Array.from({ length: poles }, (_, index) => (index - (poles - 1) / 2) * 24);
-    return <g className={mark} aria-label={`${poles}-pole switch-disconnector, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
-      <path d={`M ${x + offsets[0]} ${y} H ${x + offsets.at(-1)!}`} strokeDasharray="3 4" />
-      {offsets.map(offset => <path key={offset} d={poleContactPath(x + offset, y, closed)} />)}
-    </g>;
-  }
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
     const closed = properties.closed === true;
     const sourcedPoles = /^breaker-acti9-([1-4])p(n)?$/.exec(symbolId);
@@ -207,8 +207,15 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     const offsets = sourcedPoles ? Array.from({ length: poles }, (_, index) => (index - (poles - 1) / 2) * 24) : poles === 4 ? [-36, -12, 12, 36] : [-32, 0, 32];
     const poleLabel = sourcedPoles?.[2] ? (poles - 1) + "-pole plus switched neutral" : (poles === 3 ? "Three" : poles) + "-pole";
     return <g className={mark} aria-label={`${poleLabel} circuit breaker, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
-      <rect x={x + offsets[0] - 9} y={y} width={offsets.at(-1)! - offsets[0] + 18} height="13" />
-      {offsets.map(offset => <path key={offset} d={poleContactPath(x + offset, y, closed)} />)}
+      {poles > 1 && <path d={`M ${x + offsets[0]} ${y - 7} H ${x + offsets.at(-1)!}`} strokeDasharray="3 4" data-mechanical-link="" />}
+      {offsets.map((offset, index) => {
+        const poleX = x + offset;
+        const neutral = Boolean(sourcedPoles?.[2]) && index === (properties.neutralSide === "left" ? 0 : poles - 1);
+        return <g key={offset} data-pole={neutral ? "neutral" : "protected"}>
+          <path d={poleContactPath(poleX, y, closed)} />
+          {!neutral && <path d={`M ${poleX - 3} ${y - 22} l 6 6 m -6 0 l 6 -6`} />}
+        </g>;
+      })}
     </g>;
   }
   if (symbolId === "overload" || symbolId === "overload-3p") {

@@ -61,3 +61,18 @@ it("searches 100,000 synthetic records and bounds the rendered category page", (
   expect(indexComponentCatalog(componentLibraryCatalog)("3RT2025-1BB40").some(({ id }) => id === model.id)).toBe(true);
   if (process.env.ADIGUN_CATALOG_AUDIT === "1") console.log({ indexMs: Math.round(indexed - start), exactQueryMs: Math.round(end - indexed), pageRenderMs: Math.round(performance.now() - end) });
 });
+
+it("draws protected poles separately and leaves the switched neutral unprotected", () => {
+  const render = (symbolId: string, properties: Record<string, string | boolean>) =>
+    renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId, properties, x: 0, y: 0 }));
+  const breaker = render("breaker-acti9-3p", { closed: false });
+  expect(breaker.match(/data-pole="protected"/g)).toHaveLength(3);
+  expect(breaker).toContain("data-mechanical-link");
+  expect(breaker).not.toContain("<rect");
+  expect(render("breaker-acti9-2pn", { neutralSide: "left" })).toMatch(/data-pole="neutral"[\s\S]*data-pole="protected"/);
+  expect(render("breaker-acti9-2pn", { neutralSide: "right" })).toMatch(/data-pole="protected"[\s\S]*data-pole="neutral"/);
+  const isolator = render("switch-disconnector-1p", { closed: true });
+  expect(isolator).toContain("1-pole switch-disconnector, closed");
+  expect(isolator).not.toContain("data-mechanical-link");
+  expect(isolator).not.toContain("data-pole");
+});
