@@ -116,3 +116,49 @@ export const abbS800hvCatalog: ElectricalComponentDefinition[] = hvLowCurrentRef
     };
   });
 });
+
+const ulCurrentOrders = [
+  { ratedCurrentA: 10, kCode: "0427", zCode: "0105" },
+  { ratedCurrentA: 15, kCode: "0457", zCode: "0155" },
+  { ratedCurrentA: 20, kCode: "0487", zCode: "0205" },
+  { ratedCurrentA: 25, kCode: "0517", zCode: "0255" },
+  { ratedCurrentA: 30, kCode: "0527", zCode: "0305" },
+  { ratedCurrentA: 40, kCode: "0557", zCode: "0405" },
+  { ratedCurrentA: 50, kCode: "0577", zCode: "0505" },
+  { ratedCurrentA: 60, kCode: "0587", zCode: "0605" },
+  { ratedCurrentA: 70, kCode: "0707", zCode: "0705" },
+  { ratedCurrentA: 80, kCode: "0627", zCode: "0805" },
+  { ratedCurrentA: 90, kCode: "0907", zCode: "0905" },
+  { ratedCurrentA: 100, kCode: "0637", zCode: "0825" },
+];
+
+export const abbS800uCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  const prefix = poles === 1 ? "2CCS881" : "2CCS86" + poles;
+  const acVoltageRating = poles === 1 ? "240 VAC" : "415 VAC";
+  const icuKa = poles === 1 ? 30 : 50;
+  return ulCurrentOrders.flatMap(({ ratedCurrentA, kCode, zCode }) => [
+    { curve: "K", code: kCode }, { curve: "Z", code: zCode },
+  ].map(({ curve, code }): ElectricalComponentDefinition => {
+    const orderCode = prefix + "017R" + code;
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB S80" + poles + "U-" + curve + ratedCurrentA + " · " + orderCode,
+      category: "Protection Devices",
+      referencePrefix: "Q",
+      symbolId: "breaker-acti9-" + poles + "p",
+      description: "ABB S800U circuit breaker with interchangeable cage terminals.",
+      terminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S800U", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "ABB S800 High Performance MCBs 2019 v2, S800U K/Z ordering tables and connection diagrams",
+        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+      },
+      propertiesSchema: { ratedCurrentA, curve, acVoltageRating, icuKa, closed: true },
+      simulationModelId: "catalog-circuit-breaker",
+      simulationSupport: "connectivity",
+      documentation: "Icu and the associated voltage are the IEC/EN 60947-2 values. Refer to ABB for the UL 489 ratings. Simulation represents manual contact continuity.",
+      standardsReferences: ["IEC/EN 60947-2", "UL 489", catalogue],
+    };
+  }));
+});
