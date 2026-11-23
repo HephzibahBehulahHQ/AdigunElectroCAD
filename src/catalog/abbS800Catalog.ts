@@ -162,3 +162,39 @@ export const abbS800uCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].fla
     };
   }));
 });
+
+const s800pCatalogue = "https://library.e.abb.com/public/655482c5815b4199b154b211cb40a792/Brochure%20S800P%20-%20rev.B%202023.pdf";
+const s800pOrdering = "https://cataloghi.it.abb.com/view/586642090/";
+
+export const abbS800pCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  return ["B", "C", "D", "K"].flatMap((curve, curveIndex) => [80, 100, 125].flatMap((ratedCurrentA, currentIndex) => {
+    const orderVariants = [
+      { reference: 214 + curveIndex * 12 + (poles - 1) * 3 + currentIndex, terminalStyle: "cage", modelSuffix: "" },
+      { reference: 262 + currentIndex * 16 + (poles - 1) * 4 + curveIndex, terminalStyle: "ring lug", modelSuffix: "-R" },
+    ];
+    return orderVariants.map(({ reference, terminalStyle, modelSuffix }): ElectricalComponentDefinition => {
+      const orderCode = "2CCG001" + reference + "R0001";
+      const model = "S80" + poles + "P-" + curve + ratedCurrentA + modelSuffix;
+      return {
+        id: "abb." + orderCode.toLowerCase(),
+        name: "ABB " + model + " · " + orderCode,
+        category: "Protection Devices",
+        referencePrefix: "Q",
+        symbolId: "breaker-acti9-" + poles + "p",
+        description: "ABB S800P miniature circuit breaker with " + terminalStyle + " terminals.",
+        terminals,
+        manufacturerRecord: {
+          manufacturer: "ABB", series: "S800P", orderCode, sourceUrl: s800pOrdering, terminalMap: "verified",
+          documentRevision: "ABB S800P brochure rev. B 2023, ordering tables, technical data and numbered contact diagrams",
+          topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+        },
+        propertiesSchema: { ratedCurrentA, curve, terminalStyle, acVoltageRating: "240/415 VAC", icuKa: 50, closed: true },
+        simulationModelId: "catalog-circuit-breaker",
+        simulationSupport: "connectivity",
+        documentation: "Icu is the IEC/EN 60947-2 AC rating at 240/415 VAC. Refer to ABB for ratings at other voltages and DC wiring arrangements. Simulation represents manual contact continuity.",
+        standardsReferences: ["IEC/EN 60947-2", s800pCatalogue, s800pOrdering],
+      };
+    });
+  }));
+});
