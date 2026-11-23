@@ -348,3 +348,34 @@ export const abbS802pvMhCatalog: ElectricalComponentDefinition[] = [
     standardsReferences: ["IEC/EN 60947-3", catalogue, pvMhWiring],
   };
 });
+
+
+const uczWiring = "https://library.e.abb.com/public/ee5caf1579dc4000bf30cc4b45fcaecc/1SXU400208C0201_ABB%20MCB%20CT_DGT.pdf";
+const uczPoles = numberedBreakerPoles(4);
+const uczTerminals = uczPoles.terminals.map((terminal, index) => ({
+  ...terminal,
+  label: (index % 2 === 0 ? "Upper " : "Lower ") + (Math.floor(index / 2) + 1),
+}));
+
+export const abbS804uUczCatalog: ElectricalComponentDefinition[] = [10, 15, 20, 25, 30, 40, 50, 60, 70, 80].map((ratedCurrentA, index) => {
+  const orderCode = "2CCS248" + (356 + index) + "R0001";
+  return {
+    id: "abb." + orderCode.toLowerCase(),
+    name: "ABB S804U-UCZ" + ratedCurrentA + " · " + orderCode,
+    category: "Protection Devices",
+    referencePrefix: "Q",
+    symbolId: "breaker-acti9-4p",
+    description: "ABB S804U-UCZ four-pole DC circuit breaker.",
+    terminals: uczTerminals,
+    manufacturerRecord: {
+      manufacturer: "ABB", series: "S804U-UCZ", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+      documentRevision: "ABB S800 High Performance MCBs 2019 v2 ordering table and ABB 1SXU400208C0201 tested wiring diagrams",
+      topology: { type: "mechanically-linked-breaker", closed: uczPoles.branches, open: [], protectedPoles: 4 },
+    },
+    propertiesSchema: { ratedCurrentA, curve: "UCZ", ratedDcVoltageV: 600, dcInterruptingRatingKa: 10, closed: true },
+    simulationModelId: "catalog-circuit-breaker",
+    simulationSupport: "connectivity",
+    documentation: "The UL 489 rating applies to the listed external jumper configurations. Simulated continuity is limited to the four linked pole contacts. Draw any external jumpers explicitly.",
+    standardsReferences: ["UL 489", catalogue, uczWiring],
+  };
+});
