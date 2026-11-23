@@ -1153,7 +1153,7 @@ it("distinguishes ABB S200 and S200M order codes and breaking capacities", () =>
 
 
 it("preserves the ABB S200P rating change above 25 A", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200P");
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200P" && typeof entry.propertiesSchema.icnKa === "number");
   const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
   expect(parts).toHaveLength(172);
   expect(part("2cds281001r0255")?.propertiesSchema).toMatchObject({ ratedCurrentA: 25, curve: "B", icnKa: 25 });
@@ -1180,4 +1180,14 @@ it("uses ABB industrial K/Z codes and preserves their separate rating standard",
   expect(part("2cds274001r0428")?.propertiesSchema).toMatchObject({ ratedCurrentA: 10, curve: "Z" });
   expect(part("2cds274001r0428")?.propertiesSchema).not.toHaveProperty("icnKa");
   expect(part("2cds274001r0428")?.standardsReferences).toContain("IEC/EN 60947-2");
+});
+
+
+it("publishes ABB S200P K/Z special current references with physical pole anchors", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200P" && ["K", "Z"].includes(String(entry.propertiesSchema.curve)));
+  const part = (code: string) => parts.find(entry => entry.id === "abb." + code);
+  expect(parts).toHaveLength(144);
+  expect(part("2cds281001r0087")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.2, curve: "K" });
+  expect(part("2cds283001r0187")?.propertiesSchema).toMatchObject({ ratedCurrentA: 0.75, curve: "K" });
+  expect(part("2cds284001r0428")?.terminals).toHaveLength(8);
 });
