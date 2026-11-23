@@ -319,3 +319,32 @@ export const abbS800pvSdCatalog: ElectricalComponentDefinition[] = pvSdOrders.fl
     };
   });
 });
+
+const pvMhWiring = "https://library.e.abb.com/public/2719b214ed154565bf4a1a66fc27ba6c/1SDC007351B0201%20TC%20SOLAR%20LV%20MV%202017_LR.pdf";
+
+export const abbS802pvMhCatalog: ElectricalComponentDefinition[] = [
+  { ratedCurrentA: 32, orderCode: "2CCP247204R0001" },
+  { ratedCurrentA: 63, orderCode: "2CCP247205R0001" },
+  { ratedCurrentA: 100, orderCode: "2CCP247212R0001" },
+].map(({ ratedCurrentA, orderCode }): ElectricalComponentDefinition => {
+  const { branches, terminals } = numberedBreakerPoles(2);
+  return {
+    id: "abb." + orderCode.toLowerCase(),
+    name: "ABB S802PV-M" + ratedCurrentA + "-H · " + orderCode,
+    category: "Protection Devices",
+    referencePrefix: "Q",
+    symbolId: "switch-disconnector-2p",
+    description: "ABB S802PV-M-H polarized photovoltaic switch-disconnector with interchangeable cage terminals.",
+    terminals,
+    manufacturerRecord: {
+      manufacturer: "ABB", series: "S802PV-M-H", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+      documentRevision: "ABB S800 High Performance MCBs 2019 v2, photovoltaic disconnector ordering table and connection diagrams",
+      topology: { type: "mechanically-linked-disconnector", closed: branches, open: [], polaritySensitive: true },
+    },
+    propertiesSchema: { ratedCurrentA, ratedDcVoltageV: 1000, icwKa: 1.5, polaritySensitive: true, closed: true },
+    simulationModelId: "catalog-circuit-breaker",
+    simulationSupport: "connectivity",
+    documentation: "Permanent magnets make the unit polarity-sensitive. Follow the supply and load orientation in the ABB wiring diagrams. Simulation models manual switching continuity.",
+    standardsReferences: ["IEC/EN 60947-3", catalogue, pvMhWiring],
+  };
+});
