@@ -1,6 +1,6 @@
 import { abbS300pCatalog } from "./abbS300Catalog";
 import { abbS800bCatalog, abbS800cCatalog, abbS800hvCatalog, abbS800nCatalog, abbS800pCatalog, abbS800pvSdCatalog, abbS800pvSpCatalog, abbS800sCatalog, abbS800sUcCatalog, abbS800uCatalog, abbS802pvMhCatalog, abbS804uUczCatalog } from "./abbS800Catalog";
-import { abbS200mCatalog, abbS200Catalog, abbS200pCatalog, abbS200NeutralCatalog, abbS200mUcCatalog } from "./abbS200Catalog";
+import { abbS200mCatalog, abbS200Catalog, abbS200pCatalog, abbS200NeutralCatalog, abbS200mUcCatalog, abbS200sCatalog } from "./abbS200Catalog";
 import { siemens5sp4Catalog } from "./siemens5sp4Catalog";
 import { siemens5sy4Catalog, siemens5sy6Catalog, siemens5sy7Catalog, siemens5sy8Catalog, siemens5sy5Catalog } from "./siemens5syCatalog";
 import { siemens5sl4Catalog, siemens5sl6Catalog, siemens5sl3Catalog } from "./siemens5slCatalog";
@@ -66,6 +66,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...abbS200pCatalog,
   ...abbS200NeutralCatalog,
   ...abbS200mUcCatalog,
+  ...abbS200sCatalog,
   ...abbS800sCatalog,
   ...abbS800nCatalog,
   ...abbS800cCatalog,

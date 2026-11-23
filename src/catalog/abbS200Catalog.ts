@@ -185,3 +185,40 @@ export const abbS200mUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].f
     };
   });
 });
+
+const s200sDatasheet = "https://library.e.abb.com/public/29e02788a76841f7823cd829b81dd35a/2CDC002137D0201.pdf";
+const s200sCurves = [
+  { curve: "B", suffix: "5", currents: [6, 10, 13, 16, 20] },
+  { curve: "C", suffix: "4", currents: [6, 8, 10, 13, 16, 20] },
+];
+
+export const abbS200sCatalog: ElectricalComponentDefinition[] = [1, 3].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  const physicalTerminals = terminals.map((terminal, index) => ({
+    ...terminal,
+    label: (index % 2 === 0 ? "Line " : "Load ") + (Math.floor(index / 2) + 1),
+  }));
+  return s200sCurves.flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    const code = String(ratedCurrentA).padStart(3, "0") + suffix;
+    const orderCode = "2CDS25" + poles + "002R" + code;
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB S20" + poles + "S-" + curve + ratedCurrentA + " · " + orderCode,
+      category: "Protection Devices",
+      referencePrefix: "Q",
+      symbolId: "breaker-acti9-" + poles + "p",
+      description: "ABB S200S miniature circuit breaker with screwless load terminals.",
+      terminals: physicalTerminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S200S", orderCode, sourceUrl: s200sDatasheet, terminalMap: "verified",
+        documentRevision: "ABB 2CDC002137D0201, S200S order data and screwless load-terminal construction",
+        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+      },
+      propertiesSchema: { ratedCurrentA, curve, acVoltageRating: poles === 1 ? "230 VAC" : "400 VAC", icnKa: 6, closed: true },
+      simulationModelId: "catalog-circuit-breaker",
+      simulationSupport: "connectivity",
+      documentation: "CAD terminal labels identify line and screwless load positions. Simulation covers manual linked switching continuity.",
+      standardsReferences: ["IEC/EN 60898-1", s200sDatasheet],
+    };
+  }));
+});
