@@ -14,13 +14,18 @@ const curves = [
   { curve: "C", suffix: "4", currents: cAndDCurrents },
 ];
 
-function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): ElectricalComponentDefinition[] {
+function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T" | "SH200M"): ElectricalComponentDefinition[] {
   const { prefix, modelSuffix, icnKa } = {
     SH200: { prefix: "2CDS21", modelSuffix: "", icnKa: 6 },
     SH200L: { prefix: "2CDS24", modelSuffix: "L", icnKa: 4.5 },
     SH200T: { prefix: "2CDS23", modelSuffix: "T", icnKa: 3 },
+    SH200M: { prefix: "2CDS27", modelSuffix: "M", icnKa: 10 },
   }[series];
-  const availableCurves = series === "SH200" ? [...curves, { curve: "D", suffix: "1", currents: cAndDCurrents }] : curves;
+  const allCurves = [...curves, { curve: "D", suffix: "1", currents: cAndDCurrents }];
+  const availableCurves = series === "SH200M" ? allCurves.filter(({ curve }) => curve !== "B")
+    : series === "SH200" ? allCurves : curves;
+  const standardPoleCode = series === "SH200M" ? "011R" : "001R";
+  const neutralPoleCode = series === "SH200M" ? "113R" : "103R";
   return configurations.flatMap(({ protectedPoles, switchedNeutral }) => {
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
@@ -30,7 +35,7 @@ function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): Electrica
     );
     return availableCurves.flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
       const currentCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
-      const orderCode = prefix + protectedPoles + (switchedNeutral ? "103R" : "001R") + currentCode + suffix;
+      const orderCode = prefix + protectedPoles + (switchedNeutral ? neutralPoleCode : standardPoleCode) + currentCode + suffix;
       const model = "SH20" + protectedPoles + modelSuffix + "-" + curve + ratedCurrentA + (switchedNeutral ? "NA" : "");
       return {
         id: "abb." + orderCode.toLowerCase(),
@@ -57,3 +62,4 @@ function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): Electrica
 export const abbSh200lCatalog = createAbbSh200Catalog("SH200L");
 export const abbSh200Catalog = createAbbSh200Catalog("SH200");
 export const abbSh200tCatalog = createAbbSh200Catalog("SH200T");
+export const abbSh200mCatalog = createAbbSh200Catalog("SH200M");

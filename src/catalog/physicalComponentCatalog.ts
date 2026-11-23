@@ -1,5 +1,5 @@
 import { abbSn201Catalog } from "./abbSn201Catalog";
-import { abbSh200Catalog, abbSh200lCatalog, abbSh200tCatalog } from "./abbSh200Catalog";
+import { abbSh200Catalog, abbSh200lCatalog, abbSh200mCatalog, abbSh200tCatalog } from "./abbSh200Catalog";
 import { abbS300pCatalog } from "./abbS300Catalog";
 import { abbS800bCatalog, abbS800cCatalog, abbS800hvCatalog, abbS800nCatalog, abbS800pCatalog, abbS800pvSdCatalog, abbS800pvSpCatalog, abbS800sCatalog, abbS800sUcCatalog, abbS800uCatalog, abbS802pvMhCatalog, abbS804uUczCatalog } from "./abbS800Catalog";
 import { abbS200mCatalog, abbS200Catalog, abbS200pCatalog, abbS200NeutralCatalog, abbS200mUcCatalog, abbS200sCatalog, abbS200mrCatalog } from "./abbS200Catalog";
@@ -73,6 +73,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...abbSh200lCatalog,
   ...abbSh200Catalog,
   ...abbSh200tCatalog,
+  ...abbSh200mCatalog,
   ...abbSn201Catalog,
   ...abbS800sCatalog,
   ...abbS800nCatalog,
