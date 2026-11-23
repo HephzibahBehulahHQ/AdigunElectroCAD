@@ -16,39 +16,46 @@ const curveOrders = [
   { curve: "K", code: "7", firstLowCurrentReference: 19937, poleStride: 8 },
 ];
 
-export const abbS800sCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
-  const { branches, terminals } = numberedBreakerPoles(poles);
-  return curveOrders.flatMap(({ curve, code, firstLowCurrentReference, poleStride }) => {
-    // ABB uses sequential 2CCF references for the eight low-current variants.
-    const firstReference = firstLowCurrentReference + (poles - 1) * poleStride;
-    const orders = [
-      ...lowCurrents.map((ratedCurrentA, index) => ({
-        ratedCurrentA,
-        orderCode: "2CCF" + String(firstReference + index).padStart(6, "0") + "R0001",
-      })),
-      ...standardCurrents.map(ratedCurrentA => ({
-        ratedCurrentA,
-        orderCode: "2CCS86" + poles + "001R" + String((curve === "K" ? kCurrentCodes : highCurrentCodes).get(ratedCurrentA) ?? ratedCurrentA).padStart(3, "0") + code,
-      })),
-    ];
-    return orders.map(({ ratedCurrentA, orderCode }): ElectricalComponentDefinition => ({
-      id: "abb." + orderCode.toLowerCase(),
-      name: "ABB S80" + poles + "S-" + curve + ratedCurrentA + " · " + orderCode,
-      category: "Protection Devices",
-      referencePrefix: "Q",
-      symbolId: "breaker-acti9-" + poles + "p",
-      description: "ABB S800S high-performance circuit breaker with interchangeable cage terminals.",
-      terminals,
-      manufacturerRecord: {
-        manufacturer: "ABB", series: "S800S", orderCode, sourceUrl: catalogue, terminalMap: "verified",
-        documentRevision: "ABB S800 High Performance MCBs 2019 v2, S800S " + curve + " ordering tables and wiring diagrams",
-        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
-      },
-      propertiesSchema: { ratedCurrentA, curve, icuKa: 50, closed: true },
-      simulationModelId: "catalog-circuit-breaker",
-      simulationSupport: "connectivity",
-      documentation: "The Closed setting controls linked pole continuity. Trip behavior and voltage-dependent breaking capacity are outside the simulation scope.",
-      standardsReferences: ["IEC/EN 60947-2", catalogue],
-    }));
-  });
-});
+function createAbbS800Catalog(series: "S800S" | "S800N"): ElectricalComponentDefinition[] {
+  const highPerformance = series === "S800S";
+  const prefix = highPerformance ? "2CCS86" : "2CCS89";
+  const availableCurves = highPerformance ? curveOrders : curveOrders.filter(({ curve }) => curve !== "K");
+  return [1, 2, 3, 4].flatMap(poles => {
+    const { branches, terminals } = numberedBreakerPoles(poles);
+    return availableCurves.flatMap(({ curve, code, firstLowCurrentReference, poleStride }) => {
+      // ABB uses sequential 2CCF references for the eight low-current variants.
+      const firstReference = firstLowCurrentReference + (poles - 1) * poleStride;
+      const orders = [
+        ...(highPerformance ? lowCurrents : []).map((ratedCurrentA, index) => ({
+          ratedCurrentA,
+          orderCode: "2CCF" + String(firstReference + index).padStart(6, "0") + "R0001",
+        })),
+        ...standardCurrents.map(ratedCurrentA => ({
+          ratedCurrentA,
+          orderCode: prefix + poles + "001R" + String((curve === "K" ? kCurrentCodes : highCurrentCodes).get(ratedCurrentA) ?? ratedCurrentA).padStart(3, "0") + code,
+        })),
+      ];
+      return orders.map(({ ratedCurrentA, orderCode }): ElectricalComponentDefinition => ({
+        id: "abb." + orderCode.toLowerCase(),
+        name: "ABB S80" + poles + series.slice(-1) + "-" + curve + ratedCurrentA + " · " + orderCode,
+        category: "Protection Devices",
+        referencePrefix: "Q",
+        symbolId: "breaker-acti9-" + poles + "p",
+        description: "ABB " + series + " high-performance circuit breaker with interchangeable cage terminals.",
+        terminals,
+        manufacturerRecord: {
+          manufacturer: "ABB", series, orderCode, sourceUrl: catalogue, terminalMap: "verified",
+          documentRevision: "ABB S800 High Performance MCBs 2019 v2, " + series + " " + curve + " ordering tables and wiring diagrams",
+          topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+        },
+        propertiesSchema: { ratedCurrentA, curve, icuKa: highPerformance ? 50 : 36, closed: true },
+        simulationModelId: "catalog-circuit-breaker",
+        simulationSupport: "connectivity",
+        documentation: "The Closed setting controls linked pole continuity. Trip behavior and voltage-dependent breaking capacity are outside the simulation scope.",
+        standardsReferences: ["IEC/EN 60947-2", catalogue],
+      }));
+    });  });
+}
+
+export const abbS800sCatalog = createAbbS800Catalog("S800S");
+export const abbS800nCatalog = createAbbS800Catalog("S800N");
