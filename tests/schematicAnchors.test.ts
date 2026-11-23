@@ -1201,3 +1201,15 @@ it("exposes ABB S200P switched-neutral variants from all listed curves", () => {
   expect(part("2cds283103r0134")?.propertiesSchema).toMatchObject({ ratedCurrentA: 13, curve: "C", icnKa: 25 });
   expect(part("2cds283103r0134")?.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3", "4", "5", "6", "7N", "8N"]);
 });
+
+it("preserves ABB S200M UC voltage and polarity constraints", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M UC");
+  expect(parts).toHaveLength(108);
+  const lookup = (poles: number) => parts.find(entry => entry.manufacturerRecord?.orderCode === `2CDS27${poles}061R0164`)!;
+  expect(lookup(1).propertiesSchema.dcVoltageRating).toBe("220 VDC");
+  expect(lookup(2).propertiesSchema.dcVoltageRating).toBe("440 VDC with two poles in series");
+  expect(lookup(3).propertiesSchema.dcVoltageRating).toBeUndefined();
+  expect(lookup(4).propertiesSchema.dcVoltageRating).toBe("440 VDC with two poles in series");
+  expect(lookup(2).terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4"]);
+  expect(lookup(2).manufacturerRecord?.topology).toMatchObject({ polaritySensitive: true });
+});

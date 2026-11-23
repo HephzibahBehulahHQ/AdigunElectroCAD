@@ -86,3 +86,35 @@ export const abbS200Catalog = createAbbS200Catalog("S200");
 export const abbS200pCatalog = createAbbS200Catalog("S200P");
 
 export const abbS200NeutralCatalog = [...createAbbS200Catalog("S200", true), ...createAbbS200Catalog("S200M", true), ...createAbbS200Catalog("S200P", true)];
+
+
+const ucCatalogue = "https://library.e.abb.com/public/aeeea37834b7488ebd6796ebe35044d7/1SXU400144L0201_SystemProMCompactMCBS200MUC0915.pdf?x-sign=o6JGutA1UjOrQfzeFY9Pk4Sc4LqPt4kOlFl%2BbOpRk9w%2B2EetsQeOA0geBykuhteO";
+
+export const abbS200mUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  return orderRows.filter(row => row.curve !== "D").flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    const ratingCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
+    const orderCode = "2CDS27" + poles + "061R" + ratingCode + suffix;
+    const model = "S20" + poles + "MUC-" + curve + ratedCurrentA;
+    const dcVoltageRating = poles === 1 ? "220 VDC" : "440 VDC with two poles in series";
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB " + model + " · " + orderCode,
+      category: "Protection Devices", referencePrefix: "Q", symbolId: "breaker-acti9-" + poles + "p",
+      description: "ABB S200 M UC miniature circuit breaker with polarized DC operation.",
+      terminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S200M UC", orderCode, sourceUrl: ucCatalogue, terminalMap: "verified",
+        documentRevision: "ABB 1SXU400144L0201, B/C ordering details, technical ratings and DC connection diagrams",
+        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], polaritySensitive: true },
+      },
+      propertiesSchema: {
+        ratedCurrentA, curve, acVoltageRating: poles === 1 ? "230 VAC" : "400 VAC",
+        ...(poles === 3 ? {} : { dcVoltageRating }), icnKa: 10, polaritySensitive: true, closed: true,
+      },
+      simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
+      documentation: "For DC wiring, follow ABB’s polarity and series connection diagrams. ABB identifies terminal 1 as negative and terminal 3 as positive for top-fed configurations. The simulation models manual contact continuity. It omits polarity validation and trip behavior.",
+      standardsReferences: ["IEC/EN 60898-2", "IEC/EN 60947-2", ucCatalogue],
+    };
+  }));
+});
