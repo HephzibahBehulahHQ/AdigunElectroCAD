@@ -16,10 +16,15 @@ const curveOrders = [
   { curve: "K", code: "7", firstLowCurrentReference: 19937, poleStride: 8 },
 ];
 
-function createAbbS800Catalog(series: "S800S" | "S800N"): ElectricalComponentDefinition[] {
+function createAbbS800Catalog(series: "S800S" | "S800N" | "S800C"): ElectricalComponentDefinition[] {
   const highPerformance = series === "S800S";
-  const prefix = highPerformance ? "2CCS86" : "2CCS89";
-  const availableCurves = highPerformance ? curveOrders : curveOrders.filter(({ curve }) => curve !== "K");
+  const { prefix, icuKa, minimumCurrentA } = {
+    S800S: { prefix: "2CCS86", icuKa: 50, minimumCurrentA: 6 },
+    S800N: { prefix: "2CCS89", icuKa: 36, minimumCurrentA: 6 },
+    S800C: { prefix: "2CCS88", icuKa: 25, minimumCurrentA: 10 },
+  }[series];
+  const availableCurves = curveOrders.filter(({ curve }) => series !== "S800N" || curve !== "K");
+  const availableStandardCurrents = standardCurrents.filter(current => current >= minimumCurrentA);
   return [1, 2, 3, 4].flatMap(poles => {
     const { branches, terminals } = numberedBreakerPoles(poles);
     return availableCurves.flatMap(({ curve, code, firstLowCurrentReference, poleStride }) => {
@@ -30,7 +35,7 @@ function createAbbS800Catalog(series: "S800S" | "S800N"): ElectricalComponentDef
           ratedCurrentA,
           orderCode: "2CCF" + String(firstReference + index).padStart(6, "0") + "R0001",
         })),
-        ...standardCurrents.map(ratedCurrentA => ({
+        ...availableStandardCurrents.map(ratedCurrentA => ({
           ratedCurrentA,
           orderCode: prefix + poles + "001R" + String((curve === "K" ? kCurrentCodes : highCurrentCodes).get(ratedCurrentA) ?? ratedCurrentA).padStart(3, "0") + code,
         })),
@@ -48,14 +53,16 @@ function createAbbS800Catalog(series: "S800S" | "S800N"): ElectricalComponentDef
           documentRevision: "ABB S800 High Performance MCBs 2019 v2, " + series + " " + curve + " ordering tables and wiring diagrams",
           topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
         },
-        propertiesSchema: { ratedCurrentA, curve, icuKa: highPerformance ? 50 : 36, closed: true },
+        propertiesSchema: { ratedCurrentA, curve, icuKa, closed: true },
         simulationModelId: "catalog-circuit-breaker",
         simulationSupport: "connectivity",
         documentation: "The Closed setting controls linked pole continuity. Trip behavior and voltage-dependent breaking capacity are outside the simulation scope.",
         standardsReferences: ["IEC/EN 60947-2", catalogue],
       }));
-    });  });
+    });
+  });
 }
 
 export const abbS800sCatalog = createAbbS800Catalog("S800S");
 export const abbS800nCatalog = createAbbS800Catalog("S800N");
+export const abbS800cCatalog = createAbbS800Catalog("S800C");
