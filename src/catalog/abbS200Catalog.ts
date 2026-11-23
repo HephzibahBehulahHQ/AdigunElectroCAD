@@ -90,11 +90,68 @@ export const abbS200NeutralCatalog = [...createAbbS200Catalog("S200", true), ...
 
 const ucCatalogue = "https://library.e.abb.com/public/aeeea37834b7488ebd6796ebe35044d7/1SXU400144L0201_SystemProMCompactMCBS200MUC0915.pdf?x-sign=o6JGutA1UjOrQfzeFY9Pk4Sc4LqPt4kOlFl%2BbOpRk9w%2B2EetsQeOA0geBykuhteO";
 
+const ucIndustrialOrders = [
+  { curve: "K", ratedCurrentA: 0.2, code: "0087" },
+  { curve: "K", ratedCurrentA: 0.3, code: "0117" },
+  { curve: "K", ratedCurrentA: 0.5, code: "0157" },
+  { curve: "K", ratedCurrentA: 0.75, code: "0187" },
+  { curve: "K", ratedCurrentA: 1, code: "0217" },
+  { curve: "K", ratedCurrentA: 1.6, code: "0257" },
+  { curve: "K", ratedCurrentA: 2, code: "0277" },
+  { curve: "K", ratedCurrentA: 3, code: "0317" },
+  { curve: "K", ratedCurrentA: 4, code: "0337" },
+  { curve: "K", ratedCurrentA: 5, code: "0357" },
+  { curve: "K", ratedCurrentA: 6, code: "0377" },
+  { curve: "K", ratedCurrentA: 8, code: "0407" },
+  { curve: "K", ratedCurrentA: 10, code: "0427" },
+  { curve: "K", ratedCurrentA: 13, code: "0447" },
+  { curve: "K", ratedCurrentA: 15, code: "0457" },
+  { curve: "K", ratedCurrentA: 16, code: "0467" },
+  { curve: "K", ratedCurrentA: 20, code: "0487" },
+  { curve: "K", ratedCurrentA: 25, code: "0517" },
+  { curve: "K", ratedCurrentA: 30, code: "0527" },
+  { curve: "K", ratedCurrentA: 32, code: "0537" },
+  { curve: "K", ratedCurrentA: 35, code: "0547" },
+  { curve: "K", ratedCurrentA: 40, code: "0557" },
+  { curve: "K", ratedCurrentA: 50, code: "0577" },
+  { curve: "K", ratedCurrentA: 60, code: "0587" },
+  { curve: "K", ratedCurrentA: 63, code: "0607" },
+  { curve: "Z", ratedCurrentA: 0.5, code: "0158" },
+  { curve: "Z", ratedCurrentA: 1, code: "0218" },
+  { curve: "Z", ratedCurrentA: 1.6, code: "0258" },
+  { curve: "Z", ratedCurrentA: 2, code: "0278" },
+  { curve: "Z", ratedCurrentA: 3, code: "0318" },
+  { curve: "Z", ratedCurrentA: 4, code: "0338" },
+  { curve: "Z", ratedCurrentA: 5, code: "0358" },
+  { curve: "Z", ratedCurrentA: 6, code: "0378" },
+  { curve: "Z", ratedCurrentA: 8, code: "0408" },
+  { curve: "Z", ratedCurrentA: 10, code: "0428" },
+  { curve: "Z", ratedCurrentA: 15, code: "0458" },
+  { curve: "Z", ratedCurrentA: 16, code: "0468" },
+  { curve: "Z", ratedCurrentA: 20, code: "0488" },
+  { curve: "Z", ratedCurrentA: 25, code: "0518" },
+  { curve: "Z", ratedCurrentA: 30, code: "0528" },
+  { curve: "Z", ratedCurrentA: 32, code: "0538" },
+  { curve: "Z", ratedCurrentA: 35, code: "0548" },
+  { curve: "Z", ratedCurrentA: 40, code: "0558" },
+  { curve: "Z", ratedCurrentA: 50, code: "0578" },
+  { curve: "Z", ratedCurrentA: 60, code: "0588" },
+  { curve: "Z", ratedCurrentA: 63, code: "0608" },
+];
+
+const ucOrders = [
+  ...orderRows.filter(row => row.curve !== "D").flatMap(({ curve, suffix, currents }) => currents.map(ratedCurrentA => {
+    const ratingCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
+    return { curve, ratedCurrentA, code: ratingCode + suffix };
+  })),
+  ...ucIndustrialOrders,
+];
+
 export const abbS200mUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].flatMap(poles => {
   const { branches, terminals } = numberedBreakerPoles(poles);
-  return orderRows.filter(row => row.curve !== "D").flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
-    const ratingCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
-    const orderCode = "2CDS27" + poles + "061R" + ratingCode + suffix;
+  return ucOrders.map(({ curve, ratedCurrentA, code }): ElectricalComponentDefinition => {
+    const industrialCurve = curve === "K" || curve === "Z";
+    const orderCode = "2CDS27" + poles + "061R" + code;
     const model = "S20" + poles + "MUC-" + curve + ratedCurrentA;
     const dcVoltageRating = poles === 1 ? "220 VDC" : "440 VDC with two poles in series";
     return {
@@ -105,16 +162,26 @@ export const abbS200mUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].f
       terminals,
       manufacturerRecord: {
         manufacturer: "ABB", series: "S200M UC", orderCode, sourceUrl: ucCatalogue, terminalMap: "verified",
-        documentRevision: "ABB 1SXU400144L0201, B/C ordering details, technical ratings and DC connection diagrams",
+        documentRevision: "ABB 1SXU400144L0201, B/C/K/Z ordering details, technical ratings and DC connection diagrams",
         topology: { type: "mechanically-linked-breaker", closed: branches, open: [], polaritySensitive: true },
       },
       propertiesSchema: {
-        ratedCurrentA, curve, acVoltageRating: poles === 1 ? "230 VAC" : "400 VAC",
-        ...(poles === 3 ? {} : { dcVoltageRating }), icnKa: 10, polaritySensitive: true, closed: true,
+        ratedCurrentA, curve,
+        ...(industrialCurve ? {
+          acVoltageRating: poles === 1 ? "253 VAC" : "440 VAC",
+          dcVoltageRating,
+          icuAcKa: ratedCurrentA <= 40 ? 10 : 6,
+          icuDcKa: 10,
+        } : {
+          acVoltageRating: poles === 1 ? "230 VAC" : "400 VAC",
+          ...(poles === 3 ? {} : { dcVoltageRating }),
+          icnKa: 10,
+        }),
+        polaritySensitive: true, closed: true,
       },
       simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
       documentation: "For DC wiring, follow ABB’s polarity and series connection diagrams. ABB identifies terminal 1 as negative and terminal 3 as positive for top-fed configurations. The simulation models manual contact continuity. It omits polarity validation and trip behavior.",
-      standardsReferences: ["IEC/EN 60898-2", "IEC/EN 60947-2", ucCatalogue],
+      standardsReferences: industrialCurve ? ["IEC/EN 60947-2", ucCatalogue] : ["IEC/EN 60898-2", "IEC/EN 60947-2", ucCatalogue],
     };
-  }));
+  });
 });

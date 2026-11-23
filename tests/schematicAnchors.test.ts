@@ -1203,7 +1203,7 @@ it("exposes ABB S200P switched-neutral variants from all listed curves", () => {
 });
 
 it("preserves ABB S200M UC voltage and polarity constraints", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M UC");
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M UC" && ["B", "C"].includes(String(entry.propertiesSchema.curve)));
   expect(parts).toHaveLength(108);
   const lookup = (poles: number) => parts.find(entry => entry.manufacturerRecord?.orderCode === `2CDS27${poles}061R0164`)!;
   expect(lookup(1).propertiesSchema.dcVoltageRating).toBe("220 VDC");
@@ -1212,4 +1212,15 @@ it("preserves ABB S200M UC voltage and polarity constraints", () => {
   expect(lookup(4).propertiesSchema.dcVoltageRating).toBe("440 VDC with two poles in series");
   expect(lookup(2).terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4"]);
   expect(lookup(2).manufacturerRecord?.topology).toMatchObject({ polaritySensitive: true });
+});
+
+it("uses ABB S200M UC industrial ratings for K and Z curves", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S200M UC" && ["K", "Z"].includes(String(entry.propertiesSchema.curve)));
+  expect(parts.filter(entry => entry.propertiesSchema.curve === "K")).toHaveLength(100);
+  expect(parts.filter(entry => entry.propertiesSchema.curve === "Z")).toHaveLength(84);
+  const lookup = (orderCode: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === orderCode)!;
+  expect(lookup("2CDS274061R0187").terminals).toHaveLength(8);
+  expect(lookup("2CDS273061R0557").propertiesSchema).toMatchObject({ ratedCurrentA: 40, icuAcKa: 10, icuDcKa: 10 });
+  expect(lookup("2CDS271061R0578").propertiesSchema).toMatchObject({ ratedCurrentA: 50, icuAcKa: 6, icuDcKa: 10, dcVoltageRating: "220 VDC" });
+  expect(lookup("2CDS271061R0578").propertiesSchema.icnKa).toBeUndefined();
 });
