@@ -1226,11 +1226,20 @@ it("uses ABB S200M UC industrial ratings for K and Z curves", () => {
 });
 
 it("publishes ABB S800S B/C cage-terminal order codes with linked poles", () => {
-  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800S");
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800S" && ["B", "C"].includes(String(entry.propertiesSchema.curve)));
   expect(parts).toHaveLength(176);
   const lookup = (orderCode: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === orderCode)!;
   expect(lookup("2CCF019849R0001").propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "C", icuKa: 50 });
   const fourPole = lookup("2CCS864001R0845");
   expect(fourPole.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "B" });
   expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
+
+it("publishes S800S D/K cage-terminal variants with the correct current codes", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800S" && ["D", "K"].includes(String(entry.propertiesSchema.curve)));
+  expect(parts).toHaveLength(176);
+  const lookup = (orderCode: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === orderCode)!;
+  expect(lookup("2CCF019961R0001").propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "K" });
+  expect(lookup("2CCS862001R0597").propertiesSchema).toMatchObject({ ratedCurrentA: 63, curve: "K" });
+  expect(lookup("2CCS863001R0251").propertiesSchema).toMatchObject({ ratedCurrentA: 25, curve: "D" });
 });
