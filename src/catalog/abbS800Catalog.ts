@@ -16,13 +16,15 @@ const curveOrders = [
   { curve: "K", code: "7", firstLowCurrentReference: 19937, poleStride: 8 },
 ];
 
-function createAbbS800Catalog(series: "S800S" | "S800N" | "S800C"): ElectricalComponentDefinition[] {
+function createAbbS800Catalog(series: "S800S" | "S800N" | "S800C" | "S800B"): ElectricalComponentDefinition[] {
   const highPerformance = series === "S800S";
   const { prefix, icuKa, minimumCurrentA } = {
     S800S: { prefix: "2CCS86", icuKa: 50, minimumCurrentA: 6 },
     S800N: { prefix: "2CCS89", icuKa: 36, minimumCurrentA: 6 },
     S800C: { prefix: "2CCS88", icuKa: 25, minimumCurrentA: 10 },
+    S800B: { prefix: "2CCS81", icuKa: 16, minimumCurrentA: 32 },
   }[series];
+  const terminalStyle = series === "S800B" ? "locked cage" : "interchangeable cage";
   const availableCurves = curveOrders.filter(({ curve }) => series !== "S800N" || curve !== "K");
   const availableStandardCurrents = standardCurrents.filter(current => current >= minimumCurrentA);
   return [1, 2, 3, 4].flatMap(poles => {
@@ -46,7 +48,7 @@ function createAbbS800Catalog(series: "S800S" | "S800N" | "S800C"): ElectricalCo
         category: "Protection Devices",
         referencePrefix: "Q",
         symbolId: "breaker-acti9-" + poles + "p",
-        description: "ABB " + series + " high-performance circuit breaker with interchangeable cage terminals.",
+        description: "ABB " + series + " high-performance circuit breaker with " + terminalStyle + " terminals.",
         terminals,
         manufacturerRecord: {
           manufacturer: "ABB", series, orderCode, sourceUrl: catalogue, terminalMap: "verified",
@@ -66,3 +68,4 @@ function createAbbS800Catalog(series: "S800S" | "S800N" | "S800C"): ElectricalCo
 export const abbS800sCatalog = createAbbS800Catalog("S800S");
 export const abbS800nCatalog = createAbbS800Catalog("S800N");
 export const abbS800cCatalog = createAbbS800Catalog("S800C");
+export const abbS800bCatalog = createAbbS800Catalog("S800B");
