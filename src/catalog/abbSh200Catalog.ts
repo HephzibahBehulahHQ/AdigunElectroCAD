@@ -8,9 +8,10 @@ const configurations = [
   ...[1, 2, 3, 4].map(protectedPoles => ({ protectedPoles, switchedNeutral: false })),
   ...[1, 3].map(protectedPoles => ({ protectedPoles, switchedNeutral: true })),
 ];
+const cAndDCurrents = [0.5, 1, 1.6, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63];
 const curves = [
   { curve: "B", suffix: "5", currents: [6, 10, 13, 16, 20, 25, 32, 40, 50, 63] },
-  { curve: "C", suffix: "4", currents: [0.5, 1, 1.6, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 63] },
+  { curve: "C", suffix: "4", currents: cAndDCurrents },
 ];
 
 function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): ElectricalComponentDefinition[] {
@@ -19,6 +20,7 @@ function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): Electrica
     SH200L: { prefix: "2CDS24", modelSuffix: "L", icnKa: 4.5 },
     SH200T: { prefix: "2CDS23", modelSuffix: "T", icnKa: 3 },
   }[series];
+  const availableCurves = series === "SH200" ? [...curves, { curve: "D", suffix: "1", currents: cAndDCurrents }] : curves;
   return configurations.flatMap(({ protectedPoles, switchedNeutral }) => {
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
@@ -26,7 +28,7 @@ function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): Electrica
     const physicalTerminals = terminals.map(terminal =>
       neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal,
     );
-    return curves.flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
+    return availableCurves.flatMap(({ curve, suffix, currents }) => currents.map((ratedCurrentA): ElectricalComponentDefinition => {
       const currentCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
       const orderCode = prefix + protectedPoles + (switchedNeutral ? "103R" : "001R") + currentCode + suffix;
       const model = "SH20" + protectedPoles + modelSuffix + "-" + curve + ratedCurrentA + (switchedNeutral ? "NA" : "");
@@ -40,7 +42,7 @@ function createAbbSh200Catalog(series: "SH200" | "SH200L" | "SH200T"): Electrica
         terminals: physicalTerminals,
         manufacturerRecord: {
           manufacturer: "ABB", series, orderCode, sourceUrl: catalogue, terminalMap: "verified",
-          documentRevision: "ABB Compact Home catalogue 9AKK107991A9809 Rev F, B/C ordering tables; 2CSC400003B0201 terminal diagrams",
+          documentRevision: "ABB Compact Home catalogue 9AKK107991A9809 Rev F, " + curve + " ordering table; 2CSC400003B0201 terminal diagrams",
           topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles, ...(switchedNeutral ? { neutralTerminals } : {}) },
         },
         propertiesSchema: { ratedCurrentA, curve, icnKa, ...(switchedNeutral ? { switchedNeutral } : {}), closed: true },
