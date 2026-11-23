@@ -49,7 +49,7 @@ export const abbS300pCatalog: ElectricalComponentDefinition[] = poleConfiguratio
   const physicalTerminals = terminals.map(terminal =>
     neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal,
   );
-  const orders = [...(switchedNeutral ? [] : cdOrders), ...industrialOrders];
+  const orders = [...cdOrders, ...industrialOrders];
   return orders.map(({ curve, ratedCurrentA, code }): ElectricalComponentDefinition => {
     const orderCode = "2CDS38" + protectedPoles + (switchedNeutral ? "103R" : "001R") + code;
     return {

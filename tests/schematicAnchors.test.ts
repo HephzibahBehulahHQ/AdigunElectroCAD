@@ -1324,3 +1324,13 @@ it("maps ABB S800PV-SP voltage by pole count and preserves distinct contact pair
   expect(fourPole.propertiesSchema).toMatchObject({ ratedCurrentA: 125, ratedDcVoltageV: 1500 });
   expect(fourPole.manufacturerRecord?.topology).toMatchObject({ closed: [["l1-in", "l1-out"], ["l2-in", "l2-out"], ["l3-in", "l3-out"], ["l4-in", "l4-out"]] });
 });
+
+it("maps ABB S300P C/D switched neutral to its distinct last contact", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S300P" && entry.propertiesSchema.switchedNeutral && ["C", "D"].includes(String(entry.propertiesSchema.curve)));
+  expect(parts).toHaveLength(68);
+  const onePole = parts.find(entry => entry.manufacturerRecord?.orderCode === "2CDS381103R0984")!;
+  const threePole = parts.find(entry => entry.manufacturerRecord?.orderCode === "2CDS383103R0631")!;
+  expect(onePole.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3N", "4N"]);
+  expect(threePole.terminals.map(terminal => terminal.label).slice(-2)).toEqual(["7N", "8N"]);
+  expect(threePole.manufacturerRecord?.topology).toMatchObject({ protectedPoles: 3, neutralTerminals: ["l4-in", "l4-out"] });
+});
