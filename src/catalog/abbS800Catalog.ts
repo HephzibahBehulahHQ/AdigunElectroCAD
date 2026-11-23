@@ -253,3 +253,37 @@ export const abbS800sUcCatalog: ElectricalComponentDefinition[] = [1, 2, 3, 4].f
     });
   });
 });
+
+const pvSpOrders = [
+  { poles: 2, ratedDcVoltageV: 800, references: [19596, 19643, 19644, 19597, 19598, 19599, 19600, 19601, 19602, 19603, 19604, 19605, 19606, 19607, 19608] },
+  { poles: 3, ratedDcVoltageV: 1200, references: [19609, 19645, 19646, 19610, 19611, 19612, 19613, 19614, 19615, 19616, 19617, 19618, 19619, 19620, 19621] },
+  { poles: 4, ratedDcVoltageV: 1500, references: [19586, 19647, 19648, 19622, 19623, 19624, 19625, 19626, 19627, 19628, 19629, 19630, 19631, 19632, 19633] },
+];
+const pvSpCurrents = [5, ...standardCurrents];
+
+export const abbS800pvSpCatalog: ElectricalComponentDefinition[] = pvSpOrders.flatMap(({ poles, ratedDcVoltageV, references }) => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  return references.map((reference, index): ElectricalComponentDefinition => {
+    const ratedCurrentA = pvSpCurrents[index];
+    const orderCode = "2CCF" + String(reference).padStart(6, "0") + "R0001";
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB S80" + poles + "PV-SP" + ratedCurrentA + " · " + orderCode,
+      category: "Protection Devices",
+      referencePrefix: "Q",
+      symbolId: "breaker-acti9-" + poles + "p",
+      description: "ABB S800PV-SP photovoltaic string protection breaker with interchangeable cage terminals.",
+      terminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S800PV-SP", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "ABB S800 High Performance MCBs 2019 v2, photovoltaic string protection ordering tables and connection diagrams",
+        topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles: poles },
+      },
+      propertiesSchema: { ratedCurrentA, curve: "PV-SP", ratedDcVoltageV, icuDcKa: 5, closed: true },
+      simulationModelId: "catalog-circuit-breaker",
+      simulationSupport: "connectivity",
+      documentation: "Use ABB’s application diagrams for external pole wiring at the rated DC voltage. Simulation represents manual continuity through each mechanically linked pole.",
+      standardsReferences: ["IEC/EN 60947-2", catalogue],
+    };
+  });
+});
