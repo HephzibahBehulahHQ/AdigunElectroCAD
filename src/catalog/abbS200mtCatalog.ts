@@ -31,7 +31,11 @@ const kOrders = [
 ];
 
 const cdCurrents = [0.5, 1, 1.6, 2, 3, 4, 5, 6, 8, 10, 13, 15, 16, 20, 25, 30, 32, 35, 40, 50, 60, 63];
+const bCurrents = [1, 2, 3, 4, 5, 6, 8, 10, 13, 15, 16, 20, 25, 30, 32, 35, 40, 50, 60, 63];
+const zCurrents = new Set([0.5, 1, 1.6, 2, 3, 4, 5, 6, 8, 10, 13, 15, 16, 20, 25, 30, 32, 35, 40, 50, 60, 63]);
 const orders = [
+  ...bCurrents.map(ratedCurrentA => ({ ratedCurrentA, code: String(ratedCurrentA).padStart(3, "0") + "5", curve: "B" })),
+  ...kOrders.filter(order => zCurrents.has(order.ratedCurrentA)).map(order => ({ ...order, code: order.code.slice(0, -1) + "8", curve: "Z" })),
   ...kOrders.map(order => ({ ...order, curve: "K" })),
   ...[{ curve: "C", suffix: "4" }, { curve: "D", suffix: "1" }].flatMap(({ curve, suffix }) => cdCurrents.map(ratedCurrentA => {
     const currentCode = ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
