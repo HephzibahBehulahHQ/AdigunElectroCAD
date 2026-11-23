@@ -190,6 +190,16 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       })}
     </g>;
   }
+  const disconnector = /^switch-disconnector-([2-4])p$/.exec(symbolId);
+  if (disconnector) {
+    const poles = Number(disconnector[1]);
+    const closed = properties.closed === true;
+    const offsets = Array.from({ length: poles }, (_, index) => (index - (poles - 1) / 2) * 24);
+    return <g className={mark} aria-label={`${poles}-pole switch-disconnector, ${closed ? "closed" : "open"}`} data-state={closed ? "closed" : "open"}>
+      <path d={`M ${x + offsets[0]} ${y} H ${x + offsets.at(-1)!}`} strokeDasharray="3 4" />
+      {offsets.map(offset => <path key={offset} d={poleContactPath(x + offset, y, closed)} />)}
+    </g>;
+  }
   if (symbolId === "breaker" || symbolId === "breaker-3p" || symbolId.startsWith("breaker-")) {
     const closed = properties.closed === true;
     const sourcedPoles = /^breaker-acti9-([1-4])p(n)?$/.exec(symbolId);

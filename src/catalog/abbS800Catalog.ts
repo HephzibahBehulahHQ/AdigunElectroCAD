@@ -287,3 +287,35 @@ export const abbS800pvSpCatalog: ElectricalComponentDefinition[] = pvSpOrders.fl
     };
   });
 });
+
+const pvSdOrders = [
+  { poles: 2, ratedDcVoltageV: 800, references: [19635, 19634, 19636] },
+  { poles: 3, ratedDcVoltageV: 1200, references: [19637, 19638, 19639] },
+  { poles: 4, ratedDcVoltageV: 1500, references: [19640, 19641, 19642] },
+];
+
+export const abbS800pvSdCatalog: ElectricalComponentDefinition[] = pvSdOrders.flatMap(({ poles, ratedDcVoltageV, references }) => {
+  const { branches, terminals } = numberedBreakerPoles(poles);
+  return [32, 63, 125].map((ratedCurrentA, index): ElectricalComponentDefinition => {
+    const orderCode = "2CCF" + String(references[index]).padStart(6, "0") + "R0001";
+    return {
+      id: "abb." + orderCode.toLowerCase(),
+      name: "ABB S80" + poles + "PV-SD" + ratedCurrentA + " · " + orderCode,
+      category: "Protection Devices",
+      referencePrefix: "Q",
+      symbolId: "switch-disconnector-" + poles + "p",
+      description: "ABB S800PV-SD photovoltaic switch-disconnector with interchangeable cage terminals.",
+      terminals,
+      manufacturerRecord: {
+        manufacturer: "ABB", series: "S800PV-SD", orderCode, sourceUrl: catalogue, terminalMap: "verified",
+        documentRevision: "ABB S800 High Performance MCBs 2019 v2, photovoltaic disconnector ordering table and connection diagrams",
+        topology: { type: "mechanically-linked-disconnector", closed: branches, open: [] },
+      },
+      propertiesSchema: { ratedCurrentA, ratedDcVoltageV, icwKa: 1.5, closed: true },
+      simulationModelId: "catalog-circuit-breaker",
+      simulationSupport: "connectivity",
+      documentation: "The DC ratings apply with the pole wiring specified by ABB. Icw is short-term withstand current. Simulation represents manual switching continuity.",
+      standardsReferences: ["IEC/EN 60947-3", catalogue],
+    };
+  });
+});

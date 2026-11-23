@@ -233,7 +233,7 @@ export function executeCircuitModels(document: CircuitDocument, catalog: Map<str
       : (model === "catalog-motor-starter" || model === "contactor-dol-v1") ? p.energized === true
       : false;
     const definition = definitionsByComponent.get(component.id);
-    if (definition?.symbolId.startsWith("breaker-acti9-")) {
+    if (definition && /^(breaker-acti9|switch-disconnector)-/.test(definition.symbolId)) {
       p.poles = definition.terminals.length / 2;
       if (conducting) {
         for (const { id } of definition.terminals) {
