@@ -1313,3 +1313,14 @@ it("preserves ABB S800S-UC order codes and the four-pole DC rating change", () =
   expect(lookup("2CCS864001R1597").terminals).toHaveLength(8);
   expect(lookup("2CCF030048R0001").propertiesSchema.ratedDcVoltageV).toBeUndefined();
 });
+
+it("maps ABB S800PV-SP voltage by pole count and preserves distinct contact pairs", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800PV-SP");
+  expect(parts).toHaveLength(45);
+  const lookup = (code: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === code)!;
+  expect(lookup("2CCF019643R0001").propertiesSchema).toMatchObject({ ratedCurrentA: 6, ratedDcVoltageV: 800, icuDcKa: 5 });
+  expect(lookup("2CCF019609R0001").propertiesSchema.ratedDcVoltageV).toBe(1200);
+  const fourPole = lookup("2CCF019633R0001");
+  expect(fourPole.propertiesSchema).toMatchObject({ ratedCurrentA: 125, ratedDcVoltageV: 1500 });
+  expect(fourPole.manufacturerRecord?.topology).toMatchObject({ closed: [["l1-in", "l1-out"], ["l2-in", "l2-out"], ["l3-in", "l3-out"], ["l4-in", "l4-out"]] });
+});
