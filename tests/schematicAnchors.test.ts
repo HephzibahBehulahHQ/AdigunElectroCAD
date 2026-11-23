@@ -1224,3 +1224,13 @@ it("uses ABB S200M UC industrial ratings for K and Z curves", () => {
   expect(lookup("2CDS271061R0578").propertiesSchema).toMatchObject({ ratedCurrentA: 50, icuAcKa: 6, icuDcKa: 10, dcVoltageRating: "220 VDC" });
   expect(lookup("2CDS271061R0578").propertiesSchema.icnKa).toBeUndefined();
 });
+
+it("publishes ABB S800S B/C cage-terminal order codes with linked poles", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800S");
+  expect(parts).toHaveLength(176);
+  const lookup = (orderCode: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === orderCode)!;
+  expect(lookup("2CCF019849R0001").propertiesSchema).toMatchObject({ ratedCurrentA: 0.5, curve: "C", icuKa: 50 });
+  const fourPole = lookup("2CCS864001R0845");
+  expect(fourPole.propertiesSchema).toMatchObject({ ratedCurrentA: 125, curve: "B" });
+  expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
