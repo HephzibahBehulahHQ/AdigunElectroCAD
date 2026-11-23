@@ -1,4 +1,4 @@
-import { abbS800bCatalog, abbS800cCatalog, abbS800hvCatalog, abbS800nCatalog, abbS800pCatalog, abbS800pvSdCatalog, abbS800pvSpCatalog, abbS800sCatalog, abbS800sUcCatalog, abbS800uCatalog, abbS802pvMhCatalog } from "./abbS800Catalog";
+import { abbS800bCatalog, abbS800cCatalog, abbS800hvCatalog, abbS800nCatalog, abbS800pCatalog, abbS800pvSdCatalog, abbS800pvSpCatalog, abbS800sCatalog, abbS800sUcCatalog, abbS800uCatalog, abbS802pvMhCatalog, abbS804uUczCatalog } from "./abbS800Catalog";
 import { abbS200mCatalog, abbS200Catalog, abbS200pCatalog, abbS200NeutralCatalog, abbS200mUcCatalog } from "./abbS200Catalog";
 import { siemens5sp4Catalog } from "./siemens5sp4Catalog";
 import { siemens5sy4Catalog, siemens5sy6Catalog, siemens5sy7Catalog, siemens5sy8Catalog, siemens5sy5Catalog } from "./siemens5syCatalog";
@@ -75,6 +75,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...abbS800sUcCatalog,
   ...abbS800pvSdCatalog,
   ...abbS802pvMhCatalog,
+  ...abbS804uUczCatalog,
   ...abbS800pvSpCatalog,
   ...phoenixRails.map(([orderCode, depthMm, stockLengthMm, perforated, material, reference]): ElectricalComponentDefinition => {
     const slug = originalProductPages[orderCode as keyof typeof originalProductPages];
