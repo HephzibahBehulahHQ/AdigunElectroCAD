@@ -1282,3 +1282,13 @@ it("maps ABB S800HV cage positions and current-dependent breaking capacity", () 
   expect(threePole.propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 125, icuKa: 3 });
   expect(threePole.terminals.map(terminal => terminal.label)).toEqual(["Upper 1", "Lower 1", "Upper 2", "Lower 2", "Upper 3", "Lower 3"]);
 });
+
+it("preserves ABB S800U order codes and pole-specific IEC ratings", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800U");
+  expect(parts).toHaveLength(96);
+  const lookup = (code: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === code)!;
+  expect(lookup("2CCS881017R0707").propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 70, icuKa: 30, acVoltageRating: "240 VAC" });
+  const fourPole = lookup("2CCS864017R0825");
+  expect(fourPole.propertiesSchema).toMatchObject({ curve: "Z", ratedCurrentA: 100, icuKa: 50, acVoltageRating: "415 VAC" });
+  expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
