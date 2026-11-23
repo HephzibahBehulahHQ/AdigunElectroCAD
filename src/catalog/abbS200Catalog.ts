@@ -37,10 +37,17 @@ const industrialOrderRows = [
   { curve: "Z", suffix: "8", currents: [...industrialCurrentCodes.keys()].filter(current => current !== 13) },
 ];
 
+const pIndustrialCatalogue = "https://library.e.abb.com/public/a10050f5f2b14d769844b45d1d3c5bf1/APPENDIX_ELSB_Cat_2022_2nd_edition_2022.pdf?x-sign=6SYsrZ9i%2Fy9NgEaXTDBsDvpOkuGFwRw%2FJRUnrx2TdCqajCBA6bwfU%2FMIB%2BvWlcB%2B";
+const pOnlyCurrentCodes = new Map([[0.2, "008"], [0.3, "011"], [0.75, "018"]]);
+const pIndustrialOrderRows = [
+  { curve: "K", suffix: "7", currents: [...pOnlyCurrentCodes.keys(), ...industrialCurrentCodes.keys()] },
+  industrialOrderRows[1],
+];
+
 function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutral = false): ElectricalComponentDefinition[] {
   const prefix = { S200: "2CDS25", S200M: "2CDS27", S200P: "2CDS28" }[series];
   const sourceUrl = switchedNeutral ? neutralCatalogue : series === "S200P" ? pCatalogue : catalogue;
-  const availableRows = switchedNeutral ? orderRows.filter(row => row.curve !== "D") : series === "S200P" ? orderRows : [...orderRows, ...industrialOrderRows];
+  const availableRows = switchedNeutral ? orderRows.filter(row => row.curve !== "D") : [...orderRows, ...(series === "S200P" ? pIndustrialOrderRows : industrialOrderRows)];
   return (switchedNeutral ? [1, 3] : [1, 2, 3, 4]).flatMap(protectedPoles => {
     const poles = protectedPoles + Number(switchedNeutral);
     const { branches, terminals } = numberedBreakerPoles(poles);
@@ -48,7 +55,8 @@ function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutra
     const labeledTerminals = terminals.map(terminal => neutralTerminals.includes(terminal.id) ? { ...terminal, label: terminal.label + "N" } : terminal);
     return availableRows.flatMap(({ curve, suffix, currents }) => currents.filter(ratedCurrentA => series !== "S200P" || curve !== "C" || ratedCurrentA !== 13).map((ratedCurrentA): ElectricalComponentDefinition => {
       const industrialCurve = curve === "K" || curve === "Z";
-      const ratingCode = industrialCurve ? industrialCurrentCodes.get(ratedCurrentA)! : ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
+      const partSource = series === "S200P" && industrialCurve ? pIndustrialCatalogue : sourceUrl;
+      const ratingCode = industrialCurve ? (industrialCurrentCodes.get(ratedCurrentA) ?? pOnlyCurrentCodes.get(ratedCurrentA)!) : ratedCurrentA === 0.5 ? "098" : ratedCurrentA === 1.6 ? "097" : String(ratedCurrentA).padStart(3, "0");
       const orderCode = prefix + protectedPoles + (switchedNeutral ? "103R" : "001R") + ratingCode + suffix;
       const model = "S20" + protectedPoles + series.slice(4) + "-" + curve + ratedCurrentA + (switchedNeutral ? "NA" : "");
       const icnKa = series === "S200P" ? (ratedCurrentA <= 25 ? 25 : 15) : series === "S200M" ? 10 : 6;
@@ -59,14 +67,14 @@ function createAbbS200Catalog(series: "S200" | "S200M" | "S200P", switchedNeutra
         description: "ABB System pro M compact " + series + " miniature circuit breaker, " + protectedPoles + (switchedNeutral ? "P with switched neutral." : "P."),
         terminals: labeledTerminals,
         manufacturerRecord: {
-          manufacturer: "ABB", series, orderCode, sourceUrl, terminalMap: "verified",
-          documentRevision: switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " " + curve + " ordering details and diagrams",
+          manufacturer: "ABB", series, orderCode, sourceUrl: partSource, terminalMap: "verified",
+          documentRevision: switchedNeutral ? "ABB Niederspannungsprodukte Teil 2 (10/2024), B/C mit abschaltbarem Neutralleiter NA" : partSource === pIndustrialCatalogue ? "ABB ELSB 2022 second edition, appendix S200P K/Z ordering index" : (series === "S200P" ? "ABB System pro M compact 9AKK106354A1400, " : "ABB Electrical Installation Solutions for Buildings 2024, ") + series + " " + curve + " ordering details and diagrams",
           topology: { type: "mechanically-linked-breaker", closed: branches, open: [], protectedPoles, ...(switchedNeutral ? { neutralTerminals } : {}) },
         },
         propertiesSchema: { ratedCurrentA, curve, ...(industrialCurve ? {} : { icnKa }), ...(switchedNeutral ? { switchedNeutral } : {}), closed: true },
         simulationModelId: "catalog-circuit-breaker", simulationSupport: "connectivity",
         documentation: "The Closed setting controls the linked contacts. Simulation covers manual switching continuity." + (industrialCurve ? " Refer to ABB for IEC/EN 60947-2 breaking capacity at the intended voltage." : " The published Icn is the IEC/EN 60898-1 rating."),
-        standardsReferences: [industrialCurve ? "IEC/EN 60947-2" : "IEC/EN 60898-1", sourceUrl],
+        standardsReferences: [industrialCurve ? "IEC/EN 60947-2" : "IEC/EN 60898-1", partSource, ...(partSource === pIndustrialCatalogue ? [pCatalogue] : [])],
       };
     }));
   });
