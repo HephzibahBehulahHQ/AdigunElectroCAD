@@ -168,10 +168,17 @@ export function controlTerminalOffset(modelId: string, terminalId: string): { x:
   return undefined;
 }
 
+export function usesExternalSwitchTerminalLabels(symbolId: string | undefined): boolean {
+  return Boolean(symbolId && /^(?:breaker(?:-|$)|switch-disconnector-)/.test(symbolId));
+}
+
 export function componentLabelOffsets(rotation: ComponentInstance["rotation"], definitionId?: string) {
   const reference = rotation === 90 || rotation === 270 ? 75 : 50;
   if (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41") return { reference: reference + 28, kind: reference + 45 };
   if (definitionId === "iec.safety-relay.01") return { reference: reference + 14, kind: reference + 31 };
+  if (definitionId && usesExternalSwitchTerminalLabels(catalogById.get(definitionId)?.symbolId)) {
+    return { reference: reference + 8, kind: reference + 25 };
+  }
   return { reference, kind: reference + 17 };
 }
 
