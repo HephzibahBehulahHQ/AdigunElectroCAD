@@ -1292,3 +1292,13 @@ it("preserves ABB S800U order codes and pole-specific IEC ratings", () => {
   expect(fourPole.propertiesSchema).toMatchObject({ curve: "Z", ratedCurrentA: 100, icuKa: 50, acVoltageRating: "415 VAC" });
   expect(fourPole.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
 });
+
+it("preserves ABB S800P cage and ring-lug variants as separate order codes", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800P");
+  expect(parts).toHaveLength(96);
+  const lookup = (code: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === code)!;
+  expect(lookup("2CCG001261R0001").propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 125, terminalStyle: "cage" });
+  const ringLug = lookup("2CCG001309R0001");
+  expect(ringLug.propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 125, terminalStyle: "ring lug", icuKa: 50 });
+  expect(ringLug.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
