@@ -1302,3 +1302,14 @@ it("preserves ABB S800P cage and ring-lug variants as separate order codes", () 
   expect(ringLug.propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 125, terminalStyle: "ring lug", icuKa: 50 });
   expect(ringLug.terminals.map(terminal => terminal.label).sort()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
 });
+
+it("preserves ABB S800S-UC order codes and the four-pole DC rating change", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800S-UC");
+  expect(parts).toHaveLength(176);
+  const lookup = (code: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === code)!;
+  expect(lookup("2CCF030056R0001").propertiesSchema).toMatchObject({ ratedCurrentA: 1.6, curve: "UCB", ratedDcVoltageV: 750 });
+  expect(lookup("2CCS864001R1577").propertiesSchema.ratedDcVoltageV).toBe(1000);
+  expect(lookup("2CCS864001R1597").propertiesSchema.ratedDcVoltageV).toBe(750);
+  expect(lookup("2CCS864001R1597").terminals).toHaveLength(8);
+  expect(lookup("2CCF030048R0001").propertiesSchema.ratedDcVoltageV).toBeUndefined();
+});
