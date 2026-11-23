@@ -1271,3 +1271,14 @@ it("preserves the ABB S800B locked-cage range and 16 kA rating", () => {
   expect(part.description).toContain("locked cage");
   expect(parts.every(entry => Number(entry.propertiesSchema.ratedCurrentA) >= 32)).toBe(true);
 });
+
+it("maps ABB S800HV cage positions and current-dependent breaking capacity", () => {
+  const parts = componentLibraryCatalog.filter(entry => entry.manufacturerRecord?.series === "S800HV");
+  expect(parts).toHaveLength(68);
+  const lookup = (code: string) => parts.find(entry => entry.manufacturerRecord?.orderCode === code)!;
+  expect(lookup("2CCF020049R0001").propertiesSchema.icuKa).toBe(1.5);
+  expect(lookup("2CCF019650R0001").propertiesSchema).toMatchObject({ curve: "C", ratedCurrentA: 10, icuKa: 4 });
+  const threePole = lookup("2CCF019046R0001");
+  expect(threePole.propertiesSchema).toMatchObject({ curve: "K", ratedCurrentA: 125, icuKa: 3 });
+  expect(threePole.terminals.map(terminal => terminal.label)).toEqual(["Upper 1", "Lower 1", "Upper 2", "Lower 2", "Upper 3", "Lower 3"]);
+});
