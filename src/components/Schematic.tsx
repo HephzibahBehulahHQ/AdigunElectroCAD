@@ -1,3 +1,4 @@
+import { deviceEnvelope } from "../catalog/deviceEnvelopes";
 import { sm1223SymbolId } from "../catalog/siemensSm1223";
 import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
@@ -159,7 +160,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
   </g>;
 }
 
-function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, deviceReference, millimetres = false, snapSpacing = 20 }: { deviceReference?: string; millimetres?: boolean; snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
+function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, deviceReference, deviceDefinitionId, millimetres = false, snapSpacing = 20 }: { deviceReference?: string; deviceDefinitionId?: string; millimetres?: boolean; snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
   const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; handle?: string; index?: number } | null>(null);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
@@ -168,7 +169,10 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const x = Math.min(graphic.x1, graphic.x2); const y = Math.min(graphic.y1, graphic.y2);
   const width = Math.abs(graphic.x2 - graphic.x1); const height = Math.abs(graphic.y2 - graphic.y1);
   const points = graphic.points ?? [];
-    const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse");
+    const envelope = millimetres && graphic.kind === "rectangle" && deviceDefinitionId ? deviceEnvelope(deviceDefinitionId) : undefined;
+  const clearance = envelope && Math.abs(width - envelope.widthMm) < 1e-8 && Math.abs(height - envelope.heightMm) < 1e-8
+    ? envelope.sideBySideClearanceMm : undefined;
+  const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse");
   const dimensions = graphic.kind === "ellipse" && Math.abs(width - height) < 1e-8
     ? "Ø" + Number(width.toFixed(4)) + " mm"
     : Number(width.toFixed(4)) + " × " + Number(height.toFixed(4)) + " mm";
@@ -208,6 +212,10 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }} onPointerCancel={() => { gesture.current = null; }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
+    {clearance && <path data-installation-clearance="" pointerEvents="none" fill="none" stroke={graphic.color} strokeDasharray="4 3"
+      d={`M ${x} ${y - clearance.above} h ${width} M ${x} ${y + height + clearance.below} h ${width}`}>
+      <title>Manufacturer side-by-side mounting clearance: {clearance.above} mm above and {clearance.below} mm below</title>
+    </path>}
     {selected && <rect x={x - 5} y={y - 5} width={Math.max(10, width + 10)} height={Math.max(10, height + 10)} fill="none" stroke="#e0a526" strokeDasharray="4 3" pointerEvents="none" />}
     <g stroke={graphic.color} strokeWidth={graphic.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">{shape}</g>
     {graphic.kind === "rectangle" && <rect x={x} y={y} width={width} height={height} fill="transparent" pointerEvents="all" />}
@@ -661,8 +669,9 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       })}
       {(document.graphics ?? []).map((graphic) => {
         const link = graphic.deviceLink;
-        const deviceReference = link && (projectSheets?.find(sheet => sheet.id === link.sheetId)?.document.components.find(component => component.id === link.componentId)?.reference ?? "Unresolved device");
-        return <PlacedGraphic deviceReference={deviceReference} snapSpacing={snapSpacing} millimetres={drawingUnits === "mm"} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />;
+        const device = link && projectSheets?.find(sheet => sheet.id === link.sheetId)?.document.components.find(component => component.id === link.componentId);
+        const deviceReference = link && (device?.reference ?? "Unresolved device");
+        return <PlacedGraphic deviceReference={deviceReference} deviceDefinitionId={device?.definitionId} snapSpacing={snapSpacing} millimetres={drawingUnits === "mm"} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />;
       })}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {visibleComponents.map((component) => <PlacedSymbol key={component.id} component={component} millimetres={drawingUnits === "mm"} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={lockedLayers.has(component.layerId ?? "") ? undefined : onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}

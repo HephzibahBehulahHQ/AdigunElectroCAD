@@ -1402,3 +1402,20 @@ it("draws both Siemens auxiliary contacts outside the main poles in either state
   expect(render(true)).toContain('data-starter-auxiliary="13/14" data-state="closed" d="M 53 88 H 57 V 112 H 53"');
   expect(render(true)).toContain('data-starter-auxiliary="21/22" data-state="open" d="M 147 88 H 143 L 152 98');
 });
+
+it("draws the Siemens side-by-side limits on the linked front envelope only", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const [source, panel] = project.sheets;
+  source.document.components = [{ id: "device", definitionId: "iec.motor-starter.01", reference: "KM1", x: 120, y: 120, rotation: 0, properties: {} }];
+  panel.document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  panel.document.graphics = [{ id: "front", name: "Front", kind: "rectangle", x1: 50, y1: 100, x2: 95, y2: 185, strokeWidth: 1, color: "#19324f",
+    deviceLink: { sheetId: source.id, componentId: "device" } }];
+  const render = () => renderToStaticMarkup(createElement(Schematic, {
+    document: panel.document, projectSheets: project.sheets,
+    selectedComponentId: "", selectedWireId: "", simulation: initialDolState(), wireMode: false, wireStart: null,
+    onSelect: () => undefined, onWireSelect: () => undefined, onTerminalSelect: () => undefined,
+  }));
+  expect(render()).toContain('d="M 50 90 h 45 M 50 195 h 45"');
+  panel.document.graphics[0].x2 = 157;
+  expect(render()).not.toContain("data-installation-clearance");
+});

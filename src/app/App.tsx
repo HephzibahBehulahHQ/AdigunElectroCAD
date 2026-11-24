@@ -2526,6 +2526,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
     {envelope && <>
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
+      {envelope.sideBySideClearanceMm && <p>Side-by-side mounting clearance (mm) · {envelope.sideBySideClearanceMm.above} above, {envelope.sideBySideClearanceMm.below} below, {envelope.sideBySideClearanceMm.forward} forward, {envelope.sideBySideClearanceMm.lateral} lateral. The front envelope shows the upper and lower limits.</p>}
       <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
       <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
     </>}

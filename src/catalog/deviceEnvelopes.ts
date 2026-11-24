@@ -3,11 +3,13 @@ interface DeviceEnvelope {
   heightMm: number;
   depthMm: number;
   sourceUrl: string;
+  sideBySideClearanceMm?: { above: number; below: number; forward: number; lateral: number };
 }
 
 const deviceEnvelopes = new Map<string, DeviceEnvelope>([
   ["iec.motor-starter.01", {
     widthMm: 45, heightMm: 85, depthMm: 107,
+    sideBySideClearanceMm: { above: 10, below: 10, forward: 10, lateral: 0 },
     sourceUrl: "https://www.standardelectricsupply.com/userfiles/ad/documents/SIRIUS_3RT2025_1BB40_Specification_Sheet.pdf",
   }],
   ["iec.industrial-miniature-breaker.01", {
