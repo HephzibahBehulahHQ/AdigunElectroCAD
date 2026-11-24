@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { drawingFitsFrame, paddedDrawingBounds, prepareStandaloneSchematicSvg } from "../src/projects/schematicExport";
-import { workbookPrintHtml } from "../src/projects/schematicPrint";
+import { schematicPrintHtml, workbookPrintHtml } from "../src/projects/schematicPrint";
 import { defaultPrintLayout } from "../src/cad/printLayout";
 
 describe("schematic SVG export", () => {
@@ -15,6 +15,13 @@ describe("schematic SVG export", () => {
     expect(html).toContain("@page sheet2 { size:");
     expect(html).toContain("section + section { break-before: page; }");
     expect(html.match(/data-sheet="\w+"/g)).toEqual(['data-sheet="power"', 'data-sheet="control"', 'data-sheet="legacy"']);
+  });
+
+  it("prints unframed physical drawings using the captured millimetre dimensions", () => {
+    const svg = '<svg viewBox="-25 0 780 440"></svg>';
+    const physicalSize = { width: 780, height: 440 };
+    expect(schematicPrintHtml(svg, undefined, physicalSize)).toContain("@page { size: 780mm 440mm;");
+    expect(workbookPrintHtml([{ svg, physicalSize }])).toContain("@page sheet0 { size: 780mm 440mm;");
   });
 
   it("includes signed drawing coordinates and detects clipping against the old frame", () => {

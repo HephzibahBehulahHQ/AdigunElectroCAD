@@ -1,9 +1,11 @@
 import { paperDimensions, type PrintLayout } from "../cad/printLayout";
 
-const schematicPaper = (layout?: PrintLayout) => layout ? paperDimensions(layout) : { width: 1100 * 25.4 / 96, height: 780 * 25.4 / 96 };
+interface PhysicalPageSize { width: number; height: number }
 
-export function schematicPrintHtml(svg: string, layout?: PrintLayout): string {
-  const paper = schematicPaper(layout);
+const schematicPaper = (layout?: PrintLayout, physicalSize?: PhysicalPageSize) => physicalSize ?? (layout ? paperDimensions(layout) : { width: 1100 * 25.4 / 96, height: 780 * 25.4 / 96 });
+
+export function schematicPrintHtml(svg: string, layout?: PrintLayout, physicalSize?: PhysicalPageSize): string {
+  const paper = schematicPaper(layout, physicalSize);
   const width = `${paper.width}mm`, height = `${paper.height}mm`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>AdigunElectroCAD schematic</title>
@@ -14,9 +16,9 @@ svg { position: absolute; top: 0; left: 0; display: block; width: ${width}; heig
 </style></head><body>${svg}</body></html>`;
 }
 
-export function workbookPrintHtml(pages: readonly { svg: string; layout?: PrintLayout }[]): string {
-  const styles = pages.map(({ layout }, index) => {
-    const paper = schematicPaper(layout);
+export function workbookPrintHtml(pages: readonly { svg: string; layout?: PrintLayout; physicalSize?: PhysicalPageSize }[]): string {
+  const styles = pages.map(({ layout, physicalSize }, index) => {
+    const paper = schematicPaper(layout, physicalSize);
     const width = `${paper.width}mm`, height = `${paper.height}mm`;
     return `@page sheet${index} { size: ${width} ${height}; margin: 0; }
 .sheet${index} { page: sheet${index}; width: ${width}; height: ${height}; }`;
