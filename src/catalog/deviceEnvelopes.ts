@@ -3,6 +3,7 @@ interface DeviceEnvelope {
   heightMm: number;
   depthMm: number;
   sourceUrl: string;
+  railMountedDepths?: readonly { rail: string; depthMm: number }[];
   installationClearanceMm?: { above: number; below: number; forward: number; lateral?: number; sourceUrl?: string };
 }
 
@@ -12,6 +13,14 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
     sourceUrl: "https://cache.industry.siemens.com/dl/files/167/109744167/att_920955/v1/simatic-st70-complete-english-2017.pdf",
     installationClearanceMm: { above: 25, below: 25, forward: 25,
       sourceUrl: "https://cache.industry.siemens.com/dl/files/829/109814829/att_1120874/v1/s71200_system_manual_en-US_en-US.pdf?download=true" },
+  }],
+  ["phoenix-contact.pttb.3210567", {
+    widthMm: 5.2, heightMm: 68.2, depthMm: 45.9,
+    sourceUrl: "https://www.phoenixcontact.com/en-us/products/multi-level-terminal-block-pttb-25-3210567?type=pdf",
+    railMountedDepths: [
+      { rail: "NS 35/7.5", depthMm: 47.4 },
+      { rail: "NS 35/15", depthMm: 54.9 },
+    ],
   }],
   ["iec.motor-starter.01", {
     widthMm: 45, heightMm: 85, depthMm: 107,
