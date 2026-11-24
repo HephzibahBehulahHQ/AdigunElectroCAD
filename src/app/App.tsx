@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { User } from "@supabase/supabase-js";
+import { deviceEnvelope } from "../catalog/deviceEnvelopes";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, placementLayout, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
@@ -2463,6 +2464,12 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   const key = (link: SchematicGraphic["deviceLink"]) => link ? JSON.stringify([link.sheetId, link.componentId]) : "";
   const current = key(graphic.deviceLink);
   const linked = devices.find(device => key(device.link) === current);
+  const envelope = millimetres && linked && graphic.kind === "rectangle" ? deviceEnvelope(linked.definitionId) : undefined;
+  const applyEnvelope = (horizontalMm: number, verticalMm: number) => {
+    const x = (graphic.x1 + graphic.x2) / 2;
+    const y = (graphic.y1 + graphic.y2) / 2;
+    onGeometryChange(x - horizontalMm / 2, y - verticalMm / 2, x + horizontalMm / 2, y + verticalMm / 2);
+  };
   return <fieldset className="graphic-geometry">
     <legend>Device footprint</legend>
     <label>Schematic device<select value={current} onChange={event => onChange(devices.find(device => key(device.link) === event.target.value)?.link)}>
@@ -2471,13 +2478,10 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       {devices.map(device => <option key={key(device.link)} value={key(device.link)}>{device.name}</option>)}
     </select></label>
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
-    {millimetres && linked?.definitionId === "iec.motor-starter.01" && graphic.kind === "rectangle" && <>
-      <a href="https://www.standardelectricsupply.com/userfiles/ad/documents/SIRIUS_3RT2025_1BB40_Specification_Sheet.pdf" target="_blank" rel="noreferrer">Siemens dimensions · 45 × 85 × 107 mm</a>
-      <button type="button" onClick={() => {
-        const x = (graphic.x1 + graphic.x2) / 2;
-        const y = (graphic.y1 + graphic.y2) / 2;
-        onGeometryChange(x - 45 / 2, y - 85 / 2, x + 45 / 2, y + 85 / 2);
-      }}>Apply Siemens front dimensions</button>
+    {envelope && <>
+      <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
+      <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
+      <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
     </>}
   </fieldset>;
 }
