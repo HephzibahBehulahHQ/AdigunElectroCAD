@@ -1,0 +1,199 @@
+{
+  "id": "sentron-4ac3716-pilot-panel",
+  "name": "SENTRON 4AC3716-0 pilot circuit and panel drawings",
+  "description": "A switched 230 V AC primary supplies an 8 V AC pilot through the isolated secondary. Two dimensioned panel outlines link to the same Siemens transformer.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "Transformer panel drawings",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "Transformer panel drawings",
+        "description": "Nominal front and side envelopes for Siemens SENTRON 4AC3716-0.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "sentron-front",
+            "name": "SENTRON front",
+            "kind": "rectangle",
+            "x1": 412,
+            "y1": 290,
+            "x2": 448,
+            "y2": 380,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "transformer"
+            }
+          },
+          {
+            "id": "sentron-side",
+            "name": "SENTRON side",
+            "kind": "rectangle",
+            "x1": 508,
+            "y1": 290,
+            "x2": 572,
+            "y2": 380,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "transformer"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "8 V pilot circuit",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "8 V pilot circuit",
+        "description": "Close S1 to feed primary terminals 1 and 7. H1 lights across isolated secondary terminals 4 and 8.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "supply",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 140,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "start",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 350,
+            "y": 200,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "transformer",
+            "definitionId": "siemens.4ac37.4ac3716-0",
+            "reference": "T1",
+            "x": 580,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "primaryVoltageV": 230,
+              "secondaryVoltageV": 8,
+              "loadPercent": 0
+            }
+          },
+          {
+            "id": "lamp",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 860,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 8,
+              "dc": false,
+              "color": "#15803d",
+              "indication": "Control voltage"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "start",
+              "terminalId": "13"
+            },
+            "points": [],
+            "netName": "L"
+          },
+          {
+            "id": "switched-line",
+            "from": {
+              "componentId": "start",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "transformer",
+              "terminalId": "p1"
+            },
+            "points": [],
+            "netName": "PRIMARY_L"
+          },
+          {
+            "id": "neutral",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "transformer",
+              "terminalId": "p2"
+            },
+            "points": [],
+            "netName": "PRIMARY_N"
+          },
+          {
+            "id": "secondary-a",
+            "from": {
+              "componentId": "transformer",
+              "terminalId": "s1"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t1"
+            },
+            "points": [],
+            "netName": "SECONDARY_A"
+          },
+          {
+            "id": "secondary-b",
+            "from": {
+              "componentId": "transformer",
+              "terminalId": "s2"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t2"
+            },
+            "points": [
+              {
+                "x": 950,
+                "y": 405
+              },
+              {
+                "x": 660,
+                "y": 405
+              }
+            ],
+            "netName": "SECONDARY_B"
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
