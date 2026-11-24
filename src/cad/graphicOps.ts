@@ -1,10 +1,10 @@
 import type { SchematicGraphic } from "../types/electrical";
 
-export function setSchematicGraphicBounds(graphic: SchematicGraphic, bounds: Pick<SchematicGraphic, "x1" | "y1" | "x2" | "y2">): SchematicGraphic | null {
+export function setSchematicGraphicBounds(graphic: SchematicGraphic, bounds: Pick<SchematicGraphic, "x1" | "y1" | "x2" | "y2">, minimumSpan = 4): SchematicGraphic | null {
   if (graphic.points || !Object.values(bounds).every(Number.isFinite)) return null;
   const { x1, y1, x2, y2 } = bounds;
   const span = graphic.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) : Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
-  return span >= 4 ? { ...graphic, x1, y1, x2, y2 } : null;
+  return span >= minimumSpan - 1e-8 ? { ...graphic, x1, y1, x2, y2 } : null;
 }
 
 export function duplicateSchematicGraphic(graphic: SchematicGraphic, id: string, offset = 20): SchematicGraphic {

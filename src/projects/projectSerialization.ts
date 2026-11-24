@@ -109,6 +109,7 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
   const graphicsValue = document.graphics === undefined ? [] : array(document.graphics, `Sheet ${sheetIndex + 1} graphics are invalid.`);
   if (componentsValue.length > 2000 || wiresValue.length > 5000 || annotationsValue.length > 1000 || graphicsValue.length > 2000) throw new Error(`Sheet ${sheetIndex + 1} exceeds import limits.`);
   if (document.useDraftingLayerOrder !== undefined && typeof document.useDraftingLayerOrder !== "boolean") throw new Error("Invalid drafting layer order setting.");
+  const drawingGrid = document.drawingGrid === undefined ? undefined : parseDrawingGrid(document.drawingGrid);
   const parsed: CircuitDocument = {
     id: textValue(document.id, `sheet ${sheetIndex + 1} document id`, 96),
     name: textValue(document.name, `sheet ${sheetIndex + 1} document name`, 80),
@@ -117,12 +118,12 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
     components: componentsValue.map((component, componentIndex) => parseComponent(component, sheetIndex, componentIndex)),
     wires: wiresValue.map((wire, wireIndex) => parseWire(wire, sheetIndex, wireIndex)),
     ...(document.annotations === undefined ? {} : { annotations: annotationsValue.map((annotation, annotationIndex) => parseAnnotation(annotation, sheetIndex, annotationIndex)) }),
-    ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex)) }),
+    ...(document.graphics === undefined ? {} : { graphics: graphicsValue.map((graphic, graphicIndex) => parseGraphic(graphic, sheetIndex, graphicIndex, drawingGrid?.units === "mm")) }),
     ...(document.draftingLayers === undefined ? {} : { draftingLayers: parseDraftingLayers(document.draftingLayers) }),
     ...(typeof document.useDraftingLayerOrder === "boolean" && { useDraftingLayerOrder: document.useDraftingLayerOrder }),
     ...(document.guides === undefined ? {} : { guides: parseDrawingGuides(document.guides) }),
     ...(document.printLayout === undefined ? {} : { printLayout: parsePrintLayout(document.printLayout) }),
-    ...(document.drawingGrid === undefined ? {} : { drawingGrid: parseDrawingGrid(document.drawingGrid) }),
+    ...(drawingGrid === undefined ? {} : { drawingGrid }),
   };
   const ids = new Set(parsed.draftingLayers?.map((layer) => layer.id));
   if ([...parsed.components, ...parsed.wires].some((entity) => entity.layerId !== undefined && !ids.has(entity.layerId))) {
@@ -203,7 +204,7 @@ function parseDraftingLayers(value: unknown): DraftingLayer[] {
   return parsed;
 }
 
-function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number): SchematicGraphic {
+function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number, millimetres: boolean): SchematicGraphic {
   const graphic = object(value, `Sheet ${sheetIndex + 1} graphic ${graphicIndex + 1} is invalid.`);
   if (!["line", "rectangle", "ellipse", "polyline", "polygon"].includes(String(graphic.kind))) throw new Error("Graphic kind must be line, rectangle, ellipse, polyline or polygon.");
   const kind = graphic.kind as SchematicGraphic["kind"];
@@ -228,7 +229,9 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number):
   } else {
     x1 = finiteNumber(graphic.x1, "graphic x1"); y1 = finiteNumber(graphic.y1, "graphic y1");
     x2 = finiteNumber(graphic.x2, "graphic x2"); y2 = finiteNumber(graphic.y2, "graphic y2");
-    if (kind === "line" ? Math.hypot(x2 - x1, y2 - y1) < 4 : Math.abs(x2 - x1) < 4 || Math.abs(y2 - y1) < 4) throw new Error("Graphic must span at least 4 units.");
+    const minimum = millimetres ? 0.1 : 4;
+    const span = kind === "line" ? Math.hypot(x2 - x1, y2 - y1) : Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+    if (span < minimum - 1e-8) throw new Error("Graphic must span at least " + minimum + " units.");
   }
   const color = textValue(graphic.color, "graphic color", 7);
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("Graphic color must be a six-digit hex color.");

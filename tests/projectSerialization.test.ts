@@ -372,3 +372,13 @@ describe("project JSON import validation", () => {
 });
 
 
+
+it("reopens a 3.2 mm mounting hole and retains its precise centre", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const document = project.sheets[1].document;
+  document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 0.1, snapEnabled: true };
+  document.graphics = [{ id: "mounting-hole", name: "Mounting hole", kind: "ellipse", x1: 18.4, y1: 28.4, x2: 21.6, y2: 31.6, color: "#19324f", strokeWidth: 1 }];
+  expect(parseProjectJson(JSON.stringify(encodeProject(project)))).toEqual(project);
+  delete document.drawingGrid;
+  expect(() => parseProjectJson(JSON.stringify(encodeProject(project)))).toThrow("4 units");
+});
