@@ -110,6 +110,27 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     };
   }),
   {
+    id: "rittal.ax.1031000", name: "Rittal AX 1031.000 enclosure", category: "Distribution & Panel Hardware",
+    referencePrefix: "ENC", symbolId: "panel-enclosure", terminals: [],
+    description: "Single-door sheet-steel enclosure, nominal 380 × 300 × 210 mm.",
+    propertiesSchema: { widthMm: 380, heightMm: 300, depthMm: 210 },
+    simulationModelId: "none", simulationSupport: "symbol-only",
+    manufacturerRecord: { manufacturer: "Rittal", series: "AX", orderCode: "1031000",
+      sourceUrl: "https://www.rittal.com/uk-en/products/PG20231215SCH101/PG20231512SCH301/PRO70743?variantId=1031000",
+      terminalMap: "none-mechanical", documentRevision: "AX 1031.000 product data" },
+    documentation: "Dimensioned front envelope of the enclosure. Instance dimensions can be edited for a custom layout. The supplied mounting plate is available as its own layout entity.",
+    standardsReferences: [],
+  },
+  {
+    id: "rittal.ax.1031000.included-plate", name: "Mounting plate supplied with Rittal AX 1031.000",
+    category: "Distribution & Panel Hardware", referencePrefix: "MP", symbolId: "panel-mounting-plate", terminals: [],
+    description: "Supplied mounting plate, 330 × 275 mm on the face and 2 mm thick.",
+    propertiesSchema: { widthMm: 330, heightMm: 275, depthMm: 2 },
+    simulationModelId: "none", simulationSupport: "symbol-only",
+    documentation: "Editable plate blank. Add the holes and cutouts needed for the equipment being mounted.",
+    standardsReferences: ["https://www.rittal.com/uk-en/products/PG20231215SCH101/PG20231512SCH301/PRO70743?variantId=1031000"],
+  },
+  {
     id: "panel.cable-tray-mechanical", name: "Cable tray / trunking", category: "Wiring & Cables", referencePrefix: "CT",
     symbolId: "cable-tray", description: "Editable mechanical cable-routing hardware without device terminals.",
     terminals: [], propertiesSchema: { lengthMm: 1000, widthMm: 100, depthMm: 50 },

@@ -208,14 +208,15 @@ export function rotateOffset(x: number, y: number, rotation: ComponentInstance["
 export function panelHardwareDimensions(definitionId: string, properties?: ComponentInstance["properties"]) {
   const definition = catalogById.get(definitionId);
   const symbol = definition?.symbolId;
-  if (symbol !== "panel-din-rail" && symbol !== "cable-tray") return undefined;
+  const panel = symbol === "panel-enclosure" || symbol === "panel-mounting-plate";
+  if (!panel && symbol !== "panel-din-rail" && symbol !== "cable-tray") return undefined;
   const dimension = (key: string) => {
     const value = properties?.[key];
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : Number(definition?.propertiesSchema[key]);
   };
   return {
-    length: dimension(symbol === "panel-din-rail" ? "cutLengthMm" : "lengthMm"),
-    width: dimension("widthMm"),
+    length: dimension(panel ? "widthMm" : symbol === "panel-din-rail" ? "cutLengthMm" : "lengthMm"),
+    width: dimension(panel ? "heightMm" : "widthMm"),
     depth: dimension("depthMm"),
   };
 }

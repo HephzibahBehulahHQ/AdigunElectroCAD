@@ -1339,6 +1339,8 @@ it("renders physical rail and trunking at their saved dimensions while keeping l
   for (const [definitionId, properties, length, width] of [
     ["phoenix-contact.din-rail.0801733", { cutLengthMm: 440 }, 440, 35],
     ["panel.cable-tray-mechanical", { lengthMm: 500, widthMm: 120 }, 500, 120],
+    ["rittal.ax.1031000", {}, 380, 300],
+    ["rittal.ax.1031000.included-plate", { widthMm: 300 }, 300, 275],
   ] as const) {
     const component = { id: "hardware", reference: "H1", definitionId, x: 400, y: 300, rotation: 90 as const, size: 2, properties };
     const props = { component, draftingStyle: component, selectedComponentId: "", onSelect: () => {}, terminalAnchorsForComponent: [] };

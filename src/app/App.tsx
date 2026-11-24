@@ -1822,11 +1822,11 @@ export function App() {
       return false;
     }
     let nextDocument = updateComponentProperty(document, selectedComponent.id, property, value);
-    if (drawingGrid.units === "mm" && (definition.symbolId === "panel-din-rail" || definition.symbolId === "cable-tray") && property.endsWith("Mm")) {
+    if (drawingGrid.units === "mm" && panelHardwareDimensions(definition.id) && property.endsWith("Mm")) {
       const rail = definition.symbolId === "panel-din-rail";
       if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 ||
           (rail && property === "cutLengthMm" && value > Number(definition.propertiesSchema.stockLengthMm))) {
-        setNotice("Enter a positive hardware dimension within the stock length.");
+        setNotice(rail ? "Enter a positive cut length within the stock length." : "Enter a positive hardware dimension.");
         return false;
       }
       if (rail && property !== "cutLengthMm") {

@@ -423,6 +423,15 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
 
   if (symbolId === "panel-busbar") return <g className={mark}>{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 27} ${cy + offset} H ${x + 27}`} />)}<path d={`M ${x - 20} ${cy + 16} H ${x + 20}`} /></g>;
   if (symbolId === "panel-distribution") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 17} ${cy + offset} H ${x + 17}`} />)}</g>;
+  if (symbolId === "panel-enclosure") return <g className={mark} aria-label="Panel enclosure">
+    <rect x={x - 30} y={cy - 22} width={60} height={44} />
+    <rect x={x - 25} y={cy - 17} width={50} height={34} />
+    <path d={`M ${x + 18} ${cy - 4} v 8`} />
+  </g>;
+  if (symbolId === "panel-mounting-plate") return <g className={mark} aria-label="Mounting plate blank">
+    <rect x={x - 27} y={cy - 20} width={54} height={40} />
+    <path d={`M ${x - 19} ${cy} h 38 M ${x} ${cy - 12} v 24`} strokeDasharray="3 4" />
+  </g>;
   if (symbolId === "panel-din-rail") return <g className={mark}><rect x={x - 34} y={cy - 8} width={68} height={16} />{properties.perforated !== false && [-20, 0, 20].map((offset) => <rect key={offset} x={x + offset - 5} y={cy - 2} width={10} height={4} rx={2} />)}</g>;
   if (symbolId === "panel-door-interlock") return <g className={mark}><rect x={x - 18} y={cy - 16} width="24" height="32" /><path d={`M ${x + 6} ${cy} H ${x + 26} M ${x - 8} ${cy} H ${x + 4}`} /><circle cx={x - 3} cy={cy + 7} r="2" /></g>;
   if (symbolId === "panel-stack-light") return <g className={mark} aria-label="Indicator tower stack light">
