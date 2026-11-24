@@ -1,3 +1,4 @@
+import { sm1223DefinitionId } from "../catalog/siemensSm1223";
 import { catalogById } from "../catalog/dolCatalog";
 import type { ComponentInstance } from "../types/electrical";
 
@@ -174,6 +175,10 @@ export function usesExternalSwitchTerminalLabels(symbolId: string | undefined): 
 
 export function componentLabelOffsets(rotation: ComponentInstance["rotation"], definitionId?: string) {
   const reference = rotation === 90 || rotation === 270 ? 75 : 50;
+  if (definitionId === sm1223DefinitionId) {
+    const labelY = reference === 75 ? 175 : 81;
+    return { reference: labelY, kind: labelY + 17 };
+  }
   if (definitionId === "motor.six-terminal" || definitionId === "iec.induction-motor.41") return { reference: reference + 28, kind: reference + 45 };
   if (definitionId === "iec.safety-relay.01") return { reference: reference + 14, kind: reference + 31 };
   return { reference, kind: reference + 17 };
@@ -182,6 +187,11 @@ export function componentLabelOffsets(rotation: ComponentInstance["rotation"], d
 /** Include upright labels as well as the rotated symbol in placement clearance. */
 export function componentFootprint(x: number, y: number, rotation: ComponentInstance["rotation"], definitionId?: string, size = 1) {
   const sideways = rotation === 90 || rotation === 270;
+  if (definitionId === sm1223DefinitionId) {
+    const halfWidth = (sideways ? 70 : 162) * size;
+    return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 164 : 72) * size,
+      bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
+  }
   if (definitionId === "iec.safety-relay.01") {
     const halfWidth = (sideways ? 77 : 106) * size;
     return { left: x - halfWidth, right: x + halfWidth, top: y - (sideways ? 91 : 70) * size, bottom: y + componentLabelOffsets(rotation, definitionId).kind * size + 8 };
