@@ -213,7 +213,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   }} onPointerCancel={() => { gesture.current = null; }} style={{ cursor: onMove ? "move" : "pointer", touchAction: "none" }}>
     {clearance && <path data-installation-clearance="" pointerEvents="none" fill="none" stroke={graphic.color} strokeDasharray="4 3"
       d={`M ${x} ${y - clearance.above} h ${width} M ${x} ${y + height + clearance.below} h ${width}`}>
-      <title>Manufacturer side-by-side mounting clearance: {clearance.above} mm above and {clearance.below} mm below</title>
+      <title>Manufacturer mounting clearance: {clearance.above} mm above and {clearance.below} mm below</title>
     </path>}
     {selected && <rect x={x - 5} y={y - 5} width={Math.max(10, width + 10)} height={Math.max(10, height + 10)} fill="none" stroke="#e0a526" strokeDasharray="4 3" pointerEvents="none" />}
     <g stroke={graphic.color} strokeWidth={graphic.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">{shape}</g>

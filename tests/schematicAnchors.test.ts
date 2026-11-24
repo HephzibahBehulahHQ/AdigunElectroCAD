@@ -1418,6 +1418,10 @@ it("draws the Siemens side-by-side limits on the linked front envelope only", ()
   expect(render()).toContain('d="M 50 90 h 45 M 50 195 h 45"');
   panel.document.graphics[0].x2 = 157;
   expect(render()).not.toContain("data-installation-clearance");
+  source.document.components[0].definitionId = "siemens.sm1223.6es7223-1bh32-0xb0";
+  panel.document.graphics[0].x2 = 95;
+  panel.document.graphics[0].y2 = 200;
+  expect(render()).toContain('d="M 50 75 h 45 M 50 225 h 45"');
 });
 
 it("draws the nominal Rittal attachment centres at 280 × 250 mm spacing", () => {
