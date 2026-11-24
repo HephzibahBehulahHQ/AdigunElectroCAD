@@ -260,6 +260,26 @@ it("flags overlapping equipment outlines on millimetre sheets and allows shared 
   expect(warnings()).toEqual([]);
 });
 
+it("distinguishes real round-outline overlaps from bounding-box corner contacts", () => {
+  const { document } = createBlankProject().sheets[0];
+  document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  const style = { color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: "schematic", componentId: "encoder" } };
+  const front = { ...style, id: "front", name: "Encoder front", kind: "ellipse" as const, x1: 0, y1: 0, x2: 40, y2: 40 };
+  const equipment = { ...style, id: "equipment", name: "Equipment", kind: "rectangle" as const, x1: 36, y1: 36, x2: 55, y2: 55 };
+  document.graphics = [front, equipment];
+  const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code.startsWith("panel-"));
+  expect(warnings()).toEqual([]);
+  equipment.x1 = equipment.y1 = 32;
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+
+  const secondCircle = { ...front, id: "second", name: "Second encoder", x1: 30, y1: 30, x2: 70, y2: 70 };
+  document.graphics = [front, secondCircle];
+  expect(warnings()).toEqual([]);
+  secondCircle.x1 = secondCircle.y1 = 24;
+  secondCircle.x2 = secondCircle.y2 = 64;
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+});
+
 it("flags intersecting envelopes for linked circular and polygon outlines", () => {
   const { document } = createBlankProject().sheets[0];
   document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
