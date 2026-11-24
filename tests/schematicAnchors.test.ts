@@ -1383,3 +1383,14 @@ it("keeps the overload auxiliary contact paths outside the heater block in both 
   expect(tripped).toContain('data-overload-contact="95/96" data-state="open" d="M 53 88 H 56 L 48 98');
   expect(tripped).toContain('data-overload-contact="97/98" data-state="closed" d="M 147 88 H 144 V 112 H 147"');
 });
+
+it("draws the Omron line driver with three separate paired output groups", () => {
+  const definition = catalogById.get("omron.e6b2-cwz1x.1000p-0.5m")!;
+  const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: definition.symbolId, x: 100, y: 100, properties: definition.propertiesSchema,
+  }));
+  for (const [index, phase] of ["A", "B", "Z"].entries()) {
+    const y = 65 + index * 28;
+    expect(markup).toContain('data-encoder-pair="' + phase + '"><path d="M 125 ' + y + ' h 22 M 125 ' + (y + 14) + ' h 22"');
+  }
+});
