@@ -100,4 +100,4 @@ Open [the editable Finder example](../public/examples/finder-3851-changeover-pan
 
 ### Siemens 7.5 kW direct-on-line starter
 
-Open [the editable starter drawing](../public/examples/siemens-dol-starter-panel.json). The SENTRON breaker and SIRIUS contactor front and side envelopes link to Q1 and KM1 in the wired schematic. Run the simulation, press and release S1 to latch the starter, then press S0 to stop. The simulation covers nominal circuit operation and overload contact state. Protection coordination and motor transients are outside its scope.
+Open [the editable starter drawing](../public/examples/siemens-dol-starter-panel.json). The SENTRON breaker, SIRIUS contactor, and 3RU2126-4AB0 overload front and side envelopes link to Q1, KM1, and F1 in the wired schematic. The overload views show the standalone device. Run the simulation, press and release S1 to latch the starter, then press S0 to stop. The simulation covers nominal circuit operation and overload contact state. Protection coordination and motor transients are outside its scope.

@@ -1,7 +1,7 @@
 {
   "id": "siemens-dol-starter-panel",
   "name": "Siemens 7.5 kW DOL starter and panel envelopes",
-  "description": "Run the three-phase starter with S1, stop it with S0, and inspect the linked 5SY6332-7 breaker and 3RT2025-1BB40 contactor envelopes.",
+  "description": "Run the starter with S1, stop it with S0, and inspect the linked breaker, contactor and overload relay envelopes.",
   "revision": 1,
   "sheets": [
     {
@@ -93,6 +93,57 @@
             "x1": 576.5,
             "y1": 300,
             "x2": 683.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "overload-panel",
+      "name": "SIRIUS overload views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "overload-panel",
+        "name": "SIRIUS overload views",
+        "description": "Nominal standalone 3RU2126-4AB0 front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "overload"
+            },
+            "id": "overload-front",
+            "name": "SIRIUS overload front",
+            "kind": "rectangle",
+            "x1": 407.5,
+            "y1": 300,
+            "x2": 452.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1
+          },
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "overload"
+            },
+            "id": "overload-side",
+            "name": "SIRIUS overload side",
+            "kind": "rectangle",
+            "x1": 587.5,
+            "y1": 300,
+            "x2": 672.5,
             "y2": 385,
             "color": "#19324f",
             "strokeWidth": 1
