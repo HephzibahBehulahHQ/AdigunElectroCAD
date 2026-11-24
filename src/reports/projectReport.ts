@@ -115,6 +115,25 @@ export function componentClearanceWarnings(document: CircuitDocument): TopologyI
   return warnings;
 }
 
+function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
+  if (document.drawingGrid?.units !== "mm") return [];
+  const outlines = (document.graphics ?? []).filter(graphic => graphic.kind === "rectangle" && graphic.deviceLink).map(graphic => ({
+    name: graphic.name,
+    bounds: { left: Math.min(graphic.x1, graphic.x2), top: Math.min(graphic.y1, graphic.y2),
+      right: Math.max(graphic.x1, graphic.x2), bottom: Math.max(graphic.y1, graphic.y2) },
+  }));
+  return outlines.flatMap((outline, index): TopologyIssue[] => {
+    for (let prior = 0; prior < index; prior++) {
+      const other = outlines[prior];
+      if (componentFootprintsOverlap(outline.bounds, other.bounds)) return [{
+        severity: "warning", code: "panel-outline-overlap",
+        message: "Linked panel outlines overlap: " + other.name + " and " + outline.name + ".",
+      }];
+    }
+    return [];
+  });
+}
+
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
   const bomByDefinition = new Map<string, BomLine>();
   const components = new Map(document.components.map((component) => [component.id, component]));
@@ -153,7 +172,7 @@ export function createProjectReport(document: CircuitDocument, definitions: Map<
       draftingColor: resolveDraftingStyle(wire, document.draftingLayers).draftingColor,
     })),
     terminals: [...terminals.values()].sort((left, right) => left.reference.localeCompare(right.reference) || left.terminal.localeCompare(right.terminal)),
-    validation: [...validateCircuit(document, definitions), ...wireClearanceWarnings(document), ...componentClearanceWarnings(document)],
+    validation: [...validateCircuit(document, definitions), ...wireClearanceWarnings(document), ...componentClearanceWarnings(document), ...panelOutlineWarnings(document)],
   };
 }
 
