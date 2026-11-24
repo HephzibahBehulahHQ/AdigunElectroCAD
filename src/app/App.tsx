@@ -1824,7 +1824,12 @@ export function App() {
       return false;
     }
     let nextDocument = updateComponentProperty(document, selectedComponent.id, property, value);
-    if (drawingGrid.units === "mm" && panelHardwareDimensions(definition.id) && property.endsWith("Mm")) {
+    if (definition.id === "rittal.ax.1031000.included-plate" && property === "customBoreDiameterMm") {
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value >= 25) {
+        setNotice("Enter a bore diameter from 0 to less than 25 mm. Zero shows the centres.");
+        return false;
+      }
+    } else if (drawingGrid.units === "mm" && panelHardwareDimensions(definition.id) && property.endsWith("Mm")) {
       const rail = definition.symbolId === "panel-din-rail";
       if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 ||
           (rail && property === "cutLengthMm" && value > Number(definition.propertiesSchema.stockLengthMm))) {

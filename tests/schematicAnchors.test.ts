@@ -1430,5 +1430,10 @@ it("draws the nominal Rittal attachment centres at 280 × 250 mm spacing", () =>
   expect(markup.match(/data-mounting-centre/g)).toHaveLength(4);
   expect(markup).toContain("M 255 175 h 10 M 260 170 v 10");
   expect(markup).toContain("M 535 425 h 10 M 540 420 v 10");
-  expect(render({ ...component, properties: { widthMm: 320 } })).not.toContain("data-mounting-pattern");
+  expect(markup).not.toContain("data-mounting-bore");
+  const withBores = render({ ...component, properties: { customBoreDiameterMm: 16 } });
+  expect(withBores.match(/data-mounting-bore/g)).toHaveLength(4);
+  expect(withBores).toContain('cx="260" cy="175" r="8"');
+  expect(render({ ...component, properties: { customBoreDiameterMm: 25 } })).not.toContain("data-mounting-bore");
+  expect(render({ ...component, properties: { widthMm: 320, customBoreDiameterMm: 16 } })).not.toContain("data-mounting-pattern");
 });

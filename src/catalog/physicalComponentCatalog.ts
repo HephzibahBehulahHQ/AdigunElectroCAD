@@ -180,9 +180,9 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     id: "rittal.ax.1031000.included-plate", name: "Mounting plate supplied with Rittal AX 1031.000",
     category: "Distribution & Panel Hardware", referencePrefix: "MP", symbolId: "panel-mounting-plate", terminals: [],
     description: "Supplied mounting plate, 330 × 275 mm on the face and 2 mm thick.",
-    propertiesSchema: { widthMm: 330, heightMm: 275, depthMm: 2 },
+    propertiesSchema: { widthMm: 330, heightMm: 275, depthMm: 2, customBoreDiameterMm: 0 },
     simulationModelId: "none", simulationSupport: "symbol-only",
-    documentation: "The nominal millimetre view marks the four Type 2 attachment centres, 280 × 250 mm apart. Add the cutouts required for the equipment being mounted.",
+    documentation: "The nominal millimetre view marks the four Type 2 attachment centres, 280 × 250 mm apart. Set Custom Bore Diameter Mm for a custom circular pattern, or use 0 to show the attachment centres alone.",
     standardsReferences: ["https://www.rittal.com/imf/none/3_7678/1114000_Technical_details_EN/"],
   },
   {
