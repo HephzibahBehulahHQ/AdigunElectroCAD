@@ -204,7 +204,32 @@ export function rotateOffset(x: number, y: number, rotation: ComponentInstance["
   return { x, y };
 }
 
-export function instanceFootprint(component: ComponentInstance) {
+
+export function panelHardwareDimensions(definitionId: string, properties?: ComponentInstance["properties"]) {
+  const definition = catalogById.get(definitionId);
+  const symbol = definition?.symbolId;
+  if (symbol !== "panel-din-rail" && symbol !== "cable-tray") return undefined;
+  const dimension = (key: string) => {
+    const value = properties?.[key];
+    return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : Number(definition?.propertiesSchema[key]);
+  };
+  return {
+    length: dimension(symbol === "panel-din-rail" ? "cutLengthMm" : "lengthMm"),
+    width: dimension("widthMm"),
+    depth: dimension("depthMm"),
+  };
+}
+
+export function instanceFootprint(component: ComponentInstance, millimetres = false) {
+  const hardware = millimetres && !component.customSymbolGraphics?.length
+    ? panelHardwareDimensions(component.definitionId, component.properties) : undefined;
+  if (hardware) {
+    const sideways = component.rotation === 90 || component.rotation === 270;
+    const halfWidth = (sideways ? hardware.width : hardware.length) / 2;
+    const halfHeight = (sideways ? hardware.length : hardware.width) / 2;
+    const labelClearance = Math.max(halfWidth + 6, 68);
+    return { left: component.x - labelClearance, right: component.x + labelClearance, top: component.y - halfHeight - 6, bottom: component.y + halfHeight + 35 };
+  }
   const { x, y, rotation, definitionId, size = 1 } = component;
   const bounds = componentFootprint(x, y, rotation, definitionId, size);
   const include = (point: { x: number; y: number }, margin: number) => {

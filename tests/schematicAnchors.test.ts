@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
-import { Schematic } from "../src/components/Schematic";
+import { PlacedSymbol, Schematic } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference, terminalHitRadius } from "../src/cad/terminalAnchors";
 import { componentFootprint, instanceFootprint } from "../src/cad/componentGeometry";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
@@ -1333,4 +1333,21 @@ it("maps ABB S300P C/D switched neutral to its distinct last contact", () => {
   expect(onePole.terminals.map(terminal => terminal.label)).toEqual(["1", "2", "3N", "4N"]);
   expect(threePole.terminals.map(terminal => terminal.label).slice(-2)).toEqual(["7N", "8N"]);
   expect(threePole.manufacturerRecord?.topology).toMatchObject({ protectedPoles: 3, neutralTerminals: ["l4-in", "l4-out"] });
+});
+
+it("renders physical rail and trunking at their saved dimensions while keeping legacy schematic marks", () => {
+  for (const [definitionId, properties, length, width] of [
+    ["phoenix-contact.din-rail.0801733", { cutLengthMm: 440 }, 440, 35],
+    ["panel.cable-tray-mechanical", { lengthMm: 500, widthMm: 120 }, 500, 120],
+  ] as const) {
+    const component = { id: "hardware", reference: "H1", definitionId, x: 400, y: 300, rotation: 90 as const, size: 2, properties };
+    const props = { component, draftingStyle: component, selectedComponentId: "", onSelect: () => {}, terminalAnchorsForComponent: [] };
+    const scaled = renderToStaticMarkup(createElement(PlacedSymbol, { ...props, millimetres: true }));
+    expect(scaled).toContain('data-panel-hardware=""');
+    expect(scaled).toContain('rotate(90 400 300)');
+    expect(scaled).toContain(`width="${length}" height="${width}"`);
+    expect(scaled).not.toContain("scale(2)");
+    expect(instanceFootprint(component, true).top).toBe(300 - length / 2 - 6);
+    expect(renderToStaticMarkup(createElement(PlacedSymbol, props))).not.toContain("data-panel-hardware");
+  }
 });
