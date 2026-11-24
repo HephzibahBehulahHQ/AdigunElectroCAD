@@ -737,11 +737,11 @@ it("renders the identified Siemens contactor with its main poles and NO/NC auxil
   expect(starterSvg).toContain('data-state="de-energized"');
 });
 
-it("draws and exposes the four terminals of the sourced 24 V control power supply", () => {
+it("draws and exposes all six terminals of the sourced 24 V control power supply", () => {
   const definition = catalogById.get("iec.dc-control-supply.01")!;
   const document = createSourcedDolMotorStarter();
   const anchors = terminalAnchors(document).filter((item) => item.endpoint.componentId === "control-psu");
-  expect(anchors.map((item) => item.endpoint.terminalId)).toEqual(["line-in", "neutral-in", "plus-out", "zero-out"]);
+  expect(anchors.map((item) => item.endpoint.terminalId)).toEqual(["line-in", "neutral-in", "plus-out", "zero-out", "pe", "zero-out-2"]);
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 500, y: 300, properties: definition.propertiesSchema }));
   expect(svg).toContain('aria-label="Siemens SITOP PSU100C 24 V DC power supply"');
