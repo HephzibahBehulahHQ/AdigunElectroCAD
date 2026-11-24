@@ -2570,6 +2570,10 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       {envelope.installationClearanceMm?.sourceUrl && <a href={envelope.installationClearanceMm.sourceUrl} target="_blank" rel="noreferrer">Installation clearances source</a>}
       <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
       <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
+      {envelope.railMountedDepths?.map(({ rail, depthMm }) =>
+        <button type="button" key={rail} onClick={() => applyEnvelope(depthMm, envelope.heightMm)}>
+          Apply {rail} side envelope ({depthMm} mm)
+        </button>)}
     </>}
   </fieldset>;
 }
