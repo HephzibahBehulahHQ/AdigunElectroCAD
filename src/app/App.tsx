@@ -11,8 +11,8 @@ import { createRoot } from "react-dom/client";
 import type { User } from "@supabase/supabase-js";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
-import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
-import { controlTerminalOffset } from "../cad/componentGeometry";
+import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, placementLayout, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
+import { controlTerminalOffset, panelHardwareDimensions } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { cameraBounds, fitDrawingCamera, MAX_FREE_ZOOM, MIN_FREE_ZOOM, unobstructedDrawingBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
@@ -713,7 +713,7 @@ export function App() {
       properties: { ...definition.propertiesSchema },
       customSymbolGraphics: schematicGraphicsToSymbolGraphics(selectedGraphics),
     };
-    if (!canPlaceComponent([...document.components, instance], instance.id, x, y)) {
+    if (!canPlaceComponent([...document.components, instance], instance.id, x, y, undefined, undefined, placementLayout(document))) {
       setNotice("Move this drawing to clear symbol space before converting it into a component.");
       return;
     }
@@ -988,7 +988,7 @@ export function App() {
       const id = "imported-component-" + crypto.randomUUID();
       const instance = { ...source, id, reference: nextComponentReference(document.components, definition.referencePrefix) };
       const view = freeView && unobstructedDrawingBounds(freeView, currentZoom);
-      const position = findOpenPlacement(document.components, "free", instance.definitionId, view, instance);
+      const position = findOpenPlacement(document.components, placementLayout(document), instance.definitionId, view, instance);
       if (!position) { setNotice("No clear placement for this component. Pan to an open area and import again."); return; }
       if (!updateDocument({ ...document, components: [...document.components, { ...instance, ...position }], revision: document.revision + 1 })) return;
       selectComponent(id);
@@ -1256,7 +1256,7 @@ export function App() {
     const saved = customComponentsById.get(definitionId);
     if (saved && isReferenceSheet) { setNotice("Place custom components on a free sheet."); return; }
     const candidate = saved ? [...movableComponents, saved] : movableComponents;
-    if (!canPlaceComponent(candidate, saved?.id ?? "", x, y, saved?.definitionId ?? definition.id, undefined, isReferenceSheet ? "reference" : "free")) {
+    if (!canPlaceComponent(candidate, saved?.id ?? "", x, y, saved?.definitionId ?? definition.id, undefined, placementLayout(document))) {
       setNotice(`There is not enough clear space at that position for ${definition.name}. Drop it in another open area.`);
       return;
     }
@@ -1286,7 +1286,7 @@ export function App() {
     const placementView = freeView && unobstructedDrawingBounds(freeView, currentZoom);
     const saved = customComponentsById.get(selectedDefinition.id);
     if (saved && isReferenceSheet) { setNotice("Place custom components on a free sheet."); return; }
-    const placement = findOpenPlacement(movableComponents, isReferenceSheet ? "reference" : "free", saved?.definitionId ?? selectedDefinition.id, placementView, saved);
+    const placement = findOpenPlacement(movableComponents, placementLayout(document), saved?.definitionId ?? selectedDefinition.id, placementView, saved);
     if (!placement) {
       if (!isReferenceSheet) {
         activateSelectTool();
@@ -1569,7 +1569,7 @@ export function App() {
         const to = anchors.find((anchor) => anchor.endpoint.componentId === endpoint.componentId && anchor.endpoint.terminalId === endpoint.terminalId);
         if (!from || !to) { setNotice("Could not find both terminal positions."); return; }
         const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
-        const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")));
+        const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm");
         if (findAutomaticWireBends(from, to, obstacles) === null) {
           setNotice("No clear automatic route. Click the drawing to add bends, then choose the destination terminal again.");
           return;
@@ -1645,7 +1645,7 @@ export function App() {
     const to = anchors.find((anchor) => anchor.endpoint.componentId === selectedWire.to.componentId && anchor.endpoint.terminalId === selectedWire.to.terminalId);
     if (!from || !to) { setNotice("Could not find the selected wire's catalog terminal positions."); return; }
     const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map((layer) => layer.id));
-    const currentPoints = selectedWire.points.length ? selectedWire.points : automaticWireBends(from, to, wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? ""))));
+    const currentPoints = selectedWire.points.length ? selectedWire.points : automaticWireBends(from, to, wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm"));
     const points = appendWireRoutePoint(from, to, currentPoints, from.vertical ?? false, to.vertical ?? false);
     if (points.length === currentPoints.length) { setNotice("This route already has a point at the available position."); return; }
     updateWireRoute(selectedWire.id, points);
@@ -1821,6 +1821,22 @@ export function App() {
       return false;
     }
     let nextDocument = updateComponentProperty(document, selectedComponent.id, property, value);
+    if (drawingGrid.units === "mm" && (definition.symbolId === "panel-din-rail" || definition.symbolId === "cable-tray") && property.endsWith("Mm")) {
+      const rail = definition.symbolId === "panel-din-rail";
+      if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 ||
+          (rail && property === "cutLengthMm" && value > Number(definition.propertiesSchema.stockLengthMm))) {
+        setNotice("Enter a positive hardware dimension within the stock length.");
+        return false;
+      }
+      if (rail && property !== "cutLengthMm") {
+        setNotice("Only the cut length can change on this catalog rail.");
+        return false;
+      }
+      if (!canPlaceComponent(nextDocument.components, selectedComponent.id, selectedComponent.x, selectedComponent.y, undefined, undefined, placementLayout(document))) {
+        setNotice("The edited hardware dimensions overlap another component.");
+        return false;
+      }
+    }
     let removedWires = 0;
     if (nextTerminals) {
       const updatedTopology = applyGenericTopologyTerminals(nextDocument, selectedComponent.id, definition.terminals, nextTerminals);
@@ -1957,7 +1973,7 @@ export function App() {
     if (!selectedComponent || isReferenceSheet) return;
     const definition = catalogById.get(selectedComponent.definitionId);
     if (!definition) { setNotice("The selected catalog definition is unavailable."); return; }
-    const copy = duplicateComponentInstance(document.components, selectedComponent, `component-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, definition.referencePrefix, isReferenceSheet ? "reference" : "free");
+    const copy = duplicateComponentInstance(document.components, selectedComponent, `component-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, definition.referencePrefix, placementLayout(document));
     if (!copy) { setNotice("No clear position is available for another copy on this sheet."); return; }
     if (!updateDocument({ ...document, components: [...document.components, copy], revision: document.revision + 1 })) return;
     selectComponent(copy.id);
@@ -1967,7 +1983,14 @@ export function App() {
   const saveDrawingGrid = (grid: DrawingGrid) => {
     if (isReferenceSheet || !validDrawingGrid(grid)) return;
     if (grid.displaySpacing === drawingGrid.displaySpacing && grid.snapSpacing === drawingGrid.snapSpacing && grid.snapEnabled === drawingGrid.snapEnabled && (grid.units ?? "du") === (drawingGrid.units ?? "du")) return;
-    updateDocument({ ...document, drawingGrid: grid, revision: document.revision + 1 });
+    const next = { ...document, drawingGrid: grid, revision: document.revision + 1 };
+    if ((grid.units ?? "du") !== (drawingGrid.units ?? "du") && document.components.some(component =>
+      !component.customSymbolGraphics?.length && panelHardwareDimensions(component.definitionId, component.properties) &&
+      !canPlaceComponent(document.components, component.id, component.x, component.y, undefined, undefined, placementLayout(next)))) {
+      setNotice("Move the panel hardware to a clear area before changing drawing units.");
+      return;
+    }
+    updateDocument(next);
   };
 
   const savePrintLayout = (layout: PrintLayout) => {

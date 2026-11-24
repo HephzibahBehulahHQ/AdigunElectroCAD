@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent } from "react";
-import { componentFootprint } from "../cad/componentGeometry";
+import { componentFootprint, instanceFootprint, panelHardwareDimensions } from "../cad/componentGeometry";
 import type { ComponentTransform } from "../cad/documentOps";
 import type { ComponentInstance } from "../types/electrical";
 
@@ -25,9 +25,10 @@ export function transformFromHandle(kind: HandleKind, component: ComponentInstan
   return { kind, size: Math.max(50, Math.min(200, percent)) / 100 };
 }
 
-export function ComponentTransformHandles({ component, onPreview, onCommit }: { component: ComponentInstance; onPreview: (transform: ComponentTransform | null) => void; onCommit: (transform: ComponentTransform) => void }) {
+export function ComponentTransformHandles({ component, millimetres = false, onPreview, onCommit }: { component: ComponentInstance; millimetres?: boolean; onPreview: (transform: ComponentTransform | null) => void; onCommit: (transform: ComponentTransform) => void }) {
   const gesture = useRef<{ pointerId: number; kind: HandleKind; start: Point; component: ComponentInstance } | null>(null);
-  const bounds = componentFootprint(component.x, component.y, component.rotation, component.definitionId, component.size);
+  const physical = millimetres && !component.customSymbolGraphics?.length && panelHardwareDimensions(component.definitionId, component.properties);
+  const bounds = physical ? instanceFootprint(component, true) : componentFootprint(component.x, component.y, component.rotation, component.definitionId, component.size);
   const svgPoint = (event: PointerEvent<SVGCircleElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -79,6 +80,6 @@ export function ComponentTransformHandles({ component, onPreview, onCommit }: { 
   return <g data-export-exclude="" aria-label={`Transform ${component.reference}`}>
     <path d={`M ${component.x} ${bounds.top} v -14`} stroke="#e0a526" pointerEvents="none" />
     {handle("rotate", component.x, bounds.top - 14)}
-    {handle("resize", bounds.right, bounds.bottom)}
+    {!physical && handle("resize", bounds.right, bounds.bottom)}
   </g>;
 }

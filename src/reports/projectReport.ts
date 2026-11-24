@@ -70,7 +70,7 @@ export function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[
   const hiddenLayers = new Set(document.draftingLayers?.filter(({ hidden }) => hidden).map(({ id }) => id));
   const visible = document.components.filter(({ layerId }) => !hiddenLayers.has(layerId ?? ""));
   const references = new Map(visible.map(({ id, reference }) => [id, reference]));
-  const obstacles = wireRouteObstacles(visible);
+  const obstacles = wireRouteObstacles(visible, document.drawingGrid?.units === "mm");
   const anchors = new Map(terminalAnchors(document).map((anchor) => [endpointKey(anchor.endpoint), anchor]));
   const routePoints = (wire: Wire) => {
     const from = anchors.get(endpointKey(wire.from)), to = anchors.get(endpointKey(wire.to));
@@ -101,7 +101,7 @@ export function wireClearanceWarnings(document: CircuitDocument): TopologyIssue[
 
 export function componentClearanceWarnings(document: CircuitDocument): TopologyIssue[] {
   if (document.id === "reference-dol-motor-starter") return [];
-  const footprints = document.components.map(component => ({ reference: component.reference, bounds: instanceFootprint(component) }));
+  const footprints = document.components.map(component => ({ reference: component.reference, bounds: instanceFootprint(component, document.drawingGrid?.units === "mm") }));
   const warnings: TopologyIssue[] = [];
   for (const [index, footprint] of footprints.entries()) {
     // Keep reports bounded even when many components occupy the same location.

@@ -1,9 +1,9 @@
 import type { CircuitDocument, ComponentInstance, TerminalEndpoint, Wire } from "../types/electrical";
-import { componentFootprint, componentFootprintsOverlap, instanceFootprint } from "./componentGeometry";
+import { componentFootprint, componentFootprintsOverlap, instanceFootprint, panelHardwareDimensions } from "./componentGeometry";
 
-export type PlacementLayout = "reference" | "free";
+export type PlacementLayout = "reference" | "free" | "millimetres";
 type PlacementView = { x: number; y: number; width: number; height: number };
-const placementLayout = (document: CircuitDocument): PlacementLayout => document.id === "reference-dol-motor-starter" ? "reference" : "free";
+export const placementLayout = (document: CircuitDocument): PlacementLayout => document.id === "reference-dol-motor-starter" ? "reference" : document.drawingGrid?.units === "mm" ? "millimetres" : "free";
 
 export function createManualWire(document: CircuitDocument, from: TerminalEndpoint, to: TerminalEndpoint, branch?: { wireId: string; source: "from" | "to"; position: number }): Wire {
   let index = 1;
@@ -156,8 +156,8 @@ export function removeWire(document: CircuitDocument, wireId: string): CircuitDo
 export function findOpenPlacement(components: ComponentInstance[], layout: PlacementLayout, definitionId?: string, view?: PlacementView, instance?: ComponentInstance): { x: number; y: number } | null {
   const candidates = instance ? [...components, instance] : components;
   const fits = (x: number, y: number) => canPlaceComponent(candidates, instance?.id ?? "", x, y, definitionId, undefined, layout);
-  if (layout === "free" && view) {
-    const footprint = instance ? instanceFootprint({ ...instance, x: 0, y: 0 }) : componentFootprint(0, 0, 0, definitionId);
+  if (layout !== "reference" && view) {
+    const footprint = placementFootprint(instance, 0, 0, definitionId, instance?.size ?? 1, layout);
     const firstX = Math.ceil((view.x - footprint.left + 12) / 20) * 20;
     const firstY = Math.ceil((view.y - footprint.top + 12) / 20) * 20;
     const lastX = view.x + view.width - footprint.right - 12;
@@ -183,15 +183,20 @@ export function findOpenPlacement(components: ComponentInstance[], layout: Place
 
 export function canPlaceComponent(components: ComponentInstance[], componentId: string, x: number, y: number, definitionId?: string, size?: number, layout: PlacementLayout = "free"): boolean {
   const moving = components.find((component) => component.id === componentId);
-  const rotation = moving?.rotation ?? 0;
   const movingDefinitionId = definitionId ?? moving?.definitionId;
   const movingSize = size ?? moving?.size ?? 1;
   if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(movingSize) || movingSize < .5 || movingSize > 2) return false;
-  const bounds = moving && movingDefinitionId
-    ? instanceFootprint({ ...moving, x, y, definitionId: movingDefinitionId, size: movingSize })
-    : componentFootprint(x, y, rotation, movingDefinitionId, movingSize);
+  const bounds = placementFootprint(moving, x, y, movingDefinitionId, movingSize, layout);
   if (layout === "reference" && (bounds.left < 10 || bounds.right > 1090 || bounds.top < 90 || bounds.bottom > 770)) return false;
-  return components.every((component) => component.id === componentId || !componentFootprintsOverlap(bounds, instanceFootprint(component)));
+  return components.every((component) => component.id === componentId || !componentFootprintsOverlap(bounds, instanceFootprint(component, layout === "millimetres")));
+}
+
+function placementFootprint(instance: ComponentInstance | undefined, x: number, y: number, definitionId: string | undefined, size: number, layout: PlacementLayout) {
+  const rotation = instance?.rotation ?? 0;
+  if (definitionId && (instance || layout === "millimetres")) {
+    return instanceFootprint({ id: "", reference: "", properties: {}, ...instance, definitionId, x, y, rotation, size }, layout === "millimetres");
+  }
+  return componentFootprint(x, y, rotation, definitionId, size);
 }
 
 export function nextComponentReference(components: ComponentInstance[], referencePrefix: string): string {
@@ -228,6 +233,9 @@ function duplicatePlacementOffsets() {
 export function resizeComponent(document: CircuitDocument, componentId: string, size: number): { document: CircuitDocument; ok: boolean; reason?: string } {
   const component = document.components.find((item) => item.id === componentId);
   if (!component || !Number.isFinite(size) || size < .5 || size > 2) return { document, ok: false, reason: "Symbol size must be between 50% and 200%." };
+  if (placementLayout(document) === "millimetres" && !component.customSymbolGraphics?.length && panelHardwareDimensions(component.definitionId, component.properties)) {
+    return { document, ok: false, reason: "Edit the hardware dimensions in Properties to resize this part." };
+  }
   if (!canPlaceComponent(document.components, componentId, component.x, component.y, component.definitionId, size, placementLayout(document))) return { document, ok: false, reason: "Resize blocked: the symbol, terminals and labels need more clear space." };
   if ((component.size ?? 1) === size) return { document, ok: true };
   return { document: { ...document, revision: document.revision + 1, components: document.components.map((item) => item.id === componentId ? { ...item, size } : item) }, ok: true };

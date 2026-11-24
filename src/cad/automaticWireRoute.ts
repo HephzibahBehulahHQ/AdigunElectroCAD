@@ -5,8 +5,8 @@ import type { ComponentInstance, SchematicGraphicPoint, Wire } from "../types/el
 
 type Obstacle = ReturnType<typeof instanceFootprint> & { componentId: string };
 
-export function wireRouteObstacles(components: readonly ComponentInstance[]): Obstacle[] {
-  return components.map((component) => ({ ...instanceFootprint(component), componentId: component.id }));
+export function wireRouteObstacles(components: readonly ComponentInstance[], millimetres = false): Obstacle[] {
+  return components.map((component) => ({ ...instanceFootprint(component, millimetres), componentId: component.id }));
 }
 
 function segmentIsClear(start: SchematicGraphicPoint, end: SchematicGraphicPoint, obstacles: readonly Obstacle[]): boolean {
