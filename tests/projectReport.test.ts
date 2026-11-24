@@ -236,3 +236,21 @@ it("reports an unresolved panel link by sheet and clears it when the source retu
   source.document.components = [{ ...device, reference: "X2" }];
   expect(issues()).toEqual([]);
 });
+
+it("flags overlapping equipment outlines on millimetre sheets and allows shared edges", () => {
+  const { document } = createBlankProject().sheets[0];
+  document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  const outline = { kind: "rectangle" as const, x1: 0, y1: 0, x2: 50, y2: 50, color: "#19324f", strokeWidth: 1,
+    deviceLink: { sheetId: "schematic", componentId: "q1" } };
+  document.graphics = [
+    { ...outline, id: "g1", name: "Breaker" },
+    { ...outline, id: "g2", name: "Contactor", x1: 45, x2: 95 },
+  ];
+  const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code === "panel-outline-overlap");
+  expect(warnings()).toMatchObject([{ message: "Linked panel outlines overlap: Breaker and Contactor." }]);
+  document.graphics[1].x1 = 50;
+  expect(warnings()).toEqual([]);
+  document.graphics[1].x1 = 45;
+  delete document.graphics[1].deviceLink;
+  expect(warnings()).toEqual([]);
+});
