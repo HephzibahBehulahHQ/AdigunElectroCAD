@@ -324,6 +324,9 @@ export function App() {
     (sheet.document.graphics ?? []).filter(graphic =>
       graphic.deviceLink?.sheetId === activeSheet.id && graphic.deviceLink.componentId === selectedComponent.id,
     ).map(graphic => ({ sheetId: sheet.id, sheetName: sheet.name, graphic }))) : [];
+  const pendingFootprintReviews = useMemo(() => project.sheets.flatMap(sheet =>
+    (sheet.document.graphics ?? []).filter(graphic => graphic.deviceLink && graphic.footprintReviewRequired)
+      .map(graphic => ({ sheetId: sheet.id, sheetName: sheet.name, graphic }))), [project.sheets]);
   const stackScope = document.useDraftingLayerOrder
     ? document.components.filter(({ layerId }) => layerId === selectedComponent?.layerId)
     : document.components;
@@ -2098,6 +2101,15 @@ export function App() {
     setFreeCamera(camera => ({ center: fitted.center, zoom: Math.min(camera.zoom, fitted.zoom) }));
   };
 
+  const openLinkedGraphic = (sheetId: string, graphic: SchematicGraphic) => {
+    selectSheet(sheetId);
+    selectGraphic(graphic.id);
+    revealLinkedDrawing({
+      x: Math.min(graphic.x1, graphic.x2), y: Math.min(graphic.y1, graphic.y2),
+      width: Math.abs(graphic.x2 - graphic.x1), height: Math.abs(graphic.y2 - graphic.y1),
+    });
+  };
+
   const fitSchematicContent = (scope: "drawing" | "selection" = "drawing") => {
     const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
     const svg = viewport?.querySelector<SVGSVGElement>("svg.schematic");
@@ -2290,17 +2302,12 @@ export function App() {
           <div className="dock-content properties-panel" hidden={!rightPanelOpen || rightDockView !== "properties"}>
 
             <div className="panel-title"><strong>Properties</strong><span>{selectedContinuation?.label ?? selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
-            {linkedPanelGraphics.length > 0 && <fieldset className="graphic-geometry" aria-label="Linked panel drawings">
+            {linkedPanelGraphics.length > 0 && <fieldset className="graphic-geometry graphic-device-properties" aria-label="Linked panel drawings">
               <legend>Linked panel drawings</legend>
               {linkedPanelGraphics.map(({ sheetId, sheetName, graphic }) =>
-                <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => {
-                  selectSheet(sheetId);
-                  selectGraphic(graphic.id);
-                  revealLinkedDrawing({
-                    x: Math.min(graphic.x1, graphic.x2), y: Math.min(graphic.y1, graphic.y2),
-                    width: Math.abs(graphic.x2 - graphic.x1), height: Math.abs(graphic.y2 - graphic.y1),
-                  });
-                }}>{sheetName} · {graphic.name}</button>)}
+                <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => openLinkedGraphic(sheetId, graphic)}>
+                  {sheetName} · {graphic.name}{graphic.footprintReviewRequired && " · Review required"}
+                </button>)}
             </fieldset>}
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Sign in to a permanent account to save them.</p>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === `${activeSheet.id}::${selectedComponent.id}`)} onClimateChange={(value) => setRuntimeDocument((current) => setCircuitClimateInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, property, value))} />}
@@ -2340,6 +2347,13 @@ export function App() {
           </div>
           <div className="dock-content right-diagnostics" hidden={!rightPanelOpen || rightDockView !== "diagnostics"}>
             <div className="panel-title"><strong>{t.validation}</strong></div>
+            {pendingFootprintReviews.length > 0 && <fieldset className="graphic-geometry graphic-device-properties" aria-label="Footprints requiring review">
+              <legend>Footprints requiring review ({pendingFootprintReviews.length})</legend>
+              {pendingFootprintReviews.map(({ sheetId, sheetName, graphic }) =>
+                <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => openLinkedGraphic(sheetId, graphic)}>
+                  {sheetName} · {graphic.name}
+                </button>)}
+            </fieldset>}
             <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={activeSheetModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
             <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
           </div>
