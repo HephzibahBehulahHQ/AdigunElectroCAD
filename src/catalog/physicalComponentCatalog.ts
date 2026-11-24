@@ -110,6 +110,24 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     };
   }),
   {
+    id: "finder.38.51.7.024.0050", name: "Finder 38.51 · 24 V DC changeover relay", category: "Relays",
+    referencePrefix: "K", symbolId: "relay-finder-3851", terminals: [
+      { id: "a1", label: "A1", kind: "control", direction: "input" },
+      { id: "a2", label: "A2", kind: "control", direction: "input" },
+      { id: "11", label: "11", kind: "control", direction: "bidirectional" },
+      { id: "12", label: "12", kind: "control", direction: "bidirectional" },
+      { id: "14", label: "14", kind: "control", direction: "bidirectional" },
+    ],
+    description: "24 V DC interface relay, one 6 A changeover contact, screw terminals.",
+    propertiesSchema: { coilVoltageV: 24, coilDc: true, ratedCurrentA: 6, energized: false },
+    simulationModelId: "catalog-interface-relay", simulationSupport: "control-logic",
+    manufacturerRecord: { manufacturer: "Finder", series: "38", orderCode: "38.51.7.024.0050",
+      sourceUrl: "https://cdn.findernet.com/app/uploads/S38EN.pdf", terminalMap: "verified",
+      documentRevision: "Series 38 screw-terminal interface modules and wiring diagrams" },
+    documentation: "A1/A2 are the DC coil supply. Common 11 connects to 12 at rest and to 14 when energized. The switching model represents ideal contacts and coil state.",
+    standardsReferences: ["https://cdn.findernet.com/app/uploads/S38EN.pdf"],
+  },
+  {
     id: "phoenix-contact.sacc.1662256", name: "Phoenix Contact M12 male · 1662256", category: "Wiring & Cables",
     referencePrefix: "X", symbolId: "terminal-m12-male-5", terminals: [
       { id: "1", label: "1", kind: "control", direction: "bidirectional", position: { x: -22, y: 22 } },

@@ -190,7 +190,7 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     </g>;
   }
   if (symbolId === "relay" || symbolId.startsWith("relay-")) {
-    const contacts = Math.max(1, Math.min(3, Number(properties.changeoverContacts) || 1));
+    const contacts = symbolId === "relay-finder-3851" ? 1 : Math.max(1, Math.min(3, Number(properties.changeoverContacts) || 1));
     const energized = properties.energized === true;
     return <g className={mark} aria-label={`Interface relay with ${contacts} changeover contact${contacts === 1 ? "" : "s"}, ${energized ? "energized" : "de-energized"}`} data-state={energized ? "energized" : "de-energized"}>
       <rect x={x - 43} y={y - 15} width="9" height="30" rx="2" />

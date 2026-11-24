@@ -124,3 +124,22 @@ it("passes continuity in either direction on each PTTB level and isolates the le
   expect(run("upper-left", "lower-right")).toMatchObject({ energized: false, voltageV: 0 });
   expect(run("lower-right", "upper-left")).toMatchObject({ energized: false, voltageV: 0 });
 });
+
+it("transfers the Finder relay common between NC 12 and NO 14", () => {
+  const { document } = createMixedVoltageRelayPanelProject();
+  const definition = catalogById.get("finder.38.51.7.024.0050")!;
+  document.components = document.components.map(component => component.id === "relay"
+    ? { ...component, definitionId: definition.id, properties: definition.propertiesSchema }
+    : component.id === "picked-up" ? { ...component, properties: { ...component.properties, ratedVoltageV: 24, dc: true } } : component);
+  document.wires = document.wires.filter(wire => wire.id !== "no-feed").map(wire => {
+    if (wire.id === "picked-up-feed") return { ...wire, from: { componentId: "relay", terminalId: "14" } };
+    if (wire.id === "picked-up-return") return { ...wire, to: { componentId: "dc", terminalId: "zero-out" }, netName: "DC_RETURN" };
+    return wire;
+  });
+  const states = (pressed: boolean) => {
+    const result = evaluateWiredControl(press(document, "command", pressed), catalogById);
+    return ["relay", "picked-up", "dropped-out"].map(id => result.get(id)?.energized);
+  };
+  expect(states(false)).toEqual([false, false, true]);
+  expect(states(true)).toEqual([true, true, false]);
+});
