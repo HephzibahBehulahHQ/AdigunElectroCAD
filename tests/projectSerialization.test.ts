@@ -57,6 +57,14 @@ describe("project JSON import validation", () => {
     input.sheets[0].kind = "free-schematic";
     expect(parseProjectJson(JSON.stringify(input)).sheets[0].kind).toBe("free-schematic");
   });
+  it("round-trips per-sheet millimetre settings and rejects unsupported units", () => {
+    const input = addFreeSchematicSheet(createStarterProject());
+    input.sheets[1].document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+    const encoded = encodeProject(input);
+    expect(parseProjectJson(JSON.stringify(encoded))).toEqual(input);
+    const invalid = JSON.stringify(encoded).replace('"units":"mm"', '"units":"inch"');
+    expect(() => parseProjectJson(invalid)).toThrow("Invalid drawing grid");
+  });
   it("round-trips a project containing both reference and free sheets", () => {
     const input = addFreeSchematicSheet(createStarterProject());
     expect(parseProjectJson(JSON.stringify(input))).toEqual(input);

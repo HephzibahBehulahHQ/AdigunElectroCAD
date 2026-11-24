@@ -439,6 +439,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
   };
   const settings = document.drawingGrid ?? defaultDrawingGrid;
+  const drawingUnits = settings.units ?? "du";
   const snapSpacing = settings.snapEnabled ? settings.snapSpacing : null;
   const displaySpacing = visibleGridSpacing(settings.displaySpacing, zoom);
   const grid = (value: number) => snapDrawingCoordinate(value, snapSpacing);
@@ -577,8 +578,8 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       const target = event.target instanceof Element ? event.target.closest("[data-wire-terminal]")?.getAttribute("data-wire-terminal") : null;
       setWirePointer((target && anchorIndex.get(target)) || { x, y });
     }
-    readout.textContent = `X ${x}  Y ${y}  du${guideSnap ? " · Guide snap" : snapped && settings.snapEnabled ? " · Grid snap" : ""}`;
-  }} onPointerLeave={() => { if (cursorReadout.current) cursorReadout.current.textContent = "X —  Y —  du"; if (routeStart) setWirePointer(null); }}>
+    readout.textContent = `X ${x}  Y ${y}  ${drawingUnits}${guideSnap ? " · Guide snap" : snapped && settings.snapEnabled ? " · Grid snap" : ""}`;
+  }} onPointerLeave={() => { if (cursorReadout.current) cursorReadout.current.textContent = `X —  Y —  ${drawingUnits}`; if (routeStart) setWirePointer(null); }}>
     <svg className="schematic" tabIndex={0} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0, cursor: annotationMode || graphicMode || onPlaceComponent ? "crosshair" : undefined }} viewBox={`${drawingBounds.x} ${drawingBounds.y} ${drawingBounds.width} ${drawingBounds.height}`} role="group" aria-description="Focus a terminal and press Enter or Space to start or finish a wire." aria-label={wireMode ? "Wiring mode: choose two compatible schematic terminals" : "Free electrical schematic sheet"} onDragOver={(event) => { if (event.dataTransfer.types.includes("application/x-adigun-electrocad-component")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }} onDrop={(event) => { const definitionId = event.dataTransfer.getData("application/x-adigun-electrocad-component"); if (!definitionId || !onComponentDrop) return; const matrix = event.currentTarget.getScreenCTM(); const point = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (!point) return; event.preventDefault(); const snapped = draftingPoint(point, false, true); onComponentDrop(definitionId, snapped.x, snapped.y); }} onClickCapture={(event) => {
       if (event.button !== 0) return;
       if (routeStart && onWireBend && event.target instanceof Element && !event.target.closest("[data-wire-terminal]")) {
@@ -659,7 +660,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
       {placementPreviewDefinitionId && <ComponentPlacementPreview key={`${placementPreviewDefinitionId}:${Boolean(placementDragging)}`} document={document} definitionId={placementPreviewDefinitionId} instance={placementPreviewInstance} resolvePoint={point => draftingPoint(point, false, true)} dragging={Boolean(placementDragging)} />}
     </svg>
     {wireMode && wireNotice && <div className="wire-canvas-message">{wireNotice}</div>}
-    {freeView && <><DrawingRulers bounds={drawingBounds} zoom={zoom} onAddGuide={onAddGuide} /><output ref={cursorReadout} aria-label="Drawing cursor coordinates" aria-live="off" className="drawing-cursor-readout">X —  Y —  du</output></>}
+    {freeView && <><DrawingRulers bounds={drawingBounds} zoom={zoom} units={drawingUnits} onAddGuide={onAddGuide} /><output ref={cursorReadout} aria-label="Drawing cursor coordinates" aria-live="off" className="drawing-cursor-readout">X —  Y —  {drawingUnits}</output></>}
   </div>;
 }
 
