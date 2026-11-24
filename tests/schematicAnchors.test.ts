@@ -1353,3 +1353,9 @@ it("renders physical rail and trunking at their saved dimensions while keeping l
     expect(renderToStaticMarkup(createElement(PlacedSymbol, props))).not.toContain("data-panel-hardware");
   }
 });
+
+it("draws both isolated levels through the production terminal symbol dispatcher", () => {
+  const markup=renderToStaticMarkup(createElement(FunctionalSymbol, {symbolId:"terminal-double-level", x:100, y:100, properties:{}}));
+  expect(markup).toContain('data-terminal-level="upper"');
+  expect(markup).toContain('data-terminal-level="lower"');
+});
