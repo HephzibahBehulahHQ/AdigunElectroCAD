@@ -252,7 +252,7 @@ it("flags overlapping equipment outlines on millimetre sheets and allows shared 
     { ...outline, id: "g2", name: "Contactor", x1: 45, x2: 95 },
   ];
   const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code === "panel-outline-overlap");
-  expect(warnings()).toMatchObject([{ message: "Linked panel outlines overlap: Breaker and Contactor." }]);
+  expect(warnings()).toMatchObject([{ message: "Linked panel outlines overlap: Breaker and Contactor.", drawingTarget: { graphicId: "g2" } }]);
   document.graphics[1].x1 = 50;
   expect(warnings()).toEqual([]);
   document.graphics[1].x1 = 45;
@@ -348,7 +348,8 @@ it("reports entry inside a documented mounting clearance without requiring an ou
   ];
   const warnings = () => createProjectWideReport(project, catalogById).validation;
   expect(warnings()).not.toContainEqual(expect.objectContaining({ code: "panel-outline-overlap" }));
-  expect(warnings()).toContainEqual(expect.objectContaining({ code: "panel-installation-clearance", message: "KM2 front enters the documented mounting clearance for KM1 front." }));
+  expect(warnings()).toContainEqual(expect.objectContaining({ code: "panel-installation-clearance", message: "KM2 front enters the documented mounting clearance for KM1 front.",
+    drawingTarget: { sheetId: panel.id, graphicId: "other" } }));
   panel.document.graphics[1].y1 += 5;
   panel.document.graphics[1].y2 += 5;
   expect(warnings()).not.toContainEqual(expect.objectContaining({ code: "panel-installation-clearance" }));
