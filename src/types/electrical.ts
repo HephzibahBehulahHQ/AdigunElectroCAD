@@ -54,6 +54,8 @@ export interface ComponentInstance extends DraftingEntity {
   x: number;
   y: number;
   rotation: 0 | 90 | 180 | 270;
+  /** Reflection across the local vertical axis before rotation. */
+  mirrored?: boolean;
   /** Paint order within the component layer. Older documents use component array order. */
   zIndex?: number;
   /** Relative symbol size. Missing values in older projects render at 100%. */

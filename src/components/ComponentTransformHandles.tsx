@@ -3,7 +3,7 @@ import { componentFootprint, instanceFootprint, panelHardwareDimensions } from "
 import type { ComponentTransform } from "../cad/documentOps";
 import type { ComponentInstance } from "../types/electrical";
 
-type HandleKind = ComponentTransform["kind"];
+type HandleKind = Exclude<ComponentTransform["kind"], "mirror">;
 type Point = { x: number; y: number };
 
 export function stepComponentRotation(rotation: number, steps: number): ComponentInstance["rotation"] {

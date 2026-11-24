@@ -77,12 +77,25 @@ export function rotateComponent(document: CircuitDocument, componentId: string, 
 
 export type ComponentTransform =
   | { kind: "resize"; size: number }
-  | { kind: "rotate"; rotation: ComponentInstance["rotation"] };
+  | { kind: "rotate"; rotation: ComponentInstance["rotation"] }
+  | { kind: "mirror" };
 
 export function transformComponent(document: CircuitDocument, componentId: string, transform: ComponentTransform, clearanceComponents = document.components): { document: CircuitDocument; ok: boolean; reason?: string } {
   if (transform.kind === "resize") return resizeComponent(document, componentId, transform.size);
   const component = document.components.find((item) => item.id === componentId);
-  if (!component || ![0, 90, 180, 270].includes(transform.rotation)) return { document, ok: false, reason: "Choose a valid right-angle rotation." };
+  if (component && transform.kind === "mirror") {
+    if (placementLayout(document) === "millimetres" && !component.customSymbolGraphics?.length && panelHardwareDimensions(component.definitionId, component.properties)) {
+      return { document, ok: false, reason: "This symmetric panel envelope has no distinct mirrored view." };
+    }
+    const candidate = { ...component, mirrored: !component.mirrored };
+    const clearance = clearanceComponents.map(item => item.id === componentId ? candidate : item);
+    if (!canPlaceComponent(clearance, componentId, candidate.x, candidate.y, undefined, undefined, placementLayout(document))) {
+      return { document, ok: false, reason: "Mirror blocked by symbol or terminal clearance." };
+    }
+    return { ok: true, document: { ...document, revision: document.revision + 1,
+      components: document.components.map(item => item.id === componentId ? candidate : item) } };
+  }
+  if (!component || transform.kind !== "rotate" || ![0, 90, 180, 270].includes(transform.rotation)) return { document, ok: false, reason: "Choose a valid right-angle rotation." };
   const candidate = { ...component, rotation: transform.rotation };
   const clearance = clearanceComponents.map((item) => item.id === componentId ? candidate : item);
   if (!canPlaceComponent(clearance, componentId, component.x, component.y, undefined, undefined, placementLayout(document))) return { document, ok: false, reason: "Rotation blocked by symbol or label clearance." };

@@ -265,3 +265,18 @@ it("removes dependent wire branches when deleting a component removes their pare
   expect(result.document.wires.map((wire) => wire.id)).not.toContain(nested.id);
 });
 
+
+it("mirrors before rotation and preserves the same connected terminal through save and reopen", () => {
+  const base = createAnalogLevelProject().document;
+  const original = terminalAnchors(base).find(anchor => anchor.endpoint.componentId === "level" && anchor.endpoint.terminalId === "signal")!;
+  const component = base.components.find(item => item.id === "level")!;
+  const result = transformComponent(base, component.id, { kind: "mirror" });
+  expect(result.ok).toBe(true);
+  const reflected = terminalAnchors(result.document).find(anchor => anchor.endpoint.componentId === "level" && anchor.endpoint.terminalId === "signal")!;
+  expect(reflected).toMatchObject({ x: 2 * component.x - original.x, y: original.y, endpoint: original.endpoint });
+  expect(result.document.wires).toBe(base.wires);
+  const project = createBlankProject();
+  project.sheets[0].document = result.document;
+  const reopened = parseProjectJson(JSON.stringify(project)).sheets[0].document;
+  expect(terminalAnchors(reopened)).toEqual(terminalAnchors(result.document));
+});
