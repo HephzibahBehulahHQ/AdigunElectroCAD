@@ -56,6 +56,7 @@ export function deviceEnvelope(definitionId: string): DeviceEnvelope | undefined
 const omronEncoderIds = new Set(omronEncoderCatalog.map(({ id }) => id));
 const omronEncoderFace = {
   diameterMm: 40,
+  side: { bodyLengthMm: 39, pilotLengthMm: 5, pilotDiameterMm: 20, exposedShaftLengthMm: 10, shaftDiameterMm: 6 },
   mountingPitchDiameterMm: 30,
   thread: "M3",
   nominalThreadDiameterMm: 3,
