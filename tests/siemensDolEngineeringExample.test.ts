@@ -9,10 +9,11 @@ it("opens the linked Siemens starter drawing and runs the complete start, stop a
   const file = new URL("../public/examples/siemens-dol-starter-panel.json", import.meta.url);
   const project = parseProjectJson(readFileSync(file, "utf8"));
   expect(parseProjectJson(JSON.stringify(encodeProject(project)))).toEqual(project);
-  const [breaker, contactor, circuit] = project.sheets;
+  const [breaker, contactor, overload, circuit] = project.sheets;
   for (const [panel, componentId, widths, height] of [
     [breaker, "breaker", [54, 76], 90],
     [contactor, "contactor", [45, 107], 85],
+    [overload, "overload", [45, 85], 85],
   ] as const) {
     expect(panel.document.drawingGrid?.units).toBe("mm");
     const views = panel.document.graphics!;
