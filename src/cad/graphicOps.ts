@@ -20,6 +20,24 @@ export function duplicateSchematicGraphic(graphic: SchematicGraphic, id: string,
   };
 }
 
+export function circularMountingMarks(outline: SchematicGraphic, pitchDiameter: number, nominalDiameter: number, count: number, thread: string): SchematicGraphic[] {
+  const centreX = (outline.x1 + outline.x2) / 2;
+  const centreY = (outline.y1 + outline.y2) / 2;
+  const radius = nominalDiameter / 2;
+  return Array.from({ length: count }, (_, index) => {
+    const angle = index * 2 * Math.PI / count;
+    const x = centreX + Math.sin(angle) * pitchDiameter / 2;
+    const y = centreY - Math.cos(angle) * pitchDiameter / 2;
+    return {
+      id: `graphic-${crypto.randomUUID()}`,
+      name: `${thread} thread ${index + 1} (nominal)`,
+      kind: "ellipse",
+      x1: x - radius, y1: y - radius, x2: x + radius, y2: y + radius,
+      color: outline.color, fillColor: null, strokeWidth: 1,
+    };
+  });
+}
+
 
 export type GraphicStackOrder = "backward" | "forward" | "back" | "front";
 export type GraphicStackCapabilities = Record<GraphicStackOrder, boolean>;

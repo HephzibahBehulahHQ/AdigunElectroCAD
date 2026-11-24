@@ -58,6 +58,7 @@ const omronEncoderFace = {
   diameterMm: 40,
   mountingPitchDiameterMm: 30,
   thread: "M3",
+  nominalThreadDiameterMm: 3,
   threadDepthMm: 7,
   mountingHoleCount: 3,
   sourceUrl: "https://www.ia.omron.com/products/family/487/dimension.html",

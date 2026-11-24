@@ -30,7 +30,7 @@ import { toggleComponentSelection } from "../cad/componentSelection";
 import { appendWireRoutePoint, type WireBranchSource } from "../cad/wirePath";
 import { deleteGraphicPathVertex, graphicPathBounds, insertGraphicPathVertex, moveGraphicPathVertex } from "../cad/graphicPath";
 import { componentsInStackOrder, reorderComponents } from "../cad/componentStack";
-import { duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
+import { circularMountingMarks, duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, connectionSignalIssue, validateCircuit } from "../electrical/topology";
 import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
@@ -688,6 +688,16 @@ export function App() {
     updateDocument({ ...document, graphics: [...(document.graphics ?? []), graphic], revision: document.revision + 1 });
     selectGraphic(graphic.id);
     setNotice(`${graphic.name} drawn. It is drafting geometry and does not create an electrical connection.`);
+  };
+
+  const addMountingMarks = (marks: SchematicGraphic[]) => {
+    const graphics = document.graphics ?? [];
+    const bounds = ["x1", "y1", "x2", "y2"] as const;
+    const needed = marks.filter(mark => !graphics.some(graphic => graphic.kind === mark.kind &&
+      bounds.every(key => Math.abs(graphic[key] - mark[key]) < 1e-8)));
+    if (!needed.length) { setNotice("These mounting marks are already drawn."); return; }
+    if (graphics.length + needed.length > 2000) { setNotice("This sheet has reached the 2,000 drawing-graphic limit."); return; }
+    updateDocument({ ...document, graphics: [...graphics, ...needed], revision: document.revision + 1 });
   };
 
   const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink">>) => {
@@ -2288,7 +2298,7 @@ export function App() {
               setReplacement(null);
               setNotice("Component replaced and the selected terminal connections migrated.");
             }} />}
-          {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(stackScope), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} deviceSheets={project.sheets.filter(sheet => sheet.id !== activeSheet.id)} onDeviceNavigate={link => {
+          {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(stackScope), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} deviceSheets={project.sheets.filter(sheet => sheet.id !== activeSheet.id)} onAddMountingMarks={addMountingMarks} onDeviceNavigate={link => {
             selectSheet(link.sheetId);
             selectComponent(link.componentId);
             const source = project.sheets.find(sheet => sheet.id === link.sheetId);
@@ -2534,13 +2544,14 @@ function ComponentReplacementForm({ project, sheet, instance, definitionId, onCa
   </form>;
 }
 
-function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNavigate, onGeometryChange }: {
+function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNavigate, onGeometryChange, onAddMountingMarks }: {
   graphic: SchematicGraphic;
   millimetres: boolean;
   sheets: ElectricalProject["sheets"];
   onChange: (link: SchematicGraphic["deviceLink"]) => void;
   onNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void;
   onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void;
+  onAddMountingMarks: (marks: SchematicGraphic[]) => void;
 }) {
   const devices = sheets.flatMap(sheet => sheet.document.components.map(component => ({
     link: { sheetId: sheet.id, componentId: component.id },
@@ -2552,6 +2563,8 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   const linked = devices.find(device => key(device.link) === current);
   const envelope = millimetres && linked && graphic.kind === "rectangle" ? deviceEnvelope(linked.definitionId) : undefined;
   const roundFace = millimetres && linked && graphic.kind === "ellipse" ? roundDeviceFace(linked.definitionId) : undefined;
+  const hasRoundOutline = roundFace && Math.abs(Math.abs(graphic.x2 - graphic.x1) - roundFace.diameterMm) < 1e-8 &&
+    Math.abs(Math.abs(graphic.y2 - graphic.y1) - roundFace.diameterMm) < 1e-8;
   const applyEnvelope = (horizontalMm: number, verticalMm: number) => {
     const x = (graphic.x1 + graphic.x2) / 2;
     const y = (graphic.y1 + graphic.y2) / 2;
@@ -2569,6 +2582,8 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       <a href={roundFace.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · Ø{roundFace.diameterMm} mm</a>
       <p>{roundFace.mountingHoleCount} × {roundFace.thread} threads, {roundFace.threadDepthMm} mm deep, equally spaced on a Ø{roundFace.mountingPitchDiameterMm} mm pitch circle.</p>
       <button type="button" onClick={() => applyEnvelope(roundFace.diameterMm, roundFace.diameterMm)}>Apply circular front outline</button>
+      {hasRoundOutline && <button type="button" onClick={() => onAddMountingMarks(circularMountingMarks(graphic,
+        roundFace.mountingPitchDiameterMm, roundFace.nominalThreadDiameterMm, roundFace.mountingHoleCount, roundFace.thread))}>Draw nominal mounting marks (first at top)</button>}
     </>}
     {envelope && <>
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
@@ -2617,10 +2632,10 @@ function PanelGraphicDimensions({ graphic, onGeometryChange }: {
   </fieldset>;
 }
 
-function GraphicProperties({ graphic, millimetres, deviceSheets, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
+function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMarks, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onAddMountingMarks: (marks: SchematicGraphic[]) => void; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
   const palette = ["#1565c0", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"];
   return <section className="properties-form graphic-properties" aria-label="Drawing graphic properties">
-    {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} />}
+    {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} onAddMountingMarks={onAddMountingMarks} />}
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
     {millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse") && <PanelGraphicDimensions graphic={graphic} onGeometryChange={onGeometryChange} />}
     {!graphic.points && <fieldset className="graphic-geometry"><legend>Exact geometry</legend>{(["x1", "y1", "x2", "y2"] as const).map((key) => <label key={key}>{key.toUpperCase()}<input type="number" step="1" defaultValue={graphic[key]} key={`${graphic.id}:${key}:${graphic[key]}`} onBlur={(event) => { if (!event.currentTarget.value.trim()) return; const value = Number(event.currentTarget.value); if (!Number.isFinite(value)) return; const next = { x1: graphic.x1, y1: graphic.y1, x2: graphic.x2, y2: graphic.y2, [key]: value }; onGeometryChange(next.x1, next.y1, next.x2, next.y2); }} /></label>)}</fieldset>}
