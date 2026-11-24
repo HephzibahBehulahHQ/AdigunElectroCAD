@@ -280,7 +280,7 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
       const { left, right, top, bottom } = outline.bounds;
       const clearance = frontEnvelopeClearance(source.definitionId, right - left, bottom - top);
       if (!clearance) continue;
-      const required = { left: left - clearance.lateral, right: right + clearance.lateral,
+      const required = { left: left - (clearance.lateral ?? 0), right: right + (clearance.lateral ?? 0),
         top: top - clearance.above, bottom: bottom + clearance.below };
       const obstruction = outlines.find(other => other !== outline &&
         (other.link.sheetId !== outline.link.sheetId || other.link.componentId !== outline.link.componentId) &&
