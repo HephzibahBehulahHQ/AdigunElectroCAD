@@ -1,0 +1,309 @@
+{
+  "id": "hbk-z6-mounting-comparison",
+  "name": "HBK Z6 mounting comparison",
+  "description": "Compare the documented compact, compact 500 kg and large 500 kg top envelope and bore patterns with their linked schematic devices.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "mounting-1",
+      "name": "Z6F 100 kg mounting",
+      "kind": "free-schematic",
+      "document": {
+        "id": "mounting-1",
+        "name": "Z6F 100 kg mounting",
+        "description": "Nominal millimetre envelope and three editable bores. The cable exit and body shape are omitted.",
+        "revision": 10,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "load-cell-outline",
+            "name": "Load cell top",
+            "kind": "rectangle",
+            "x1": 368.5,
+            "y1": 314,
+            "x2": 491.5,
+            "y2": 356,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "schematic-1",
+              "componentId": "breaker"
+            }
+          },
+          {
+            "id": "bore-1",
+            "name": "Mounting bore 1",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 377.4,
+            "y1": 330.9,
+            "x2": 385.6,
+            "y2": 339.1,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-2",
+            "name": "Mounting bore 2",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 395.4,
+            "y1": 330.9,
+            "x2": 403.6,
+            "y2": 339.1,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-3",
+            "name": "Load application bore",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 477.4,
+            "y1": 330.9,
+            "x2": 485.6,
+            "y2": 339.1,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "schematic-1",
+      "name": "Z6F 100 kg schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "schematic-1",
+        "name": "Z6F 100 kg schematic",
+        "description": "The load cell exposes its six bridge leads and housing shield for wiring. Excitation and signal conditioning are left for the user.",
+        "revision": 8,
+        "components": [
+          {
+            "id": "breaker",
+            "definitionId": "hbk.z6fc3.100kg",
+            "reference": "B1",
+            "x": 520,
+            "y": 340,
+            "rotation": 0,
+            "properties": {
+              "forceN": 0
+            }
+          }
+        ],
+        "wires": []
+      }
+    },
+    {
+      "id": "mounting-2",
+      "name": "Z6F 500 kg mounting",
+      "kind": "free-schematic",
+      "document": {
+        "id": "mounting-2",
+        "name": "Z6F 500 kg mounting",
+        "description": "Nominal millimetre envelope and three editable bores. The cable exit and body shape are omitted.",
+        "revision": 10,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "load-cell-outline",
+            "name": "Load cell top",
+            "kind": "rectangle",
+            "x1": 368.5,
+            "y1": 314,
+            "x2": 491.5,
+            "y2": 356,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "schematic-2",
+              "componentId": "breaker"
+            }
+          },
+          {
+            "id": "bore-1",
+            "name": "Mounting bore 1",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 376.25,
+            "y1": 329.75,
+            "x2": 386.75,
+            "y2": 340.25,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-2",
+            "name": "Mounting bore 2",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 394.25,
+            "y1": 329.75,
+            "x2": 404.75,
+            "y2": 340.25,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-3",
+            "name": "Load application bore",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 475.95,
+            "y1": 329.45,
+            "x2": 487.05,
+            "y2": 340.55,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "schematic-2",
+      "name": "Z6F 500 kg schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "schematic-2",
+        "name": "Z6F 500 kg schematic",
+        "description": "The load cell exposes its six bridge leads and housing shield for wiring. Excitation and signal conditioning are left for the user.",
+        "revision": 8,
+        "components": [
+          {
+            "id": "breaker",
+            "definitionId": "hbk.z6fc3.500kg",
+            "reference": "B2",
+            "x": 520,
+            "y": 340,
+            "rotation": 0,
+            "properties": {
+              "forceN": 0
+            }
+          }
+        ],
+        "wires": []
+      }
+    },
+    {
+      "id": "mounting-3",
+      "name": "Z6G 500 kg mounting",
+      "kind": "free-schematic",
+      "document": {
+        "id": "mounting-3",
+        "name": "Z6G 500 kg mounting",
+        "description": "Nominal millimetre envelope and three editable bores. The cable exit and body shape are omitted.",
+        "revision": 10,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "load-cell-outline",
+            "name": "Load cell top",
+            "kind": "rectangle",
+            "x1": 325,
+            "y1": 305,
+            "x2": 535,
+            "y2": 365,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "schematic-3",
+              "componentId": "breaker"
+            }
+          },
+          {
+            "id": "bore-1",
+            "name": "Mounting bore 1",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 333.5,
+            "y1": 328.5,
+            "x2": 346.5,
+            "y2": 341.5,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-2",
+            "name": "Mounting bore 2",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 373.5,
+            "y1": 328.5,
+            "x2": 386.5,
+            "y2": 341.5,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "bore-3",
+            "name": "Load application bore",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 507.45,
+            "y1": 329.45,
+            "x2": 518.55,
+            "y2": 340.55,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "schematic-3",
+      "name": "Z6G 500 kg schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "schematic-3",
+        "name": "Z6G 500 kg schematic",
+        "description": "The load cell exposes its six bridge leads and housing shield for wiring. Excitation and signal conditioning are left for the user.",
+        "revision": 8,
+        "components": [
+          {
+            "id": "breaker",
+            "definitionId": "hbk.z6gc3.500kg",
+            "reference": "B3",
+            "x": 520,
+            "y": 340,
+            "rotation": 0,
+            "properties": {
+              "forceN": 0
+            }
+          }
+        ],
+        "wires": []
+      }
+    }
+  ],
+  "schemaVersion": 1
+}

@@ -69,3 +69,7 @@ For added terminals on the generic user symbol, edit the local X/Y anchor offset
 ## Linked encoder drawing example
 
 Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawing.json) and open it through **File → Import JSON**. The mechanical sheet contains the Ø40 mm front view, three nominal M3 thread marks and the stepped side view. Select either outline and use **Go to schematic device** in Properties to inspect the two differential A-channel wires and their separate terminal levels. The example documents routing and nominal geometry. It omits the receiver circuit and encoder power wiring.
+
+## HBK Z6 mounting comparison
+
+Import the [HBK Z6 mounting comparison](../public/examples/hbk-z6-mounting-comparison.json) to compare the Z6F 100 kg, Z6F 500 kg and Z6G 500 kg drawings. Each millimetre sheet has an editable top envelope, two mounting bores and one load application bore. Select its outline and use **Go to schematic device** to inspect the six bridge leads and shield. The example covers nominal geometry and leaves excitation and signal conditioning unwired.
