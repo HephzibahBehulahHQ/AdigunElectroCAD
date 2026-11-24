@@ -45,7 +45,7 @@ export interface ProjectReport {
   bom: BomLine[];
   wires: WireLine[];
   terminals: TerminalLine[];
-  validation: Array<TopologyIssue & { sheet?: string }>;
+  validation: Array<TopologyIssue & { sheet?: string; drawingTarget?: { graphicId: string; sheetId?: string } }>;
   simulation?: ReturnType<typeof simulationResultsTable>;
 }
 
@@ -120,7 +120,7 @@ function panelOutlines(document: CircuitDocument) {
   if (document.drawingGrid?.units !== "mm") return [];
   return (document.graphics ?? []).flatMap(graphic =>
     (graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon") && graphic.deviceLink ? [{
-    name: graphic.name, link: graphic.deviceLink, kind: graphic.kind, points: graphic.points,
+    id: graphic.id, name: graphic.name, link: graphic.deviceLink, kind: graphic.kind, points: graphic.points,
     bounds: { left: Math.min(graphic.x1, graphic.x2), top: Math.min(graphic.y1, graphic.y2),
       right: Math.max(graphic.x1, graphic.x2), bottom: Math.max(graphic.y1, graphic.y2) },
   }] : []);
@@ -248,9 +248,9 @@ function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | unde
   return "possible";
 }
 
-function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
+function panelOutlineWarnings(document: CircuitDocument): ProjectReport["validation"] {
   const outlines = panelOutlines(document);
-  return outlines.flatMap((outline, index): TopologyIssue[] => {
+  return outlines.flatMap((outline, index): ProjectReport["validation"] => {
     for (let prior = 0; prior < index; prior++) {
       const other = outlines[prior];
       const overlap = panelOverlap(outline, other);
@@ -258,6 +258,7 @@ function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
         const exact = overlap === "exact";
         return [{
           severity: "warning", code: exact ? "panel-outline-overlap" : "panel-envelope-overlap",
+          drawingTarget: { graphicId: outline.id },
           message: (exact ? "Linked panel outlines overlap: " : "Linked panel envelopes overlap. Check the outline geometry: ") + other.name + " and " + outline.name + ".",
         }];
       }
@@ -399,7 +400,9 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     }
     wires.push(...report.wires.map((wire) => ({ ...wire, sheet: name })));
     terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: name })));
-    validation.push(...report.validation.map((issue) => ({ ...issue, sheet: name })));
+    validation.push(...report.validation.map(issue => ({ ...issue, sheet: name,
+      ...(issue.drawingTarget && { drawingTarget: { ...issue.drawingTarget, sheetId: sheet.id } }),
+    })));
     const outlines = panelOutlines(sheet.document);
     for (const outline of outlines) {
       if (outline.kind !== "rectangle") continue;
@@ -416,6 +419,7 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
         panelOverlap(other, clearanceOutline) && panelOverlap(other, outline) !== "exact");
       if (obstruction) validation.push({
         severity: "warning", code: "panel-installation-clearance", sheet: name,
+        drawingTarget: { sheetId: sheet.id, graphicId: obstruction.id },
         message: obstruction.name + (panelOverlap(obstruction, clearanceOutline) === "exact" ? " enters" : " may enter") +
           " the documented mounting clearance for " + outline.name + ".",
       });

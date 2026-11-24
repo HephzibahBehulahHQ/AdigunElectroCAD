@@ -2370,8 +2370,15 @@ export function App() {
             <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={activeSheetModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
             {panelGeometryIssues.length > 0 && <section className="console-section" aria-label="Panel geometry warnings">
               <strong>Panel geometry warnings</strong>
-              {panelGeometryIssues.map(({ code, message, sheet }, index) =>
-                <p className="issue" key={JSON.stringify([sheet, code, message, index])}>{sheet} · {message}</p>)}
+              {panelGeometryIssues.map(({ code, message, sheet, drawingTarget }, index) =>
+                <div className="issue" key={JSON.stringify([sheet, code, message, index])}>
+                  <p>{sheet} · {message}</p>
+                  {drawingTarget?.sheetId && <button type="button" onClick={() => {
+                    const target = project.sheets.find(item => item.id === drawingTarget.sheetId);
+                    const graphic = target?.document.graphics?.find(item => item.id === drawingTarget.graphicId);
+                    if (target && graphic) openLinkedGraphic(target.id, graphic);
+                  }}>Open affected footprint</button>}
+                </div>)}
             </section>}
             <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
           </div>
