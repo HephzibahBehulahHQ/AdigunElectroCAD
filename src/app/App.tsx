@@ -2732,6 +2732,7 @@ function PanelGraphicDimensions({ graphic, onGeometryChange }: {
   return <fieldset className="graphic-geometry"><legend>Panel geometry</legend>
     {(Object.keys(fields) as (keyof typeof fields)[]).map(name => field(name, fields[name]))}
     {graphic.kind === "ellipse" && field("Diameter", Math.abs(width - height) < 1e-8 ? width : undefined)}
+    {graphic.kind === "polygon" && <p>Changing the width or height scales the profile on that axis.</p>}
   </fieldset>;
 }
 
@@ -2741,7 +2742,7 @@ function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMa
     {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} onAddMountingMarks={onAddMountingMarks} onApplyProfile={onApplyProfile} onMarkReviewed={() => onChange({ footprintReviewRequired: false })} />}
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
     <label><input type="checkbox" checked={!graphic.labelHidden} onChange={event => onChange({ labelHidden: !event.target.checked })} /> Show canvas label</label>
-    {millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse") && <PanelGraphicDimensions graphic={graphic} onGeometryChange={onGeometryChange} />}
+    {millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon") && <PanelGraphicDimensions graphic={graphic} onGeometryChange={onGeometryChange} />}
     {!graphic.points && <fieldset className="graphic-geometry"><legend>Exact geometry</legend>{(["x1", "y1", "x2", "y2"] as const).map((key) => <label key={key}>{key.toUpperCase()}<input type="number" step="1" defaultValue={graphic[key]} key={`${graphic.id}:${key}:${graphic[key]}`} onBlur={(event) => { if (!event.currentTarget.value.trim()) return; const value = Number(event.currentTarget.value); if (!Number.isFinite(value)) return; const next = { x1: graphic.x1, y1: graphic.y1, x2: graphic.x2, y2: graphic.y2, [key]: value }; onGeometryChange(next.x1, next.y1, next.x2, next.y2); }} /></label>)}</fieldset>}
     <label>Color<input type="color" value={graphic.color} onChange={(event) => onChange({ color: event.target.value })} /></label>
     <div className="annotation-palette" aria-label="Graphic color palette">{palette.map((color) => <button key={color} type="button" aria-label={`Set graphic color ${color}`} title={color} style={{ backgroundColor: color }} onClick={() => onChange({ color })} />)}</div>

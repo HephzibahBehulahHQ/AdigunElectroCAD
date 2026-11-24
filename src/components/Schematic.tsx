@@ -172,7 +172,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const points = graphic.points ?? [];
     const clearance = millimetres && graphic.kind === "rectangle" && deviceDefinitionId
     ? frontEnvelopeClearance(deviceDefinitionId, width, height) : undefined;
-  const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse");
+  const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon");
   const dimensions = graphic.kind === "ellipse" && Math.abs(width - height) < 1e-8
     ? "Ø" + Number(width.toFixed(4)) + " mm"
     : Number(width.toFixed(4)) + " × " + Number(height.toFixed(4)) + " mm";

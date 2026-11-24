@@ -3,7 +3,7 @@ import { snapDrawingCoordinate } from "./drawingGrid";
 
 export type GraphicPathKind = "polyline" | "polygon";
 
-const polygonHasArea = (points: SchematicGraphicPoint[]) => Math.abs(points.reduce((sum, point, index) => { const next = points[(index + 1) % points.length]; return sum + point.x * next.y - next.x * point.y; }, 0)) >= 8;
+export const polygonHasArea = (points: SchematicGraphicPoint[]) => Math.abs(points.reduce((sum, point, index) => { const next = points[(index + 1) % points.length]; return sum + point.x * next.y - next.x * point.y; }, 0)) >= 8;
 
 export function graphicPathBounds(points: SchematicGraphicPoint[]) {
   const xs = points.map((point) => point.x); const ys = points.map((point) => point.y);
