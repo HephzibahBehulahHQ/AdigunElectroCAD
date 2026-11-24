@@ -93,3 +93,7 @@ Open [the editable M12 example](../public/examples/phoenix-m12-housing-and-pinou
 ### Phoenix Contact PTTB two-level pilot
 
 Open [the editable PTTB example](../public/examples/phoenix-pttb-two-level-pilot.json). Select either nominal envelope and use **Go to schematic device** to select X2. Run the simulation and press S1. The upper feed-through carries switched +24 V to H1 and the lower feed-through returns to 0 V. Disconnecting either circuit path extinguishes H1. The envelopes use the [Phoenix Contact 3210567 datasheet](https://www.phoenixcontact.com/en-us/products/multi-level-terminal-block-pttb-25-3210567?type=pdf).
+
+### Finder 38.51 changeover pilot and panel drawing
+
+Open [the editable Finder example](../public/examples/finder-3851-changeover-panel.json). The 6.2 × 87.8 mm front and 75.6 × 87.8 mm side envelopes both link to K1. Run the simulation and press S1 to transfer indication from H2 on NC 12 to H1 on NO 14. Releasing S1 restores H2. The outlines use the [Finder Series 38 drawing](https://cdn.findernet.com/app/uploads/S38EN.pdf#page=17).
