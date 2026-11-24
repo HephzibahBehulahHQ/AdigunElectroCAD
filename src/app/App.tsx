@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { User } from "@supabase/supabase-js";
-import { deviceEnvelope } from "../catalog/deviceEnvelopes";
+import { deviceEnvelope, roundDeviceFace } from "../catalog/deviceEnvelopes";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, placementLayout, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
@@ -2551,6 +2551,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   const current = key(graphic.deviceLink);
   const linked = devices.find(device => key(device.link) === current);
   const envelope = millimetres && linked && graphic.kind === "rectangle" ? deviceEnvelope(linked.definitionId) : undefined;
+  const roundFace = millimetres && linked && graphic.kind === "ellipse" ? roundDeviceFace(linked.definitionId) : undefined;
   const applyEnvelope = (horizontalMm: number, verticalMm: number) => {
     const x = (graphic.x1 + graphic.x2) / 2;
     const y = (graphic.y1 + graphic.y2) / 2;
@@ -2564,6 +2565,11 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       {devices.map(device => <option key={key(device.link)} value={key(device.link)}>{device.name}</option>)}
     </select></label>
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
+    {roundFace && <>
+      <a href={roundFace.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · Ø{roundFace.diameterMm} mm</a>
+      <p>{roundFace.mountingHoleCount} × {roundFace.thread} threads, {roundFace.threadDepthMm} mm deep, equally spaced on a Ø{roundFace.mountingPitchDiameterMm} mm pitch circle.</p>
+      <button type="button" onClick={() => applyEnvelope(roundFace.diameterMm, roundFace.diameterMm)}>Apply circular front outline</button>
+    </>}
     {envelope && <>
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
       {envelope.installationClearanceMm && <p>Mounting clearance (mm) · {envelope.installationClearanceMm.above} above, {envelope.installationClearanceMm.below} below, {envelope.installationClearanceMm.forward} forward{envelope.installationClearanceMm.lateral !== undefined && `, ${envelope.installationClearanceMm.lateral} lateral`}. The front envelope shows the upper and lower limits.</p>}

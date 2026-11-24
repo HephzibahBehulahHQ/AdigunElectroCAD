@@ -1,3 +1,5 @@
+import { omronEncoderCatalog } from "./omronEncoderCatalog";
+
 interface DeviceEnvelope {
   widthMm: number;
   heightMm: number;
@@ -49,6 +51,20 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
 
 export function deviceEnvelope(definitionId: string): DeviceEnvelope | undefined {
   return deviceEnvelopes.get(definitionId);
+}
+
+const omronEncoderIds = new Set(omronEncoderCatalog.map(({ id }) => id));
+const omronEncoderFace = {
+  diameterMm: 40,
+  mountingPitchDiameterMm: 30,
+  thread: "M3",
+  threadDepthMm: 7,
+  mountingHoleCount: 3,
+  sourceUrl: "https://www.ia.omron.com/products/family/487/dimension.html",
+};
+
+export function roundDeviceFace(definitionId: string) {
+  return omronEncoderIds.has(definitionId) ? omronEncoderFace : undefined;
 }
 
 export function frontEnvelopeClearance(definitionId: string, width: number, height: number) {
