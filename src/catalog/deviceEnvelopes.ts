@@ -22,6 +22,11 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
       { rail: "NS 35/15", depthMm: 54.9 },
     ],
   }],
+  ["finder.38.51.7.024.0050", {
+    // Overall side depth includes the 3.5 mm projection in the outline drawing.
+    widthMm: 6.2, heightMm: 87.8, depthMm: 75.6,
+    sourceUrl: "https://cdn.findernet.com/app/uploads/S38EN.pdf#page=17",
+  }],
   ["iec.motor-starter.01", {
     widthMm: 45, heightMm: 85, depthMm: 107,
     installationClearanceMm: { above: 10, below: 10, forward: 10, lateral: 0 },
