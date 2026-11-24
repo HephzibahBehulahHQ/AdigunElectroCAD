@@ -126,13 +126,41 @@ function panelOutlines(document: CircuitDocument) {
   }] : []);
 }
 
+type PanelOutline = ReturnType<typeof panelOutlines>[number];
+
+function panelOverlap(a: Pick<PanelOutline, "kind" | "bounds">, b: Pick<PanelOutline, "kind" | "bounds">): "exact" | "possible" | undefined {
+  if (!componentFootprintsOverlap(a.bounds, b.bounds)) return;
+  if (a.kind === "rectangle" && b.kind === "rectangle") return "exact";
+  const ellipse = a.kind === "ellipse" ? a.bounds : b.kind === "ellipse" ? b.bounds : undefined;
+  const rectangle = a.kind === "rectangle" ? a.bounds : b.kind === "rectangle" ? b.bounds : undefined;
+  if (ellipse && rectangle) {
+    const x = (ellipse.left + ellipse.right) / 2;
+    const y = (ellipse.top + ellipse.bottom) / 2;
+    const dx = Math.max(rectangle.left - x, x - rectangle.right, 0) / ((ellipse.right - ellipse.left) / 2);
+    const dy = Math.max(rectangle.top - y, y - rectangle.bottom, 0) / ((ellipse.bottom - ellipse.top) / 2);
+    return Math.hypot(dx, dy) < 1 - 1e-10 ? "exact" : undefined;
+  }
+  if (a.kind === "ellipse" && b.kind === "ellipse") {
+    const diameterA = a.bounds.right - a.bounds.left;
+    const diameterB = b.bounds.right - b.bounds.left;
+    if (Math.abs(diameterA - (a.bounds.bottom - a.bounds.top)) < 1e-8 &&
+      Math.abs(diameterB - (b.bounds.bottom - b.bounds.top)) < 1e-8) {
+      const dx = a.bounds.left + diameterA / 2 - b.bounds.left - diameterB / 2;
+      const dy = a.bounds.top + diameterA / 2 - b.bounds.top - diameterB / 2;
+      return Math.hypot(dx, dy) < (diameterA + diameterB) / 2 - 1e-8 ? "exact" : undefined;
+    }
+  }
+  return "possible";
+}
+
 function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
   const outlines = panelOutlines(document);
   return outlines.flatMap((outline, index): TopologyIssue[] => {
     for (let prior = 0; prior < index; prior++) {
       const other = outlines[prior];
-      if (componentFootprintsOverlap(outline.bounds, other.bounds)) {
-        const exact = outline.kind === "rectangle" && other.kind === "rectangle";
+      const overlap = panelOverlap(outline, other);
+      if (overlap) {
+        const exact = overlap === "exact";
         return [{
           severity: "warning", code: exact ? "panel-outline-overlap" : "panel-envelope-overlap",
           message: (exact ? "Linked panel outlines overlap: " : "Linked panel envelopes overlap. Check the outline geometry: ") + other.name + " and " + outline.name + ".",
@@ -287,12 +315,13 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
       if (!clearance) continue;
       const required = { left: left - (clearance.lateral ?? 0), right: right + (clearance.lateral ?? 0),
         top: top - clearance.above, bottom: bottom + clearance.below };
+      const clearanceOutline = { kind: "rectangle" as const, bounds: required };
       const obstruction = outlines.find(other => other !== outline &&
         (other.link.sheetId !== outline.link.sheetId || other.link.componentId !== outline.link.componentId) &&
-        componentFootprintsOverlap(other.bounds, required) && !componentFootprintsOverlap(other.bounds, outline.bounds));
+        panelOverlap(other, clearanceOutline) && panelOverlap(other, outline) !== "exact");
       if (obstruction) validation.push({
         severity: "warning", code: "panel-installation-clearance", sheet: name,
-        message: obstruction.name + (obstruction.kind === "rectangle" ? " enters" : " may enter") +
+        message: obstruction.name + (panelOverlap(obstruction, clearanceOutline) === "exact" ? " enters" : " may enter") +
           " the documented mounting clearance for " + outline.name + ".",
       });
     }
