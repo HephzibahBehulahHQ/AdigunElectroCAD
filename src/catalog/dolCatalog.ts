@@ -119,7 +119,7 @@ export const componentLibraryCatalog: ElectricalComponentDefinition[] = [
   genericThreePhaseMotor,
   ...modeledCatalog.filter((definition) => sourceBackedCatalogIds.has(definition.id)),
   ...windingCatalog,
-  ...userSymbolCatalog,
+  ...userSymbolCatalog.filter(({ id }) => id !== "user.drawn-symbol"),
   interlockedContactor,
 ];
 export const componentLibraryById = new Map(componentLibraryCatalog.map((definition) => [definition.id, definition]));

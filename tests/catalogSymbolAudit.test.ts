@@ -22,7 +22,7 @@ it("audits rendering and terminal identity across selectable and stored definiti
       symbolId: definition.symbolId, componentName: definition.name,
       properties: definition.propertiesSchema, x: 0, y: 0,
     }));
-    if ((markup && !markup.includes("data-symbol-fallback")) || definition.simulationModelId === "six-terminal-windings" || definition.id === "user.drawn-symbol") row.dedicatedMarkup++;
+    if ((markup && !markup.includes("data-symbol-fallback")) || definition.simulationModelId === "six-terminal-windings" || (definition.id === "user.drawn-symbol" && !selectable.has(definition.id))) row.dedicatedMarkup++;
     else fallback.push(definition.id);
     const document: CircuitDocument = {
       id: "catalog-audit", name: "Catalog audit", description: "", revision: 1, wires: [],
