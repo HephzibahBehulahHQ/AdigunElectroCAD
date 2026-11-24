@@ -1,0 +1,104 @@
+{
+  "id": "rittal-ax-panel-hardware",
+  "name": "Rittal AX enclosure and panel hardware",
+  "description": "Compare the AX 1031.000 cabinet and supplied mounting plate, then edit the DIN rail and trunking cut lengths on the second sheet.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "Cabinet and plate",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "Cabinet and plate",
+        "description": "Editable front views of the enclosure and its supplied mounting plate, shown side by side.",
+        "revision": 5,
+        "components": [
+          {
+            "id": "enclosure",
+            "definitionId": "rittal.ax.1031000",
+            "reference": "ENC1",
+            "x": 285,
+            "y": 330,
+            "rotation": 0,
+            "properties": {
+              "widthMm": 380,
+              "heightMm": 300,
+              "depthMm": 210
+            }
+          },
+          {
+            "id": "plate",
+            "definitionId": "rittal.ax.1031000.included-plate",
+            "reference": "MP1",
+            "x": 775,
+            "y": 330,
+            "rotation": 0,
+            "properties": {
+              "widthMm": 330,
+              "heightMm": 275,
+              "depthMm": 2
+            }
+          }
+        ],
+        "wires": [],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "hardware-cut-plan",
+      "name": "Rail and trunking cut plan",
+      "kind": "free-schematic",
+      "document": {
+        "id": "hardware-cut-plan",
+        "name": "Rail and trunking cut plan",
+        "description": "Independent cut lengths for a 35 mm DIN rail and generic trunking. Cut lengths are editable design choices.",
+        "revision": 5,
+        "components": [
+          {
+            "id": "din-rail",
+            "definitionId": "phoenix-contact.din-rail.0801733",
+            "reference": "DR1",
+            "x": 540,
+            "y": 240,
+            "rotation": 0,
+            "properties": {
+              "widthMm": 35,
+              "depthMm": 7.5,
+              "stockLengthMm": 2000,
+              "cutLengthMm": 220,
+              "perforated": true,
+              "material": "Steel"
+            }
+          },
+          {
+            "id": "trunking",
+            "definitionId": "panel.cable-tray-mechanical",
+            "reference": "CT1",
+            "x": 540,
+            "y": 450,
+            "rotation": 0,
+            "properties": {
+              "lengthMm": 220,
+              "widthMm": 100,
+              "depthMm": 50
+            }
+          }
+        ],
+        "wires": [],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
