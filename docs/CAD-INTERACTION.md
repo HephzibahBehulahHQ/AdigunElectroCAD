@@ -101,3 +101,7 @@ Open [the editable Finder example](../public/examples/finder-3851-changeover-pan
 ### Siemens 7.5 kW direct-on-line starter
 
 Open [the editable starter drawing](../public/examples/siemens-dol-starter-panel.json). The SENTRON breaker, SIRIUS contactor, and 3RU2126-4AB0 overload front and side envelopes link to Q1, KM1, and F1 in the wired schematic. The overload views show the standalone device. Run the simulation, press and release S1 to latch the starter, then press S0 to stop. The simulation covers nominal circuit operation and overload contact state. Protection coordination and motor transients are outside its scope.
+
+### SIMOTICS six-lead winding connections
+
+Open [the editable winding comparison](../public/examples/siemens-six-lead-winding-connections.json). The 690 V star sheet joins U2, V2, and W2 at one node. The 400 V delta sheet connects U2 to W1, V2 to U1, and W2 to V1. Both show the separate protective-earth connection. The drawing illustrates fixed winding connections and omits starter controls, protection, and motor transient modeling.

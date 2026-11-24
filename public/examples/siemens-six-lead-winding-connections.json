@@ -1,0 +1,363 @@
+{
+  "id": "siemens-six-lead-winding-connections",
+  "name": "SIMOTICS six-lead star and delta connections",
+  "description": "Compare 690 V star and 400 V delta wiring for the same six-lead SIMOTICS motor type on separate schematic sheets.",
+  "revision": 2,
+  "sheets": [
+    {
+      "id": "star",
+      "name": "Star · 690 V",
+      "kind": "free-schematic",
+      "document": {
+        "id": "star",
+        "name": "Star · 690 V",
+        "description": "U2, V2 and W2 share a star point.",
+        "components": [
+          {
+            "id": "supply",
+            "definitionId": "iec.ac-supply.01",
+            "reference": "X1",
+            "x": 520,
+            "y": 160,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 690,
+              "frequencyHz": 50,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "motor",
+            "definitionId": "iec.induction-motor.41",
+            "reference": "M1",
+            "x": 520,
+            "y": 370,
+            "rotation": 0,
+            "properties": {
+              "equivalentCircuitEnabled": false
+            }
+          },
+          {
+            "id": "star",
+            "definitionId": "junction.power",
+            "reference": "X2",
+            "x": 520,
+            "y": 570,
+            "rotation": 0,
+            "properties": {}
+          }
+        ],
+        "wires": [
+          {
+            "id": "L1",
+            "netName": "L1",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l1-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "u1"
+            },
+            "points": []
+          },
+          {
+            "id": "L2",
+            "netName": "L2",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l2-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "v1"
+            },
+            "points": []
+          },
+          {
+            "id": "L3",
+            "netName": "L3",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l3-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "w1"
+            },
+            "points": []
+          },
+          {
+            "id": "PE",
+            "netName": "PE",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "pe"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "pe"
+            },
+            "points": [
+              {
+                "x": 680,
+                "y": 160
+              },
+              {
+                "x": 680,
+                "y": 65
+              },
+              {
+                "x": 320,
+                "y": 65
+              },
+              {
+                "x": 320,
+                "y": 370
+              }
+            ]
+          },
+          {
+            "id": "Star U",
+            "netName": "Star U",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "u2"
+            },
+            "to": {
+              "componentId": "star",
+              "terminalId": "node"
+            },
+            "points": []
+          },
+          {
+            "id": "Star V",
+            "netName": "Star V",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "v2"
+            },
+            "to": {
+              "componentId": "star",
+              "terminalId": "node"
+            },
+            "points": []
+          },
+          {
+            "id": "Star W",
+            "netName": "Star W",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "w2"
+            },
+            "to": {
+              "componentId": "star",
+              "terminalId": "node"
+            },
+            "points": []
+          }
+        ],
+        "revision": 2
+      }
+    },
+    {
+      "id": "delta",
+      "name": "Delta · 400 V",
+      "kind": "free-schematic",
+      "document": {
+        "id": "delta",
+        "name": "Delta · 400 V",
+        "description": "U2–W1, V2–U1 and W2–V1 close the delta.",
+        "components": [
+          {
+            "id": "supply",
+            "definitionId": "iec.ac-supply.01",
+            "reference": "X1",
+            "x": 520,
+            "y": 160,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 400,
+              "frequencyHz": 50,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "motor",
+            "definitionId": "iec.induction-motor.41",
+            "reference": "M1",
+            "x": 520,
+            "y": 370,
+            "rotation": 0,
+            "properties": {
+              "equivalentCircuitEnabled": false
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "L1",
+            "netName": "L1",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l1-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "u1"
+            },
+            "points": []
+          },
+          {
+            "id": "L2",
+            "netName": "L2",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l2-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "v1"
+            },
+            "points": []
+          },
+          {
+            "id": "L3",
+            "netName": "L3",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l3-out"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "w1"
+            },
+            "points": []
+          },
+          {
+            "id": "PE",
+            "netName": "PE",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "pe"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "pe"
+            },
+            "points": [
+              {
+                "x": 680,
+                "y": 160
+              },
+              {
+                "x": 680,
+                "y": 65
+              },
+              {
+                "x": 320,
+                "y": 65
+              },
+              {
+                "x": 320,
+                "y": 370
+              }
+            ]
+          },
+          {
+            "id": "delta-link-1",
+            "netName": "U2-W1",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "u2"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "w1"
+            },
+            "points": [
+              {
+                "x": 490,
+                "y": 447
+              },
+              {
+                "x": 390,
+                "y": 447
+              },
+              {
+                "x": 390,
+                "y": 282
+              },
+              {
+                "x": 550,
+                "y": 282
+              }
+            ]
+          },
+          {
+            "id": "delta-link-2",
+            "netName": "V2-U1",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "v2"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "u1"
+            },
+            "points": [
+              {
+                "x": 520,
+                "y": 478
+              },
+              {
+                "x": 355,
+                "y": 478
+              },
+              {
+                "x": 355,
+                "y": 257
+              },
+              {
+                "x": 490,
+                "y": 257
+              }
+            ]
+          },
+          {
+            "id": "delta-link-3",
+            "netName": "W2-V1",
+            "from": {
+              "componentId": "motor",
+              "terminalId": "w2"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "v1"
+            },
+            "points": [
+              {
+                "x": 550,
+                "y": 510
+              },
+              {
+                "x": 650,
+                "y": 510
+              },
+              {
+                "x": 650,
+                "y": 230
+              },
+              {
+                "x": 520,
+                "y": 230
+              }
+            ]
+          }
+        ],
+        "revision": 2
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
