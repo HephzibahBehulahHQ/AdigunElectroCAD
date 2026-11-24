@@ -1,10 +1,20 @@
 import type { SchematicGraphic } from "../types/electrical";
+import { graphicPathBounds, polygonHasArea } from "./graphicPath";
 
 export function setSchematicGraphicBounds(graphic: SchematicGraphic, bounds: Pick<SchematicGraphic, "x1" | "y1" | "x2" | "y2">, minimumSpan = 4): SchematicGraphic | null {
-  if (graphic.points || !Object.values(bounds).every(Number.isFinite)) return null;
+  if (!Object.values(bounds).every(Number.isFinite)) return null;
   const { x1, y1, x2, y2 } = bounds;
   const span = graphic.kind === "line" ? Math.hypot(x2 - x1, y2 - y1) : Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
-  return span >= minimumSpan - 1e-8 ? { ...graphic, x1, y1, x2, y2 } : null;
+  if (span < minimumSpan - 1e-8) return null;
+  if (!graphic.points) return { ...graphic, x1, y1, x2, y2 };
+  if (graphic.kind !== "polygon" || x1 >= x2 || y1 >= y2) return null;
+  const original = graphicPathBounds(graphic.points);
+  const points = graphic.points.map(({ x, y }) => ({
+    x: x1 + (x - original.x1) / (original.x2 - original.x1) * (x2 - x1),
+    y: y1 + (y - original.y1) / (original.y2 - original.y1) * (y2 - y1),
+  }));
+  if (!points.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)) || !polygonHasArea(points)) return null;
+  return { ...graphic, ...bounds, points };
 }
 
 export function duplicateSchematicGraphic(graphic: SchematicGraphic, id: string, offset = 20): SchematicGraphic {

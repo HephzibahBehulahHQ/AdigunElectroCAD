@@ -33,7 +33,15 @@ it("accepts signed graphic coordinates and rejects spans too small to draw", () 
   expect(setSchematicGraphicBounds(rectangle, { x1: 80, y1: 90, x2: 82, y2: 270 })).toBeNull();
 });
 
-it("keeps path vertex geometry on the vertex editor", () => {
+it("resizes a linked polygon proportionally on each axis and rejects a collapsed profile", () => {
+  const polygon: SchematicGraphic = { ...pathGraphic, kind: "polygon", deviceLink: { sheetId: "source", componentId: "encoder" } };
+  const bounds = { x1: 40, y1: 50, x2: 240, y2: 100 };
+  expect(setSchematicGraphicBounds(polygon, bounds, 0.1)).toEqual({ ...polygon, ...bounds,
+    points: [{ x: 40, y: 50 }, { x: 40, y: 100 }, { x: 240, y: 100 }] });
+  expect(setSchematicGraphicBounds(polygon, { x1: 0, y1: 0, x2: 0.5, y2: 0.5 }, 0.1)).toBeNull();
+});
+
+it("keeps polyline geometry on the vertex editor", () => {
   const path = { ...rectangle, kind: "polyline" as const, points: [{ x: 100, y: 120 }, { x: 300, y: 240 }] };
   expect(setSchematicGraphicBounds(path, { x1: 80, y1: 90, x2: 360, y2: 270 })).toBeNull();
 });
