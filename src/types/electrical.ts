@@ -116,11 +116,17 @@ export type SchematicGraphicKind = "line" | "rectangle" | "ellipse" | "polyline"
 
 export interface SchematicGraphicPoint { x: number; y: number }
 
+export interface GraphicDeviceLink {
+  sheetId: string;
+  componentId: string;
+}
+
 /** Visual drafting geometry; it does not represent electrical connectivity. */
 export interface SchematicGraphic {
   id: string;
   name: string;
   kind: SchematicGraphicKind;
+  deviceLink?: GraphicDeviceLink;
   x1: number;
   y1: number;
   x2: number;
@@ -133,7 +139,7 @@ export interface SchematicGraphic {
 }
 
 /** One user-drawn primitive stored relative to a reusable component symbol origin. */
-export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name">;
+export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name" | "deviceLink">;
 
 export interface DrawingGuide {
   id: string;
