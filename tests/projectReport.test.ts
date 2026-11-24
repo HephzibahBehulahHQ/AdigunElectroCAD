@@ -221,19 +221,24 @@ it("reports a blocked branch leg and clears the warning when its obstacle moves"
   expect(document.wires[1].branchOfWireId).toBe("parent");
 });
 
-it("reports an unresolved panel link by sheet and clears it when the source returns", () => {
+it("reports unresolved and pending panel footprints by sheet", () => {
   const project = addFreeSchematicSheet(createBlankProject());
   const [source, panel] = project.sheets;
   const device = createDolMotorStarter().components[0];
   source.document.components = [device];
   panel.document.graphics = [{ id: "footprint", name: "Device front", kind: "rectangle", x1: 100, y1: 100, x2: 145, y2: 185,
     color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: source.id, componentId: device.id } }];
-  const issues = () => createProjectWideReport(project, catalogById).validation.filter(issue => issue.code === "unresolved-panel-device");
+  const issues = () => createProjectWideReport(project, catalogById).validation.filter(issue =>
+    issue.code === "unresolved-panel-device" || issue.code === "panel-footprint-review");
   expect(issues()).toEqual([]);
+  panel.document.graphics[0].footprintReviewRequired = true;
   source.document.components = [];
   expect(issues()).toEqual([{ severity: "warning", code: "unresolved-panel-device", sheet: panel.name + " · Sheet 2",
     message: "Device front links to a missing schematic device. Relink it in the graphic Properties." }]);
   source.document.components = [{ ...device, reference: "X2" }];
+  expect(issues()).toEqual([{ severity: "warning", code: "panel-footprint-review", sheet: panel.name + " · Sheet 2",
+    message: "Device front needs footprint review for X2. Verify the outline dimensions and mounting features in the graphic Properties." }]);
+  delete panel.document.graphics[0].footprintReviewRequired;
   expect(issues()).toEqual([]);
 });
 

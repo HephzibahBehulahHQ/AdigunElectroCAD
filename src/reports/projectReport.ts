@@ -292,10 +292,17 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     }
     for (const graphic of sheet.document.graphics ?? []) {
       const link = graphic.deviceLink;
-      if (link && !sheetLocations.get(link.sheetId)?.components.has(link.componentId)) {
+      if (!link) continue;
+      const device = sheetLocations.get(link.sheetId)?.components.get(link.componentId);
+      if (!device) {
         validation.push({
           severity: "warning", code: "unresolved-panel-device", sheet: name,
           message: graphic.name + " links to a missing schematic device. Relink it in the graphic Properties.",
+        });
+      } else if (graphic.footprintReviewRequired) {
+        validation.push({
+          severity: "warning", code: "panel-footprint-review", sheet: name,
+          message: `${graphic.name} needs footprint review for ${device.reference}. Verify the outline dimensions and mounting features in the graphic Properties.`,
         });
       }
     }
