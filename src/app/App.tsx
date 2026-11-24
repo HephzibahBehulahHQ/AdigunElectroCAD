@@ -2569,6 +2569,8 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   const current = key(graphic.deviceLink);
   const linked = devices.find(device => key(device.link) === current);
   const envelope = millimetres && linked && graphic.kind === "rectangle" ? deviceEnvelope(linked.definitionId) : undefined;
+  const topBores = envelope?.topBores && Math.abs(Math.abs(graphic.x2 - graphic.x1) - envelope.widthMm) < 1e-8 &&
+    Math.abs(Math.abs(graphic.y2 - graphic.y1) - envelope.depthMm) < 1e-8 ? envelope.topBores : undefined;
   const roundDevice = millimetres && linked ? roundDeviceFace(linked.definitionId) : undefined;
   const roundFace = graphic.kind === "ellipse" ? roundDevice : undefined;
   const side = graphic.kind === "rectangle" || graphic.kind === "polygon" ? roundDevice?.side : undefined;
@@ -2614,8 +2616,22 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
       {envelope.installationClearanceMm && <p>Mounting clearance (mm) · {envelope.installationClearanceMm.above} above, {envelope.installationClearanceMm.below} below, {envelope.installationClearanceMm.forward} forward{envelope.installationClearanceMm.lateral !== undefined && `, ${envelope.installationClearanceMm.lateral} lateral`}. The front envelope shows the upper and lower limits.</p>}
       {envelope.installationClearanceMm?.sourceUrl && <a href={envelope.installationClearanceMm.sourceUrl} target="_blank" rel="noreferrer">Installation clearances source</a>}
-      <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
-      <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
+      {envelope.topBores ? <>
+        <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.depthMm)}>Apply load cell top envelope</button>
+        {topBores && <button type="button" onClick={() => {
+          const left = Math.min(graphic.x1, graphic.x2);
+          const y = (graphic.y1 + graphic.y2) / 2;
+          onAddMountingMarks(topBores.map(({ fromLeftMm, diameterMm, name }) => {
+            const x = left + fromLeftMm;
+            const radius = diameterMm / 2;
+            return { id: `graphic-${crypto.randomUUID()}`, name, kind: "ellipse", labelHidden: true,
+              x1: x - radius, y1: y - radius, x2: x + radius, y2: y + radius, color: graphic.color, fillColor: null, strokeWidth: 1 };
+          }));
+        }}>Draw nominal load cell bores</button>}
+      </> : <>
+        <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
+        <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
+      </>}
       {envelope.railMountedDepths?.map(({ rail, depthMm }) =>
         <button type="button" key={rail} onClick={() => applyEnvelope(depthMm, envelope.heightMm)}>
           Apply {rail} side envelope ({depthMm} mm)
