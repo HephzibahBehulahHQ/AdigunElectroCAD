@@ -257,12 +257,15 @@ if (symbolId === "transformer" || symbolId.startsWith("transformer-")) {
     return <g className={mark} aria-label={`Siemens SIRIUS 3RU2126-4AB0 three-pole Class 10 overload relay, 95/96 ${contact95Closed ? "closed" : "open"}, 97/98 ${contact97Closed ? "closed" : "open"}`} data-state={tripped ? "tripped" : "healthy"}>
       <rect x={x - 41} y={y - 13} width="82" height="26" />
       {[-32, 0, 32].map(offset => <g key={offset}><path d={`M ${x + offset} ${y - 27} V ${y - 12} M ${x + offset} ${y - 12} L ${x + offset - 5} ${y - 7} L ${x + offset + 5} ${y - 2} L ${x + offset - 5} ${y + 3} L ${x + offset + 5} ${y + 8} L ${x + offset} ${y + 12} V ${y + 27}`} /></g>)}
-      <path d={contact95Closed
-        ? `M ${x - 47} ${y - 12} H ${x - 25} V ${y + 12} H ${x - 47}`
-        : `M ${x - 47} ${y - 12} H ${x - 31} L ${x - 22} ${y - 2} M ${x - 25} ${y + 3} V ${y + 12} H ${x - 47}`} />
-      <path d={contact97Closed
-        ? `M ${x + 47} ${y - 12} H ${x + 25} V ${y + 12} H ${x + 47}`
-        : `M ${x + 47} ${y - 12} H ${x + 31} L ${x + 22} ${y - 2} M ${x + 25} ${y + 3} V ${y + 12} H ${x + 47}`} />
+      {([{ side: -1, pair: "95/96", closed: contact95Closed },
+        { side: 1, pair: "97/98", closed: contact97Closed }] as const).map(({ side, pair, closed }) => {
+        const anchorX = x + side * 47;
+        const bladeX = x + side * 44;
+        const openTip = x + side * 52;
+        return <path key={pair} data-overload-contact={pair} data-state={closed ? "closed" : "open"} d={closed
+          ? `M ${anchorX} ${y - 12} H ${bladeX} V ${y + 12} H ${anchorX}`
+          : `M ${anchorX} ${y - 12} H ${bladeX} L ${openTip} ${y - 2} M ${bladeX} ${y + 3} V ${y + 12} H ${anchorX}`} />;
+      })}
       <circle cx={x + 19} cy={y + 18} r="3" fill={tripped ? "#c62828" : "#16824a"} aria-label={tripped ? "Tripped" : "Healthy"} />
     </g>;
   }
