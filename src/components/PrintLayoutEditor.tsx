@@ -1,11 +1,12 @@
 import { defaultPrintLayout, paperFormats, type PrintLayout } from "../cad/printLayout";
 
-export function PrintLayoutEditor({ layout, onSave, onRemove }: {
+export function PrintLayoutEditor({ layout, millimetres = false, onSave, onRemove }: {
+  millimetres?: boolean;
   layout?: PrintLayout;
   onSave: (layout: PrintLayout) => void;
   onRemove: () => void;
 }) {
-  const saved = layout ?? defaultPrintLayout;
+  const saved = layout ?? (millimetres ? { ...defaultPrintLayout, unitsPerMm: 1 } : defaultPrintLayout);
   return <section className="properties-form" aria-label="Print layout">
     <strong>Print layout</strong>
     <form className="properties-form" key={JSON.stringify(saved)} onSubmit={event => {
@@ -22,7 +23,8 @@ export function PrintLayoutEditor({ layout, onSave, onRemove }: {
       <label>Orientation<select name="orientation" defaultValue={saved.orientation}><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
       {([
         ["customWidthMm", "Custom width (mm)"], ["customHeightMm", "Custom height (mm)"], ["marginMm", "Margin (mm)"],
-        ["unitsPerMm", "Drawing units per printed mm"], ["x", "Frame origin X (du)"], ["y", "Frame origin Y (du)"],
+        ["unitsPerMm", millimetres ? "Drawing mm per printed mm" : "Drawing units per printed mm"],
+        ["x", "Frame origin X (" + (millimetres ? "mm" : "du") + ")"], ["y", "Frame origin Y (" + (millimetres ? "mm" : "du") + ")"],
       ] as const).map(([key, label]) => <label key={key}>{label}<input required name={key} type="number" step="any" defaultValue={saved[key]} /></label>)}
       <label>Title block text<input name="title" maxLength={80} defaultValue={saved.title} /></label>
       <label className="property-checkbox">Show frame on canvas<input name="visible" type="checkbox" defaultChecked={saved.visible} /></label>
