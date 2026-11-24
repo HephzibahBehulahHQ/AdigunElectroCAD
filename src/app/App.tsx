@@ -1095,8 +1095,13 @@ export function App() {
 
   const printSchematic = () => {
     try {
-      const capture = captureSchematicSvg("frame");
-      if (capture) openSchematicPrint(schematicPrintHtml(capture.markup, isReferenceSheet ? undefined : document.printLayout));
+      const layout = isReferenceSheet ? undefined : document.printLayout;
+      const naturalScale = !isReferenceSheet && drawingGrid.units === "mm" && !layout;
+      const capture = captureSchematicSvg(naturalScale ? "drawing" : "frame");
+      if (capture) {
+        const physicalSize = naturalScale ? { width: capture.width, height: capture.height } : undefined;
+        openSchematicPrint(schematicPrintHtml(capture.markup, layout, physicalSize));
+      }
     } catch {
       setNotice("The schematic could not be prepared for printing.");
     }
@@ -1114,9 +1119,11 @@ export function App() {
         const drawing = host.querySelector("svg.schematic");
         if (!(drawing instanceof SVGSVGElement)) throw new Error("Missing sheet drawing");
         const layout = sheet.kind === "reference-dol" ? undefined : sheet.document.printLayout;
-        const { svg, clipsContent } = snapshotSchematicSvg(drawing, "frame", layout);
-        if (clipsContent) clipped.push(sheet.name);
-        return { layout, svg: prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(svg)) };
+        const naturalScale = sheet.kind === "free-schematic" && sheet.document.drawingGrid?.units === "mm" && !layout;
+        const { svg, clipsContent } = snapshotSchematicSvg(drawing, naturalScale ? "drawing" : "frame", layout, naturalScale);
+        if (!naturalScale && clipsContent) clipped.push(sheet.name);
+        const physicalSize = naturalScale ? { width: svg.viewBox.baseVal.width, height: svg.viewBox.baseVal.height } : undefined;
+        return { layout, physicalSize, svg: prepareStandaloneSchematicSvg(new XMLSerializer().serializeToString(svg)) };
       });
       if (clipped.length && !window.confirm(`The print frame clips drawing content on ${clipped.join(", ")}. Print the project frames anyway?`)) return;
       openSchematicPrint(workbookPrintHtml(pages));
