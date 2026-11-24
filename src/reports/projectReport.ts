@@ -249,6 +249,15 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     wires.push(...report.wires.map((wire) => ({ ...wire, sheet: name })));
     terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: name })));
     validation.push(...report.validation.map((issue) => ({ ...issue, sheet: name })));
+    for (const graphic of sheet.document.graphics ?? []) {
+      const link = graphic.deviceLink;
+      if (link && !sheetLocations.get(link.sheetId)?.components.has(link.componentId)) {
+        validation.push({
+          severity: "warning", code: "unresolved-panel-device", sheet: name,
+          message: graphic.name + " links to a missing schematic device. Relink it in the graphic Properties.",
+        });
+      }
+    }
   }
 
   const describePoint = ({ sheetId, endpoint, gridReference }: ProjectContinuationPoint) => {
