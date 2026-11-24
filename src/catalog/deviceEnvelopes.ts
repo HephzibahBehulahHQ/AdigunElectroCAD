@@ -13,6 +13,10 @@ interface DeviceEnvelope {
 }
 
 const deviceEnvelopes = new Map<string, DeviceEnvelope>([
+  ["siemens.4ac37.4ac3716-0", {
+    widthMm: 36, heightMm: 90, depthMm: 64,
+    sourceUrl: "https://docs.rs-online.com/3722/A700000007298810.pdf#page=1",
+  }],
   ["iec.dc-control-supply.01", {
     widthMm: 52.5, heightMm: 80, depthMm: 100,
     sourceUrl: "https://cache.industry.siemens.com/dl/files/785/55017785/att_1104125/v1/A5E51869189-1-XB_OP-INST_SITOP-PSU100C-60W-100W_2022-05-15.pdf?download=true",

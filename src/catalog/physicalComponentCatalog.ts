@@ -46,6 +46,23 @@ const originalProductPages = {
 } as const;
 
 export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
+  {
+    id: "siemens.4ac37.4ac3716-0", name: "Siemens SENTRON 4AC3716-0 · 230/8 V AC", category: "Transformers",
+    referencePrefix: "T", symbolId: "transformer", terminals: [
+      { id: "p1", label: "1", kind: "power", direction: "input" },
+      { id: "p2", label: "7", kind: "power", direction: "input" },
+      { id: "s1", label: "4", kind: "control", direction: "output" },
+      { id: "s2", label: "8", kind: "control", direction: "output" },
+    ],
+    description: "Single-phase 16 VA safety transformer with isolated 230 V primary and 8 V AC secondary.",
+    propertiesSchema: { primaryVoltageV: 230, secondaryVoltageV: 8, frequencyHz: 50, ratedPowerVa: 16, ratedSecondaryCurrentA: 2, loadPercent: 0 },
+    simulationModelId: "catalog-control-transformer", simulationSupport: "numerical",
+    manufacturerRecord: { manufacturer: "Siemens", series: "SENTRON 4AC37", orderCode: "4AC3716-0", terminalMap: "verified",
+      sourceUrl: "https://cache.industry.siemens.com/dl/files/646/109750646/att_1024180/v1/12_Transformers_LV10_042020_EN_202006081507562620.pdf",
+      documentRevision: "LV 10 · 04/2020, circuit diagram I201_18473" },
+    documentation: "Primary terminals 1 and 7 are electrically isolated from secondary terminals 4 and 8. The nominal ratio model does not simulate PTC protection, inrush or temperature.",
+    standardsReferences: ["EN 61558-1", "EN 61558-2-6"],
+  },
   ...hbkLoadCellCatalog,
   sm1223Definition,
   ...omronEncoderCatalog,
