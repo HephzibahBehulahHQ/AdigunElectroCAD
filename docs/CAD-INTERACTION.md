@@ -89,3 +89,7 @@ Import the [SENTRON 4AC3716-0 pilot panel](../public/examples/sentron-4ac3716-pi
 ### Phoenix Contact M12 housing and pin routing
 
 Open [the editable M12 example](../public/examples/phoenix-m12-housing-and-pinout.json) to inspect the Ø20 mm mating-end outline and 60 × 20 mm side envelope. Select either outline and use **Go to schematic device** to select X2. The schematic shows pin 5 wired to H1 as a routing example. H1 is unpowered. The housing envelopes use the [Phoenix Contact 1662256 datasheet](https://www.phoenixcontact.com/en-us/products/circular-connector-cable-side-sacc-m12ms-5con-pg-7-1662256?type=pdf).
+
+### Phoenix Contact PTTB two-level pilot
+
+Open [the editable PTTB example](../public/examples/phoenix-pttb-two-level-pilot.json). Select either nominal envelope and use **Go to schematic device** to select X2. Run the simulation and press S1. The upper feed-through carries switched +24 V to H1 and the lower feed-through returns to 0 V. Disconnecting either circuit path extinguishes H1. The envelopes use the [Phoenix Contact 3210567 datasheet](https://www.phoenixcontact.com/en-us/products/multi-level-terminal-block-pttb-25-3210567?type=pdf).

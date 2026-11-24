@@ -1,0 +1,254 @@
+{
+  "id": "phoenix-pttb-two-level-pilot",
+  "name": "Phoenix Contact PTTB two-level pilot",
+  "description": "Press S1 with simulation running to light H1 through X2. The upper level carries switched +24 V and the lower level carries the return.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "PTTB panel drawings",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "PTTB panel drawings",
+        "description": "Nominal unmounted front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "pttb-front",
+            "name": "PTTB front envelope",
+            "kind": "rectangle",
+            "x1": 427.4,
+            "y1": 300.9,
+            "x2": 432.6,
+            "y2": 369.1,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "terminal"
+            }
+          },
+          {
+            "id": "pttb-side",
+            "name": "PTTB side envelope",
+            "kind": "rectangle",
+            "x1": 515,
+            "y1": 300.9,
+            "x2": 560.9,
+            "y2": 369.1,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "terminal"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "PTTB pilot circuit",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "PTTB pilot circuit",
+        "description": "Press S1 with simulation running to light H1 through X2. The upper level carries switched +24 V and the lower level carries the return.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "ac",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 155,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "dc",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 345,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "command",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 555,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "lamp",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 960,
+            "y": 335,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": true,
+              "color": "#15803d",
+              "indication": "PTTB pilot"
+            }
+          },
+          {
+            "id": "terminal",
+            "definitionId": "phoenix-contact.pttb.3210567",
+            "reference": "X2",
+            "x": 775,
+            "y": 303,
+            "rotation": 0,
+            "properties": {
+              "conductorAreaMm2": 2.5
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "netName": "L",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "line-in"
+            },
+            "points": []
+          },
+          {
+            "id": "neutral",
+            "netName": "N",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "neutral-in"
+            },
+            "points": []
+          },
+          {
+            "id": "command-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "command",
+              "terminalId": "13"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-feed",
+            "netName": "PILOT_PLUS",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "terminal",
+              "terminalId": "upper-left"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "lamp",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "terminal",
+              "terminalId": "lower-right"
+            },
+            "points": [
+              {
+                "x": 1025,
+                "y": 335
+              },
+              {
+                "x": 1025,
+                "y": 420
+              },
+              {
+                "x": 843,
+                "y": 420
+              },
+              {
+                "x": 843,
+                "y": 317
+              }
+            ]
+          },
+          {
+            "id": "terminal-to-pilot",
+            "netName": "PILOT_PLUS",
+            "from": {
+              "componentId": "terminal",
+              "terminalId": "upper-right"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t1"
+            },
+            "points": []
+          },
+          {
+            "id": "terminal-to-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "terminal",
+              "terminalId": "lower-left"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out-2"
+            },
+            "points": [
+              {
+                "x": 700,
+                "y": 400
+              },
+              {
+                "x": 455,
+                "y": 400
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
