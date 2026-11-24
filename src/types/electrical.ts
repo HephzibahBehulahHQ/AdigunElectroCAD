@@ -129,6 +129,7 @@ export interface SchematicGraphic {
   name: string;
   kind: SchematicGraphicKind;
   deviceLink?: GraphicDeviceLink;
+  footprintReviewRequired?: boolean;
   labelHidden?: boolean;
   x1: number;
   y1: number;
@@ -142,7 +143,7 @@ export interface SchematicGraphic {
 }
 
 /** One user-drawn primitive stored relative to a reusable component symbol origin. */
-export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name" | "deviceLink" | "labelHidden">;
+export type UserSymbolGraphic = Omit<SchematicGraphic, "id" | "name" | "deviceLink" | "labelHidden" | "footprintReviewRequired">;
 
 export interface DrawingGuide {
   id: string;

@@ -243,7 +243,9 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number, 
   const deviceLink = graphic.deviceLink === undefined ? undefined : object(graphic.deviceLink, "Graphic device link is invalid.");
   const labelHidden = graphic.labelHidden;
   if (labelHidden !== undefined && typeof labelHidden !== "boolean") throw new Error("Graphic label visibility must be a boolean.");
-  return { ...(labelHidden !== undefined && { labelHidden }), ...(deviceLink && { deviceLink: {
+  const footprintReviewRequired = graphic.footprintReviewRequired;
+  if (footprintReviewRequired !== undefined && typeof footprintReviewRequired !== "boolean") throw new Error("Graphic footprint review status must be a boolean.");
+  return { ...(footprintReviewRequired && deviceLink && { footprintReviewRequired }), ...(labelHidden !== undefined && { labelHidden }), ...(deviceLink && { deviceLink: {
     sheetId: textValue(deviceLink.sheetId, "linked device sheet id", 96),
     componentId: textValue(deviceLink.componentId, "linked device component id", 96),
   } }), id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind, x1, y1, x2, y2, ...(points ? { points } : {}), color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
