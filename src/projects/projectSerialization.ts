@@ -297,6 +297,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
   const component = object(value, `Sheet ${sheetIndex + 1} component ${componentIndex + 1} is invalid.`);
   const definitionId = textValue(component.definitionId, "component definition", 120);
   if (!catalogById.has(definitionId)) throw new Error(`Component definition ${definitionId} is not in the installed catalog.`);
+  if (component.mirrored !== undefined && typeof component.mirrored !== "boolean") throw new Error("Component mirror setting is invalid.");
   const rotation = component.rotation;
   if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) throw new Error("Component rotation is invalid.");
   const size = component.size === undefined ? undefined : finiteNumber(component.size, "component size");
@@ -308,6 +309,7 @@ function parseComponent(value: unknown, sheetIndex: number, componentIndex: numb
     id: textValue(component.id, "component id", 120), definitionId, reference: textValue(component.reference, "component reference", 12),
     ...(component.displayName === undefined ? {} : { displayName: optionalText(component.displayName, "component display name", 80) }),
     x: finiteNumber(component.x, "component x"), y: finiteNumber(component.y, "component y"), rotation: rotation as 0 | 90 | 180 | 270, size,
+    ...(component.mirrored === undefined ? {} : { mirrored: component.mirrored }),
     ...parseDraftingStyle(component, "Component"),
     ...(component.layerId !== undefined && { layerId: textValue(component.layerId, "component drafting layer id", 64) }),
     ...(component.zIndex === undefined ? {} : { zIndex: integer(component.zIndex, "component stacking index") }),

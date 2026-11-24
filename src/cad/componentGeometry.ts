@@ -244,7 +244,7 @@ export function instanceFootprint(component: ComponentInstance, millimetres = fa
   const { x, y, rotation, definitionId, size = 1 } = component;
   const bounds = componentFootprint(x, y, rotation, definitionId, size);
   const include = (point: { x: number; y: number }, margin: number) => {
-    const offset = rotateOffset(point.x * size, point.y * size, rotation);
+    const offset = rotateOffset(point.x * size * (component.mirrored ? -1 : 1), point.y * size, rotation);
     bounds.left = Math.min(bounds.left, x + offset.x - margin);
     bounds.right = Math.max(bounds.right, x + offset.x + margin);
     bounds.top = Math.min(bounds.top, y + offset.y - margin);

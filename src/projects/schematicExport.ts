@@ -36,6 +36,7 @@ const standaloneStyles = `
   .coil-label { fill: #17324f; font-size: 13px; font-weight: 900; }
   .overload.tripped { fill: #fbd0cd; stroke: #d84a3a; }
   .generic-symbol-mark, .functional-symbol { stroke: var(--component-ink, #2272ad); stroke-width: 2.4; }
+  [data-mirrored-symbol] text { transform-box: fill-box; transform-origin: center; transform: scaleX(-1); }
   .functional-symbol-text { stroke: none; fill: #17649c; font-size: 10px; font-weight: 900; }
   .terminal-pin { fill: #fff; stroke: #1e5f96; stroke-width: 2.5; }
   .free-terminal-label { fill: #13233b; font-size: 10px; font-weight: 800; paint-order: stroke; stroke: #f4f8fc; stroke-width: 3px; stroke-linejoin: round; }

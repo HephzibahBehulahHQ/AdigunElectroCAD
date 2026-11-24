@@ -1916,7 +1916,7 @@ export function App() {
     if (!result.ok) { setNotice(result.reason ?? "Component transform blocked."); return; }
     if (result.document === document) return;
     if (!updateDocument(result.document)) return;
-    setNotice(transform.kind === "resize" ? `${instance.reference} size set to ${Math.round(transform.size * 100)}%.` : `${instance.reference} rotated to ${transform.rotation}°.`);
+    setNotice(transform.kind === "mirror" ? `${instance.reference} mirrored.` : transform.kind === "resize" ? `${instance.reference} size set to ${Math.round(transform.size * 100)}%.` : `${instance.reference} rotated to ${transform.rotation}°.`);
   };
 
   const updateSelectedSize = (rawValue: string) => {
@@ -2090,6 +2090,7 @@ export function App() {
         <button role="menuitem" onClick={() => setComponentContextMenu(null)}>Properties and terminals</button>
         <button role="menuitem" onClick={() => { setComponentContextMenu(null); toggleWireMode(); }}>Wire terminals</button>
         <button role="menuitem" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); rotateSelectedComponent(); }}>Rotate 90°</button>
+        <button role="menuitem" disabled={isReferenceSheet} onClick={() => { setComponentContextMenu(null); applyComponentTransform(contextComponent.id, { kind: "mirror" }); }}>Mirror symbol</button>
         <button role="menuitem" disabled={isReferenceSheet} onClick={() => { setComponentContextMenu(null); duplicateSelectedComponent(); }}>Duplicate</button>
         <button role="menuitem" className="danger" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); removeSelectedComponent(); }}>Delete component</button>
       </div>}
