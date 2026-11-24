@@ -1,0 +1,323 @@
+{
+  "id": "siemens-sm1223-input-wiring",
+  "name": "Siemens SM 1223 input wiring and panel views",
+  "description": "Wire an I0 input commissioning signal and verify its external 24 V pilot. The SM 1223 exposes its documented terminals for drafting.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "SM 1223 panel views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "SM 1223 panel views",
+        "description": "Nominal front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "sm1223-front",
+            "name": "SM 1223 front envelope",
+            "kind": "rectangle",
+            "x1": 407.5,
+            "y1": 285,
+            "x2": 452.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "io"
+            }
+          },
+          {
+            "id": "sm1223-side",
+            "name": "SM 1223 side envelope",
+            "kind": "rectangle",
+            "x1": 592.5,
+            "y1": 285,
+            "x2": 667.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "io"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "SM 1223 input wiring",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "SM 1223 input wiring",
+        "description": "S1 feeds I0 and the external H1 pilot. H1 verifies the upstream signal circuit. This example does not simulate a CPU or output switching.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "ac",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 155,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "dc",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 345,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "command",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 555,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "lamp",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 925,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": true,
+              "color": "#15803d",
+              "indication": "I0 field signal"
+            }
+          },
+          {
+            "id": "io",
+            "definitionId": "siemens.sm1223.6es7223-1bh32-0xb0",
+            "reference": "IO1",
+            "x": 850,
+            "y": 515,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 24
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "netName": "L",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "line-in"
+            },
+            "points": []
+          },
+          {
+            "id": "neutral",
+            "netName": "N",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "neutral-in"
+            },
+            "points": []
+          },
+          {
+            "id": "command-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "command",
+              "terminalId": "13"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-feed",
+            "netName": "PILOT_PLUS",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t1"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "lamp",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out-2"
+            },
+            "points": [
+              {
+                "x": 1000,
+                "y": 260
+              },
+              {
+                "x": 1000,
+                "y": 330
+              },
+              {
+                "x": 440,
+                "y": 330
+              },
+              {
+                "x": 440,
+                "y": 370
+              }
+            ]
+          },
+          {
+            "id": "io-l-plus",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "io",
+              "terminalId": "x10-1"
+            },
+            "points": [
+              {
+                "x": 510,
+                "y": 350
+              },
+              {
+                "x": 510,
+                "y": 385
+              },
+              {
+                "x": 708,
+                "y": 385
+              }
+            ]
+          },
+          {
+            "id": "io-m",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "to": {
+              "componentId": "io",
+              "terminalId": "x10-2"
+            },
+            "points": [
+              {
+                "x": 490,
+                "y": 360
+              },
+              {
+                "x": 490,
+                "y": 410
+              },
+              {
+                "x": 730,
+                "y": 410
+              }
+            ]
+          },
+          {
+            "id": "io-common-one",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "to": {
+              "componentId": "io",
+              "terminalId": "x10-3"
+            },
+            "points": [
+              {
+                "x": 475,
+                "y": 360
+              },
+              {
+                "x": 475,
+                "y": 435
+              },
+              {
+                "x": 752,
+                "y": 435
+              }
+            ]
+          },
+          {
+            "id": "io-i0",
+            "netName": "I0_FIELD",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "io",
+              "terminalId": "x10-4"
+            },
+            "points": [
+              {
+                "x": 680,
+                "y": 260
+              },
+              {
+                "x": 680,
+                "y": 365
+              },
+              {
+                "x": 774,
+                "y": 365
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
