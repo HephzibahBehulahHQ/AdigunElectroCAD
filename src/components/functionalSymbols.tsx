@@ -99,6 +99,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       <path d={`M ${x - 20} ${y - 10} q 16 5 0 10 q -16 5 0 10 M ${x} ${y} H ${plunger} M ${plunger} ${y - 8} V ${y + 8}${spring ? ` M ${x + 27} ${y - 10} l 4 5 l -8 5 l 8 5 l -4 5` : ""}`} />
     </g>;
   }
+  if (symbolId === "terminal-double-level") return <g className={mark} aria-label="Double-level terminal with isolated upper and lower conductors">
+    {[-14, 14].map(offset => <g key={offset} data-terminal-level={offset < 0 ? "upper" : "lower"}>
+      <path d={`M ${x - 42} ${y + offset} h 84`} />
+      <circle cx={x} cy={y + offset} r={3} fill="currentColor" />
+    </g>)}
+  </g>;
   if (symbolId === "terminal" || symbolId.startsWith("terminal-")) {
     const connected = properties.continuityClosed !== false;
     return <g className={mark} aria-label={`Feed-through terminal block, ${connected ? "connected" : "open"}`} data-state={connected ? "connected" : "open"}>
@@ -423,12 +429,6 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
 
   if (symbolId === "panel-busbar") return <g className={mark}>{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 27} ${cy + offset} H ${x + 27}`} />)}<path d={`M ${x - 20} ${cy + 16} H ${x + 20}`} /></g>;
   if (symbolId === "panel-distribution") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 17} ${cy + offset} H ${x + 17}`} />)}</g>;
-  if (symbolId === "terminal-double-level") return <g className={mark} aria-label="Double-level terminal with isolated upper and lower conductors">
-    {[-14, 14].map(offset => <g key={offset} data-terminal-level={offset < 0 ? "upper" : "lower"}>
-      <path d={`M ${x - 42} ${y + offset} h 84`} />
-      <circle cx={x} cy={y + offset} r={3} fill="currentColor" />
-    </g>)}
-  </g>;
   if (symbolId === "panel-enclosure") return <g className={mark} aria-label="Panel enclosure">
     <rect x={x - 30} y={cy - 22} width={60} height={44} />
     <rect x={x - 25} y={cy - 17} width={50} height={34} />
