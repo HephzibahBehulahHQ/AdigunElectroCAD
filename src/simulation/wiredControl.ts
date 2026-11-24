@@ -54,6 +54,12 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
       if (m === "catalog-feed-through-terminal" && p.continuityClosed === true && isControl(c.id, "1") && isControl(c.id, "2")) {
         link(key(c.id, "1"), key(c.id, "2"));
       }
+      if (m === "phoenix-pttb-double-level") {
+        for (const level of ["upper", "lower"]) {
+          const left = level + "-left", right = level + "-right";
+          if (isControl(c.id, left) && isControl(c.id, right)) link(key(c.id, left), key(c.id, right));
+        }
+      }
       if (m === "pushbutton-start-v1" && p.pressed === true) link(key(c.id, "13"), key(c.id, "14"));
       if (m === "pushbutton-stop-v1" && p.pressed !== true) link(key(c.id, "21"), key(c.id, "22"));
       if (m === "thermal-overload-dol-v1" && p.tripped !== true && !(p.thermalEnabled === true && p.runtimeThermalTripped === true)) link(key(c.id, "aux-95"), key(c.id, "aux-96"));
