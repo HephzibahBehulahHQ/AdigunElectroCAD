@@ -280,6 +280,24 @@ it("distinguishes real round-outline overlaps from bounding-box corner contacts"
   expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
 });
 
+it("checks noncircular ellipse pairs with different aspect ratios", () => {
+  const { document } = createBlankProject().sheets[0];
+  document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  const style = { kind: "ellipse" as const, color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: "schematic", componentId: "encoder" } };
+  const horizontal = { ...style, id: "horizontal", name: "Horizontal ellipse", x1: -25, y1: -5, x2: 25, y2: 5 };
+  const vertical = { ...style, id: "vertical", name: "Vertical ellipse", x1: 21, y1: 4, x2: 31, y2: 44 };
+  document.graphics = [horizontal, vertical];
+  const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code.startsWith("panel-"));
+  expect(warnings()).toEqual([]);
+  vertical.x1 -= 6;
+  vertical.x2 -= 6;
+  vertical.y1 -= 4;
+  vertical.y2 -= 4;
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+  document.graphics.reverse();
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+});
+
 it("checks a rectangular outline against the actual interior of a concave panel profile", () => {
   const { document } = createBlankProject().sheets[0];
   document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
