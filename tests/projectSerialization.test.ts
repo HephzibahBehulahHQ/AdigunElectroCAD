@@ -382,3 +382,21 @@ it("reopens a 3.2 mm mounting hole and retains its precise centre", () => {
   delete document.drawingGrid;
   expect(() => parseProjectJson(JSON.stringify(encodeProject(project)))).toThrow("4 units");
 });
+
+it("preserves footprint links by device identity across rename, reorder and unresolved source", () => {
+  const project = addFreeSchematicSheet(createStarterProject());
+  const [source, panel] = project.sheets;
+  const component = source.document.components[0];
+  panel.document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  panel.document.graphics = [{
+    id: "panel-device", name: "Contactor footprint", kind: "rectangle",
+    x1: 0, y1: 0, x2: 45, y2: 85, color: "#19324f", strokeWidth: 1,
+    deviceLink: { sheetId: source.id, componentId: component.id },
+  }];
+  component.reference = "KM-renamed";
+  project.sheets.reverse();
+  const reopen = () => parseProjectJson(JSON.stringify(encodeProject(project)));
+  expect(reopen()).toEqual(project);
+  project.sheets = [panel];
+  expect(reopen()).toEqual(project);
+});
