@@ -356,13 +356,23 @@ if (symbolId === "transformer" || symbolId.startsWith("transformer-")) {
       <path d={cell(x+20, supplyOpen) + " " + cell(x-16, !supplyOpen)} />
     </g>;
   }
-  if (symbolId === "sensor-encoder-differential") return <g className={mark}><rect x={x-25} y={y-39} width={50} height={78} rx={3} />
-    <path d={[-22, 0, 22].map(offset => ["M",x-47,y+offset,"H",x-25].join(" ")).concat([-35,-21,-7,7,21,35].map(offset => ["M",x+25,y+offset,"H",x+47].join(" "))).join(" ")} />
-    <path d={["M",x-10,y+5,"v",-10,"h",7,"v",10,"h",7,"v",-10,"h",6].join(" ")} />
+  if (symbolId === "sensor-encoder-differential") return <g className={mark} aria-label="Incremental encoder with differential A, B and Z outputs">
+    <rect x={x - 25} y={y - 40} width={50} height={80} rx={3} />
+    <path d={[-22, 0, 22].map(offset => `M ${x - 47} ${y + offset} H ${x - 25}`).join(" ")} />
+    {(["A", "B", "Z"] as const).map((phase, index) => {
+      const middleY = y - 28 + index * 28;
+      return <g key={phase} data-encoder-pair={phase}>
+        <path d={`M ${x + 25} ${middleY - 7} h 22 M ${x + 25} ${middleY + 7} h 22`} />
+        <path d={`M ${x - 4} ${middleY + 4} h 5 v -8 h 7 v 8 h 5`} />
+        {index < 2 && <path d={`M ${x - 25} ${middleY + 14} h 50`} strokeDasharray="2 4" />}
+      </g>;
+    })}
   </g>;
-  if (symbolId === "sensor-encoder-abc") return <g className={mark}><circle cx={x} cy={y} r={17} />
-    <path d={[-22, 0, 22].map(offset => ["M",x-47,y+offset,"H",x-24,"M",x+24,y+offset,"H",x+47].join(" ")).join(" ")} />
-    <path d={["M",x-10,y+5,"v",-10,"h",7,"v",10,"h",7,"v",-10,"h",6].join(" ")} />
+  if (symbolId === "sensor-encoder-abc") return <g className={mark} aria-label="Incremental encoder with A, B and Z outputs">
+    <rect x={x - 24} y={y - 31} width={48} height={62} rx={3} />
+    <circle cx={x} cy={y} r={17} />
+    <path d={[-22, 0, 22].map(offset => `M ${x - 47} ${y + offset} H ${x - 24} M ${x + 24} ${y + offset} H ${x + 47}`).join(" ")} />
+    <path d={`M ${x - 10} ${y + 5} v -10 h 7 v 10 h 7 v -10 h 6`} />
   </g>;
   if (symbolId === "sensor-load-cell-bridge") return <g className={mark}>
     <path d={["M",x,y-20,"L",x+22,y,"L",x,y+20,"L",x-22,y,"Z",
