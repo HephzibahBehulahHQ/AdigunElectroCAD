@@ -162,6 +162,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
 
 function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, deviceReference, deviceDefinitionId, millimetres = false, snapSpacing = 20 }: { deviceReference?: string; deviceDefinitionId?: string; millimetres?: boolean; snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
   const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; clientX: number; clientY: number; handle?: string; index?: number } | null>(null);
+  const dragged = useRef(false);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -189,16 +190,20 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
     ? [{ id: "start", x: graphic.x1, y: graphic.y1 }, { id: "end", x: graphic.x2, y: graphic.y2 }]
     : [{ id: "nw", x, y }, { id: "ne", x: x + width, y }, { id: "sw", x, y: y + height }, { id: "se", x: x + width, y: y + height }];
   const resizeHandleRadius = graphic.kind === "line" ? 6 : Math.min(6, Math.min(width, height) / 3);
-  return <g data-drawing-selected={selected || undefined} data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id, event.shiftKey); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
+  return <g data-drawing-selected={selected || undefined} data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); if (!dragged.current || event.detail === 0) onSelect(graphic.id, event.shiftKey); dragged.current = false; }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
+    dragged.current = false;
     if (event.shiftKey) return;
     if (!onMove || event.button !== 0) return;
-    event.stopPropagation(); onSelect(graphic.id); const start = point(event);
+    event.stopPropagation(); if (!selected) onSelect(graphic.id); const start = point(event);
     gesture.current = start ? { mode: "move", start, clientX: event.clientX, clientY: event.clientY } : null;
     if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
   }} onPointerUp={(event) => {
     const active = gesture.current; const current = point(event); gesture.current = null;
     if (active && current && Math.hypot(event.clientX - active.clientX, event.clientY - active.clientY) > 4) {
-      if (active.mode === "move") onMove?.(graphic.id, current.x - active.start.x, current.y - active.start.y);
+      if (active.mode === "move") {
+        dragged.current = true;
+        onMove?.(graphic.id, current.x - active.start.x, current.y - active.start.y);
+      }
       else if (active.mode === "vertex" && active.index !== undefined) onVertexMove?.(graphic.id, active.index, current.x, current.y);
       else {
         const snappedX = snapDrawingCoordinate(current.x, snapSpacing);

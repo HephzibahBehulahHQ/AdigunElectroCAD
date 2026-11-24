@@ -751,8 +751,9 @@ export function App() {
     const snap = (value: number) => snapDrawingCoordinate(value, snapSpacing);
     const dx = snap(deltaX); const dy = snap(deltaY);
     if (!dx && !dy) return;
-    selectGraphic(id);
-    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => item.id === id ? { ...item, x1: item.x1 + dx, x2: item.x2 + dx, y1: item.y1 + dy, y2: item.y2 + dy, ...(item.points ? { points: item.points.map((point) => ({ x: point.x + dx, y: point.y + dy })) } : {}) } : item), revision: document.revision + 1 });
+    const moving = new Set(selectedGraphicIds.includes(id) ? selectedGraphicIds : [id]);
+    if (moving.size === 1) selectGraphic(id);
+    updateDocument({ ...document, graphics: (document.graphics ?? []).map((item) => moving.has(item.id) ? { ...item, x1: item.x1 + dx, x2: item.x2 + dx, y1: item.y1 + dy, y2: item.y2 + dy, ...(item.points ? { points: item.points.map((point) => ({ x: point.x + dx, y: point.y + dy })) } : {}) } : item), revision: document.revision + 1 });
   };
 
   const resizeGraphic = (id: string, x1: number, y1: number, x2: number, y2: number) => {
@@ -2695,8 +2696,8 @@ function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMa
     </>}
     <label>Stroke width · units<input type="number" min="1" max="12" step="1" defaultValue={graphic.strokeWidth} key={`${graphic.id}:${graphic.strokeWidth}`} onBlur={(event) => onChange({ strokeWidth: Number(event.target.value) })} /></label>
     <p>{graphic.kind[0].toUpperCase() + graphic.kind.slice(1)} · drafting geometry; it does not connect electrical terminals. {graphic.points ? "Double-click an edge to insert a vertex; drag vertices to reshape and right-click a handle to remove it." : "Drag the shape to move it."}</p>
-    {selectionCount > 1 && <p>{selectionCount} graphics selected. Properties above edit the active graphic; symbol conversion combines the selected shapes.</p>}
-    {selectionCount === 1 && <p>Shift-click more graphics to combine a drawing into one user symbol.</p>}
+    {selectionCount > 1 && <p>{selectionCount} graphics selected. Drag a selected shape to move them together. Properties edit the active graphic.</p>}
+    {selectionCount === 1 && <p>Shift-click to select more graphics for moving or symbol conversion.</p>}
     <StackControls capabilities={stackCapabilities} onChange={onStackChange} groupHint={selectionCount > 1 ? "Moves the selected shapes together." : undefined} />
     <button type="button" onClick={onMakeComponent}>{selectionCount > 1 ? `Make symbol from ${selectionCount} graphics` : "Make component symbol"}</button>
     <button type="button" onClick={onDuplicate}>Duplicate drawing graphic</button>
