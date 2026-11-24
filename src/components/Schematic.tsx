@@ -188,6 +188,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const handles = graphic.kind === "line"
     ? [{ id: "start", x: graphic.x1, y: graphic.y1 }, { id: "end", x: graphic.x2, y: graphic.y2 }]
     : [{ id: "nw", x, y }, { id: "ne", x: x + width, y }, { id: "sw", x, y: y + height }, { id: "se", x: x + width, y: y + height }];
+  const resizeHandleRadius = graphic.kind === "line" ? 6 : Math.min(6, Math.min(width, height) / 3);
   return <g data-drawing-selected={selected || undefined} data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id, event.shiftKey); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
     if (event.shiftKey) return;
     if (!onMove || event.button !== 0) return;
@@ -222,7 +223,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
     {graphic.kind === "line" && <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
     {graphic.kind === "polyline" && <polyline points={pointList} fill="none" stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
     {graphic.kind === "polygon" && <polygon points={pointList} fill="transparent" stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
-    {selected && onResize && handles.map((handle) => <circle key={handle.id} data-resize-handle={handle.id} cx={handle.x} cy={handle.y} r="6" fill="#fff" stroke="#e0a526" strokeWidth="2" aria-label={`Resize ${graphic.name} from ${handle.id}`} onPointerDown={(event) => {
+    {selected && onResize && handles.map((handle) => <circle key={handle.id} data-resize-handle={handle.id} cx={handle.x} cy={handle.y} r={resizeHandleRadius} fill="#fff" stroke="#e0a526" strokeWidth={Math.min(2, resizeHandleRadius / 2)} aria-label={`Resize ${graphic.name} from ${handle.id}`} onPointerDown={(event) => {
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "resize", start, clientX: event.clientX, clientY: event.clientY, handle: handle.id } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
