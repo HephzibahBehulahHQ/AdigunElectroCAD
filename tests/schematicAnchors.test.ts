@@ -1359,3 +1359,15 @@ it("draws both isolated levels through the production terminal symbol dispatcher
   expect(markup).toContain('data-terminal-level="upper"');
   expect(markup).toContain('data-terminal-level="lower"');
 });
+
+it("keeps each M12 mating-face contact centred on its documented wire anchor", () => {
+  const definition = catalogById.get("phoenix-contact.sacc.1662256")!;
+  const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: definition.symbolId, x: 100, y: 100, properties: definition.propertiesSchema,
+  }));
+  expect(markup).toContain('data-connector-key=""');
+  for (const terminal of definition.terminals) {
+    const { x, y } = terminal.position!;
+    expect(markup).toContain('data-connector-pin="' + terminal.id + '" cx="' + (100 + x) + '" cy="' + (100 + y) + '"');
+  }
+});

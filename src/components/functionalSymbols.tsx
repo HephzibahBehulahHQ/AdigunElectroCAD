@@ -99,6 +99,11 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       <path d={`M ${x - 20} ${y - 10} q 16 5 0 10 q -16 5 0 10 M ${x} ${y} H ${plunger} M ${plunger} ${y - 8} V ${y + 8}${spring ? ` M ${x + 27} ${y - 10} l 4 5 l -8 5 l 8 5 l -4 5` : ""}`} />
     </g>;
   }
+  if (symbolId === "terminal-m12-male-5") return <g className={mark} aria-label="Five-pin M12 male mating face">
+    <path data-connector-key="" d={`M ${x - 6} ${y + 38} A 39 39 0 1 1 ${x + 6} ${y + 38} v -6 h -12 z`} />
+    {[[-22, 22], [22, 22], [22, -22], [-22, -22], [0, 0]].map(([dx, dy], index) =>
+      <circle key={index} data-connector-pin={index + 1} cx={x + dx} cy={y + dy} r={3} />)}
+  </g>;
   if (symbolId === "terminal-double-level") return <g className={mark} aria-label="Double-level terminal with isolated upper and lower conductors">
     {[-14, 14].map(offset => <g key={offset} data-terminal-level={offset < 0 ? "upper" : "lower"}>
       <path d={`M ${x - 42} ${y + offset} h 84`} />

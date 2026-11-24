@@ -110,6 +110,23 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     };
   }),
   {
+    id: "phoenix-contact.sacc.1662256", name: "Phoenix Contact M12 male · 1662256", category: "Wiring & Cables",
+    referencePrefix: "X", symbolId: "terminal-m12-male-5", terminals: [
+      { id: "1", label: "1", kind: "control", direction: "bidirectional", position: { x: -22, y: 22 } },
+      { id: "2", label: "2", kind: "control", direction: "bidirectional", position: { x: 22, y: 22 } },
+      { id: "3", label: "3", kind: "control", direction: "bidirectional", position: { x: 22, y: -22 } },
+      { id: "4", label: "4", kind: "control", direction: "bidirectional", position: { x: -22, y: -22 } },
+      { id: "5", label: "5", kind: "control", direction: "bidirectional", position: { x: 0, y: 0 } },
+    ],
+    description: "A-coded five-position M12 male cable connector with screw termination.",
+    propertiesSchema: {}, simulationModelId: "phoenix-sacc-m12-male-5", simulationSupport: "connectivity",
+    manufacturerRecord: { manufacturer: "Phoenix Contact", series: "SACC", orderCode: "1662256",
+      sourceUrl: "https://www.phoenixcontact.com/en-us/products/circular-connector-cable-side-sacc-m12ms-5con-pg-7-1662256?type=pdf",
+      terminalMap: "verified", documentRevision: "1662256 male mating face pin assignment, p. 5" },
+    documentation: "The symbol is viewed from the male mating face, with the key at the bottom. Each contact is an independent wire endpoint. Signal roles depend on the connected equipment.",
+    standardsReferences: ["https://www.phoenixcontact.com/en-us/products/circular-connector-cable-side-sacc-m12ms-5con-pg-7-1662256?type=pdf"],
+  },
+  {
     id: "phoenix-contact.pttb.3210567", name: "Phoenix Contact PTTB 2,5 · 3210567", category: "Terminal Blocks",
     referencePrefix: "X", symbolId: "terminal-double-level",
     description: "Double-level feed-through terminal block with an independent conductor path on each level.",
