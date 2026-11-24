@@ -1,5 +1,6 @@
 import { omronEncoderCatalog } from "./omronEncoderCatalog";
 import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
+import { festoValveCatalog } from "./festoValveCatalog";
 
 interface DeviceEnvelope {
   widthMm: number;
@@ -66,6 +67,17 @@ for (const { id, propertiesSchema } of hbkLoadCellCatalog) {
 
 export function deviceEnvelope(definitionId: string): DeviceEnvelope | undefined {
   return deviceEnvelopes.get(definitionId);
+}
+
+const festoValvePlans = new Map(festoValveCatalog.map(({ id, symbolId, propertiesSchema }) => [id, {
+  lengthMm: 49,
+  widthMm: symbolId === "pneumatic-vovg-five-way" ? 25 : 12,
+  sourceUrl: "https://ftp.festo.com/Public/PNEUMATIC/SOFTWARE_SERVICE/Documentation/2018/EN/VOVG_EN.PDF#page=" +
+    (propertiesSchema.mounting === "In-line" ? 9 : 10),
+}]));
+
+export function valvePlanEnvelope(definitionId: string) {
+  return festoValvePlans.get(definitionId);
 }
 
 const omronEncoderIds = new Set(omronEncoderCatalog.map(({ id }) => id));
