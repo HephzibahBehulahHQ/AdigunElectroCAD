@@ -1419,3 +1419,16 @@ it("draws the Siemens side-by-side limits on the linked front envelope only", ()
   panel.document.graphics[0].x2 = 157;
   expect(render()).not.toContain("data-installation-clearance");
 });
+
+it("draws the nominal Rittal attachment centres at 280 × 250 mm spacing", () => {
+  const component = { id: "plate", definitionId: "rittal.ax.1031000.included-plate", reference: "MP1", x: 400, y: 300, rotation: 90 as const, properties: {} };
+  const render = (instance: typeof component) => renderToStaticMarkup(createElement(PlacedSymbol, {
+    component: instance, draftingStyle: instance, selectedComponentId: "", onSelect: () => undefined, terminalAnchorsForComponent: [], millimetres: true,
+  }));
+  const markup = render(component);
+  expect(markup).toContain('rotate(90 400 300)');
+  expect(markup.match(/data-mounting-centre/g)).toHaveLength(4);
+  expect(markup).toContain("M 255 175 h 10 M 260 170 v 10");
+  expect(markup).toContain("M 535 425 h 10 M 540 420 v 10");
+  expect(render({ ...component, properties: { widthMm: 320 } })).not.toContain("data-mounting-pattern");
+});
