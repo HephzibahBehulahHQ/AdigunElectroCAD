@@ -61,6 +61,7 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
       sourceUrl: "https://cache.industry.siemens.com/dl/files/646/109750646/att_1024180/v1/12_Transformers_LV10_042020_EN_202006081507562620.pdf",
       documentRevision: "LV 10 · 04/2020, circuit diagram I201_18473" },
     documentation: "Primary terminals 1 and 7 are electrically isolated from secondary terminals 4 and 8. The nominal ratio model does not simulate PTC protection, inrush or temperature.",
+    standardsReferences: ["EN 61558-1", "EN 61558-2-6"],
   },
   ...hbkLoadCellCatalog,
   sm1223Definition,
