@@ -85,3 +85,7 @@ Import the [SITOP pilot panel](../public/examples/sitop-psu100c-pilot-panel.json
 ## SENTRON safety transformer pilot panel
 
 Import the [SENTRON 4AC3716-0 pilot panel](../public/examples/sentron-4ac3716-pilot-panel.json). Select either outline, follow **Go to schematic device**, and run the simulation. Toggle **Live Pressed** on S1 to light H1 from the isolated 8 V AC secondary. The example models the nominal voltage ratio and leaves PTC protection and transformer transients outside the simulation.
+
+### Phoenix Contact M12 housing and pin routing
+
+Open [the editable M12 example](../public/examples/phoenix-m12-housing-and-pinout.json) to inspect the Ø20 mm mating-end outline and 60 × 20 mm side envelope. Select either outline and use **Go to schematic device** to select X2. The schematic shows pin 5 wired to H1 as a routing example. H1 is unpowered. The housing envelopes use the [Phoenix Contact 1662256 datasheet](https://www.phoenixcontact.com/en-us/products/circular-connector-cable-side-sacc-m12ms-5con-pg-7-1662256?type=pdf).

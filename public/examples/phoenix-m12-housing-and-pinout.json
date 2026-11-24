@@ -1,0 +1,110 @@
+{
+  "id": "phoenix-m12-housing-and-pinout",
+  "name": "Phoenix Contact M12 housing and pin routing",
+  "description": "Nominal housing views for Phoenix Contact 1662256 and an editable pin 5 routing example. H1 is unpowered.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "M12 housing",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "M12 housing",
+        "description": "Mating-end and side housing envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "m12-housing-front",
+            "name": "Mating-end housing",
+            "kind": "ellipse",
+            "x1": 420,
+            "y1": 325,
+            "x2": 440,
+            "y2": 345,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "m12"
+            }
+          },
+          {
+            "id": "m12-housing-side",
+            "name": "Side housing",
+            "kind": "rectangle",
+            "x1": 500,
+            "y1": 325,
+            "x2": 560,
+            "y2": 345,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "m12"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "M12 schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "M12 schematic",
+        "description": "Free-form electrical schematic sheet.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "m12",
+            "definitionId": "phoenix-contact.sacc.1662256",
+            "reference": "X2",
+            "x": 460,
+            "y": 320,
+            "rotation": 0,
+            "properties": {}
+          },
+          {
+            "id": "lamp",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 710,
+            "y": 430,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": false,
+              "color": "#15803d"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "manual-wire-1",
+            "from": {
+              "componentId": "m12",
+              "terminalId": "5"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t1"
+            },
+            "points": [],
+            "netName": "MANUAL_1"
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
