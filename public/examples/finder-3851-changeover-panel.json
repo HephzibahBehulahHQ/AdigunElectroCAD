@@ -1,0 +1,372 @@
+{
+  "id": "finder-3851-changeover-panel",
+  "name": "Finder 38.51 changeover pilot and panel drawing",
+  "description": "Press S1 in simulation to transfer K1 from NC 12 to NO 14. H2 indicates the resting state and H1 indicates the energized state.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "Finder relay views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "Finder relay views",
+        "description": "Nominal front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "finder-front",
+            "name": "Finder front envelope",
+            "kind": "rectangle",
+            "x1": 426.9,
+            "y1": 291.1,
+            "x2": 433.1,
+            "y2": 378.9,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "relay"
+            }
+          },
+          {
+            "id": "finder-side",
+            "name": "Finder side envelope",
+            "kind": "rectangle",
+            "x1": 592.2,
+            "y1": 291.1,
+            "x2": 667.8,
+            "y2": 378.9,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "relay"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "Finder changeover circuit",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "Finder changeover circuit",
+        "description": "Press S1 in simulation to transfer K1 from NC 12 to NO 14. H2 indicates the resting state and H1 indicates the energized state.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "ac",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 115,
+            "y": 360,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "dc",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 300,
+            "y": 360,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "command",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 490,
+            "y": 190,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "relay",
+            "definitionId": "finder.38.51.7.024.0050",
+            "reference": "K1",
+            "x": 640,
+            "y": 360,
+            "rotation": 0,
+            "properties": {
+              "coilVoltageV": 24,
+              "coilDc": true,
+              "ratedCurrentA": 6,
+              "energized": false
+            }
+          },
+          {
+            "id": "picked-up",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 925,
+            "y": 210,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": true,
+              "color": "#15803d",
+              "indication": "Normally open"
+            }
+          },
+          {
+            "id": "dropped-out",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H2",
+            "x": 925,
+            "y": 510,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": true,
+              "color": "#a16207",
+              "indication": "Normally closed"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "netName": "L",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "line-in"
+            },
+            "points": []
+          },
+          {
+            "id": "neutral",
+            "netName": "N",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "neutral-in"
+            },
+            "points": []
+          },
+          {
+            "id": "command-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "command",
+              "terminalId": "13"
+            },
+            "points": [
+              {
+                "x": 410,
+                "y": 348
+              },
+              {
+                "x": 410,
+                "y": 190
+              }
+            ]
+          },
+          {
+            "id": "coil-feed",
+            "netName": "COIL_PLUS",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "relay",
+              "terminalId": "a1"
+            },
+            "points": [
+              {
+                "x": 550,
+                "y": 190
+              },
+              {
+                "x": 550,
+                "y": 348
+              }
+            ]
+          },
+          {
+            "id": "coil-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "relay",
+              "terminalId": "a2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "points": [
+              {
+                "x": 510,
+                "y": 372
+              }
+            ]
+          },
+          {
+            "id": "nc-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "relay",
+              "terminalId": "11"
+            },
+            "points": [
+              {
+                "x": 460,
+                "y": 348
+              },
+              {
+                "x": 460,
+                "y": 285
+              },
+              {
+                "x": 610,
+                "y": 285
+              }
+            ]
+          },
+          {
+            "id": "picked-up-feed",
+            "netName": "PICKED_UP",
+            "from": {
+              "componentId": "relay",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "picked-up",
+              "terminalId": "t1"
+            },
+            "points": [
+              {
+                "x": 618,
+                "y": 440
+              },
+              {
+                "x": 785,
+                "y": 440
+              }
+            ]
+          },
+          {
+            "id": "dropped-out-feed",
+            "netName": "DROPPED_OUT",
+            "from": {
+              "componentId": "relay",
+              "terminalId": "12"
+            },
+            "to": {
+              "componentId": "dropped-out",
+              "terminalId": "t1"
+            },
+            "points": [
+              {
+                "x": 602,
+                "y": 480
+              },
+              {
+                "x": 730,
+                "y": 480
+              }
+            ]
+          },
+          {
+            "id": "picked-up-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "picked-up",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "points": [
+              {
+                "x": 1000,
+                "y": 210
+              },
+              {
+                "x": 1000,
+                "y": 606
+              },
+              {
+                "x": 420,
+                "y": 606
+              },
+              {
+                "x": 420,
+                "y": 372
+              }
+            ]
+          },
+          {
+            "id": "dropped-out-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "dropped-out",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "points": [
+              {
+                "x": 1040,
+                "y": 510
+              },
+              {
+                "x": 1040,
+                "y": 646
+              },
+              {
+                "x": 390,
+                "y": 646
+              },
+              {
+                "x": 390,
+                "y": 372
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
