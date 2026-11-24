@@ -324,9 +324,16 @@ export function App() {
     (sheet.document.graphics ?? []).filter(graphic =>
       graphic.deviceLink?.sheetId === activeSheet.id && graphic.deviceLink.componentId === selectedComponent.id,
     ).map(graphic => ({ sheetId: sheet.id, sheetName: sheet.name, graphic }))) : [];
-  const pendingFootprintReviews = useMemo(() => project.sheets.flatMap(sheet =>
-    (sheet.document.graphics ?? []).filter(graphic => graphic.deviceLink && graphic.footprintReviewRequired)
-      .map(graphic => ({ sheetId: sheet.id, sheetName: sheet.name, graphic }))), [project.sheets]);
+  const footprintIssues = useMemo(() => {
+    const deviceIdsBySheet = new Map(project.sheets.map(sheet => [sheet.id, new Set(sheet.document.components.map(({ id }) => id))]));
+    return project.sheets.flatMap(sheet => (sheet.document.graphics ?? []).flatMap(graphic => {
+      const link = graphic.deviceLink;
+      if (!link) return [];
+      const missing = !deviceIdsBySheet.get(link.sheetId)?.has(link.componentId);
+      if (!missing && !graphic.footprintReviewRequired) return [];
+      return [{ sheetId: sheet.id, sheetName: sheet.name, graphic, missing }];
+    }));
+  }, [project.sheets]);
   const stackScope = document.useDraftingLayerOrder
     ? document.components.filter(({ layerId }) => layerId === selectedComponent?.layerId)
     : document.components;
@@ -712,6 +719,10 @@ export function App() {
   const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden" | "footprintReviewRequired">>) => {
     if (!selectedGraphic) return;
     const next = { ...selectedGraphic, ...patch };
+    const priorLink = selectedGraphic.deviceLink;
+    if (priorLink && next.deviceLink && (priorLink.sheetId !== next.deviceLink.sheetId || priorLink.componentId !== next.deviceLink.componentId)) {
+      next.footprintReviewRequired = true;
+    }
     if (!next.deviceLink || !next.footprintReviewRequired) delete next.footprintReviewRequired;
     if (!next.name.trim() || next.name.length > 80 || !/^#[0-9a-f]{6}$/i.test(next.color) || (next.fillColor !== null && next.fillColor !== undefined && !/^#[0-9a-f]{6}$/i.test(next.fillColor)) || !Number.isFinite(next.strokeWidth) || next.strokeWidth < 1 || next.strokeWidth > 12) {
       setNotice("Graphic names are limited to 80 characters; color and stroke width must be valid.");
@@ -2347,11 +2358,11 @@ export function App() {
           </div>
           <div className="dock-content right-diagnostics" hidden={!rightPanelOpen || rightDockView !== "diagnostics"}>
             <div className="panel-title"><strong>{t.validation}</strong></div>
-            {pendingFootprintReviews.length > 0 && <fieldset className="graphic-geometry graphic-device-properties" aria-label="Footprints requiring review">
-              <legend>Footprints requiring review ({pendingFootprintReviews.length})</legend>
-              {pendingFootprintReviews.map(({ sheetId, sheetName, graphic }) =>
+            {footprintIssues.length > 0 && <fieldset className="graphic-geometry graphic-device-properties" aria-label="Footprint issues">
+              <legend>Footprint issues ({footprintIssues.length})</legend>
+              {footprintIssues.map(({ sheetId, sheetName, graphic, missing }) =>
                 <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => openLinkedGraphic(sheetId, graphic)}>
-                  {sheetName} · {graphic.name}
+                  {sheetName} · {graphic.name} · {missing ? "Missing schematic device" : "Review required"}
                 </button>)}
             </fieldset>}
             <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={activeSheetModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
@@ -2618,7 +2629,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     </select></label>
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
     {linked && graphic.footprintReviewRequired && <>
-      <p role="status">The linked device was replaced. Verify the outline dimensions and mounting features for the new part.</p>
+      <p role="status">The linked device changed. Verify the outline dimensions and mounting features for the new part.</p>
       <button type="button" onClick={onMarkReviewed}>Mark footprint reviewed</button>
     </>}
     {valvePlan && <>
