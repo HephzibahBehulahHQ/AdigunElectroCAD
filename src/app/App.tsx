@@ -320,6 +320,10 @@ export function App() {
   }, [isReferenceSheet, isLabPage]);
   const isReferenceProject = project.sheets.length === 1 && isReferenceSheet;
   const selectedComponent = document.components.find((component) => component.id === selectedComponentId);
+  const linkedPanelGraphics = selectedComponent ? project.sheets.flatMap(sheet =>
+    (sheet.document.graphics ?? []).filter(graphic =>
+      graphic.deviceLink?.sheetId === activeSheet.id && graphic.deviceLink.componentId === selectedComponent.id,
+    ).map(graphic => ({ sheetId: sheet.id, sheetName: sheet.name, graphic }))) : [];
   const stackScope = document.useDraftingLayerOrder
     ? document.components.filter(({ layerId }) => layerId === selectedComponent?.layerId)
     : document.components;
@@ -2252,6 +2256,14 @@ export function App() {
           <div className="dock-content properties-panel" hidden={!rightPanelOpen || rightDockView !== "properties"}>
 
             <div className="panel-title"><strong>Properties</strong><span>{selectedContinuation?.label ?? selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
+            {linkedPanelGraphics.length > 0 && <fieldset className="graphic-geometry" aria-label="Linked panel drawings">
+              <legend>Linked panel drawings</legend>
+              {linkedPanelGraphics.map(({ sheetId, sheetName, graphic }) =>
+                <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => {
+                  selectSheet(sheetId);
+                  selectGraphic(graphic.id);
+                }}>{sheetName} · {graphic.name}</button>)}
+            </fieldset>}
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Sign in to a permanent account to save them.</p>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === `${activeSheet.id}::${selectedComponent.id}`)} onClimateChange={(value) => setRuntimeDocument((current) => setCircuitClimateInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, property, value))} />}
           {replacement && replacement.sheetId === activeSheet.id && selectedComponent?.id === replacement.componentId && <ComponentReplacementForm
