@@ -182,8 +182,8 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     description: "Supplied mounting plate, 330 × 275 mm on the face and 2 mm thick.",
     propertiesSchema: { widthMm: 330, heightMm: 275, depthMm: 2 },
     simulationModelId: "none", simulationSupport: "symbol-only",
-    documentation: "Editable plate blank. Add the holes and cutouts needed for the equipment being mounted.",
-    standardsReferences: ["https://www.rittal.com/uk-en/products/PG20231215SCH101/PG20231512SCH301/PRO70743?variantId=1031000"],
+    documentation: "The nominal millimetre view marks the four Type 2 attachment centres, 280 × 250 mm apart. Add the cutouts required for the equipment being mounted.",
+    standardsReferences: ["https://www.rittal.com/imf/none/3_7678/1114000_Technical_details_EN/"],
   },
   {
     id: "panel.cable-tray-mechanical", name: "Cable tray / trunking", category: "Wiring & Cables", referencePrefix: "CT",
