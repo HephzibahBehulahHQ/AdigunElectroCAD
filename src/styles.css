@@ -493,3 +493,4 @@ footer { display: grid; grid-template-columns: max-content max-content minmax(17
 .wire.manual-wire.pneumatic-wire { stroke: #087e89; stroke-dasharray: 9 3 2 3; }
 
 [data-mirrored-symbol] text { transform-box: fill-box; transform-origin: center; transform: scaleX(-1); }
+.graphic-geometry.graphic-device-properties { grid-template-columns: minmax(0, 1fr); }

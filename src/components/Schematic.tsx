@@ -230,7 +230,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, index } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
-    <text x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{deviceReference ? deviceReference + " · " : ""}{graphic.name}{dimensioned && " · " + dimensions}</text>
+    {!graphic.labelHidden && <text data-graphic-label="" x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{deviceReference ? deviceReference + " · " : ""}{graphic.name}{dimensioned && " · " + dimensions}</text>}
     <title>{`${graphic.name} · drafting geometry; not an electrical connection`}</title>
   </g>;
 }
