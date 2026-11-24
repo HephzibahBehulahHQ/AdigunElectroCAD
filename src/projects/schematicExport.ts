@@ -56,7 +56,7 @@ export function drawingFitsFrame(bounds: DrawingBounds, frame: DrawingBounds): b
   return bounds.x >= frame.x && bounds.y >= frame.y && bounds.x + bounds.width <= frame.x + frame.width && bounds.y + bounds.height <= frame.y + frame.height;
 }
 
-export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | "frame" = "drawing", layout?: PrintLayout): { svg: SVGSVGElement; clipsContent: boolean } {
+export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | "frame" = "drawing", layout?: PrintLayout, millimetres = false): { svg: SVGSVGElement; clipsContent: boolean } {
   const copy = drawing.cloneNode(true) as SVGSVGElement;
   const editingAids = [
     "[data-export-exclude]", ".selection-boundary", ".selection-marquee", ".terminal-anchors",
@@ -102,7 +102,7 @@ export function snapshotSchematicSvg(drawing: SVGSVGElement, scope: "drawing" | 
     for (const [name, value] of Object.entries(bounds)) node.setAttribute(name, String(value));
     node.removeAttribute("data-viewport-fill");
   });
-  const physical = scope === "frame" && layout ? paperDimensions(layout) : undefined;
+  const physical = scope === "frame" && layout ? paperDimensions(layout) : scope === "drawing" && millimetres ? { width, height } : undefined;
   copy.setAttribute("width", physical ? `${physical.width}mm` : String(width));
   copy.setAttribute("height", physical ? `${physical.height}mm` : String(height));
   return { svg: copy, clipsContent };
