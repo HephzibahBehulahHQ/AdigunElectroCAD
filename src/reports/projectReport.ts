@@ -128,7 +128,7 @@ function panelOutlines(document: CircuitDocument) {
 
 type PanelOutline = ReturnType<typeof panelOutlines>[number];
 
-type PanelShape = Pick<PanelOutline, "kind" | "bounds" | "points">;
+type PanelShape = Pick<PanelOutline, "kind" | "bounds"> & Partial<Pick<PanelOutline, "points">>;
 
 function polygonIntersectsEllipse(points: NonNullable<PanelShape["points"]>, bounds: PanelShape["bounds"]): boolean {
   const rx = (bounds.right - bounds.left) / 2;
