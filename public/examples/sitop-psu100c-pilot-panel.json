@@ -1,0 +1,200 @@
+{
+  "id": "sitop-psu100c-pilot-panel",
+  "name": "SITOP PSU100C pilot circuit and panel drawings",
+  "description": "Switch a 24 V DC pilot on the SITOP 6EP1332-5BA10 and inspect the linked front and side views. This simulation leaves PE unwired and models ideal supply continuity.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "SITOP panel drawings",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "SITOP panel drawings",
+        "description": "Nominal body dimensions and 50 mm cooling guides on the front view.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "sitop-front",
+            "name": "SITOP front",
+            "kind": "rectangle",
+            "x1": 403.75,
+            "y1": 295,
+            "x2": 456.25,
+            "y2": 375,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "dc"
+            }
+          },
+          {
+            "id": "sitop-side",
+            "name": "SITOP side",
+            "kind": "rectangle",
+            "x1": 510,
+            "y1": 295,
+            "x2": 610,
+            "y2": 375,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "dc"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "24 V pilot circuit",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "24 V pilot circuit",
+        "description": "Run the simulation and press S1 to light H1 through the second 0 V screw.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "ac",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 155,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "dc",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 345,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "command",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 555,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "lamp",
+            "definitionId": "user.indicator-lamp",
+            "reference": "H1",
+            "x": 785,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "ratedVoltageV": 24,
+              "dc": true,
+              "color": "#15803d",
+              "indication": "SITOP pilot"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "netName": "L",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "line-in"
+            },
+            "points": []
+          },
+          {
+            "id": "neutral",
+            "netName": "N",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "neutral-in"
+            },
+            "points": []
+          },
+          {
+            "id": "command-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "command",
+              "terminalId": "13"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-feed",
+            "netName": "PILOT_PLUS",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "lamp",
+              "terminalId": "t1"
+            },
+            "points": []
+          },
+          {
+            "id": "pilot-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "lamp",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out-2"
+            },
+            "points": [
+              {
+                "x": 690,
+                "y": 400
+              },
+              {
+                "x": 455,
+                "y": 400
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
