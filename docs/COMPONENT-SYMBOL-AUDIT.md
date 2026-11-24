@@ -1,34 +1,39 @@
 # Component symbol audit
 
-The automated inventory covers 587 catalog definitions, including 102 selectable definitions and the definitions retained for saved-project compatibility. Every declared terminal resolves to a unique finite anchor, and every definition resolves to symbol artwork or its user-drawn rendering path. These checks establish renderer and anchor coverage. Inspection of lead-to-anchor coincidence, manufacturer pinouts, and live state for every family remains open.
+The automated inventory covers 10,676 catalog definitions in 26 categories, including 10,119 selectable definitions and legacy definitions retained for saved-project compatibility. The audit reported zero fallback symbols, zero missing or coincident anchors, and zero terminal identity or coordinate failures after a combined translation, mirror, resize, and 90° rotation. It checks the shared model geometry. Visual lead-to-anchor alignment in the editor, manufacturer provenance, and live operating states still require separate evidence.
 
 | Electrical family | Definitions | Selectable | Symbol and anchor coverage |
 | --- | ---: | ---: | ---: |
 | Power supply | 36 | 4 | 36 / 36 |
 | Circuit breakers | 43 | 3 | 43 / 43 |
 | Contactors and starters | 3 | 3 | 3 / 3 |
-| Protection devices | 37 | 2 | 37 / 37 |
+| Protection devices | 9927 | 9824 | 9927 / 9927 |
 | Motors | 45 | 6 | 45 / 45 |
 | Switches and pushbuttons | 38 | 3 | 38 / 38 |
 | Logic and control | 20 | 20 | 20 / 20 |
-| Advanced sensors and instrumentation | 11 | 11 | 11 / 11 |
+| Advanced sensors and instrumentation | 169 | 168 | 169 / 169 |
 | Pneumatics and hydraulics | 9 | 9 | 9 / 9 |
 | HVAC | 6 | 6 | 6 / 6 |
 | Solar and renewable energy | 5 | 5 | 5 / 5 |
 | Safety and monitoring | 6 | 6 | 6 / 6 |
-| Distribution and panel hardware | 7 | 7 | 7 / 7 |
-| Wiring and cables | 4 | 4 | 4 / 4 |
-| Relays | 46 | 1 | 46 / 46 |
-| Transformers | 31 | 1 | 31 / 31 |
+| Distribution and panel hardware | 24 | 23 | 24 / 24 |
+| Wiring and cables | 6 | 5 | 6 / 6 |
+| Transformers | 32 | 2 | 32 / 32 |
+| PLC and I/O | 37 | 2 | 37 / 37 |
+| Pneumatic systems | 18 | 18 | 18 / 18 |
+| Relays | 47 | 2 | 47 / 47 |
+| Terminal blocks | 38 | 3 | 38 / 38 |
 | Sensors | 36 | 1 | 36 / 36 |
-| PLC and I/O | 36 | 1 | 36 / 36 |
 | Timers and counters | 33 | 1 | 33 / 33 |
-| Terminal blocks | 37 | 2 | 37 / 37 |
 | Measuring and indication | 26 | 1 | 26 / 26 |
 | Drives and power electronics | 33 | 1 | 33 / 33 |
 | Industrial loads and actuators | 36 | 1 | 36 / 36 |
 | Safety and signalling | 1 | 1 | 1 / 1 |
-| User symbols | 2 | 2 | 2 / 2 |
+| User symbols | 2 | 1 | 2 / 2 |
+
+## Representative engineering drawings
+
+The live Projects menu opens the published native drawings. The starter workbook covers the three-pole breaker, contactor and overload relay, and the winding comparison covers the six-lead motor. The remaining representative examples include the safety transformer, Finder relay, SM 1223, encoder, multilevel terminal, M12 connector, and the enclosure, plate, rail and trunking sheets. See [the engineering drawing index](CAD-INTERACTION.md#open-engineering-drawings-in-the-editor) for access and model limits.
 
 The three-pole contactor checkpoint draws linked poles at the existing power anchors and preserves the coil and auxiliary anchors and electrical IDs. Library thumbnails and details reuse the schematic artwork. Detailed previews include terminal designations, and the selected device retains the existing placement controls.
 

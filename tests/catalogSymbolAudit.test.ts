@@ -13,6 +13,7 @@ it("audits rendering and terminal identity across selectable and stored definiti
   const rows = new Map<string, { records: number; selectable: number; dedicatedMarkup: number; anchorMatch: number }>();
   const fallback: string[] = [];
   const badAnchors: string[] = [];
+  const badTransforms: string[] = [];
   for (const definition of componentCatalog) {
     const row = rows.get(definition.category) ?? { records: 0, selectable: 0, dedicatedMarkup: 0, anchorMatch: 0 };
     rows.set(definition.category, row);
@@ -35,14 +36,25 @@ it("audits rendering and terminal identity across selectable and stored definiti
       anchors.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)) &&
       new Set(anchors.map(({ x, y }) => `${x},${y}`)).size === anchors.length) row.anchorMatch++;
     else badAnchors.push(definition.id);
+    const [component] = document.components;
+    const rotated = terminalAnchors({ ...document, components: [
+      { ...component, x: 360, y: 420, size: 1.5, rotation: 90, mirrored: true },
+    ] });
+    if (rotated.length !== anchors.length || !rotated.every(({ endpoint, x, y }, index) => {
+      const original = anchors[index];
+      return endpoint.terminalId === original.endpoint.terminalId &&
+        Math.abs(x - (360 - original.y * 1.5)) < 1e-8 &&
+        Math.abs(y - (420 - original.x * 1.5)) < 1e-8;
+    })) badTransforms.push(definition.id);
   }
   if (process.env.ADIGUN_CATALOG_AUDIT === "1") {
     console.table(Object.fromEntries(rows));
-    console.log({ records: componentCatalog.length, selectable: selectable.size, fallback, badAnchors });
+    console.log({ records: componentCatalog.length, selectable: selectable.size, fallback, badAnchors, badTransforms });
   }
   expect(new Set(componentCatalog.map(({ id }) => id)).size).toBe(componentCatalog.length);
   expect(fallback).toEqual([]);
   expect(badAnchors).toEqual([]);
+  expect(badTransforms).toEqual([]);
 });
 
 it("searches 100,000 synthetic records and bounds the rendered category page", () => {
