@@ -2679,7 +2679,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     </>}
     {envelope && <>
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
-      {envelope.installationClearanceMm && <p>Mounting clearance (mm) · {envelope.installationClearanceMm.above} above, {envelope.installationClearanceMm.below} below, {envelope.installationClearanceMm.forward} forward{envelope.installationClearanceMm.lateral !== undefined && `, ${envelope.installationClearanceMm.lateral} lateral`}. The front envelope shows the upper and lower limits.</p>}
+      {envelope.installationClearanceMm && <p>Mounting clearance (mm) · {envelope.installationClearanceMm.above} above, {envelope.installationClearanceMm.below} below{envelope.installationClearanceMm.forward !== undefined && `, ${envelope.installationClearanceMm.forward} forward`}{envelope.installationClearanceMm.lateral !== undefined && `, ${envelope.installationClearanceMm.lateral} lateral`}. The front envelope shows the upper and lower limits. {envelope.installationClearanceMm.note}</p>}
       {envelope.installationClearanceMm?.sourceUrl && <a href={envelope.installationClearanceMm.sourceUrl} target="_blank" rel="noreferrer">Installation clearances source</a>}
       {envelope.topBores ? <>
         <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.depthMm)}>Apply load cell top envelope</button>

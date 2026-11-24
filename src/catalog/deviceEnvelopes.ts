@@ -9,10 +9,18 @@ interface DeviceEnvelope {
   sourceUrl: string;
   railMountedDepths?: readonly { rail: string; depthMm: number }[];
   topBores?: readonly { fromLeftMm: number; diameterMm: number; name: string }[];
-  installationClearanceMm?: { above: number; below: number; forward: number; lateral?: number; sourceUrl?: string };
+  installationClearanceMm?: { above: number; below: number; forward?: number; lateral?: number; sourceUrl?: string; note?: string };
 }
 
 const deviceEnvelopes = new Map<string, DeviceEnvelope>([
+  ["iec.dc-control-supply.01", {
+    widthMm: 52.5, heightMm: 80, depthMm: 100,
+    sourceUrl: "https://cache.industry.siemens.com/dl/files/785/55017785/att_1104125/v1/A5E51869189-1-XB_OP-INST_SITOP-PSU100C-60W-100W_2022-05-15.pdf?download=true",
+    installationClearanceMm: { above: 50, below: 50, lateral: 0,
+      sourceUrl: "https://support.industry.siemens.com/cs/attachments/65647808/PSU100C_Handbuch_englisch_en-US.pdf#page=19",
+      note: "Mount vertically with input terminals down. The side envelope uses nominal body dimensions. Consult the instructions for latch projections and the cable-duct clearance exception.",
+    },
+  }],
   ["siemens.sm1223.6es7223-1bh32-0xb0", {
     widthMm: 45, heightMm: 100, depthMm: 75,
     sourceUrl: "https://cache.industry.siemens.com/dl/files/167/109744167/att_920955/v1/simatic-st70-complete-english-2017.pdf",
