@@ -1394,3 +1394,11 @@ it("draws the Omron line driver with three separate paired output groups", () =>
     expect(markup).toContain('data-encoder-pair="' + phase + '"><path d="M 125 ' + y + ' h 22 M 125 ' + (y + 14) + ' h 22"');
   }
 });
+
+it("draws both Siemens auxiliary contacts outside the main poles in either state", () => {
+  const render = (energized: boolean) => renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "starter", x: 100, y: 100, properties: { energized } }));
+  expect(render(false)).toContain('data-starter-auxiliary="13/14" data-state="open" d="M 53 88 H 57 L 48 98');
+  expect(render(false)).toContain('data-starter-auxiliary="21/22" data-state="closed" d="M 147 88 H 143 V 112 H 147"');
+  expect(render(true)).toContain('data-starter-auxiliary="13/14" data-state="closed" d="M 53 88 H 57 V 112 H 53"');
+  expect(render(true)).toContain('data-starter-auxiliary="21/22" data-state="open" d="M 147 88 H 143 L 152 98');
+});

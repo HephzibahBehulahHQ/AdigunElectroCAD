@@ -275,7 +275,14 @@ if (symbolId === "transformer" || symbolId.startsWith("transformer-")) {
       <path d={`M ${x - 24} ${y - 1} H ${x + 24}`} strokeDasharray="3 4" />
       {[-24, 0, 24].map(offset => <path key={offset} d={poleContactPath(x + offset, y, energized)} />)}
       <path d={`M ${x - 16} ${y - 47} H ${x - 12} C ${x - 4} ${y - 59}, ${x - 4} ${y - 35}, ${x} ${y - 47} C ${x + 4} ${y - 59}, ${x + 4} ${y - 35}, ${x + 12} ${y - 47} H ${x + 16}`} />
-      <path d={`M ${x - 47} ${y - 12} H ${x - 36} M ${x - 47} ${y + 12} H ${x - 36} ${energized ? `M ${x - 36} ${y - 12} V ${y + 12}` : `M ${x - 36} ${y - 12} L ${x - 26} ${y - 1} M ${x - 26} ${y + 12} H ${x - 36}`} M ${x + 47} ${y - 12} H ${x + 36} M ${x + 47} ${y + 12} H ${x + 36} ${energized ? `M ${x + 36} ${y - 12} L ${x + 26} ${y - 1} M ${x + 26} ${y + 12} H ${x + 36}` : `M ${x + 36} ${y - 12} V ${y + 12}`} `} />
+      {([{ side: -1, pair: "13/14", closed: energized },
+        { side: 1, pair: "21/22", closed: !energized }] as const).map(({ side, pair, closed }) => {
+        const terminalX = x + side * 47;
+        const pivotX = x + side * 43;
+        return <path key={pair} data-starter-auxiliary={pair} data-state={closed ? "closed" : "open"} d={closed
+          ? `M ${terminalX} ${y - 12} H ${pivotX} V ${y + 12} H ${terminalX}`
+          : `M ${terminalX} ${y - 12} H ${pivotX} L ${x + side * 52} ${y - 2} M ${pivotX} ${y + 3} V ${y + 12} H ${terminalX}`} />;
+      })}
     </g>;
   }
   if (symbolId === "contactor-3p") {
