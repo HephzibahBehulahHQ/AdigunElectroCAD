@@ -298,16 +298,21 @@ it("checks noncircular ellipse pairs with different aspect ratios", () => {
   expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
 });
 
-it("checks a rectangular outline against the actual interior of a concave panel profile", () => {
+it.each(["rectangle", "polygon"] as const)("checks a %s outline against the actual interior of a concave panel profile", kind => {
   const { document } = createBlankProject().sheets[0];
   document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
   const style = { color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: "schematic", componentId: "encoder" } };
   document.graphics = [{ ...style, id: "profile", name: "Stepped profile", kind: "polygon", x1: 0, y1: 0, x2: 40, y2: 40,
     points: [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 10 }, { x: 10, y: 10 }, { x: 10, y: 40 }, { x: 0, y: 40 }] },
-    { ...style, id: "equipment", name: "Equipment", kind: "rectangle", x1: 10, y1: 10, x2: 30, y2: 30 }];
+    { ...style, id: "equipment", name: "Equipment", kind, x1: 10, y1: 10, x2: 30, y2: 30,
+      ...(kind === "polygon" && { points: [{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }] }) }];
   const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code.startsWith("panel-"));
   expect(warnings()).toEqual([]);
   document.graphics[1].x1 = 9;
+  const points = document.graphics[1].points;
+  if (points) points[0].x = points[3].x = 9;
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+  document.graphics[1] = { ...document.graphics[0], id: "coincident", name: "Coincident profile" };
   expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
 });
 

@@ -197,9 +197,41 @@ function ellipsesIntersect(a: PanelShape["bounds"], b: PanelShape["bounds"]): bo
   return distance < 1 - 1e-10;
 }
 
+function polygonsIntersect(a: NonNullable<PanelShape["points"]>, b: NonNullable<PanelShape["points"]>): boolean {
+  const edges = (points: typeof a) => points.map((start, index) => ({ start, end: points[(index + 1) % points.length] }));
+  const edgeA = edges(a);
+  const edgeB = edges(b);
+  const side = (start: typeof a[number], end: typeof a[number], point: typeof a[number]) =>
+    (end.x - start.x) * (point.y - start.y) - (end.y - start.y) * (point.x - start.x);
+  const opposite = (left: number, right: number) => (left < 0 && right > 0) || (left > 0 && right < 0);
+  // A proper crossing puts interiors on the same side of both boundaries in one quadrant.
+  if (edgeA.some(p => edgeB.some(q => opposite(side(p.start, p.end, q.start), side(p.start, p.end, q.end)) &&
+    opposite(side(q.start, q.end, p.start), side(q.start, q.end, p.end))))) return true;
+
+  // With no proper crossing, horizontal interval order cannot change between vertex heights.
+  const heights = [...new Set([...a, ...b].map(point => point.y))].sort((left, right) => left - right);
+  const crossings = (segments: typeof edgeA, y: number) => segments.flatMap(({ start, end }) =>
+    (start.y > y) !== (end.y > y) ? [start.x + (y - start.y) * (end.x - start.x) / (end.y - start.y)] : []
+  ).sort((left, right) => left - right);
+  for (let row = 1; row < heights.length; row++) {
+    const y = heights[row - 1] + (heights[row] - heights[row - 1]) / 2;
+    const xs = crossings(edgeA, y);
+    const ys = crossings(edgeB, y);
+    for (let i = 0, j = 0; i + 1 < xs.length && j + 1 < ys.length;) {
+      if (Math.min(xs[i + 1], ys[j + 1]) - Math.max(xs[i], ys[j]) > 1e-8) return true;
+      if (xs[i + 1] < ys[j + 1]) i += 2;
+      else j += 2;
+    }
+  }
+  return false;
+}
+
 function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | undefined {
   if (!componentFootprintsOverlap(a.bounds, b.bounds)) return;
   if (a.kind === "rectangle" && b.kind === "rectangle") return "exact";
+  if (a.kind === "polygon" && b.kind === "polygon" && a.points && b.points) {
+    return polygonsIntersect(a.points, b.points) ? "exact" : undefined;
+  }
   const ellipse = a.kind === "ellipse" ? a.bounds : b.kind === "ellipse" ? b.bounds : undefined;
   const rectangle = a.kind === "rectangle" ? a.bounds : b.kind === "rectangle" ? b.bounds : undefined;
   const polygon = a.kind === "polygon" ? a.points : b.kind === "polygon" ? b.points : undefined;
