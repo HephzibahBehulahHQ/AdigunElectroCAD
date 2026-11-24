@@ -27,6 +27,11 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
     widthMm: 6.2, heightMm: 87.8, depthMm: 75.6,
     sourceUrl: "https://cdn.findernet.com/app/uploads/S38EN.pdf#page=17",
   }],
+  ["overload.thermal", {
+    // Exact 3RU2126-4AB0 device dimensions. The mounted assembly includes a separate contactor.
+    widthMm: 45, heightMm: 85, depthMm: 85,
+    sourceUrl: "https://media.distributordatasolutions.com/siemenscomplete/2021q3/documents/37926da566bb730826ec467ba7324ce384d9ea17.pdf#page=2",
+  }],
   ["iec.motor-starter.01", {
     widthMm: 45, heightMm: 85, depthMm: 107,
     installationClearanceMm: { above: 10, below: 10, forward: 10, lateral: 0 },
