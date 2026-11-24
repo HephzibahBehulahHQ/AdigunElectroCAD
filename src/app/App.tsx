@@ -369,6 +369,8 @@ export function App() {
   const report = useMemo(() => createProjectReport(document, catalogById), [document]);
   const { sheets, continuations } = project;
   const projectReport = useMemo(() => createProjectWideReport({ sheets, continuations }, catalogById), [sheets, continuations]);
+  const panelGeometryIssues = useMemo(() => projectReport.validation.filter(({ code }) =>
+    code === "panel-outline-overlap" || code === "panel-envelope-overlap" || code === "panel-installation-clearance"), [projectReport]);
   const circuitModelRuns = useMemo(() => executeProjectCircuitModels(project, catalogById, runtimeDocument ? undefined : activeSheet.id, runtimeDocument), [project, activeSheet.id, runtimeDocument]);
   const activeSheetModelRuns = circuitModelRuns.filter((run) => run.sheetId === activeSheet.id);
   const symbolStates = new Map(activeSheetModelRuns.map(({ componentId, evaluatedProperties }) => [componentId, evaluatedProperties]));
@@ -2366,6 +2368,11 @@ export function App() {
                 </button>)}
             </fieldset>}
             <div className="console-section">{topologyIssues.length ? topologyIssues.map((issue) => <p className="issue" key={`${issue.code}-${issue.message}`}>{issue.message}</p>) : <p className="pass">✓ {t.valid} · {document.wires.length} terminal-to-terminal wires checked.</p>}<ModelRunSummary runs={activeSheetModelRuns} /><p className="muted">Component results are documented engineering abstractions; validate physical designs independently.</p></div>
+            {panelGeometryIssues.length > 0 && <section className="console-section" aria-label="Panel geometry warnings">
+              <strong>Panel geometry warnings</strong>
+              {panelGeometryIssues.map(({ code, message, sheet }, index) =>
+                <p className="issue" key={JSON.stringify([sheet, code, message, index])}>{sheet} · {message}</p>)}
+            </section>}
             <div className="console-section event-log"><strong>Event log</strong>{simulation.events.slice(0, 4).map((event, index) => <p key={`${event}-${index}`}>{event}</p>)}</div>
           </div>
         </aside>
