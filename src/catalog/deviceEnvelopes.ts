@@ -1,4 +1,5 @@
 import { omronEncoderCatalog } from "./omronEncoderCatalog";
+import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
 
 interface DeviceEnvelope {
   widthMm: number;
@@ -6,6 +7,7 @@ interface DeviceEnvelope {
   depthMm: number;
   sourceUrl: string;
   railMountedDepths?: readonly { rail: string; depthMm: number }[];
+  topBores?: readonly { fromLeftMm: number; diameterMm: number; name: string }[];
   installationClearanceMm?: { above: number; below: number; forward: number; lateral?: number; sourceUrl?: string };
 }
 
@@ -48,6 +50,19 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
     sourceUrl: "https://eshop.se.com/sg/ic60n-miniature-circuit-breaker-4p-16a-c-curve-a9f74416.html",
   }],
 ]);
+
+const hbkBodySource = "https://www.hbm.com/fileadmin/mediapool/hbmdoc/technical/B01010.pdf#page=1";
+const loadCellBores = (mounting: readonly [number, number], load: number, mountingDiameter: number, loadDiameter: number) => [
+  ...mounting.map((fromLeftMm, index) => ({ fromLeftMm, diameterMm: mountingDiameter, name: `Mounting bore ${index + 1}` })),
+  { fromLeftMm: load, diameterMm: loadDiameter, name: "Load application bore" },
+];
+const hbkCompactBody: DeviceEnvelope = { widthMm: 123, heightMm: 42, depthMm: 42, sourceUrl: hbkBodySource, topBores: loadCellBores([13, 31], 113, 8.2, 8.2) };
+const hbkCompact500Body: DeviceEnvelope = { ...hbkCompactBody, topBores: loadCellBores([13, 31], 113, 10.5, 11.1) };
+const hbkLargeBody: DeviceEnvelope = { widthMm: 210, heightMm: 60, depthMm: 60, sourceUrl: hbkBodySource, topBores: loadCellBores([15, 55], 188, 13, 11.1) };
+for (const { id, propertiesSchema } of hbkLoadCellCatalog) {
+  const largeBody = id === "hbk.z6gc3.500kg" || propertiesSchema.capacityKg === 1000;
+  deviceEnvelopes.set(id, largeBody ? hbkLargeBody : propertiesSchema.capacityKg === 500 ? hbkCompact500Body : hbkCompactBody);
+}
 
 export function deviceEnvelope(definitionId: string): DeviceEnvelope | undefined {
   return deviceEnvelopes.get(definitionId);
