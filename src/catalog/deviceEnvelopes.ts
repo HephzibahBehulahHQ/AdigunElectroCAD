@@ -12,7 +12,14 @@ interface DeviceEnvelope {
   installationClearanceMm?: { above: number; below: number; forward?: number; lateral?: number; sourceUrl?: string; note?: string };
 }
 
+const phoenixM12Face = { diameterMm: 20,
+  note: "The circle represents the housing envelope viewed from the mating end. Pin positions are shown on the schematic.",
+  sourceUrl: "https://www.phoenixcontact.com/en-us/products/circular-connector-cable-side-sacc-m12ms-5con-pg-7-1662256?type=pdf" };
+
 const deviceEnvelopes = new Map<string, DeviceEnvelope>([
+  ["phoenix-contact.sacc.1662256", {
+    widthMm: phoenixM12Face.diameterMm, heightMm: phoenixM12Face.diameterMm, depthMm: 60, sourceUrl: phoenixM12Face.sourceUrl,
+  }],
   ["siemens.4ac37.4ac3716-0", {
     widthMm: 36, heightMm: 90, depthMm: 64,
     sourceUrl: "https://docs.rs-online.com/3722/A700000007298810.pdf#page=1",
@@ -96,15 +103,12 @@ const omronEncoderIds = new Set(omronEncoderCatalog.map(({ id }) => id));
 const omronEncoderFace = {
   diameterMm: 40,
   side: { bodyLengthMm: 39, pilotLengthMm: 5, pilotDiameterMm: 20, exposedShaftLengthMm: 10, shaftDiameterMm: 6 },
-  mountingPitchDiameterMm: 30,
-  thread: "M3",
-  nominalThreadDiameterMm: 3,
-  threadDepthMm: 7,
-  mountingHoleCount: 3,
+  mounting: { pitchDiameterMm: 30, thread: "M3", nominalThreadDiameterMm: 3, threadDepthMm: 7, holeCount: 3 },
   sourceUrl: "https://www.ia.omron.com/products/family/487/dimension.html",
 };
 
-export function roundDeviceFace(definitionId: string) {
+export function roundDeviceFace(definitionId: string): (Pick<typeof phoenixM12Face, "diameterMm" | "sourceUrl"> & Partial<typeof omronEncoderFace> & { note?: string }) | undefined {
+  if (definitionId === "phoenix-contact.sacc.1662256") return phoenixM12Face;
   return omronEncoderIds.has(definitionId) ? omronEncoderFace : undefined;
 }
 
