@@ -286,7 +286,7 @@ export function PlacedSymbol({ component, millimetres = false, evaluatedProperti
   const requestedBore = component.properties.customBoreDiameterMm;
   const bore = mountingPlate && typeof requestedBore === "number" && requestedBore > 0 && requestedBore < 25 ? requestedBore : 0;
   const halfHeight = hardware && ((component.rotation === 90 || component.rotation === 270) ? hardware.length : hardware.width) / 2;
-  return <g onClick={(event) => { event.stopPropagation(); if (dragged.current) { dragged.current = false; return; } onSelect(component.id, event.shiftKey); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onOpenContextMenu?.(component.id, event.clientX, event.clientY); }} transform={`translate(${visualDelta.x} ${visualDelta.y})`} style={{ touchAction: wireMode ? "auto" : "none", cursor: onMove && !wireMode ? "grab" : undefined }}
+  return <g onClick={(event) => { event.stopPropagation(); if (dragged.current) { dragged.current = false; return; } onSelect(component.id, event.shiftKey); event.currentTarget.ownerSVGElement?.focus({ preventScroll: true }); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onOpenContextMenu?.(component.id, event.clientX, event.clientY); }} transform={`translate(${visualDelta.x} ${visualDelta.y})`} style={{ touchAction: wireMode ? "auto" : "none", cursor: onMove && !wireMode ? "grab" : undefined }}
     onPointerDown={(event) => {
       if (!onMove || wireMode || event.button !== 0) return;
       const start = point(event); if (!start) return;
