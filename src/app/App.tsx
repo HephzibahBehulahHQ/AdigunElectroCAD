@@ -13,7 +13,7 @@ import { deviceEnvelope } from "../catalog/deviceEnvelopes";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, placementLayout, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
-import { controlTerminalOffset, panelHardwareDimensions } from "../cad/componentGeometry";
+import { controlTerminalOffset, instanceFootprint, panelHardwareDimensions } from "../cad/componentGeometry";
 import { schematicGraphicsToSymbolGraphics } from "../cad/userSymbol";
 import { componentPropertyInputType } from "../cad/componentPropertyInput";
 import { cameraBounds, fitDrawingCamera, MAX_FREE_ZOOM, MIN_FREE_ZOOM, unobstructedDrawingBounds, zoomDrawingAt, type DrawingCamera } from "../cad/drawingCamera";
@@ -2074,6 +2074,12 @@ export function App() {
     });
   };
 
+  const revealLinkedDrawing = (bounds: { x: number; y: number; width: number; height: number }) => {
+    if (!drawingViewport.width || !drawingViewport.height) return;
+    const fitted = fitDrawingCamera(bounds, drawingViewport);
+    setFreeCamera(camera => ({ center: fitted.center, zoom: Math.min(camera.zoom, fitted.zoom) }));
+  };
+
   const fitSchematicContent = (scope: "drawing" | "selection" = "drawing") => {
     const viewport = window.document.querySelector<HTMLElement>(".drawing-area .schematic-wrap");
     const svg = viewport?.querySelector<SVGSVGElement>("svg.schematic");
@@ -2262,6 +2268,10 @@ export function App() {
                 <button key={JSON.stringify([sheetId, graphic.id])} type="button" onClick={() => {
                   selectSheet(sheetId);
                   selectGraphic(graphic.id);
+                  revealLinkedDrawing({
+                    x: Math.min(graphic.x1, graphic.x2), y: Math.min(graphic.y1, graphic.y2),
+                    width: Math.abs(graphic.x2 - graphic.x1), height: Math.abs(graphic.y2 - graphic.y1),
+                  });
                 }}>{sheetName} · {graphic.name}</button>)}
             </fieldset>}
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Sign in to a permanent account to save them.</p>}
@@ -2281,6 +2291,12 @@ export function App() {
           {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(stackScope), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} deviceSheets={project.sheets.filter(sheet => sheet.id !== activeSheet.id)} onDeviceNavigate={link => {
             selectSheet(link.sheetId);
             selectComponent(link.componentId);
+            const source = project.sheets.find(sheet => sheet.id === link.sheetId);
+            const instance = source?.document.components.find(component => component.id === link.componentId);
+            if (instance && source?.kind === "free-schematic") {
+              const bounds = instanceFootprint(instance, source.document.drawingGrid?.units === "mm");
+              revealLinkedDrawing({ x: bounds.left, y: bounds.top, width: bounds.right - bounds.left, height: bounds.bottom - bounds.top });
+            }
           }} millimetres={drawingGrid.units === "mm"} selectionCount={selectedGraphicIds.length} stackCapabilities={canReorderSchematicGraphics(document.graphics ?? [], selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id])} onStackChange={(order) => updateGraphicStackOrder(selectedGraphicIds.length ? selectedGraphicIds : [selectedGraphic.id], order)} onChange={updateSelectedGraphic} onGeometryChange={(x1, y1, x2, y2) => resizeGraphic(selectedGraphic.id, x1, y1, x2, y2)} onDuplicate={duplicateSelectedGraphic} onRemove={removeSelectedGraphic} onMakeComponent={makeComponentFromGraphic} /> : <section className="catalog-properties-preview"><strong>{selectedDefinition.name}</strong><p>{selectedDefinition.description}</p><dl><dt>Reference</dt><dd>{selectedDefinition.referencePrefix}</dd><dt>Terminals</dt><dd>{selectedDefinition.terminals.map((terminal) => terminal.label).join(", ")}</dd><dt>Simulation</dt><dd>{selectedDefinition.simulationSupport}</dd></dl><button type="button" className="primary wide" onClick={addSelectedComponent}>Insert into drawing</button></section>}
             {!isReferenceSheet && showGridEditor && <DrawingGridEditor grid={drawingGrid} onSave={saveDrawingGrid} />}
             {!isReferenceSheet && showPrintLayout && <PrintLayoutEditor layout={document.printLayout} millimetres={drawingGrid.units === "mm"} onSave={savePrintLayout} onRemove={removePrintLayout} />}
