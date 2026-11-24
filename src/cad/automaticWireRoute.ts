@@ -88,6 +88,18 @@ export function findAutomaticWireBends(from: TerminalAnchor, to: TerminalAnchor,
   return best.length ? best : searchCorridorGrid(from, to, xs, ys, otherSymbols);
 }
 
+/** Prefer the terminal lead axes for new wires, without changing stored automatic routes. */
+export function newWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] | null {
+  if ((from.vertical || to.vertical) && from.x !== to.x && from.y !== to.y) {
+    const middle = (from.y + to.y) / 2;
+    const bends = from.vertical && to.vertical
+      ? [{ x: from.x, y: middle }, { x: to.x, y: middle }]
+      : [from.vertical ? { x: from.x, y: to.y } : { x: to.x, y: from.y }];
+    if (!wireRouteObstructions(from, to, bends, obstacles).length) return bends;
+  }
+  return findAutomaticWireBends(from, to, obstacles) === null ? null : [];
+}
+
 /** Keep previously saved wires visible if the geometry no longer permits an automatic route. */
 export function automaticWireBends(from: TerminalAnchor, to: TerminalAnchor, obstacles: readonly Obstacle[]): SchematicGraphicPoint[] {
   return findAutomaticWireBends(from, to, obstacles) ?? [];

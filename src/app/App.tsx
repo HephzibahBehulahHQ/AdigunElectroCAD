@@ -1,4 +1,4 @@
-import { automaticWireBends, findAutomaticWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticWireBends, newWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
@@ -1628,6 +1628,7 @@ export function App() {
       const check = canConnectTerminals(document, catalogById, wireStart, endpoint);
       if (!check.ok) { setNotice(check.reason ?? "The selected terminals cannot be connected."); return; }
       const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
+      if (!wireBranchStart) wire.points = wireBends;
       if (!wireBranchStart && !isReferenceSheet && wireBends.length === 0) {
         const anchors = terminalAnchors(document);
         const from = anchors.find((anchor) => anchor.endpoint.componentId === wireStart.componentId && anchor.endpoint.terminalId === wireStart.terminalId);
@@ -1635,12 +1636,13 @@ export function App() {
         if (!from || !to) { setNotice("Could not find both terminal positions."); return; }
         const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
         const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm");
-        if (findAutomaticWireBends(from, to, obstacles) === null) {
+        const route = newWireBends(from, to, obstacles);
+        if (route === null) {
           setNotice("No clear automatic route. Click the drawing to add bends, then choose the destination terminal again.");
           return;
         }
+        wire.points = route;
       }
-      if (!wireBranchStart) wire.points = wireBends;
       if (!updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 })) return;
       setSelectedWireId(wire.id);
       setNotice(continueBranch ? `Wire ${wire.netName} added. The source remains selected; Shift-click another compatible target or click without Shift to finish branching.` : `Wire ${wire.netName} created between catalog terminals.`);
