@@ -183,15 +183,22 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     <text x={x - 12} y={y + 18} textAnchor="middle" className={text}>AI</text>
     <text x={x + 12} y={y + 4} textAnchor="middle" className={text}>Q</text>
   </g>;
-  if (symbolId === "transformer" || symbolId.startsWith("transformer-")) return <g className={mark} aria-label="Transformer with primary and secondary windings">
-    <path d={`M ${x - 47} ${y - 12} H ${x - 25} V ${y - 24} H ${x - 8}
-      M ${x - 47} ${y + 12} H ${x - 25} V ${y + 24} H ${x - 8}
-      M ${x + 47} ${y - 12} H ${x + 25} V ${y - 24} H ${x + 8}
-      M ${x + 47} ${y + 12} H ${x + 25} V ${y + 24} H ${x + 8}`} />
-    <path d={`M ${x - 8} ${y - 24} C ${x - 22} ${y - 24} ${x - 22} ${y - 16} ${x - 8} ${y - 16} C ${x - 22} ${y - 16} ${x - 22} ${y - 8} ${x - 8} ${y - 8} C ${x - 22} ${y - 8} ${x - 22} ${y} ${x - 8} ${y} C ${x - 22} ${y} ${x - 22} ${y + 8} ${x - 8} ${y + 8} C ${x - 22} ${y + 8} ${x - 22} ${y + 16} ${x - 8} ${y + 16} C ${x - 22} ${y + 16} ${x - 22} ${y + 24} ${x - 8} ${y + 24}`} />
-    <path d={`M ${x + 8} ${y - 24} C ${x + 22} ${y - 24} ${x + 22} ${y - 16} ${x + 8} ${y - 16} C ${x + 22} ${y - 16} ${x + 22} ${y - 8} ${x + 8} ${y - 8} C ${x + 22} ${y - 8} ${x + 22} ${y} ${x + 8} ${y} C ${x + 22} ${y} ${x + 22} ${y + 8} ${x + 8} ${y + 8} C ${x + 22} ${y + 8} ${x + 22} ${y + 16} ${x + 8} ${y + 16} C ${x + 22} ${y + 16} ${x + 22} ${y + 24} ${x + 8} ${y + 24}`} />
-    <path d={`M ${x - 2} ${y - 27} V ${y + 27} M ${x + 2} ${y - 27} V ${y + 27}`} />
-  </g>;
+if (symbolId === "transformer" || symbolId.startsWith("transformer-")) {
+    return <g className={mark} aria-label="Transformer with primary and secondary windings">
+      {([{ side: "primary", sign: -1, volts: properties.primaryVoltageV },
+        { side: "secondary", sign: 1, volts: properties.secondaryVoltageV }] as const).map(({ side, sign, volts }) => {
+        const windingX = x + sign * 8;
+        const bendX = x + sign * 25;
+        const terminalX = x + sign * 47;
+        const turns = Array.from({ length: 6 }, () => `q ${sign * 20} 4 0 8`).join(" ");
+        return <g key={side} data-transformer-winding={side}>
+          <path d={`M ${terminalX} ${y - 12} H ${bendX} V ${y - 24} H ${windingX} ${turns} H ${bendX} V ${y + 12} H ${terminalX}`} />
+          {typeof volts === "number" && volts > 0 && <text x={x + sign * 27} y={y - 30} textAnchor="middle" className={text}>{volts} V</text>}
+        </g>;
+      })}
+      <path data-transformer-core="" d={`M ${x - 2} ${y - 27} V ${y + 27} M ${x + 2} ${y - 27} V ${y + 27}`} />
+    </g>;
+  }
   if (symbolId === "fuse" || symbolId.startsWith("fuse-")) {
     const poles = (["l1", "l2", "l3"] as const).map((phase, index) => ({ phase, offset: (index - 1) * 32, closed: fusePoleClosed(properties, phase) }));
     const healthy = poles.every(({ closed }) => closed);

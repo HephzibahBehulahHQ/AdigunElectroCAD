@@ -659,7 +659,9 @@ it("positions transformer primary and secondary pins around a dedicated winding 
   expect(hasDedicatedFunctionalSymbol(definition.symbolId)).toBe(true);
   const svg = renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: definition.symbolId, x: 400, y: 300 }));
   expect(svg).toContain('aria-label="Transformer with primary and secondary windings"');
-  expect(svg).toContain("C 378 276");
+  expect(svg).toMatch(/data-transformer-winding="primary"><path d="M 353 288 [^"]+ H 353"/);
+  expect(svg).toMatch(/data-transformer-winding="secondary"><path d="M 447 288 [^"]+ H 447"/);
+  expect(svg).toContain('data-transformer-core=""');
 });
 
 it("renders a connectable three-pole fuse switch with its three real pole anchors", () => {
