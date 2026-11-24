@@ -706,9 +706,10 @@ export function App() {
     updateDocument({ ...document, graphics: [...graphics, ...needed], revision: document.revision + 1 });
   };
 
-  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden">>) => {
+  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden" | "footprintReviewRequired">>) => {
     if (!selectedGraphic) return;
     const next = { ...selectedGraphic, ...patch };
+    if (!next.deviceLink || !next.footprintReviewRequired) delete next.footprintReviewRequired;
     if (!next.name.trim() || next.name.length > 80 || !/^#[0-9a-f]{6}$/i.test(next.color) || (next.fillColor !== null && next.fillColor !== undefined && !/^#[0-9a-f]{6}$/i.test(next.fillColor)) || !Number.isFinite(next.strokeWidth) || next.strokeWidth < 1 || next.strokeWidth > 12) {
       setNotice("Graphic names are limited to 80 characters; color and stroke width must be valid.");
       return;
@@ -2313,7 +2314,7 @@ export function App() {
               if (reason) return reason;
               recordEdit(result.project);
               setReplacement(null);
-              setNotice("Component replaced and the selected terminal connections migrated.");
+              setNotice(linkedPanelGraphics.length ? "Component replaced. Review its linked drawing footprints." : "Component replaced and the selected terminal connections migrated.");
             }} />}
           {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(stackScope), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} deviceSheets={project.sheets.filter(sheet => sheet.id !== activeSheet.id)} onAddMountingMarks={addMountingMarks} onApplyProfile={applyGraphicProfile} onDeviceNavigate={link => {
             selectSheet(link.sheetId);
@@ -2561,7 +2562,7 @@ function ComponentReplacementForm({ project, sheet, instance, definitionId, onCa
   </form>;
 }
 
-function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNavigate, onGeometryChange, onAddMountingMarks, onApplyProfile }: {
+function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNavigate, onGeometryChange, onAddMountingMarks, onApplyProfile, onMarkReviewed }: {
   graphic: SchematicGraphic;
   millimetres: boolean;
   sheets: ElectricalProject["sheets"];
@@ -2570,6 +2571,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void;
   onAddMountingMarks: (marks: SchematicGraphic[]) => void;
   onApplyProfile: (points: SchematicGraphicPoint[]) => void;
+  onMarkReviewed: () => void;
 }) {
   const devices = sheets.flatMap(sheet => sheet.document.components.map(component => ({
     link: { sheetId: sheet.id, componentId: component.id },
@@ -2601,6 +2603,10 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       {devices.map(device => <option key={key(device.link)} value={key(device.link)}>{device.name}</option>)}
     </select></label>
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
+    {linked && graphic.footprintReviewRequired && <>
+      <p role="status">The linked device was replaced. Verify the outline dimensions and mounting features for the new part.</p>
+      <button type="button" onClick={onMarkReviewed}>Mark footprint reviewed</button>
+    </>}
     {valvePlan && <>
       <a href={valvePlan.sourceUrl} target="_blank" rel="noreferrer">Festo valve dimensions</a>
       <p>Nominal plan envelope {valvePlan.lengthMm} × {valvePlan.widthMm} mm. Allow separately for fittings, cable clearance and the manifold.</p>
@@ -2690,10 +2696,10 @@ function PanelGraphicDimensions({ graphic, onGeometryChange }: {
   </fieldset>;
 }
 
-function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMarks, onApplyProfile, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onAddMountingMarks: (marks: SchematicGraphic[]) => void; onApplyProfile: (points: SchematicGraphicPoint[]) => void; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
+function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMarks, onApplyProfile, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onAddMountingMarks: (marks: SchematicGraphic[]) => void; onApplyProfile: (points: SchematicGraphicPoint[]) => void; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden" | "footprintReviewRequired">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
   const palette = ["#1565c0", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"];
   return <section className="properties-form graphic-properties" aria-label="Drawing graphic properties">
-    {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} onAddMountingMarks={onAddMountingMarks} onApplyProfile={onApplyProfile} />}
+    {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} onAddMountingMarks={onAddMountingMarks} onApplyProfile={onApplyProfile} onMarkReviewed={() => onChange({ footprintReviewRequired: false })} />}
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
     <label><input type="checkbox" checked={!graphic.labelHidden} onChange={event => onChange({ labelHidden: !event.target.checked })} /> Show canvas label</label>
     {millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse") && <PanelGraphicDimensions graphic={graphic} onGeometryChange={onGeometryChange} />}

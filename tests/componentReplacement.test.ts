@@ -11,6 +11,10 @@ it("requires an explicit, unique map for local wires and cross-sheet terminal re
   const lamp = { id: "lamp", definitionId: "user.indicator-lamp", reference: "H1", x: 800, y: 300, rotation: 0 as const, properties: {} };
   sheet.document.components = [connector, lamp];
   other.document.components = [{ ...lamp, id: "remote" }];
+  const outline = { id: "outline", name: "Connector outline", kind: "rectangle" as const, x1: 100, y1: 100, x2: 145, y2: 125,
+    color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: sheet.id, componentId: connector.id } };
+  const unrelated = { ...outline, id: "unrelated", deviceLink: { sheetId: other.id, componentId: "remote" } };
+  other.document.graphics = [outline, unrelated];
   const points = [{ x: 650, y: 300 }];
   sheet.document.wires = [{ id: "w1", from: { componentId: connector.id, terminalId: "5" }, to: { componentId: lamp.id, terminalId: "t1" }, points, netName: "Local" }];
   const source = { componentId: connector.id, terminalId: "1" };
@@ -25,6 +29,8 @@ it("requires an explicit, unique map for local wires and cross-sheet terminal re
   const replaced = replace([["5", "upper-left"], ["1", "lower-right"]]);
   expect(replaced.reason).toBeUndefined();
   const reopened = parseProjectJson(JSON.stringify(replaced.project));
+  expect(reopened.sheets[1].document.graphics).toEqual([{ ...outline, footprintReviewRequired: true }, unrelated]);
+  expect(project.sheets[1].document.graphics).toEqual([outline, unrelated]);
   expect(reopened.sheets[0].document.wires[0]).toMatchObject({ id: "w1", points, from: { componentId: connector.id, terminalId: "upper-left" } });
   expect(reopened.continuations?.[0].points[0].endpoint).toEqual({ componentId: connector.id, terminalId: "lower-right" });
 });

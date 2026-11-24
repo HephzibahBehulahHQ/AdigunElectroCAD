@@ -53,6 +53,13 @@ export function replaceCatalogComponent(project: ElectricalProject, sheetId: str
   const invalid = validateCircuit(document, catalogById).find(issue => !priorErrors.has(issue.message));
   if (invalid) return { project, reason: invalid.message };
   const nextProject = replaceSheetDocument(project, sheetId, document);
+  nextProject.sheets = nextProject.sheets.map(item => {
+    const graphics = item.document.graphics;
+    if (!graphics?.some(graphic => graphic.deviceLink?.sheetId === sheetId && graphic.deviceLink.componentId === componentId && !graphic.footprintReviewRequired)) return item;
+    return { ...item, document: { ...item.document, revision: item.document.revision + 1, graphics: graphics.map(graphic =>
+      graphic.deviceLink?.sheetId === sheetId && graphic.deviceLink.componentId === componentId
+        ? { ...graphic, footprintReviewRequired: true } : graphic) } };
+  });
   if (project.continuations) {
     nextProject.continuations = project.continuations.map(net => ({
       ...net, points: net.points.map(point => {
