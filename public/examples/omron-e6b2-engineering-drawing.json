@@ -1,0 +1,208 @@
+{
+  "id": "omron-e6b2-engineering-drawing",
+  "name": "Omron E6B2-C wiring and mechanical views",
+  "description": "Nominal Omron E6B2-C front and side views linked to an RS-422 A-channel pair routed to separate terminal levels. The schematic documents routing only.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "Mechanical views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "Mechanical views",
+        "description": "Scale 1 drawing unit per millimetre. Three nominal M3 thread marks on a 30 mm pitch circle. The side silhouette omits the cable exit and shaft flat.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "encoder-front",
+            "name": "Encoder front",
+            "kind": "ellipse",
+            "x1": 410,
+            "y1": 315,
+            "x2": 450,
+            "y2": 355,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "encoder"
+            }
+          },
+          {
+            "id": "encoder-m3-1",
+            "name": "M3 thread 1 (nominal)",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 428.5,
+            "y1": 318.5,
+            "x2": 431.5,
+            "y2": 321.5,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "encoder-m3-2",
+            "name": "M3 thread 2 (nominal)",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 441.4903810567666,
+            "y1": 341,
+            "x2": 444.4903810567666,
+            "y2": 344,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "encoder-m3-3",
+            "name": "M3 thread 3 (nominal)",
+            "kind": "ellipse",
+            "labelHidden": true,
+            "x1": 415.5096189432334,
+            "y1": 341,
+            "x2": 418.5096189432334,
+            "y2": 344,
+            "color": "#19324f",
+            "fillColor": null,
+            "strokeWidth": 1
+          },
+          {
+            "id": "encoder-side",
+            "name": "Encoder side",
+            "kind": "polygon",
+            "x1": 513,
+            "y1": 315,
+            "x2": 567,
+            "y2": 355,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "encoder"
+            },
+            "points": [
+              {
+                "x": 513,
+                "y": 332
+              },
+              {
+                "x": 523,
+                "y": 332
+              },
+              {
+                "x": 523,
+                "y": 325
+              },
+              {
+                "x": 528,
+                "y": 325
+              },
+              {
+                "x": 528,
+                "y": 315
+              },
+              {
+                "x": 567,
+                "y": 315
+              },
+              {
+                "x": 567,
+                "y": 355
+              },
+              {
+                "x": 528,
+                "y": 355
+              },
+              {
+                "x": 528,
+                "y": 345
+              },
+              {
+                "x": 523,
+                "y": 345
+              },
+              {
+                "x": 523,
+                "y": 338
+              },
+              {
+                "x": 513,
+                "y": 338
+              }
+            ]
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "Encoder schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "Encoder schematic",
+        "description": "Phase A+ and A− terminate on electrically isolated PTTB 2,5 levels. Add the actual receiving circuit and encoder supply to complete the installation.",
+        "revision": 1,
+        "components": [
+          {
+            "id": "encoder",
+            "definitionId": "omron.e6b2-cwz1x.1000p-0.5m",
+            "reference": "B2",
+            "x": 460,
+            "y": 320,
+            "rotation": 0,
+            "properties": {}
+          },
+          {
+            "id": "terminal",
+            "definitionId": "phoenix-contact.pttb.3210567",
+            "reference": "X1",
+            "x": 710,
+            "y": 292,
+            "rotation": 0,
+            "properties": {}
+          }
+        ],
+        "wires": [
+          {
+            "id": "manual-wire-1",
+            "from": {
+              "componentId": "encoder",
+              "terminalId": "phase-a"
+            },
+            "to": {
+              "componentId": "terminal",
+              "terminalId": "upper-left"
+            },
+            "points": [],
+            "netName": "MANUAL_1"
+          },
+          {
+            "id": "manual-wire-2",
+            "from": {
+              "componentId": "encoder",
+              "terminalId": "phase-a-inverted"
+            },
+            "to": {
+              "componentId": "terminal",
+              "terminalId": "lower-left"
+            },
+            "points": [],
+            "netName": "MANUAL_2"
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
