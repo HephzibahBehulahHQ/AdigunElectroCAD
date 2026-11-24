@@ -1,4 +1,4 @@
-import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
+import { automaticWireBends, findAutomaticWireBends, newWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../src/cad/automaticWireRoute";
 import { createWiredReversingCircuit } from "../src/projects/wiredReversingCircuit";
 import { expect, it } from "vitest";
 import { appendWireRoutePoint, insertWireRoutePointAt, orthogonalWirePath, orthogonalWireVertices, wireBranchAtPoint, wireBranchRoute } from "../src/cad/wirePath";
@@ -11,6 +11,15 @@ it("retains saved bend points and approaches vertical power terminals on their a
     .toBe("M 20 30 V 80 H 40 H 170 V 210 H 200 V 250");
   expect(orthogonalWirePath({x: 20, y: 30}, {x: 200, y: 250}))
     .toBe("M 20 30 H 110 V 250 H 200");
+});
+
+it("stores a route along the terminal axes when creating a new diagonal wire", () => {
+  const from = { endpoint: { componentId: "source", terminalId: "1" }, x: 20, y: 30, vertical: true };
+  const to = { endpoint: { componentId: "load", terminalId: "1" }, x: 200, y: 250, vertical: true };
+  expect(newWireBends(from, to, [])).toEqual([{ x: 20, y: 140 }, { x: 200, y: 140 }]);
+  expect(newWireBends(from, { ...to, vertical: false }, [])).toEqual([{ x: 20, y: 250 }]);
+  expect(newWireBends({ ...from, vertical: false }, to, [])).toEqual([{ x: 200, y: 30 }]);
+  expect(automaticWireBends(from, to, [])).toEqual([]);
 });
 
 it("rotates and translates power anchors without changing saved wire topology", () => {
