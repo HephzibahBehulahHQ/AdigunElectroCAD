@@ -97,3 +97,7 @@ Open [the editable PTTB example](../public/examples/phoenix-pttb-two-level-pilot
 ### Finder 38.51 changeover pilot and panel drawing
 
 Open [the editable Finder example](../public/examples/finder-3851-changeover-panel.json). The 6.2 × 87.8 mm front and 75.6 × 87.8 mm side envelopes both link to K1. Run the simulation and press S1 to transfer indication from H2 on NC 12 to H1 on NO 14. Releasing S1 restores H2. The outlines use the [Finder Series 38 drawing](https://cdn.findernet.com/app/uploads/S38EN.pdf#page=17).
+
+### Siemens 7.5 kW direct-on-line starter
+
+Open [the editable starter drawing](../public/examples/siemens-dol-starter-panel.json). The SENTRON breaker and SIRIUS contactor front and side envelopes link to Q1 and KM1 in the wired schematic. Run the simulation, press and release S1 to latch the starter, then press S0 to stop. The simulation covers nominal circuit operation and overload contact state. Protection coordination and motor transients are outside its scope.

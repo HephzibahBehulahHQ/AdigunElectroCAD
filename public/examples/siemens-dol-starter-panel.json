@@ -1,0 +1,637 @@
+{
+  "id": "siemens-dol-starter-panel",
+  "name": "Siemens 7.5 kW DOL starter and panel envelopes",
+  "description": "Run the three-phase starter with S1, stop it with S0, and inspect the linked 5SY6332-7 breaker and 3RT2025-1BB40 contactor envelopes.",
+  "revision": 1,
+  "sheets": [
+    {
+      "id": "breaker-panel",
+      "name": "SENTRON breaker views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "breaker-panel",
+        "name": "SENTRON breaker views",
+        "description": "Nominal front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "breaker"
+            },
+            "id": "breaker-front",
+            "name": "SENTRON breaker front",
+            "kind": "rectangle",
+            "x1": 403,
+            "y1": 300,
+            "x2": 457,
+            "y2": 390,
+            "color": "#19324f",
+            "strokeWidth": 1
+          },
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "breaker"
+            },
+            "id": "breaker-side",
+            "name": "SENTRON breaker side",
+            "kind": "rectangle",
+            "x1": 592,
+            "y1": 300,
+            "x2": 668,
+            "y2": 390,
+            "color": "#19324f",
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "contactor-panel",
+      "name": "SIRIUS contactor views",
+      "kind": "free-schematic",
+      "document": {
+        "id": "contactor-panel",
+        "name": "SIRIUS contactor views",
+        "description": "Nominal front and side envelopes in millimeters.",
+        "revision": 1,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "contactor"
+            },
+            "id": "contactor-front",
+            "name": "SIRIUS contactor front",
+            "kind": "rectangle",
+            "x1": 407.5,
+            "y1": 300,
+            "x2": 452.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1
+          },
+          {
+            "deviceLink": {
+              "sheetId": "starter",
+              "componentId": "contactor"
+            },
+            "id": "contactor-side",
+            "name": "SIRIUS contactor side",
+            "kind": "rectangle",
+            "x1": 576.5,
+            "y1": 300,
+            "x2": 683.5,
+            "y2": 385,
+            "color": "#19324f",
+            "strokeWidth": 1
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "starter",
+      "name": "DOL schematic",
+      "kind": "free-schematic",
+      "document": {
+        "id": "starter",
+        "name": "DOL Motor Starter — 7.5 kW",
+        "description": "Editable, terminal-wired DOL starter using Siemens 5SY6332-7 breaker, 3RT2025-1BB40 contactor, 3RU2126-4AB0 overload, 1LE1003 motor and 6EP1332-5BA10 24 V DC control supply. The 230 V control feed and 400 V three-phase source are educational supply abstractions; protection coordination and motor transients are not simulated.",
+        "revision": 2,
+        "components": [
+          {
+            "id": "supply",
+            "definitionId": "iec.ac-supply.01",
+            "reference": "X1",
+            "x": 390,
+            "y": 115,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 400,
+              "frequencyHz": 50,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "breaker",
+            "definitionId": "iec.industrial-miniature-breaker.01",
+            "reference": "Q1",
+            "x": 390,
+            "y": 245,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 400,
+              "ratedCurrentA": 32,
+              "poles": 3,
+              "curve": "C",
+              "breakingCapacityKa": 6,
+              "closed": true
+            }
+          },
+          {
+            "id": "contactor",
+            "definitionId": "iec.motor-starter.01",
+            "reference": "KM1",
+            "x": 390,
+            "y": 390,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 400,
+              "ratedCurrentA": 17,
+              "ratedPowerKw": 7.5,
+              "coilVoltageV": 24,
+              "coilDc": true,
+              "energized": false,
+              "auxiliaryNoContacts": 1,
+              "auxiliaryNcContacts": 1
+            }
+          },
+          {
+            "id": "overload",
+            "definitionId": "overload.thermal",
+            "reference": "F1",
+            "x": 390,
+            "y": 515,
+            "rotation": 0,
+            "properties": {
+              "settingA": 14.3,
+              "settingMinA": 11,
+              "settingMaxA": 16,
+              "tripClass": 10,
+              "tripped": false,
+              "thermalEnabled": false
+            }
+          },
+          {
+            "id": "motor",
+            "definitionId": "iec.induction-motor.01",
+            "reference": "M1",
+            "x": 390,
+            "y": 650,
+            "rotation": 0,
+            "properties": {
+              "nominalVoltageV": 400,
+              "ratedCurrentA": 14.3,
+              "ratedPowerKw": 7.5,
+              "nominalSpeedRpm": 1470,
+              "frequencyHz": 50,
+              "powerFactor": 0.84,
+              "efficiencyPercent": 90.4,
+              "windingConnection": "Delta",
+              "energized": true
+            }
+          },
+          {
+            "id": "control",
+            "definitionId": "supply.control",
+            "reference": "X2",
+            "x": 800,
+            "y": 140,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "control-psu",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 1010,
+            "y": 220,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "stop",
+            "definitionId": "pushbutton.stop-nc",
+            "reference": "S0",
+            "x": 760,
+            "y": 480,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "start",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 1020,
+            "y": 480,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "w1",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l1-out"
+            },
+            "to": {
+              "componentId": "breaker",
+              "terminalId": "l1-in"
+            },
+            "points": [],
+            "netName": "L1"
+          },
+          {
+            "id": "w2",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l2-out"
+            },
+            "to": {
+              "componentId": "breaker",
+              "terminalId": "l2-in"
+            },
+            "points": [],
+            "netName": "L2"
+          },
+          {
+            "id": "w3",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "l3-out"
+            },
+            "to": {
+              "componentId": "breaker",
+              "terminalId": "l3-in"
+            },
+            "points": [],
+            "netName": "L3"
+          },
+          {
+            "id": "w4",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "l1-out"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "l1-in"
+            },
+            "points": [],
+            "netName": "L1_SW"
+          },
+          {
+            "id": "w5",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "l2-out"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "l2-in"
+            },
+            "points": [],
+            "netName": "L2_SW"
+          },
+          {
+            "id": "w6",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "l3-out"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "l3-in"
+            },
+            "points": [],
+            "netName": "L3_SW"
+          },
+          {
+            "id": "w7",
+            "from": {
+              "componentId": "contactor",
+              "terminalId": "l1-out"
+            },
+            "to": {
+              "componentId": "overload",
+              "terminalId": "l1-in"
+            },
+            "points": [],
+            "netName": "L1_M"
+          },
+          {
+            "id": "w8",
+            "from": {
+              "componentId": "contactor",
+              "terminalId": "l2-out"
+            },
+            "to": {
+              "componentId": "overload",
+              "terminalId": "l2-in"
+            },
+            "points": [],
+            "netName": "L2_M"
+          },
+          {
+            "id": "w9",
+            "from": {
+              "componentId": "contactor",
+              "terminalId": "l3-out"
+            },
+            "to": {
+              "componentId": "overload",
+              "terminalId": "l3-in"
+            },
+            "points": [],
+            "netName": "L3_M"
+          },
+          {
+            "id": "w10",
+            "from": {
+              "componentId": "overload",
+              "terminalId": "t1"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "u1"
+            },
+            "points": [],
+            "netName": "U1"
+          },
+          {
+            "id": "w11",
+            "from": {
+              "componentId": "overload",
+              "terminalId": "t2"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "v1"
+            },
+            "points": [],
+            "netName": "V1"
+          },
+          {
+            "id": "w12",
+            "from": {
+              "componentId": "overload",
+              "terminalId": "t3"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "w1"
+            },
+            "points": [],
+            "netName": "W1"
+          },
+          {
+            "id": "w13",
+            "from": {
+              "componentId": "supply",
+              "terminalId": "pe"
+            },
+            "to": {
+              "componentId": "motor",
+              "terminalId": "pe"
+            },
+            "points": [],
+            "netName": "PE"
+          },
+          {
+            "id": "w14",
+            "from": {
+              "componentId": "control",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "control-psu",
+              "terminalId": "line-in"
+            },
+            "points": [],
+            "netName": "230V_L"
+          },
+          {
+            "id": "w15",
+            "from": {
+              "componentId": "control",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "control-psu",
+              "terminalId": "neutral-in"
+            },
+            "points": [],
+            "netName": "230V_N"
+          },
+          {
+            "id": "w16",
+            "from": {
+              "componentId": "control-psu",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "stop",
+              "terminalId": "21"
+            },
+            "points": [
+              {
+                "x": 1085,
+                "y": 220
+              },
+              {
+                "x": 1085,
+                "y": 430
+              },
+              {
+                "x": 685,
+                "y": 430
+              }
+            ],
+            "netName": "24V+"
+          },
+          {
+            "id": "w17",
+            "from": {
+              "componentId": "stop",
+              "terminalId": "22"
+            },
+            "to": {
+              "componentId": "overload",
+              "terminalId": "aux-95"
+            },
+            "points": [
+              {
+                "x": 855,
+                "y": 480
+              },
+              {
+                "x": 855,
+                "y": 600
+              },
+              {
+                "x": 285,
+                "y": 600
+              },
+              {
+                "x": 285,
+                "y": 503
+              }
+            ],
+            "netName": "STOP_OK"
+          },
+          {
+            "id": "w18",
+            "from": {
+              "componentId": "overload",
+              "terminalId": "aux-96"
+            },
+            "to": {
+              "componentId": "start",
+              "terminalId": "13"
+            },
+            "points": [
+              {
+                "x": 320,
+                "y": 531
+              },
+              {
+                "x": 320,
+                "y": 585
+              },
+              {
+                "x": 945,
+                "y": 585
+              }
+            ],
+            "netName": "OL_OK"
+          },
+          {
+            "id": "w19",
+            "from": {
+              "componentId": "overload",
+              "terminalId": "aux-96"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "aux-13"
+            },
+            "points": [
+              {
+                "x": 305,
+                "y": 531
+              },
+              {
+                "x": 305,
+                "y": 380
+              }
+            ],
+            "netName": "HOLD_FEED"
+          },
+          {
+            "id": "w20",
+            "from": {
+              "componentId": "start",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "a1"
+            },
+            "points": [
+              {
+                "x": 1100,
+                "y": 480
+              },
+              {
+                "x": 1100,
+                "y": 325
+              },
+              {
+                "x": 270,
+                "y": 325
+              },
+              {
+                "x": 270,
+                "y": 343
+              }
+            ],
+            "netName": "COIL_START"
+          },
+          {
+            "id": "w21",
+            "from": {
+              "componentId": "contactor",
+              "terminalId": "aux-14"
+            },
+            "to": {
+              "componentId": "contactor",
+              "terminalId": "a1"
+            },
+            "points": [
+              {
+                "x": 290,
+                "y": 415
+              },
+              {
+                "x": 290,
+                "y": 343
+              }
+            ],
+            "netName": "COIL_HOLD"
+          },
+          {
+            "id": "w22",
+            "from": {
+              "componentId": "contactor",
+              "terminalId": "a2"
+            },
+            "to": {
+              "componentId": "control-psu",
+              "terminalId": "zero-out"
+            },
+            "points": [
+              {
+                "x": 455,
+                "y": 343
+              },
+              {
+                "x": 455,
+                "y": 292
+              },
+              {
+                "x": 1100,
+                "y": 292
+              },
+              {
+                "x": 1100,
+                "y": 244
+              }
+            ],
+            "netName": "0V"
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}
