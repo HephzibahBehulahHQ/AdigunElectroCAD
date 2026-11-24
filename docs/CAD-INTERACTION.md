@@ -81,3 +81,7 @@ Import the [Festo VOVG 5/2 valve coil test](../public/examples/festo-vovg-coil-t
 ## SITOP PSU100C pilot panel
 
 Import the [SITOP pilot panel](../public/examples/sitop-psu100c-pilot-panel.json). Select the front or side outline and use **Go to schematic device**. Run the simulation, select S1 and toggle **Live Pressed** to light H1 through the second 0 V terminal. The sample leaves PE unwired and uses the nominal body envelope.
+
+## SENTRON safety transformer pilot panel
+
+Import the [SENTRON 4AC3716-0 pilot panel](../public/examples/sentron-4ac3716-pilot-panel.json). Select either outline, follow **Go to schematic device**, and run the simulation. Toggle **Live Pressed** on S1 to light H1 from the isolated 8 V AC secondary. The example models the nominal voltage ratio and leaves PTC protection and transformer transients outside the simulation.
