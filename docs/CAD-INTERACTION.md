@@ -65,6 +65,7 @@ An interface relay with a control supply reaching A1 or A2 derives its state fro
 On a custom pilot indicator, set the rated voltage and AC/DC mode in Properties, then wire its control terminals T1 and T2. For DC, connect positive to T1 and return to T2. The lamp lights only with a complete matching supply path. A rating of zero leaves an older indicator unrated until configured. Alternate terminal labels keep the original physical identities. Extra terminals remain available for drafting and wiring and do not drive the lamp. The model uses ideal continuity and voltage matching, with no modeled current draw or inrush.
 For added terminals on the generic user symbol, edit the local X/Y anchor offsets in Properties. Offsets are bounded to -60..60 units, follow component scale and rotation, and move the wire connection point and terminal label together. Built-in T1/T2 pin endpoints stay aligned with the indicator glyph.
 
+
 ## Linked encoder drawing example
 
 Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawing.json) and open it through **File → Import JSON**. The mechanical sheet contains the Ø40 mm front view, three nominal M3 thread marks and the stepped side view. Select either outline and use **Go to schematic device** in Properties to inspect the two differential A-channel wires and their separate terminal levels. The example documents routing and nominal geometry. It omits the receiver circuit and encoder power wiring.
