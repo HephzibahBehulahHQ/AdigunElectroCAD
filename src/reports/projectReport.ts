@@ -118,8 +118,9 @@ export function componentClearanceWarnings(document: CircuitDocument): TopologyI
 
 function panelOutlines(document: CircuitDocument) {
   if (document.drawingGrid?.units !== "mm") return [];
-  return (document.graphics ?? []).flatMap(graphic => graphic.kind === "rectangle" && graphic.deviceLink ? [{
-    name: graphic.name, link: graphic.deviceLink,
+  return (document.graphics ?? []).flatMap(graphic =>
+    (graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon") && graphic.deviceLink ? [{
+    name: graphic.name, link: graphic.deviceLink, kind: graphic.kind,
     bounds: { left: Math.min(graphic.x1, graphic.x2), top: Math.min(graphic.y1, graphic.y2),
       right: Math.max(graphic.x1, graphic.x2), bottom: Math.max(graphic.y1, graphic.y2) },
   }] : []);
@@ -130,10 +131,13 @@ function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
   return outlines.flatMap((outline, index): TopologyIssue[] => {
     for (let prior = 0; prior < index; prior++) {
       const other = outlines[prior];
-      if (componentFootprintsOverlap(outline.bounds, other.bounds)) return [{
-        severity: "warning", code: "panel-outline-overlap",
-        message: "Linked panel outlines overlap: " + other.name + " and " + outline.name + ".",
-      }];
+      if (componentFootprintsOverlap(outline.bounds, other.bounds)) {
+        const exact = outline.kind === "rectangle" && other.kind === "rectangle";
+        return [{
+          severity: "warning", code: exact ? "panel-outline-overlap" : "panel-envelope-overlap",
+          message: (exact ? "Linked panel outlines overlap: " : "Linked panel envelopes overlap. Check the outline geometry: ") + other.name + " and " + outline.name + ".",
+        }];
+      }
     }
     return [];
   });
@@ -275,6 +279,7 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     validation.push(...report.validation.map((issue) => ({ ...issue, sheet: name })));
     const outlines = panelOutlines(sheet.document);
     for (const outline of outlines) {
+      if (outline.kind !== "rectangle") continue;
       const source = sheetLocations.get(outline.link.sheetId)?.components.get(outline.link.componentId);
       if (!source) continue;
       const { left, right, top, bottom } = outline.bounds;
@@ -287,7 +292,8 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
         componentFootprintsOverlap(other.bounds, required) && !componentFootprintsOverlap(other.bounds, outline.bounds));
       if (obstruction) validation.push({
         severity: "warning", code: "panel-installation-clearance", sheet: name,
-        message: obstruction.name + " enters the documented mounting clearance for " + outline.name + ".",
+        message: obstruction.name + (obstruction.kind === "rectangle" ? " enters" : " may enter") +
+          " the documented mounting clearance for " + outline.name + ".",
       });
     }
     for (const graphic of sheet.document.graphics ?? []) {

@@ -260,6 +260,21 @@ it("flags overlapping equipment outlines on millimetre sheets and allows shared 
   expect(warnings()).toEqual([]);
 });
 
+it("flags intersecting envelopes for linked circular and polygon outlines", () => {
+  const { document } = createBlankProject().sheets[0];
+  document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  const style = { color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: "schematic", componentId: "encoder" } };
+  const front = { ...style, id: "front", name: "Encoder front", kind: "ellipse" as const, x1: 0, y1: 0, x2: 40, y2: 40 };
+  const side = { ...style, id: "side", name: "Encoder side", kind: "polygon" as const, x1: 39, y1: 0, x2: 93, y2: 40,
+    points: [{ x: 39, y: 0 }, { x: 93, y: 0 }, { x: 93, y: 40 }] };
+  document.graphics = [front, side];
+  const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code.startsWith("panel-"));
+  expect(warnings()).toMatchObject([{ code: "panel-envelope-overlap", message: expect.stringContaining("Check the outline geometry") }]);
+  side.x1 = 40;
+  side.points[0].x = 40;
+  expect(warnings()).toEqual([]);
+});
+
 it("reports entry inside a documented mounting clearance without requiring an outline overlap", () => {
   const project = addFreeSchematicSheet(createBlankProject());
   const [source, panel] = project.sheets;
