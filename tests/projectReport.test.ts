@@ -258,6 +258,12 @@ it("flags overlapping equipment outlines on millimetre sheets and allows shared 
   document.graphics[1].x1 = 45;
   delete document.graphics[1].deviceLink;
   expect(warnings()).toEqual([]);
+  document.graphics = [0, 10, 20].map((x1, index) => ({ ...outline, id: `g${index}`, name: `Device ${index}`, x1, x2: x1 + 50 }));
+  expect(warnings().map(({ message }) => message)).toEqual([
+    "Linked panel outlines overlap: Device 0 and Device 1.",
+    "Linked panel outlines overlap: Device 0 and Device 2.",
+    "Linked panel outlines overlap: Device 1 and Device 2.",
+  ]);
 });
 
 it("distinguishes real round-outline overlaps from bounding-box corner contacts", () => {
