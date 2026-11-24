@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { catalogById, componentLibraryCatalog } from "../src/catalog/dolCatalog";
-import { PlacedSymbol, Schematic } from "../src/components/Schematic";
+import { PlacedSymbol, Schematic, SixTerminalWindings } from "../src/components/Schematic";
 import { terminalAnchors, terminalGridReference, terminalHitRadius } from "../src/cad/terminalAnchors";
 import { componentFootprint, instanceFootprint } from "../src/cad/componentGeometry";
 import { componentsInStackOrder, reorderComponents } from "../src/cad/componentStack";
@@ -239,7 +239,17 @@ it("places all six motor winding terminals outside the IEC motor symbol body", (
   const anchors = terminalAnchors(document).filter((anchor) => anchor.endpoint.componentId === motor.id);
   expect(anchors.filter((anchor) => ["u1", "v1", "w1"].includes(anchor.endpoint.terminalId)).map(({ x, y }) => [x - motor.x, y - motor.y])).toEqual([[-30, -42], [0, -42], [30, -42]]);
   expect(anchors.filter((anchor) => ["u2", "v2", "w2"].includes(anchor.endpoint.terminalId)).map(({ x, y }) => [x - motor.x, y - motor.y])).toEqual([[-30, 42], [0, 42], [30, 42]]);
-  expect(anchors.find((anchor) => anchor.endpoint.terminalId === "pe")).toMatchObject({ x: motor.x - 47, y: motor.y });
+  const artwork = renderToStaticMarkup(createElement(SixTerminalWindings, { x: motor.x, y: motor.y }));
+  for (const phase of ["u", "v", "w"]) {
+    const entry = anchors.find(({ endpoint }) => endpoint.terminalId === phase + "1")!;
+    const exit = anchors.find(({ endpoint }) => endpoint.terminalId === phase + "2")!;
+    expect(entry.vertical && exit.vertical).toBe(true);
+    expect(artwork).toContain(`data-motor-winding="${phase.toUpperCase()}" d="M ${entry.x} ${entry.y} V ${motor.y - 21} q 14 7 0 14 q 14 7 0 14 q 14 7 0 14 V ${exit.y}"`);
+  }
+  expect(anchors.find((anchor) => anchor.endpoint.terminalId === "pe")).toMatchObject({ x: motor.x - 47, y: motor.y, vertical: false });
+  const rotated = terminalAnchors({ ...document, components: [{ ...motor, rotation: 90 }] });
+  expect(rotated.map(({ endpoint }) => endpoint.terminalId)).toEqual(anchors.map(({ endpoint }) => endpoint.terminalId));
+  expect(rotated.every(({ vertical }) => !vertical)).toBe(true);
 });
 
 it("aligns breaker and overload phase anchors with the dedicated three-pole symbols", () => {
