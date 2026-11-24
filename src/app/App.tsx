@@ -1,4 +1,4 @@
-import { automaticWireBends, newWireBends, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticWireBends, newWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import { ModelRunSummary } from "../components/ModelRunSummary";
 import { IndicatorColorPalette } from "../components/IndicatorColorPalette";
@@ -1636,12 +1636,12 @@ export function App() {
         if (!from || !to) { setNotice("Could not find both terminal positions."); return; }
         const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
         const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm");
-        const route = newWireBends(from, to, obstacles);
+        const route = newWireRoute(from, to, obstacles);
         if (route === null) {
           setNotice("No clear automatic route. Click the drawing to add bends, then choose the destination terminal again.");
           return;
         }
-        wire.points = route;
+        wire.points = route.storedPoints;
       }
       if (!updateDocument({ ...document, wires: [...document.wires, wire], revision: document.revision + 1 })) return;
       setSelectedWireId(wire.id);

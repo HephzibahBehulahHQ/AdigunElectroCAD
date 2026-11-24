@@ -1,6 +1,6 @@
 import { frontEnvelopeClearance } from "../catalog/deviceEnvelopes";
 import { sm1223SymbolId } from "../catalog/siemensSm1223";
-import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
+import { automaticWireBends, newWireRoute, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
 import type { CircuitDocument, ComponentInstance, SchematicAnnotation, SchematicGraphic, SchematicGraphicKind, SchematicGraphicPoint, UserSymbolGraphic, Wire, DraftingStyle } from "../types/electrical";
 import type { DolSimulationState } from "../simulation/dolSimulator";
@@ -454,7 +454,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
   const routeObstacles = wireRouteObstacles(previewDocument.components.filter(({ id }) => visibleIds.has(id)), document.drawingGrid?.units === "mm");
   const previewTarget = wirePointer?.endpoint && anchorIndex.get(endpointKey(wirePointer.endpoint));
   const draftBends = routeStart && previewTarget && wireBends.length === 0
-    ? findAutomaticWireBends(routeStart, previewTarget, routeObstacles)
+    ? newWireRoute(routeStart, previewTarget, routeObstacles)?.points ?? null
     : wireBends;
   const currentRoutePoints = (wire: Wire) => {
     if (routePreview?.wireId === wire.id) return routePreview.points;
