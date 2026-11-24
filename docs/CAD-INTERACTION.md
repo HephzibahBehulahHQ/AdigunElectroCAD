@@ -77,3 +77,7 @@ Import the [HBK Z6 mounting comparison](../public/examples/hbk-z6-mounting-compa
 ## Festo VOVG coil test and plan
 
 Import the [Festo VOVG 5/2 valve coil test](../public/examples/festo-vovg-coil-test.json). Select the 49 × 25 mm plan outline and choose **Go to schematic device**. Run the simulation and operate S1 to switch V2 between its released and energized port pairs. The example verifies coil continuity and nominal spool paths. It leaves the external pneumatic circuit unwired.
+
+## SITOP PSU100C pilot panel
+
+Import the [SITOP pilot panel](../public/examples/sitop-psu100c-pilot-panel.json). Select the front or side outline and use **Go to schematic device**. Run the simulation, select S1 and toggle **Live Pressed** to light H1 through the second 0 V terminal. The sample leaves PE unwired and uses the nominal body envelope.
