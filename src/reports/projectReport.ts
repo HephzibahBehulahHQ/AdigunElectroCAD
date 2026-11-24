@@ -1,4 +1,5 @@
 import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles, wireRouteObstructions } from "../cad/automaticWireRoute";
+import { frontEnvelopeClearance } from "../catalog/deviceEnvelopes";
 import { componentFootprintsOverlap, instanceFootprint } from "../cad/componentGeometry";
 import { endpointKey, terminalAnchors } from "../cad/terminalAnchors";
 import { resolveDraftingStyle } from "../cad/draftingLayers";
@@ -115,13 +116,17 @@ export function componentClearanceWarnings(document: CircuitDocument): TopologyI
   return warnings;
 }
 
-function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
+function panelOutlines(document: CircuitDocument) {
   if (document.drawingGrid?.units !== "mm") return [];
-  const outlines = (document.graphics ?? []).filter(graphic => graphic.kind === "rectangle" && graphic.deviceLink).map(graphic => ({
-    name: graphic.name,
+  return (document.graphics ?? []).flatMap(graphic => graphic.kind === "rectangle" && graphic.deviceLink ? [{
+    name: graphic.name, link: graphic.deviceLink,
     bounds: { left: Math.min(graphic.x1, graphic.x2), top: Math.min(graphic.y1, graphic.y2),
       right: Math.max(graphic.x1, graphic.x2), bottom: Math.max(graphic.y1, graphic.y2) },
-  }));
+  }] : []);
+}
+
+function panelOutlineWarnings(document: CircuitDocument): TopologyIssue[] {
+  const outlines = panelOutlines(document);
   return outlines.flatMap((outline, index): TopologyIssue[] => {
     for (let prior = 0; prior < index; prior++) {
       const other = outlines[prior];
@@ -268,6 +273,23 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
     wires.push(...report.wires.map((wire) => ({ ...wire, sheet: name })));
     terminals.push(...report.terminals.map((terminal) => ({ ...terminal, sheet: name })));
     validation.push(...report.validation.map((issue) => ({ ...issue, sheet: name })));
+    const outlines = panelOutlines(sheet.document);
+    for (const outline of outlines) {
+      const source = sheetLocations.get(outline.link.sheetId)?.components.get(outline.link.componentId);
+      if (!source) continue;
+      const { left, right, top, bottom } = outline.bounds;
+      const clearance = frontEnvelopeClearance(source.definitionId, right - left, bottom - top);
+      if (!clearance) continue;
+      const required = { left: left - clearance.lateral, right: right + clearance.lateral,
+        top: top - clearance.above, bottom: bottom + clearance.below };
+      const obstruction = outlines.find(other => other !== outline &&
+        (other.link.sheetId !== outline.link.sheetId || other.link.componentId !== outline.link.componentId) &&
+        componentFootprintsOverlap(other.bounds, required) && !componentFootprintsOverlap(other.bounds, outline.bounds));
+      if (obstruction) validation.push({
+        severity: "warning", code: "panel-installation-clearance", sheet: name,
+        message: obstruction.name + " enters the documented mounting clearance for " + outline.name + ".",
+      });
+    }
     for (const graphic of sheet.document.graphics ?? []) {
       const link = graphic.deviceLink;
       if (link && !sheetLocations.get(link.sheetId)?.components.has(link.componentId)) {

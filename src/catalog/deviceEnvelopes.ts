@@ -25,3 +25,10 @@ const deviceEnvelopes = new Map<string, DeviceEnvelope>([
 export function deviceEnvelope(definitionId: string): DeviceEnvelope | undefined {
   return deviceEnvelopes.get(definitionId);
 }
+
+export function frontEnvelopeClearance(definitionId: string, width: number, height: number) {
+  const envelope = deviceEnvelope(definitionId);
+  if (envelope && Math.abs(width - envelope.widthMm) < 1e-8 && Math.abs(height - envelope.heightMm) < 1e-8) {
+    return envelope.sideBySideClearanceMm;
+  }
+}
