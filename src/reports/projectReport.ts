@@ -173,6 +173,30 @@ function polygonIntersectsRectangle(points: NonNullable<PanelShape["points"]>, b
   return Math.abs(twiceArea) > 1e-10;
 }
 
+function ellipsesIntersect(a: PanelShape["bounds"], b: PanelShape["bounds"]): boolean {
+  // Scale the first ellipse to a unit circle and find the closest point on the second.
+  const width = a.right - a.left;
+  const height = a.bottom - a.top;
+  const rx = (b.right - b.left) / width;
+  const ry = (b.bottom - b.top) / height;
+  const x = (b.left + b.right - a.left - a.right) / width;
+  const y = (b.top + b.bottom - a.top - a.bottom) / height;
+  if (Math.hypot(x / rx, y / ry) <= 1) return true;
+
+  const rxSquared = rx * rx;
+  const rySquared = ry * ry;
+  let lower = 0;
+  let upper = Math.hypot(rx * x, ry * y);
+  for (let iteration = 0; iteration < 56; iteration++) {
+    const t = (lower + upper) / 2;
+    const radius = Math.hypot(rx * x / (rxSquared + t), ry * y / (rySquared + t));
+    if (radius > 1) lower = t;
+    else upper = t;
+  }
+  const distance = Math.hypot(x * upper / (rxSquared + upper), y * upper / (rySquared + upper));
+  return distance < 1 - 1e-10;
+}
+
 function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | undefined {
   if (!componentFootprintsOverlap(a.bounds, b.bounds)) return;
   if (a.kind === "rectangle" && b.kind === "rectangle") return "exact";
@@ -188,16 +212,7 @@ function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | unde
     const dy = Math.max(rectangle.top - y, y - rectangle.bottom, 0) / ((ellipse.bottom - ellipse.top) / 2);
     return Math.hypot(dx, dy) < 1 - 1e-10 ? "exact" : undefined;
   }
-  if (a.kind === "ellipse" && b.kind === "ellipse") {
-    const diameterA = a.bounds.right - a.bounds.left;
-    const diameterB = b.bounds.right - b.bounds.left;
-    if (Math.abs(diameterA - (a.bounds.bottom - a.bounds.top)) < 1e-8 &&
-      Math.abs(diameterB - (b.bounds.bottom - b.bounds.top)) < 1e-8) {
-      const dx = a.bounds.left + diameterA / 2 - b.bounds.left - diameterB / 2;
-      const dy = a.bounds.top + diameterA / 2 - b.bounds.top - diameterB / 2;
-      return Math.hypot(dx, dy) < (diameterA + diameterB) / 2 - 1e-8 ? "exact" : undefined;
-    }
-  }
+  if (a.kind === "ellipse" && b.kind === "ellipse") return ellipsesIntersect(a.bounds, b.bounds) ? "exact" : undefined;
   return "possible";
 }
 
