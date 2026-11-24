@@ -51,6 +51,9 @@ export function evaluateWiredControl(document: CircuitDocument, catalog: Map<str
     for (const c of document.components) {
       const p = props(c.id);
       const m = model(c.id);
+      if (m === "catalog-dc-control-supply" && isControl(c.id, "zero-out") && isControl(c.id, "zero-out-2")) {
+        link(key(c.id, "zero-out"), key(c.id, "zero-out-2"));
+      }
       if (m === "catalog-feed-through-terminal" && p.continuityClosed === true && isControl(c.id, "1") && isControl(c.id, "2")) {
         link(key(c.id, "1"), key(c.id, "2"));
       }

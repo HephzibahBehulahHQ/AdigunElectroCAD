@@ -106,8 +106,10 @@ it("keeps Festo fluid lines isolated from coil wires and switches the documented
   connect(endpoint("ac", "neutral"), endpoint("dc", "neutral-in"));
   for (const valve of [nc, no, fiveWay]) {
     connect(endpoint("dc", "plus-out"), endpoint(valve.id, "a1"));
-    connect(endpoint("dc", "zero-out"), endpoint(valve.id, "a2"));
+    connect(endpoint("dc", valve === fiveWay ? "zero-out-2" : "zero-out"), endpoint(valve.id, "a2"));
   }
+  expect(catalogById.get(dc.definitionId)?.terminals.find(terminal => terminal.id === "pe")?.kind).toBe("protective-earth");
+  expect(canConnectTerminals(document, catalogById, endpoint("dc", "pe"), endpoint("nc", "a2")).ok).toBe(false);
   expect(paths()).toEqual(["1 ↔ 2", "2 ↔ 3", "1 ↔ 4 · 2 ↔ 3"]);
   expect(validateCircuit(document, catalogById)).toEqual([]);
 });
