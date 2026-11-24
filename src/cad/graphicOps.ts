@@ -32,6 +32,7 @@ export function circularMountingMarks(outline: SchematicGraphic, pitchDiameter: 
       id: `graphic-${crypto.randomUUID()}`,
       name: `${thread} thread ${index + 1} (nominal)`,
       kind: "ellipse",
+      labelHidden: true,
       x1: x - radius, y1: y - radius, x2: x + radius, y2: y + radius,
       color: outline.color, fillColor: null, strokeWidth: 1,
     };

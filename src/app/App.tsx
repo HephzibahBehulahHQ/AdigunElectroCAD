@@ -700,7 +700,7 @@ export function App() {
     updateDocument({ ...document, graphics: [...graphics, ...needed], revision: document.revision + 1 });
   };
 
-  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink">>) => {
+  const updateSelectedGraphic = (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden">>) => {
     if (!selectedGraphic) return;
     const next = { ...selectedGraphic, ...patch };
     if (!next.name.trim() || next.name.length > 80 || !/^#[0-9a-f]{6}$/i.test(next.color) || (next.fillColor !== null && next.fillColor !== undefined && !/^#[0-9a-f]{6}$/i.test(next.fillColor)) || !Number.isFinite(next.strokeWidth) || next.strokeWidth < 1 || next.strokeWidth > 12) {
@@ -2570,7 +2570,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     const y = (graphic.y1 + graphic.y2) / 2;
     onGeometryChange(x - horizontalMm / 2, y - verticalMm / 2, x + horizontalMm / 2, y + verticalMm / 2);
   };
-  return <fieldset className="graphic-geometry">
+  return <fieldset className="graphic-geometry graphic-device-properties">
     <legend>Device footprint</legend>
     <label>Schematic device<select value={current} onChange={event => onChange(devices.find(device => key(device.link) === event.target.value)?.link)}>
       <option value="">Unlinked</option>
@@ -2632,11 +2632,12 @@ function PanelGraphicDimensions({ graphic, onGeometryChange }: {
   </fieldset>;
 }
 
-function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMarks, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onAddMountingMarks: (marks: SchematicGraphic[]) => void; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
+function GraphicProperties({ graphic, millimetres, deviceSheets, onAddMountingMarks, onDeviceNavigate, selectionCount, stackCapabilities, onStackChange, onChange, onGeometryChange, onDuplicate, onRemove, onMakeComponent }: { graphic: SchematicGraphic; millimetres: boolean; deviceSheets: ElectricalProject["sheets"]; onAddMountingMarks: (marks: SchematicGraphic[]) => void; onDeviceNavigate: (link: NonNullable<SchematicGraphic["deviceLink"]>) => void; selectionCount: number; stackCapabilities: GraphicStackCapabilities; onStackChange: (order: GraphicStackOrder) => void; onChange: (patch: Partial<Pick<SchematicGraphic, "name" | "color" | "fillColor" | "strokeWidth" | "deviceLink" | "labelHidden">>) => void; onGeometryChange: (x1: number, y1: number, x2: number, y2: number) => void; onDuplicate: () => void; onRemove: () => void; onMakeComponent: () => void }) {
   const palette = ["#1565c0", "#19324f", "#c62828", "#16814b", "#d27a00", "#7b3fa1"];
   return <section className="properties-form graphic-properties" aria-label="Drawing graphic properties">
     {(millimetres || graphic.deviceLink) && <GraphicDeviceProperties graphic={graphic} millimetres={millimetres} sheets={deviceSheets} onChange={deviceLink => onChange({ deviceLink })} onNavigate={onDeviceNavigate} onGeometryChange={onGeometryChange} onAddMountingMarks={onAddMountingMarks} />}
     <label>Name / tag<input defaultValue={graphic.name} key={`${graphic.id}:${graphic.name}`} maxLength={80} onBlur={(event) => onChange({ name: event.target.value })} /></label>
+    <label><input type="checkbox" checked={!graphic.labelHidden} onChange={event => onChange({ labelHidden: !event.target.checked })} /> Show canvas label</label>
     {millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse") && <PanelGraphicDimensions graphic={graphic} onGeometryChange={onGeometryChange} />}
     {!graphic.points && <fieldset className="graphic-geometry"><legend>Exact geometry</legend>{(["x1", "y1", "x2", "y2"] as const).map((key) => <label key={key}>{key.toUpperCase()}<input type="number" step="1" defaultValue={graphic[key]} key={`${graphic.id}:${key}:${graphic[key]}`} onBlur={(event) => { if (!event.currentTarget.value.trim()) return; const value = Number(event.currentTarget.value); if (!Number.isFinite(value)) return; const next = { x1: graphic.x1, y1: graphic.y1, x2: graphic.x2, y2: graphic.y2, [key]: value }; onGeometryChange(next.x1, next.y1, next.x2, next.y2); }} /></label>)}</fieldset>}
     <label>Color<input type="color" value={graphic.color} onChange={(event) => onChange({ color: event.target.value })} /></label>

@@ -241,7 +241,9 @@ function parseGraphic(value: unknown, sheetIndex: number, graphicIndex: number, 
   const strokeWidth = finiteNumber(graphic.strokeWidth, "graphic stroke width");
   if (strokeWidth < 1 || strokeWidth > 12) throw new Error("Graphic stroke width must be between 1 and 12.");
   const deviceLink = graphic.deviceLink === undefined ? undefined : object(graphic.deviceLink, "Graphic device link is invalid.");
-  return { ...(deviceLink && { deviceLink: {
+  const labelHidden = graphic.labelHidden;
+  if (labelHidden !== undefined && typeof labelHidden !== "boolean") throw new Error("Graphic label visibility must be a boolean.");
+  return { ...(labelHidden !== undefined && { labelHidden }), ...(deviceLink && { deviceLink: {
     sheetId: textValue(deviceLink.sheetId, "linked device sheet id", 96),
     componentId: textValue(deviceLink.componentId, "linked device component id", 96),
   } }), id: textValue(graphic.id, "graphic id", 120), name: textValue(graphic.name, "graphic name", 80), kind, x1, y1, x2, y2, ...(points ? { points } : {}), color, ...(graphic.fillColor === undefined ? {} : { fillColor }), strokeWidth };
