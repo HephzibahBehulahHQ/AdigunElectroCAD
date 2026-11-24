@@ -52,6 +52,7 @@ import { loadLatestCloudProject, saveCloudProject, saveUserPreferences } from ".
 import { supabaseClient } from "../services/supabase";
 import { encodeCustomComponent, encodeProject, parseCustomComponentJson, parseProjectJson } from "../projects/projectSerialization";
 import { editCustomTerminalContract } from "../projects/customTerminalEdit";
+import { connectedComponentTerminals, replaceCatalogComponent } from "../projects/componentReplacement";
 import { assignProjectCableCore, createProjectContinuation, extendProjectContinuation, findTerminalContinuation, introducedDriverConflict, removeProjectContinuation, updateProjectContinuation, type ProjectTerminalReference } from "../projects/projectContinuations";
 import { prepareStandaloneSchematicSvg, snapshotSchematicSvg } from "../projects/schematicExport";
 import { schematicPrintHtml, workbookPrintHtml } from "../projects/schematicPrint";
@@ -132,6 +133,7 @@ export function App() {
   const [selectedComponentId, setSelectedComponentId] = useState("");
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
   const [customComponents, setCustomComponents] = useState(readCustomComponents);
+  const [replacement, setReplacement] = useState<{ sheetId: string; componentId: string; definitionId: string } | null>(null);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState("supply.three-phase");
   const [componentPanelOpen, setComponentPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -2091,6 +2093,11 @@ export function App() {
         <button role="menuitem" onClick={() => { setComponentContextMenu(null); toggleWireMode(); }}>Wire terminals</button>
         <button role="menuitem" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); rotateSelectedComponent(); }}>Rotate 90°</button>
         <button role="menuitem" disabled={isReferenceSheet} onClick={() => { setComponentContextMenu(null); applyComponentTransform(contextComponent.id, { kind: "mirror" }); }}>Mirror symbol</button>
+        <button role="menuitem" disabled={isReferenceSheet || selectedDefinition.id === contextComponent.definitionId || !catalogById.has(selectedDefinition.id)} onClick={() => {
+          setComponentContextMenu(null);
+          setReplacement({ sheetId: activeSheet.id, componentId: contextComponent.id, definitionId: selectedDefinition.id });
+          setNotice("Choose where each connected terminal should move.");
+        }}>Replace with {selectedDefinition.name}</button>
         <button role="menuitem" disabled={isReferenceSheet} onClick={() => { setComponentContextMenu(null); duplicateSelectedComponent(); }}>Duplicate</button>
         <button role="menuitem" className="danger" disabled={isReferenceSheet && fixedReferenceComponentIds.has(contextComponent.id)} onClick={() => { setComponentContextMenu(null); removeSelectedComponent(); }}>Delete component</button>
       </div>}
@@ -2235,6 +2242,18 @@ export function App() {
             <div className="panel-title"><strong>Properties</strong><span>{selectedContinuation?.label ?? selectedComponent?.reference ?? selectedAnnotation?.text ?? selectedGraphic?.name ?? (selectedWire ? selectedWire.netName ?? "Wire" : "—")}</span></div>
             {botEditsUnsaved && <p className="cloud-note">Bot edits are unsaved. Sign in to a permanent account to save them.</p>}
             {!isReferenceSheet && selectedComponent && catalogById.get(selectedComponent.definitionId) && <RuntimeControls component={selectedComponent} definition={catalogById.get(selectedComponent.definitionId)!} runtime={runtimeDocument?.components.find((component) => component.id === `${activeSheet.id}::${selectedComponent.id}`)} onClimateChange={(value) => setRuntimeDocument((current) => setCircuitClimateInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onLevelChange={(value) => setRuntimeDocument((current) => setCircuitLevelInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, value))} onChange={(property, value) => setRuntimeDocument((current) => setCircuitBooleanInput(current ?? resetCircuitClock(createProjectRuntimeDocument(project), catalogById), catalogById, `${activeSheet.id}::${selectedComponent.id}`, property, value))} />}
+          {replacement && replacement.sheetId === activeSheet.id && selectedComponent?.id === replacement.componentId && <ComponentReplacementForm
+            key={JSON.stringify(replacement)} project={project} sheet={activeSheet} instance={selectedComponent} definitionId={replacement.definitionId}
+            onCancel={() => setReplacement(null)} onApply={mapping => {
+              const result = replaceCatalogComponent(project, activeSheet.id, replacement.componentId, replacement.definitionId, mapping);
+              if (result.reason) return result.reason;
+              const next = result.project.sheets.find(sheet => sheet.id === activeSheet.id)!;
+              const reason = lockedDraftingEditReason(document, next.document);
+              if (reason) return reason;
+              recordEdit(result.project);
+              setReplacement(null);
+              setNotice("Component replaced and the selected terminal connections migrated.");
+            }} />}
           {selectedContinuation ? <ContinuationProperties continuation={selectedContinuation} sheets={project.sheets} onCableCoreChange={updateSelectedCableCore} onLabelChange={(label) => updateSelectedContinuation({ label })} onColorChange={(conductorColor) => updateSelectedContinuation({ conductorColor })} onRemove={removeSelectedContinuation} /> : selectedWire ? <WireProperties wire={selectedWire} effectiveColor={resolveDraftingStyle(selectedWire, document.draftingLayers).draftingColor} onNetNameChange={renameSelectedWire} onColorChange={updateSelectedWireColor} onReconnect={reconnectSelectedWire} onRemove={removeSelectedWire} routeEditable={!isReferenceSheet && !selectedWire.branchOfWireId} routeEditing={wireRouteEditId === selectedWire.id} onRouteEditToggle={() => setWireRouteEditId(wireRouteEditId === selectedWire.id ? "" : selectedWire.id)} onRoutePointAdd={addSelectedWireRoutePoint} onRouteReset={resetSelectedWireRoute} /> : selectedComponent ? <Properties instance={selectedComponent} effectiveColor={resolveDraftingStyle(selectedComponent, document.draftingLayers).draftingColor} selectionCount={selectedComponentIds.length} stackCapabilities={isReferenceSheet ? undefined : canReorderSchematicGraphics(componentsInStackOrder(stackScope), selectedComponentIds.length ? selectedComponentIds : [selectedComponent.id])} onStackChange={updateComponentStackOrder} modelOutput={isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id) ? undefined : activeSheetModelRuns.find((run) => run.componentId === selectedComponent.id)?.output} onReferenceChange={updateReference} onDisplayNameChange={updateDisplayName} onTerminalLabelChange={updateTerminalLabel} onCustomPropertyAdd={addSelectedCustomProperty} onCustomPropertyRename={renameSelectedCustomProperty} onCustomPropertyChange={updateSelectedCustomProperty} onCustomPropertyRemove={removeSelectedCustomProperty} onPropertyChange={updateSelectedProperty} onDraftingColorChange={updateSelectedDraftingColor} onSizeChange={updateSelectedSize} onPositionChange={updateSelectedPosition} onNudge={nudgeSelectedComponent} onRotate={rotateSelectedComponent} onRotationChange={(rotation) => { if (selectedComponent) applyComponentTransform(selectedComponent.id, { kind: "rotate", rotation }); }} onDuplicate={duplicateSelectedComponent} onRemove={removeSelectedComponent} onCustomTerminalChange={changeCustomTerminal} onCustomTerminalAdd={addCustomTerminal} onCustomTerminalRemove={removeCustomTerminal} onCustomTerminalOffsetChange={changeCustomTerminalOffset} movable={!(isReferenceSheet && fixedReferenceComponentIds.has(selectedComponent.id))} /> : selectedAnnotation ? <AnnotationProperties annotation={selectedAnnotation} onChange={updateSelectedAnnotation} onRemove={removeSelectedAnnotation} /> : selectedGraphic ? <GraphicProperties graphic={selectedGraphic} deviceSheets={project.sheets.filter(sheet => sheet.id !== activeSheet.id)} onDeviceNavigate={link => {
             selectSheet(link.sheetId);
             selectComponent(link.componentId);
@@ -2447,6 +2466,32 @@ function AnnotationProperties({ annotation, onChange, onRemove }: { annotation: 
     <p>Position · X {annotation.x} · Y {annotation.y}. Drag the text on the sheet to move it.</p>
     <button className="remove-component" onClick={onRemove}>Remove text annotation</button>
   </section>;
+}
+
+function ComponentReplacementForm({ project, sheet, instance, definitionId, onCancel, onApply }: {
+  project: ElectricalProject; sheet: ElectricalProject["sheets"][number]; instance: ComponentInstance; definitionId: string;
+  onCancel: () => void; onApply: (mapping: ReadonlyMap<string, string>) => string | undefined;
+}) {
+  const [error, setError] = useState("");
+  const target = catalogById.get(definitionId)!;
+  const connected = connectedComponentTerminals(project, sheet, instance.id);
+  const original = (instance.customTerminals ?? catalogById.get(instance.definitionId)?.terminals ?? []).filter(pin => connected.has(pin.id));
+  return <form className="properties-form" aria-label="Component replacement" onSubmit={event => {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    setError(onApply(new Map(original.map(pin => [pin.id, String(fields.get(pin.id) ?? "")]))) ?? "");
+  }}>
+    <strong>Replace {instance.reference} with {target.name}</strong>
+    {original.map(pin => <label key={pin.id}>Destination for {instance.terminalLabels?.[pin.id] ?? pin.label}
+      <select name={pin.id} defaultValue="" required>
+        <option value="">Choose a terminal</option>
+        {target.terminals.filter(next => next.kind === pin.kind).map(next => <option key={next.id} value={next.id}>{next.label} · {next.id}</option>)}
+      </select>
+    </label>)}
+    {error && <p role="alert">{error}</p>}
+    <button type="submit">Apply component replacement</button>
+    <button type="button" onClick={onCancel}>Cancel replacement</button>
+  </form>;
 }
 
 function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNavigate, onGeometryChange }: {
