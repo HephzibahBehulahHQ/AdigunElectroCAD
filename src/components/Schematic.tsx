@@ -158,7 +158,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
   </g>;
 }
 
-function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, snapSpacing = 20 }: { snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
+function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, millimetres = false, snapSpacing = 20 }: { millimetres?: boolean; snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
   const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; handle?: string; index?: number } | null>(null);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
@@ -167,6 +167,10 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const x = Math.min(graphic.x1, graphic.x2); const y = Math.min(graphic.y1, graphic.y2);
   const width = Math.abs(graphic.x2 - graphic.x1); const height = Math.abs(graphic.y2 - graphic.y1);
   const points = graphic.points ?? [];
+    const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse");
+  const dimensions = graphic.kind === "ellipse" && Math.abs(width - height) < 1e-8
+    ? "Ø" + Number(width.toFixed(4)) + " mm"
+    : Number(width.toFixed(4)) + " × " + Number(height.toFixed(4)) + " mm";
   const pointList = points.map((vertex) => `${vertex.x},${vertex.y}`).join(" ");
   const shape = graphic.kind === "line"
     ? <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} fill="none" />
@@ -218,7 +222,7 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
       event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, index } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
-    <text x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{graphic.name}</text>
+    <text x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{graphic.name}{dimensioned && " · " + dimensions}</text>
     <title>{`${graphic.name} · drafting geometry; not an electrical connection`}</title>
   </g>;
 }
@@ -657,7 +661,7 @@ function FreeSchematic({ document, symbolStates, onPlaceComponent, placementPrev
           {wireRouteEditId === wire.id && !wire.branchOfWireId && !lockedLayers.has(wire.layerId ?? "") && routePoints.map((point, index) => <circle key={index} className="wire-route-handle" data-route-point={index} cx={point.x} cy={point.y} r="6" role="button" tabIndex={0} aria-label={`Route point ${index + 1} on ${wire.netName ?? wire.id}; drag to move or use arrow keys`} onPointerDown={(event) => { event.stopPropagation(); routeGesture.current = { wireId: wire.id, index, points: [...routePoints] }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => moveRoutePoint(event, wire.id)} onPointerUp={(event) => finishRoutePoint(event, wire.id)} onPointerCancel={() => { routeGesture.current = null; setRoutePreview(null); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); }} onKeyDown={(event) => { const delta = (event.shiftKey ? 5 : 1) * (snapSpacing ?? 20); const move = event.key === "ArrowLeft" ? { x: -delta, y: 0 } : event.key === "ArrowRight" ? { x: delta, y: 0 } : event.key === "ArrowUp" ? { x: 0, y: -delta } : event.key === "ArrowDown" ? { x: 0, y: delta } : null; if (move) { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.map((item, pointIndex) => pointIndex === index ? snappedPathPoint(item.x + move.x, item.y + move.y) : item)); } else if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); onWireRouteChange?.(wire.id, routePoints.filter((_, pointIndex) => pointIndex !== index)); } }} />)}
         </g>;
       })}
-      {(document.graphics ?? []).map((graphic) => <PlacedGraphic snapSpacing={snapSpacing} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
+      {(document.graphics ?? []).map((graphic) => <PlacedGraphic snapSpacing={snapSpacing} millimetres={drawingUnits === "mm"} key={graphic.id} graphic={graphic} selected={selectedGraphicIds.includes(graphic.id) || graphic.id === selectedGraphicId} onSelect={onGraphicSelect} onMove={onGraphicMove} onResize={onGraphicResize} onVertexMove={onGraphicVertexMove} onVertexInsert={onGraphicVertexInsert} onVertexDelete={onGraphicVertexDelete} />)}
       {graphicPreview && <PlacedGraphic graphic={{ id: "__preview__", name: "Drawing preview", color: "#1565c0", strokeWidth: 2, ...graphicPreview }} selected={false} onSelect={() => {}} />}
       {visibleComponents.map((component) => <PlacedSymbol key={component.id} component={component} millimetres={drawingUnits === "mm"} evaluatedProperties={symbolStates?.get(component.id)} indicatorLit={litIndicatorIds?.has(component.id)} draftingStyle={resolveDraftingStyle(component, document.draftingLayers)} selectedComponentId={selectedComponentId} selectedComponentIds={selectedComponentIds} onSelect={onSelect} onMove={lockedLayers.has(component.layerId ?? "") ? undefined : onMove} onMovePreview={updateMovePreview} previewDelta={previewMove?.ids.includes(component.id) ? previewMove.delta : undefined} wireMode={wireMode} onOpenContextMenu={onComponentContextMenu} terminalAnchorsForComponent={pinsByComponent.get(component.id) ?? []} />)}
       {(document.annotations ?? []).map((annotation) => <PlacedAnnotation key={annotation.id} annotation={annotation} selected={annotation.id === selectedAnnotationId} onSelect={onAnnotationSelect} onMove={onAnnotationMove} />)}
