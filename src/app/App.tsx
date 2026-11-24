@@ -2629,6 +2629,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     Math.abs(Math.abs(graphic.y2 - graphic.y1) - envelope.depthMm) < 1e-8 ? envelope.topBores : undefined;
   const roundDevice = millimetres && linked ? roundDeviceFace(linked.definitionId) : undefined;
   const roundFace = graphic.kind === "ellipse" ? roundDevice : undefined;
+  const mounting = roundFace?.mounting;
   const side = graphic.kind === "rectangle" || graphic.kind === "polygon" ? roundDevice?.side : undefined;
   const hasRoundOutline = roundFace && Math.abs(Math.abs(graphic.x2 - graphic.x1) - roundFace.diameterMm) < 1e-8 &&
     Math.abs(Math.abs(graphic.y2 - graphic.y1) - roundFace.diameterMm) < 1e-8;
@@ -2656,10 +2657,11 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     </>}
     {roundFace && <>
       <a href={roundFace.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · Ø{roundFace.diameterMm} mm</a>
-      <p>{roundFace.mountingHoleCount} × {roundFace.thread} threads, {roundFace.threadDepthMm} mm deep, equally spaced on a Ø{roundFace.mountingPitchDiameterMm} mm pitch circle.</p>
+      {roundFace.note && <p>{roundFace.note}</p>}
+      {mounting && <p>{mounting.holeCount} × {mounting.thread} threads, {mounting.threadDepthMm} mm deep, equally spaced on a Ø{mounting.pitchDiameterMm} mm pitch circle.</p>}
       <button type="button" onClick={() => applyEnvelope(roundFace.diameterMm, roundFace.diameterMm)}>Apply circular front outline</button>
-      {hasRoundOutline && <button type="button" onClick={() => onAddMountingMarks(circularMountingMarks(graphic,
-        roundFace.mountingPitchDiameterMm, roundFace.nominalThreadDiameterMm, roundFace.mountingHoleCount, roundFace.thread))}>Draw nominal mounting marks (first at top)</button>}
+      {hasRoundOutline && mounting && <button type="button" onClick={() => onAddMountingMarks(circularMountingMarks(graphic,
+        mounting.pitchDiameterMm, mounting.nominalThreadDiameterMm, mounting.holeCount, mounting.thread))}>Draw nominal mounting marks (first at top)</button>}
     </>}
     {side && roundDevice && <>
       <a href={roundDevice.sourceUrl} target="_blank" rel="noreferrer">Manufacturer side drawing</a>
@@ -2694,7 +2696,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
           }));
         }}>Draw nominal load cell bores</button>}
       </> : <>
-        <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>
+        {!roundDevice && <button type="button" onClick={() => applyEnvelope(envelope.widthMm, envelope.heightMm)}>Apply front envelope</button>}
         <button type="button" onClick={() => applyEnvelope(envelope.depthMm, envelope.heightMm)}>Apply side envelope</button>
       </>}
       {envelope.railMountedDepths?.map(({ rail, depthMm }) =>
