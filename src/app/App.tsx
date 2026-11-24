@@ -703,7 +703,10 @@ export function App() {
   };
 
   const applyGraphicProfile = (points: SchematicGraphicPoint[]) => {
-    if (!selectedGraphic || selectedGraphic.kind !== "rectangle") return;
+    if (!selectedGraphic || (selectedGraphic.kind !== "rectangle" && selectedGraphic.kind !== "polygon")) return;
+    const currentPoints = selectedGraphic.points;
+    if (currentPoints?.length === points.length && currentPoints.every(({ x, y }, index) =>
+      Math.abs(x - points[index].x) < 1e-8 && Math.abs(y - points[index].y) < 1e-8)) return;
     const next: SchematicGraphic = { ...selectedGraphic, kind: "polygon", points, ...graphicPathBounds(points) };
     updateDocument({ ...document, graphics: (document.graphics ?? []).map(graphic => graphic.id === next.id ? next : graphic), revision: document.revision + 1 });
   };
@@ -2661,7 +2664,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
     {side && roundDevice && <>
       <a href={roundDevice.sourceUrl} target="_blank" rel="noreferrer">Manufacturer side drawing</a>
       <p>Nominal housing {side.bodyLengthMm} × Ø{roundDevice.diameterMm} mm, pilot {side.pilotLengthMm} × Ø{side.pilotDiameterMm} mm, exposed shaft {side.exposedShaftLengthMm} × Ø{side.shaftDiameterMm} mm. Cable exit and shaft flat omitted.</p>
-      {graphic.kind === "rectangle" && <button type="button" onClick={() => {
+      <button type="button" onClick={() => {
         const length = side.exposedShaftLengthMm + side.pilotLengthMm + side.bodyLengthMm;
         const left = (graphic.x1 + graphic.x2 - length) / 2;
         const centreY = (graphic.y1 + graphic.y2) / 2;
@@ -2672,7 +2675,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
         ];
         const top = steps.flatMap(({ start, end, radius }) => [{ x: start, y: centreY - radius }, { x: end, y: centreY - radius }]);
         onApplyProfile([...top, ...top.slice().reverse().map(({ x, y }) => ({ x, y: 2 * centreY - y }))]);
-      }}>Apply encoder side profile</button>}
+      }}>{graphic.kind === "polygon" ? "Restore nominal encoder side profile" : "Apply encoder side profile"}</button>
     </>}
     {envelope && <>
       <a href={envelope.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · {envelope.widthMm} × {envelope.heightMm} × {envelope.depthMm} mm</a>
