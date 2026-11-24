@@ -1,0 +1,182 @@
+{
+  "id": "festo-vovg-coil-test",
+  "name": "Festo VOVG 5/2 valve coil test and plan",
+  "description": "Energize and release a Festo 560708 valve coil using a 24 V DC control circuit. The simulator reports nominal internal port pairs; fluid pressure and motion are outside this example.",
+  "revision": 10,
+  "sheets": [
+    {
+      "id": "sheet-1",
+      "name": "Valve mounting plan",
+      "kind": "free-schematic",
+      "document": {
+        "id": "sheet-1",
+        "name": "Valve mounting plan",
+        "description": "Free-form electrical schematic sheet.",
+        "revision": 9,
+        "components": [],
+        "wires": [],
+        "graphics": [
+          {
+            "id": "rect-cutout",
+            "name": "Valve plan",
+            "kind": "rectangle",
+            "x1": 405.5,
+            "y1": 322.5,
+            "x2": 454.5,
+            "y2": 347.5,
+            "color": "#19324f",
+            "strokeWidth": 1,
+            "deviceLink": {
+              "sheetId": "control",
+              "componentId": "breaker"
+            }
+          }
+        ],
+        "drawingGrid": {
+          "displaySpacing": 20,
+          "snapSpacing": 1,
+          "snapEnabled": true,
+          "units": "mm"
+        }
+      }
+    },
+    {
+      "id": "control",
+      "name": "Valve coil test",
+      "kind": "free-schematic",
+      "document": {
+        "id": "control",
+        "name": "Valve coil test",
+        "description": "Close S1 to energize V2. Release S1 to restore the spring-return paths.",
+        "revision": 8,
+        "components": [
+          {
+            "id": "ac",
+            "definitionId": "supply.control",
+            "reference": "X1",
+            "x": 155,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "voltageV": 230,
+              "frequencyHz": 50
+            }
+          },
+          {
+            "id": "dc",
+            "definitionId": "iec.dc-control-supply.01",
+            "reference": "T1",
+            "x": 345,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "inputVoltageV": 230,
+              "nominalVoltageV": 24,
+              "ratedCurrentA": 4,
+              "outputEnabled": true
+            }
+          },
+          {
+            "id": "command",
+            "definitionId": "pushbutton.start-no",
+            "reference": "S1",
+            "x": 555,
+            "y": 260,
+            "rotation": 0,
+            "properties": {
+              "pressed": false
+            }
+          },
+          {
+            "id": "breaker",
+            "definitionId": "festo.vovg.560708",
+            "reference": "V2",
+            "x": 785,
+            "y": 350,
+            "rotation": 0,
+            "properties": {
+              "coilVoltageV": 24
+            }
+          }
+        ],
+        "wires": [
+          {
+            "id": "line",
+            "netName": "L",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "line"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "line-in"
+            },
+            "points": []
+          },
+          {
+            "id": "neutral",
+            "netName": "N",
+            "from": {
+              "componentId": "ac",
+              "terminalId": "neutral"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "neutral-in"
+            },
+            "points": []
+          },
+          {
+            "id": "command-feed",
+            "netName": "DC_PLUS",
+            "from": {
+              "componentId": "dc",
+              "terminalId": "plus-out"
+            },
+            "to": {
+              "componentId": "command",
+              "terminalId": "13"
+            },
+            "points": []
+          },
+          {
+            "id": "coil-feed",
+            "netName": "COIL_PLUS",
+            "from": {
+              "componentId": "command",
+              "terminalId": "14"
+            },
+            "to": {
+              "componentId": "breaker",
+              "terminalId": "a1"
+            },
+            "points": []
+          },
+          {
+            "id": "coil-return",
+            "netName": "DC_RETURN",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "a2"
+            },
+            "to": {
+              "componentId": "dc",
+              "terminalId": "zero-out"
+            },
+            "points": [
+              {
+                "x": 690,
+                "y": 400
+              },
+              {
+                "x": 455,
+                "y": 400
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "schemaVersion": 1
+}

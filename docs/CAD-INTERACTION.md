@@ -73,3 +73,7 @@ Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawin
 ## HBK Z6 mounting comparison
 
 Import the [HBK Z6 mounting comparison](../public/examples/hbk-z6-mounting-comparison.json) to compare the Z6F 100 kg, Z6F 500 kg and Z6G 500 kg drawings. Each millimetre sheet has an editable top envelope, two mounting bores and one load application bore. Select its outline and use **Go to schematic device** to inspect the six bridge leads and shield. The example covers nominal geometry and leaves excitation and signal conditioning unwired.
+
+## Festo VOVG coil test and plan
+
+Import the [Festo VOVG 5/2 valve coil test](../public/examples/festo-vovg-coil-test.json). Select the 49 × 25 mm plan outline and choose **Go to schematic device**. Run the simulation and operate S1 to switch V2 between its released and energized port pairs. The example verifies coil continuity and nominal spool paths. It leaves the external pneumatic circuit unwired.
