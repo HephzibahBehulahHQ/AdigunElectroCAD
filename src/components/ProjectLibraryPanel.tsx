@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { engineeringDrawings, type EngineeringDrawingId } from "../projects/engineeringDrawings";
 import type { ProjectTemplate } from "../projects/templateLibrary";
 import { verifyProjectTemplate, type TemplateVerification } from "../projects/templateVerification";
 import type { CircuitDocument } from "../types/electrical";
@@ -41,7 +42,7 @@ function ProjectPreview({ template }: { template: ProjectTemplate }) {
   </svg>;
 }
 
-export function ProjectLibraryPanel({ active, templates, selected, verification, activeDocument, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook, onOpenPlcSensorWorkbook, onOpenVfdWorkbook }: {
+export function ProjectLibraryPanel({ active, templates, selected, verification, activeDocument, onSelect, onLoad, onOpenWorkbook, onOpenFourSheetWorkbook, onOpenStarDeltaWorkbook, onOpenReversingWorkbook, onOpenTwoMotorWorkbook, onOpenAnalogWorkbook, onOpenPneumaticWorkbook, onOpenPlcSensorWorkbook, onOpenVfdWorkbook, onOpenEngineeringDrawing }: {
   active: boolean;
   templates: ProjectTemplate[];
   selected: ProjectTemplate;
@@ -58,7 +59,15 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
   onOpenPneumaticWorkbook?: () => void;
   onOpenPlcSensorWorkbook?: () => void;
   onOpenVfdWorkbook?: () => void;
+  onOpenEngineeringDrawing: (id: EngineeringDrawingId) => Promise<void>;
 }) {
+  const [drawingId, setDrawingId] = useState<EngineeringDrawingId>(engineeringDrawings[0].id);
+  const [openingDrawing, setOpeningDrawing] = useState(false);
+  const openDrawing = async () => {
+    setOpeningDrawing(true);
+    try { await onOpenEngineeringDrawing(drawingId); }
+    finally { setOpeningDrawing(false); }
+  };
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("");
   const [category, setCategory] = useState("");
@@ -80,6 +89,18 @@ export function ProjectLibraryPanel({ active, templates, selected, verification,
       {selected.id === "plc-proximity-solenoid-hold" && onOpenPlcSensorWorkbook && <button className="wide workbook-open" onClick={onOpenPlcSensorWorkbook}>Open 3-sheet PLC sensor control</button>}
       {selected.id === "vfd-motor-feeder" && onOpenVfdWorkbook && <button className="wide workbook-open" onClick={onOpenVfdWorkbook}>Open 4-sheet VFD feeder</button>}
     </div>
+    <details className="project-information">
+      <summary>Engineering drawings</summary>
+      <select aria-label="Engineering drawing" value={drawingId} disabled={openingDrawing} onChange={(event) => {
+        const drawing = engineeringDrawings.find(({ id }) => id === event.target.value);
+        if (drawing) setDrawingId(drawing.id);
+      }}>
+        {engineeringDrawings.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+      </select>
+      <button type="button" className="wide workbook-open" disabled={openingDrawing} onClick={() => void openDrawing()}>
+        {openingDrawing ? "Opening drawing…" : "Open engineering drawing"}
+      </button>
+    </details>
     <div className="project-browser-controls">
       <input aria-label="Search projects" placeholder="Search projects…" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} />
       <div className="project-filters">
