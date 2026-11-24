@@ -1,4 +1,4 @@
-import { deviceEnvelope } from "../catalog/deviceEnvelopes";
+import { frontEnvelopeClearance } from "../catalog/deviceEnvelopes";
 import { sm1223SymbolId } from "../catalog/siemensSm1223";
 import { automaticWireBends, findAutomaticWireBends, resolveBranchWireRoute, wireRouteObstacles } from "../cad/automaticWireRoute";
 import { displayTerminalLabel } from "../electrical/terminalLabels";
@@ -169,9 +169,8 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const x = Math.min(graphic.x1, graphic.x2); const y = Math.min(graphic.y1, graphic.y2);
   const width = Math.abs(graphic.x2 - graphic.x1); const height = Math.abs(graphic.y2 - graphic.y1);
   const points = graphic.points ?? [];
-    const envelope = millimetres && graphic.kind === "rectangle" && deviceDefinitionId ? deviceEnvelope(deviceDefinitionId) : undefined;
-  const clearance = envelope && Math.abs(width - envelope.widthMm) < 1e-8 && Math.abs(height - envelope.heightMm) < 1e-8
-    ? envelope.sideBySideClearanceMm : undefined;
+    const clearance = millimetres && graphic.kind === "rectangle" && deviceDefinitionId
+    ? frontEnvelopeClearance(deviceDefinitionId, width, height) : undefined;
   const dimensioned = millimetres && (graphic.kind === "rectangle" || graphic.kind === "ellipse");
   const dimensions = graphic.kind === "ellipse" && Math.abs(width - height) < 1e-8
     ? "Ø" + Number(width.toFixed(4)) + " mm"

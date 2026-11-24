@@ -254,3 +254,23 @@ it("flags overlapping equipment outlines on millimetre sheets and allows shared 
   delete document.graphics[1].deviceLink;
   expect(warnings()).toEqual([]);
 });
+
+it("reports entry inside a documented mounting clearance without requiring an outline overlap", () => {
+  const project = addFreeSchematicSheet(createBlankProject());
+  const [source, panel] = project.sheets;
+  source.document.components = ["KM1", "KM2"].map((reference, index) => ({
+    id: reference, reference, definitionId: "iec.motor-starter.01", x: 200 + index * 200, y: 200, rotation: 0 as const, properties: {},
+  }));
+  panel.document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
+  const graphic = { kind: "rectangle" as const, x1: 0, y1: 0, x2: 45, y2: 85, color: "#19324f", strokeWidth: 1 };
+  panel.document.graphics = [
+    { ...graphic, id: "front", name: "KM1 front", deviceLink: { sheetId: source.id, componentId: "KM1" } },
+    { ...graphic, id: "other", name: "KM2 front", y1: 90, y2: 175, deviceLink: { sheetId: source.id, componentId: "KM2" } },
+  ];
+  const warnings = () => createProjectWideReport(project, catalogById).validation;
+  expect(warnings()).not.toContainEqual(expect.objectContaining({ code: "panel-outline-overlap" }));
+  expect(warnings()).toContainEqual(expect.objectContaining({ code: "panel-installation-clearance", message: "KM2 front enters the documented mounting clearance for KM1 front." }));
+  panel.document.graphics[1].y1 += 5;
+  panel.document.graphics[1].y2 += 5;
+  expect(warnings()).not.toContainEqual(expect.objectContaining({ code: "panel-installation-clearance" }));
+});
