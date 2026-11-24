@@ -2,7 +2,7 @@ import { parseProjectJson } from "../src/projects/projectSerialization";
 import { describe, expect, it } from "vitest";
 import { catalogById } from "../src/catalog/dolCatalog";
 import { createDolMotorStarter } from "../src/projects/dolMotorStarter";
-import { createBlankProject } from "../src/projects/starterProject";
+import { addFreeSchematicSheet, createBlankProject } from "../src/projects/starterProject";
 import { createMotorFeederWorkbook } from "../src/projects/motorFeederWorkbook";
 import { assignProjectCableCore } from "../src/projects/projectContinuations";
 import { cableScheduleTable, createProjectReport, createProjectWideReport, electricalValidationTable, reportCsv, simulationResultsTable, wireReportTable } from "../src/reports/projectReport";
@@ -219,4 +219,20 @@ it("reports a blocked branch leg and clears the warning when its obstacle moves"
   document.components[3].x = 1070;
   expect(warnings()).toEqual([]);
   expect(document.wires[1].branchOfWireId).toBe("parent");
+});
+
+it("reports an unresolved panel link by sheet and clears it when the source returns", () => {
+  const project = addFreeSchematicSheet(createBlankProject());
+  const [source, panel] = project.sheets;
+  const device = createDolMotorStarter().components[0];
+  source.document.components = [device];
+  panel.document.graphics = [{ id: "footprint", name: "Device front", kind: "rectangle", x1: 100, y1: 100, x2: 145, y2: 185,
+    color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: source.id, componentId: device.id } }];
+  const issues = () => createProjectWideReport(project, catalogById).validation.filter(issue => issue.code === "unresolved-panel-device");
+  expect(issues()).toEqual([]);
+  source.document.components = [];
+  expect(issues()).toEqual([{ severity: "warning", code: "unresolved-panel-device", sheet: panel.name + " · Sheet 2",
+    message: "Device front links to a missing schematic device. Relink it in the graphic Properties." }]);
+  source.document.components = [{ ...device, reference: "X2" }];
+  expect(issues()).toEqual([]);
 });
