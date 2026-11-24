@@ -105,3 +105,7 @@ Open [the editable starter drawing](../public/examples/siemens-dol-starter-panel
 ### SIMOTICS six-lead winding connections
 
 Open [the editable winding comparison](../public/examples/siemens-six-lead-winding-connections.json). The 690 V star sheet joins U2, V2, and W2 at one node. The 400 V delta sheet connects U2 to W1, V2 to U1, and W2 to V1. Both show the separate protective-earth connection. The drawing illustrates fixed winding connections and omits starter controls, protection, and motor transient modeling.
+
+### SM 1223 input wiring and panel drawing
+
+Open [the editable SM 1223 example](../public/examples/siemens-sm1223-input-wiring.json). The 45 × 100 mm front and 75 × 100 mm side envelopes both link to IO1. In simulation, S1 switches the field signal feeding I0 and the external H1 pilot. H1 verifies the upstream circuit. The module provides documented connector endpoints for drafting. CPU execution and transistor output switching are outside this model.
