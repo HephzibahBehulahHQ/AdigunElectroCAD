@@ -120,7 +120,7 @@ function panelOutlines(document: CircuitDocument) {
   if (document.drawingGrid?.units !== "mm") return [];
   return (document.graphics ?? []).flatMap(graphic =>
     (graphic.kind === "rectangle" || graphic.kind === "ellipse" || graphic.kind === "polygon") && graphic.deviceLink ? [{
-    name: graphic.name, link: graphic.deviceLink, kind: graphic.kind,
+    name: graphic.name, link: graphic.deviceLink, kind: graphic.kind, points: graphic.points,
     bounds: { left: Math.min(graphic.x1, graphic.x2), top: Math.min(graphic.y1, graphic.y2),
       right: Math.max(graphic.x1, graphic.x2), bottom: Math.max(graphic.y1, graphic.y2) },
   }] : []);
@@ -128,11 +128,34 @@ function panelOutlines(document: CircuitDocument) {
 
 type PanelOutline = ReturnType<typeof panelOutlines>[number];
 
-function panelOverlap(a: Pick<PanelOutline, "kind" | "bounds">, b: Pick<PanelOutline, "kind" | "bounds">): "exact" | "possible" | undefined {
+type PanelShape = Pick<PanelOutline, "kind" | "bounds"> & Partial<Pick<PanelOutline, "points">>;
+
+function polygonIntersectsEllipse(points: NonNullable<PanelShape["points"]>, bounds: PanelShape["bounds"]): boolean {
+  const rx = (bounds.right - bounds.left) / 2;
+  const ry = (bounds.bottom - bounds.top) / 2;
+  const centreX = bounds.left + rx;
+  const centreY = bounds.top + ry;
+  const normalized = points.map(({ x, y }) => ({ x: (x - centreX) / rx, y: (y - centreY) / ry }));
+  let containsCentre = false;
+  for (const [index, start] of normalized.entries()) {
+    const end = normalized[(index + 1) % normalized.length];
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const edgeLengthSquared = dx * dx + dy * dy;
+    const t = edgeLengthSquared ? Math.max(0, Math.min(1, -(start.x * dx + start.y * dy) / edgeLengthSquared)) : 0;
+    if (Math.hypot(start.x + t * dx, start.y + t * dy) < 1 - 1e-10) return true;
+    if ((start.y > 0) !== (end.y > 0) && start.x - start.y * dx / dy > 0) containsCentre = !containsCentre;
+  }
+  return containsCentre;
+}
+
+function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | undefined {
   if (!componentFootprintsOverlap(a.bounds, b.bounds)) return;
   if (a.kind === "rectangle" && b.kind === "rectangle") return "exact";
   const ellipse = a.kind === "ellipse" ? a.bounds : b.kind === "ellipse" ? b.bounds : undefined;
   const rectangle = a.kind === "rectangle" ? a.bounds : b.kind === "rectangle" ? b.bounds : undefined;
+  const polygon = a.kind === "polygon" ? a.points : b.kind === "polygon" ? b.points : undefined;
+  if (ellipse && polygon) return polygonIntersectsEllipse(polygon, ellipse) ? "exact" : undefined;
   if (ellipse && rectangle) {
     const x = (ellipse.left + ellipse.right) / 2;
     const y = (ellipse.top + ellipse.bottom) / 2;

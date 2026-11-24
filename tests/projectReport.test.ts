@@ -280,7 +280,7 @@ it("distinguishes real round-outline overlaps from bounding-box corner contacts"
   expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
 });
 
-it("flags intersecting envelopes for linked circular and polygon outlines", () => {
+it("checks ellipse and polygon outlines for edge intersection and containment", () => {
   const { document } = createBlankProject().sheets[0];
   document.drawingGrid = { units: "mm", displaySpacing: 10, snapSpacing: 1, snapEnabled: true };
   const style = { color: "#19324f", strokeWidth: 1, deviceLink: { sheetId: "schematic", componentId: "encoder" } };
@@ -289,10 +289,13 @@ it("flags intersecting envelopes for linked circular and polygon outlines", () =
     points: [{ x: 39, y: 0 }, { x: 93, y: 0 }, { x: 93, y: 40 }] };
   document.graphics = [front, side];
   const warnings = () => createProjectReport(document, catalogById).validation.filter(issue => issue.code.startsWith("panel-"));
-  expect(warnings()).toMatchObject([{ code: "panel-envelope-overlap", message: expect.stringContaining("Check the outline geometry") }]);
-  side.x1 = 40;
-  side.points[0].x = 40;
   expect(warnings()).toEqual([]);
+  side.x1 = 6;
+  side.points[0].x = 6;
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
+  Object.assign(side, { x1: -5, y1: -5, x2: 45, y2: 45,
+    points: [{ x: -5, y: -5 }, { x: 45, y: -5 }, { x: 45, y: 45 }, { x: -5, y: 45 }] });
+  expect(warnings()).toMatchObject([{ code: "panel-outline-overlap" }]);
 });
 
 it("reports entry inside a documented mounting clearance without requiring an outline overlap", () => {
