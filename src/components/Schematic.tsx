@@ -194,7 +194,8 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
     dragged.current = false;
     if (event.shiftKey) return;
     if (!onMove || event.button !== 0) return;
-    event.stopPropagation(); if (!selected) onSelect(graphic.id); const start = point(event);
+    event.stopPropagation(); event.currentTarget.ownerSVGElement?.focus({ preventScroll: true });
+    if (!selected) onSelect(graphic.id); const start = point(event);
     gesture.current = start ? { mode: "move", start, clientX: event.clientX, clientY: event.clientY } : null;
     if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
   }} onPointerUp={(event) => {
