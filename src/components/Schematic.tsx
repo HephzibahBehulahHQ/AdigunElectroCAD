@@ -161,7 +161,7 @@ function PlacedAnnotation({ annotation, selected, onSelect, onMove }: { annotati
 }
 
 function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertexMove, onVertexInsert, onVertexDelete, deviceReference, deviceDefinitionId, millimetres = false, snapSpacing = 20 }: { deviceReference?: string; deviceDefinitionId?: string; millimetres?: boolean; snapSpacing?: number | null; graphic: SchematicGraphic; selected: boolean; onSelect: NonNullable<Props["onGraphicSelect"]>; onMove?: Props["onGraphicMove"]; onResize?: Props["onGraphicResize"]; onVertexMove?: Props["onGraphicVertexMove"]; onVertexInsert?: Props["onGraphicVertexInsert"]; onVertexDelete?: Props["onGraphicVertexDelete"] }) {
-  const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; handle?: string; index?: number } | null>(null);
+  const gesture = useRef<{ mode: "move" | "resize" | "vertex"; start: { x: number; y: number }; clientX: number; clientY: number; handle?: string; index?: number } | null>(null);
   const point = (event: PointerEvent<SVGGElement>) => {
     const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM();
     return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
@@ -188,15 +188,16 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
   const handles = graphic.kind === "line"
     ? [{ id: "start", x: graphic.x1, y: graphic.y1 }, { id: "end", x: graphic.x2, y: graphic.y2 }]
     : [{ id: "nw", x, y }, { id: "ne", x: x + width, y }, { id: "sw", x, y: y + height }, { id: "se", x: x + width, y: y + height }];
+  const resizeHandleRadius = graphic.kind === "line" ? 6 : Math.min(6, Math.min(width, height) / 3);
   return <g data-drawing-selected={selected || undefined} data-graphic-id={graphic.id} data-graphic-kind={graphic.kind} onClick={(event) => { event.stopPropagation(); onSelect(graphic.id, event.shiftKey); }} onDoubleClick={(event) => { if (!graphic.points || !onVertexInsert) return; event.stopPropagation(); const matrix = event.currentTarget.ownerSVGElement?.getScreenCTM(); const current = matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null; if (current) onVertexInsert(graphic.id, current.x, current.y); }} onPointerDown={(event) => {
     if (event.shiftKey) return;
     if (!onMove || event.button !== 0) return;
     event.stopPropagation(); onSelect(graphic.id); const start = point(event);
-    gesture.current = start ? { mode: "move", start } : null;
+    gesture.current = start ? { mode: "move", start, clientX: event.clientX, clientY: event.clientY } : null;
     if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
   }} onPointerUp={(event) => {
     const active = gesture.current; const current = point(event); gesture.current = null;
-    if (active && current && Math.hypot(current.x - active.start.x, current.y - active.start.y) > 4) {
+    if (active && current && Math.hypot(event.clientX - active.clientX, event.clientY - active.clientY) > 4) {
       if (active.mode === "move") onMove?.(graphic.id, current.x - active.start.x, current.y - active.start.y);
       else if (active.mode === "vertex" && active.index !== undefined) onVertexMove?.(graphic.id, active.index, current.x, current.y);
       else {
@@ -222,12 +223,12 @@ function PlacedGraphic({ graphic, selected, onSelect, onMove, onResize, onVertex
     {graphic.kind === "line" && <line x1={graphic.x1} y1={graphic.y1} x2={graphic.x2} y2={graphic.y2} stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
     {graphic.kind === "polyline" && <polyline points={pointList} fill="none" stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
     {graphic.kind === "polygon" && <polygon points={pointList} fill="transparent" stroke="transparent" strokeWidth={Math.max(12, graphic.strokeWidth + 8)} />}
-    {selected && onResize && handles.map((handle) => <circle key={handle.id} data-resize-handle={handle.id} cx={handle.x} cy={handle.y} r="6" fill="#fff" stroke="#e0a526" strokeWidth="2" aria-label={`Resize ${graphic.name} from ${handle.id}`} onPointerDown={(event) => {
-      event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "resize", start, handle: handle.id } : null;
+    {selected && onResize && handles.map((handle) => <circle key={handle.id} data-resize-handle={handle.id} cx={handle.x} cy={handle.y} r={resizeHandleRadius} fill="#fff" stroke="#e0a526" strokeWidth={Math.min(2, resizeHandleRadius / 2)} aria-label={`Resize ${graphic.name} from ${handle.id}`} onPointerDown={(event) => {
+      event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "resize", start, clientX: event.clientX, clientY: event.clientY, handle: handle.id } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
     {selected && onVertexMove && graphic.points?.map((vertex, index) => <circle key={index} data-vertex-handle={index} cx={vertex.x} cy={vertex.y} r="6" fill="#fff" stroke="#e0a526" strokeWidth="2" aria-label={`Drag to move ${graphic.name} vertex ${index + 1}; right-click to remove`} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onVertexDelete?.(graphic.id, index); }} onPointerDown={(event) => {
-      event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, index } : null;
+      event.stopPropagation(); const start = point(event); gesture.current = start ? { mode: "vertex", start, clientX: event.clientX, clientY: event.clientY, index } : null;
       if (gesture.current) event.currentTarget.setPointerCapture(event.pointerId);
     }} />)}
     {!graphic.labelHidden && <text data-graphic-label="" x={x + width / 2} y={y + height + 17} textAnchor="middle" fontSize="11" fontWeight="700" fill={graphic.color} paintOrder="stroke" stroke="#f4f8fc" strokeWidth="3" pointerEvents="none" textLength={graphic.name.length > 16 ? 150 : undefined} lengthAdjust="spacingAndGlyphs">{deviceReference ? deviceReference + " · " : ""}{graphic.name}{dimensioned && " · " + dimensions}</text>}
