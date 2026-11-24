@@ -1,9 +1,12 @@
 import { DRAWING_RULER_LEFT, DRAWING_RULER_TOP, drawingRulerTicks } from "../cad/drawingCamera";
 import { useState, type CSSProperties, type PointerEvent } from "react";
 
-export function DrawingRulers({ bounds, zoom, onAddGuide }: {
+import type { DrawingUnits } from "../cad/drawingGrid";
+
+export function DrawingRulers({ bounds, zoom, units, onAddGuide }: {
   bounds: { x: number; y: number; width: number; height: number };
   zoom: number;
+  units: DrawingUnits;
   onAddGuide?: (axis: "x" | "y", coordinate: number) => void;
 }) {
   const [preview, setPreview] = useState<{ axis: "x" | "y"; offset: number } | null>(null);
@@ -35,7 +38,7 @@ export function DrawingRulers({ bounds, zoom, onAddGuide }: {
     }} onLostPointerCapture={() => setPreview(null)}>
       {drawingRulerTicks(start, span, zoom).map(value => <span key={value} style={{ [style]: `${(value - start) / span * 100}%` }}>{value}</span>)}
     </div>)}
-    <span className="drawing-ruler-units" title="Drawing units">du</span>
+    <span className="drawing-ruler-units" title={units === "mm" ? "Millimetres" : "Drawing units"}>{units}</span>
     {preview && <i className={`drawing-guide-preview drawing-guide-preview-${preview.axis}`} style={{ [preview.axis === "x" ? "left" : "top"]: `${preview.offset * 100}%` }} />}
   </div>;
 }

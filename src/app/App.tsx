@@ -1966,7 +1966,7 @@ export function App() {
 
   const saveDrawingGrid = (grid: DrawingGrid) => {
     if (isReferenceSheet || !validDrawingGrid(grid)) return;
-    if (grid.displaySpacing === drawingGrid.displaySpacing && grid.snapSpacing === drawingGrid.snapSpacing && grid.snapEnabled === drawingGrid.snapEnabled) return;
+    if (grid.displaySpacing === drawingGrid.displaySpacing && grid.snapSpacing === drawingGrid.snapSpacing && grid.snapEnabled === drawingGrid.snapEnabled && (grid.units ?? "du") === (drawingGrid.units ?? "du")) return;
     updateDocument({ ...document, drawingGrid: grid, revision: document.revision + 1 });
   };
 

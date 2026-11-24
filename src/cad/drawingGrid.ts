@@ -1,4 +1,7 @@
+export type DrawingUnits = "du" | "mm";
+
 export interface DrawingGrid {
+  units?: DrawingUnits;
   displaySpacing: number;
   snapSpacing: number;
   snapEnabled: boolean;
@@ -8,7 +11,8 @@ export const defaultDrawingGrid: DrawingGrid = { displaySpacing: 20, snapSpacing
 
 export function validDrawingGrid(grid: DrawingGrid): boolean {
   return [grid.displaySpacing, grid.snapSpacing].every(value => Number.isFinite(value) && value >= .1 && value <= 10000)
-    && typeof grid.snapEnabled === "boolean";
+    && typeof grid.snapEnabled === "boolean"
+    && (grid.units === undefined || grid.units === "du" || grid.units === "mm");
 }
 
 export function snapDrawingCoordinate(value: number, spacing: number | null = 20): number {

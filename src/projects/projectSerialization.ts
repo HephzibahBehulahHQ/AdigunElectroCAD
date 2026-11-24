@@ -137,8 +137,8 @@ function parseDocument(value: unknown, sheetIndex: number): CircuitDocument {
 
 function parseDrawingGrid(value: unknown): DrawingGrid {
   const raw = object(value, "Invalid drawing grid.");
-  const grid = { displaySpacing: raw.displaySpacing, snapSpacing: raw.snapSpacing, snapEnabled: raw.snapEnabled } as DrawingGrid;
-  if (!validDrawingGrid(grid)) throw new Error("Invalid drawing grid spacing or snap setting.");
+  const grid = { displaySpacing: raw.displaySpacing, snapSpacing: raw.snapSpacing, snapEnabled: raw.snapEnabled, ...(raw.units === undefined ? {} : { units: raw.units }) } as DrawingGrid;
+  if (!validDrawingGrid(grid)) throw new Error("Invalid drawing grid spacing, snap setting or unit.");
   return grid;
 }
 
