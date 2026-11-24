@@ -1373,3 +1373,13 @@ it("keeps each M12 mating-face contact centred on its documented wire anchor", (
     expect(markup).toContain('data-connector-pin="' + terminal.id + '" cx="' + (100 + x) + '" cy="' + (100 + y) + '"');
   }
 });
+
+it("keeps the overload auxiliary contact paths outside the heater block in both states", () => {
+  const render = (tripped: boolean) => renderToStaticMarkup(createElement(FunctionalSymbol, { symbolId: "overload-3p", x: 100, y: 100, properties: { tripped } }));
+  const healthy = render(false);
+  expect(healthy).toContain('data-overload-contact="95/96" data-state="closed" d="M 53 88 H 56 V 112 H 53"');
+  expect(healthy).toContain('data-overload-contact="97/98" data-state="open" d="M 147 88 H 144 L 152 98');
+  const tripped = render(true);
+  expect(tripped).toContain('data-overload-contact="95/96" data-state="open" d="M 53 88 H 56 L 48 98');
+  expect(tripped).toContain('data-overload-contact="97/98" data-state="closed" d="M 147 88 H 144 V 112 H 147"');
+});
