@@ -149,6 +149,30 @@ function polygonIntersectsEllipse(points: NonNullable<PanelShape["points"]>, bou
   return containsCentre;
 }
 
+function polygonIntersectsRectangle(points: NonNullable<PanelShape["points"]>, bounds: PanelShape["bounds"]): boolean {
+  const edges = [["x", bounds.left, 1], ["x", bounds.right, -1],
+    ["y", bounds.top, 1], ["y", bounds.bottom, -1]] as const;
+  let clipped = points;
+  for (const [axis, limit, direction] of edges) {
+    clipped = clipped.flatMap((end, index) => {
+      const start = clipped[(index + clipped.length - 1) % clipped.length];
+      const startInside = (start[axis] - limit) * direction >= 0;
+      const endInside = (end[axis] - limit) * direction >= 0;
+      if (startInside === endInside) return endInside ? [end] : [];
+      const fraction = (limit - start[axis]) / (end[axis] - start[axis]);
+      const crossing = { x: start.x + fraction * (end.x - start.x), y: start.y + fraction * (end.y - start.y), [axis]: limit };
+      return endInside ? [crossing, end] : [crossing];
+    });
+  }
+  const origin = clipped[0];
+  if (!origin) return false;
+  const twiceArea = clipped.reduce((area, point, index) => {
+    const next = clipped[(index + 1) % clipped.length];
+    return area + (point.x - origin.x) * (next.y - origin.y) - (point.y - origin.y) * (next.x - origin.x);
+  }, 0);
+  return Math.abs(twiceArea) > 1e-10;
+}
+
 function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | undefined {
   if (!componentFootprintsOverlap(a.bounds, b.bounds)) return;
   if (a.kind === "rectangle" && b.kind === "rectangle") return "exact";
@@ -156,6 +180,7 @@ function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | unde
   const rectangle = a.kind === "rectangle" ? a.bounds : b.kind === "rectangle" ? b.bounds : undefined;
   const polygon = a.kind === "polygon" ? a.points : b.kind === "polygon" ? b.points : undefined;
   if (ellipse && polygon) return polygonIntersectsEllipse(polygon, ellipse) ? "exact" : undefined;
+  if (rectangle && polygon) return polygonIntersectsRectangle(polygon, rectangle) ? "exact" : undefined;
   if (ellipse && rectangle) {
     const x = (ellipse.left + ellipse.right) / 2;
     const y = (ellipse.top + ellipse.bottom) / 2;
