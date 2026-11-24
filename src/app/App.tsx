@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import type { User } from "@supabase/supabase-js";
-import { deviceEnvelope, roundDeviceFace } from "../catalog/deviceEnvelopes";
+import { deviceEnvelope, roundDeviceFace, valvePlanEnvelope } from "../catalog/deviceEnvelopes";
 import { indexComponentCatalog } from "../catalog/catalogSearch";
 import { catalogById, componentLibraryById, componentLibraryCatalog, dolCatalog } from "../catalog/dolCatalog";
 import { canPlaceComponent, createManualWire, duplicateComponentInstance, findOpenPlacement, moveComponentsByGrid, moveComponentsByOffset, nextComponentReference, placementLayout, positionCustomTerminal, reconnectWire, removeComponent, removeWire, renameWire, transformComponent, type ComponentTransform, updateComponentProperty } from "../cad/documentOps";
@@ -2569,6 +2569,7 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
   const current = key(graphic.deviceLink);
   const linked = devices.find(device => key(device.link) === current);
   const envelope = millimetres && linked && graphic.kind === "rectangle" ? deviceEnvelope(linked.definitionId) : undefined;
+  const valvePlan = millimetres && linked && graphic.kind === "rectangle" ? valvePlanEnvelope(linked.definitionId) : undefined;
   const topBores = envelope?.topBores && Math.abs(Math.abs(graphic.x2 - graphic.x1) - envelope.widthMm) < 1e-8 &&
     Math.abs(Math.abs(graphic.y2 - graphic.y1) - envelope.depthMm) < 1e-8 ? envelope.topBores : undefined;
   const roundDevice = millimetres && linked ? roundDeviceFace(linked.definitionId) : undefined;
@@ -2589,6 +2590,11 @@ function GraphicDeviceProperties({ graphic, millimetres, sheets, onChange, onNav
       {devices.map(device => <option key={key(device.link)} value={key(device.link)}>{device.name}</option>)}
     </select></label>
     {linked && <button type="button" onClick={() => onNavigate(linked.link)}>Go to schematic device</button>}
+    {valvePlan && <>
+      <a href={valvePlan.sourceUrl} target="_blank" rel="noreferrer">Festo valve dimensions</a>
+      <p>Nominal plan envelope {valvePlan.lengthMm} × {valvePlan.widthMm} mm. Allow separately for fittings, cable clearance and the manifold.</p>
+      <button type="button" onClick={() => applyEnvelope(valvePlan.lengthMm, valvePlan.widthMm)}>Apply valve plan envelope</button>
+    </>}
     {roundFace && <>
       <a href={roundFace.sourceUrl} target="_blank" rel="noreferrer">Manufacturer dimensions · Ø{roundFace.diameterMm} mm</a>
       <p>{roundFace.mountingHoleCount} × {roundFace.thread} threads, {roundFace.threadDepthMm} mm deep, equally spaced on a Ø{roundFace.mountingPitchDiameterMm} mm pitch circle.</p>
