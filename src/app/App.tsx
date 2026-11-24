@@ -33,6 +33,7 @@ import { componentsInStackOrder, reorderComponents } from "../cad/componentStack
 import { circularMountingMarks, duplicateSchematicGraphic, canReorderSchematicGraphics, reorderSchematicGraphic, setSchematicGraphicBounds, type GraphicStackCapabilities, type GraphicStackOrder } from "../cad/graphicOps";
 import { recordProjectEdit, redoProject, undoProject, type ProjectHistory } from "../cad/projectHistory";
 import { canConnectTerminals, connectionSignalIssue, validateCircuit } from "../electrical/topology";
+import type { EngineeringDrawingId } from "../projects/engineeringDrawings";
 import { addFreeSchematicSheet, createBlankProject, createMotorStarterWorkbook, loadTemplateIntoSheet, replaceSheetDocument } from "../projects/starterProject";
 import { createFourSheetDolWorkbook } from "../projects/fourSheetDolWorkbook";
 import { createFourSheetStarDeltaWorkbook } from "../projects/fourSheetStarDeltaWorkbook";
@@ -1218,6 +1219,19 @@ export function App() {
     setNotice(noticeText);
   };
 
+  const openEngineeringDrawing = async (id: EngineeringDrawingId) => {
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}examples/${id}.json`);
+      if (!response.ok) throw new Error(`Drawing unavailable (HTTP ${response.status}).`);
+      const drawing = parseProjectJson(await response.text());
+      if (!window.confirm(`Open ${drawing.name} and replace the current project? Save or export the current project first if you need to keep it.`)) return;
+      loadProjectIntoEditor(drawing, `${drawing.name} opened. Undo restores the previous project.`);
+      closeProjectsMenu();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to open the engineering drawing.");
+    }
+  };
+
   const restoreDol = () => loadProjectIntoEditor(createMotorStarterWorkbook(), "Nine-motor feeder workbook restored with all ten sheets.");
 
   const openFeederWorkbook = () => {
@@ -2235,7 +2249,7 @@ export function App() {
         <details><summary>Simulation</summary><div className="menu-popover"><button onClick={startSimulation}>▶ Run</button><button onClick={pauseSimulation}>Ⅱ Pause</button><button onClick={stopSimulation}>■ Stop</button></div></details>
         <button onClick={() => setReportsOpen((open) => !open)} aria-expanded={reportsOpen}>Reports</button>
         <button onClick={() => window.open("https://github.com/HephzibahBehulahHQ/AdigunElectroCAD/blob/main/docs/HELP.md", "_blank", "noopener,noreferrer")}>Help</button>
-        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); const nextOpen = !projectsMenuPinnedRef.current; setProjectsMenuPinned(nextOpen); setProjectsMenuOpen(nextOpen); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} activeDocument={document} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} onOpenAnalogWorkbook={openFourSheetAnalogLevelWorkbook} onOpenPneumaticWorkbook={openFourSheetPneumaticWorkbook} onOpenPlcSensorWorkbook={openThreeSheetPlcSensorWorkbook} onOpenVfdWorkbook={openFourSheetVfdFeederWorkbook} /></div></details>
+        <details className="projects-menu" ref={projectsMenuRef} open={projectsMenuOpen}><summary aria-expanded={projectsMenuOpen} onClick={(event) => { event.preventDefault(); const nextOpen = !projectsMenuPinnedRef.current; setProjectsMenuPinned(nextOpen); setProjectsMenuOpen(nextOpen); }}>Projects</summary><div className="menu-popover project-menu-popover"><div className="project-menu-heading"><strong>Projects</strong><button type="button" className="project-menu-close" aria-label="Close Projects menu" title="Close Projects menu" onClick={closeProjectsMenu}>×</button></div><ProjectLibraryPanel active templates={templateLibrary} selected={selectedTemplate} verification={selectedTemplateVerification} activeDocument={document} onSelect={setSelectedTemplateId} onLoad={loadTemplate} onOpenWorkbook={openFeederWorkbook} onOpenFourSheetWorkbook={openFourSheetDolWorkbook} onOpenStarDeltaWorkbook={openFourSheetStarDeltaWorkbook} onOpenReversingWorkbook={openFourSheetReversingWorkbook} onOpenTwoMotorWorkbook={openFourSheetTwoMotorWorkbook} onOpenAnalogWorkbook={openFourSheetAnalogLevelWorkbook} onOpenPneumaticWorkbook={openFourSheetPneumaticWorkbook} onOpenPlcSensorWorkbook={openThreeSheetPlcSensorWorkbook} onOpenVfdWorkbook={openFourSheetVfdFeederWorkbook} onOpenEngineeringDrawing={openEngineeringDrawing} /></div></details>
         <a className="lab-route-link" href="#LAB">Laboratory →</a>
       </nav>
 

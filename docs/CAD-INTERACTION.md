@@ -110,6 +110,10 @@ Open [the editable winding comparison](../public/examples/siemens-six-lead-windi
 
 Open [the editable SM 1223 example](../public/examples/siemens-sm1223-input-wiring.json). The 45 × 100 mm front and 75 × 100 mm side envelopes both link to IO1. In simulation, S1 switches the field signal feeding I0 and the external H1 pilot. H1 verifies the upstream circuit. The module provides documented connector endpoints for drafting. CPU execution and transistor output switching are outside this model.
 
+### Open engineering drawings in the editor
+
+Choose **Projects → Engineering drawings**, select an example, and choose **Open engineering drawing**. The editor asks before replacing the current project. Cancel keeps the current project, and Undo restores it after opening an example. Downloaded copies also open through **File → Import JSON**.
+
 ### Rittal AX enclosure and panel hardware
 
 Open [the editable panel hardware drawing](../public/examples/rittal-ax-panel-hardware.json) to compare the Rittal AX 1031.000 cabinet and supplied mounting plate. The second sheet shows a 35 mm DIN rail and generic trunking with editable cut lengths. The sheets show separate front views and cut geometry in millimeters.
