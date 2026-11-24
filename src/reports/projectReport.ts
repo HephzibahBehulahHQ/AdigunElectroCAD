@@ -250,21 +250,22 @@ function panelOverlap(a: PanelShape, b: PanelShape): "exact" | "possible" | unde
 
 function panelOutlineWarnings(document: CircuitDocument): ProjectReport["validation"] {
   const outlines = panelOutlines(document);
-  return outlines.flatMap((outline, index): ProjectReport["validation"] => {
+  const warnings: ProjectReport["validation"] = [];
+  for (const [index, outline] of outlines.entries()) {
     for (let prior = 0; prior < index; prior++) {
       const other = outlines[prior];
       const overlap = panelOverlap(outline, other);
       if (overlap) {
         const exact = overlap === "exact";
-        return [{
+        warnings.push({
           severity: "warning", code: exact ? "panel-outline-overlap" : "panel-envelope-overlap",
           drawingTarget: { graphicId: outline.id },
           message: (exact ? "Linked panel outlines overlap: " : "Linked panel envelopes overlap. Check the outline geometry: ") + other.name + " and " + outline.name + ".",
-        }];
+        });
       }
     }
-    return [];
-  });
+  }
+  return warnings;
 }
 
 export function createProjectReport(document: CircuitDocument, definitions: Map<string, ElectricalComponentDefinition>): ProjectReport {
@@ -414,15 +415,17 @@ export function createProjectWideReport(project: Pick<ElectricalProject, "sheets
       const required = { left: left - (clearance.lateral ?? 0), right: right + (clearance.lateral ?? 0),
         top: top - clearance.above, bottom: bottom + clearance.below };
       const clearanceOutline = { kind: "rectangle" as const, bounds: required };
-      const obstruction = outlines.find(other => other !== outline &&
-        (other.link.sheetId !== outline.link.sheetId || other.link.componentId !== outline.link.componentId) &&
-        panelOverlap(other, clearanceOutline) && panelOverlap(other, outline) !== "exact");
-      if (obstruction) validation.push({
-        severity: "warning", code: "panel-installation-clearance", sheet: name,
-        drawingTarget: { sheetId: sheet.id, graphicId: obstruction.id },
-        message: obstruction.name + (panelOverlap(obstruction, clearanceOutline) === "exact" ? " enters" : " may enter") +
-          " the documented mounting clearance for " + outline.name + ".",
-      });
+      for (const obstruction of outlines) {
+        if (obstruction.link.sheetId === outline.link.sheetId && obstruction.link.componentId === outline.link.componentId) continue;
+        const clearanceOverlap = panelOverlap(obstruction, clearanceOutline);
+        if (!clearanceOverlap || panelOverlap(obstruction, outline) === "exact") continue;
+        validation.push({
+          severity: "warning", code: "panel-installation-clearance", sheet: name,
+          drawingTarget: { sheetId: sheet.id, graphicId: obstruction.id },
+          message: obstruction.name + (clearanceOverlap === "exact" ? " enters" : " may enter") +
+            " the documented mounting clearance for " + outline.name + ".",
+        });
+      }
     }
     for (const graphic of sheet.document.graphics ?? []) {
       const link = graphic.deviceLink;
