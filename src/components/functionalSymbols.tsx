@@ -423,6 +423,12 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
 
   if (symbolId === "panel-busbar") return <g className={mark}>{[-8, 0, 8].map((offset) => <path key={offset} d={`M ${x - 27} ${cy + offset} H ${x + 27}`} />)}<path d={`M ${x - 20} ${cy + 16} H ${x + 20}`} /></g>;
   if (symbolId === "panel-distribution") return <g className={mark}><rect x={x - 24} y={cy - 15} width="48" height="30" rx="3" />{[-9, 0, 9].map((offset) => <path key={offset} d={`M ${x - 17} ${cy + offset} H ${x + 17}`} />)}</g>;
+  if (symbolId === "terminal-double-level") return <g className={mark} aria-label="Double-level terminal with isolated upper and lower conductors">
+    {[-14, 14].map(offset => <g key={offset} data-terminal-level={offset < 0 ? "upper" : "lower"}>
+      <path d={`M ${x - 42} ${y + offset} h 84`} />
+      <circle cx={x} cy={y + offset} r={3} fill="currentColor" />
+    </g>)}
+  </g>;
   if (symbolId === "panel-enclosure") return <g className={mark} aria-label="Panel enclosure">
     <rect x={x - 30} y={cy - 22} width={60} height={44} />
     <rect x={x - 25} y={cy - 17} width={50} height={34} />

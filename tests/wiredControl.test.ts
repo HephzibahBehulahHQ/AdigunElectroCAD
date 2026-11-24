@@ -105,3 +105,22 @@ it("drives isolated AC and DC loads from separate poles of a physically wired re
   expect(evaluateWiredControl(openReturn, catalogById).get("relay")).toEqual({ energized: false, voltageV: 0 });
   expect(evaluateWiredControl(openReturn, catalogById).get("dropped-out")).toEqual({ energized: true, voltageV: 24 });
 });
+
+it("passes continuity in either direction on each PTTB level and isolates the levels", () => {
+  const base = press(createTransformerPilotProject().document, "start", true);
+  const secondary = base.wires.find(wire => wire.id === "secondary-a")!;
+  const component = { id: "pttb", definitionId: "phoenix-contact.pttb.3210567", reference: "X2", x: 500, y: 500, rotation: 0 as const, properties: {} };
+  const run = (entry: string, exit: string) => evaluateWiredControl({
+    ...base,
+    components: [...base.components, component],
+    wires: [
+      ...base.wires.filter(wire => wire !== secondary),
+      { ...secondary, id: "pttb-entry", to: { componentId: component.id, terminalId: entry } },
+      { ...secondary, id: "pttb-exit", from: { componentId: component.id, terminalId: exit } },
+    ],
+  }, catalogById).get("lamp");
+  expect(run("upper-left", "upper-right")).toEqual({ energized: true, voltageV: 24 });
+  expect(run("lower-right", "lower-left")).toEqual({ energized: true, voltageV: 24 });
+  expect(run("upper-left", "lower-right")).toMatchObject({ energized: false, voltageV: 0 });
+  expect(run("lower-right", "upper-left")).toMatchObject({ energized: false, voltageV: 0 });
+});

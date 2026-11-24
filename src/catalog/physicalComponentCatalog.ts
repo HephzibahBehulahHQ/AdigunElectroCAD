@@ -110,6 +110,24 @@ export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
     };
   }),
   {
+    id: "phoenix-contact.pttb.3210567", name: "Phoenix Contact PTTB 2,5 · 3210567", category: "Terminal Blocks",
+    referencePrefix: "X", symbolId: "terminal-double-level",
+    description: "Double-level feed-through terminal block with an independent conductor path on each level.",
+    terminals: [
+      { id: "upper-left", label: "UL", kind: "control", direction: "bidirectional", position: { x: -42, y: -14 } },
+      { id: "upper-right", label: "UR", kind: "control", direction: "bidirectional", position: { x: 42, y: -14 } },
+      { id: "lower-left", label: "LL", kind: "control", direction: "bidirectional", position: { x: -42, y: 14 } },
+      { id: "lower-right", label: "LR", kind: "control", direction: "bidirectional", position: { x: 42, y: 14 } },
+    ],
+    propertiesSchema: { conductorAreaMm2: 2.5 },
+    simulationModelId: "phoenix-pttb-double-level", simulationSupport: "connectivity",
+    manufacturerRecord: { manufacturer: "Phoenix Contact", series: "PTTB 2,5", orderCode: "3210567",
+      sourceUrl: "https://www.phoenixcontact.com/en-us/products/multi-level-terminal-block-pttb-25-3210567?type=pdf",
+      terminalMap: "verified", documentRevision: "3210567 circuit diagram, p. 7" },
+    documentation: "UL/UR and LL/LR are drafting identifiers for the two feed-through pairs. Each pair passes control-circuit continuity independently. External jumper accessories and conductor ampacity are outside the continuity model.",
+    standardsReferences: ["https://www.phoenixcontact.com/en-us/products/multi-level-terminal-block-pttb-25-3210567?type=pdf"],
+  },
+  {
     id: "rittal.ax.1031000", name: "Rittal AX 1031.000 enclosure", category: "Distribution & Panel Hardware",
     referencePrefix: "ENC", symbolId: "panel-enclosure", terminals: [],
     description: "Single-door sheet-steel enclosure, nominal 380 × 300 × 210 mm.",
