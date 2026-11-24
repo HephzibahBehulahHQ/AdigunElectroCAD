@@ -14,6 +14,7 @@ import { eatonFazCatalog, eatonFazNaCatalog, eatonFazNaDcCatalog, eatonFazRtDcCa
 import { schneiderBreakerCatalog } from "./schneiderBreakerCatalog";
 import { festoValveCatalog } from "./festoValveCatalog";
 import { omronEncoderCatalog } from "./omronEncoderCatalog";
+import { sm1223Definition } from "./siemensSm1223";
 import { hbkLoadCellCatalog } from "./hbkLoadCellCatalog";
 import type { ElectricalComponentDefinition } from "../types/electrical";
 
@@ -46,6 +47,7 @@ const originalProductPages = {
 
 export const physicalComponentCatalog: ElectricalComponentDefinition[] = [
   ...hbkLoadCellCatalog,
+  sm1223Definition,
   ...omronEncoderCatalog,
   ...festoValveCatalog,
   ...schneiderBreakerCatalog,

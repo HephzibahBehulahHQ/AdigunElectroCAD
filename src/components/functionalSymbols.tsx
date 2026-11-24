@@ -1,3 +1,4 @@
+import { sm1223Connectors, sm1223SymbolId } from "../catalog/siemensSm1223";
 import { fusePoleClosed } from "../simulation/industrialDevices";
 import { controlTerminalOffset, powerTerminalOffset } from "../cad/componentGeometry";
 import { evaluateFunctionalSignal } from "../simulation/functionalModels";
@@ -157,6 +158,19 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
     <path d={`M ${x} ${y - 17} V ${y + 17}`} />
     <text x={x - 15} y={y + 5} textAnchor="middle" className={text}>~</text>
     <text x={x + 15} y={y + 5} textAnchor="middle" className={text}>f</text>
+  </g>;
+  if (symbolId === sm1223SymbolId) return <g className={mark} aria-label="SM 1223 digital module, eight inputs and eight transistor outputs">
+    <rect x={x - 156} y={y - 35} width={312} height={70} />
+    <text x={x} y={y + 4} className={text} textAnchor="middle">SM 1223 · 8 DI / 8 DQ</text>
+    {sm1223Connectors.map(({ name, title, terminals }) => {
+      const first = terminals[0].position!;
+      const last = terminals[terminals.length - 1].position!;
+      const edge = first.y < 0 ? -35 : 35;
+      return <g key={name} data-io-connector={name}>
+        <text x={x + (first.x + last.x) / 2} y={y + (edge < 0 ? -19 : 25)} className={text} textAnchor="middle">{name} · {title}</text>
+        {terminals.map(({ id, position }) => <path key={id} d={`M ${x + position!.x} ${y + edge} V ${y + position!.y}`} />)}
+      </g>;
+    })}
   </g>;
   if (symbolId === "plc-io" || symbolId.startsWith("plc-io-")) return <g className={mark} aria-label="PLC digital and analog I/O module">
     <rect x={x - 25} y={y - 29} width="50" height="58" rx="2" />
