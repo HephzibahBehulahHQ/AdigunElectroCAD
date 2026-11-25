@@ -1474,3 +1474,13 @@ it("aligns all SM 1223 leads to their terminal anchors and clears the output mar
     expect(markup).toContain(`<text x="${x}" y="372" text-anchor="middle" class="free-terminal-label"`);
   }
 });
+
+it("centres the junction dot on its one shared wire anchor", () => {
+  const component = { id: "star", definitionId: "junction.power", reference: "X2", x: 520, y: 570, rotation: 90 as const, properties: {} };
+  const anchors = terminalAnchors({ id: "star-drawing", name: "Star", description: "", revision: 1, wires: [], components: [component] });
+  expect(anchors).toMatchObject([{ endpoint: { componentId: "star", terminalId: "node" }, x: 520, y: 570 }]);
+  const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: catalogById.get(component.definitionId)!.symbolId, x: 520, y: 570, properties: {},
+  }));
+  expect(markup).toContain('data-power-junction="" cx="520" cy="570"');
+});

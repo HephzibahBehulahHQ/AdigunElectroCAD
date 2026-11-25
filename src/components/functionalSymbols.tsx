@@ -111,6 +111,9 @@ export function FunctionalSymbol({ symbolId, x, y, properties = {}, componentNam
       <circle cx={x} cy={y + offset} r={3} fill="currentColor" />
     </g>)}
   </g>;
+  if (symbolId === "terminal-power-junction") return <g className={mark} aria-label="Common power conductor junction">
+    <circle data-power-junction="" cx={x} cy={y} r={4} fill="currentColor" />
+  </g>;
   if (symbolId === "terminal" || symbolId.startsWith("terminal-")) {
     const connected = properties.continuityClosed !== false;
     return <g className={mark} aria-label={`Feed-through terminal block, ${connected ? "connected" : "open"}`} data-state={connected ? "connected" : "open"}>
