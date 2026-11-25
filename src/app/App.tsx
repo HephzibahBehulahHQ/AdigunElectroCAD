@@ -1611,6 +1611,15 @@ export function App() {
       setReconnectingWireId("");
       return;
     }
+    const routeBetweenTerminals = (source: TerminalEndpoint, target: TerminalEndpoint) => {
+      const anchors = terminalAnchors(document);
+      const from = anchors.find((anchor) => anchor.endpoint.componentId === source.componentId && anchor.endpoint.terminalId === source.terminalId);
+      const to = anchors.find((anchor) => anchor.endpoint.componentId === target.componentId && anchor.endpoint.terminalId === target.terminalId);
+      if (!from || !to) return null;
+      const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
+      const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm");
+      return newWireRoute(from, to, obstacles);
+    };
     if (reconnectingWire) {
       const next = reconnectWire(document, reconnectingWire.id, endpoint, reconnectSide);
       const previousWires = new Set(document.wires);
@@ -1621,6 +1630,13 @@ export function App() {
       }
       const issue = validateCircuit(next, catalogById).find((item) => item.severity === "error");
       if (issue) { setNotice(issue.message); return; }
+      if (next !== document && !isReferenceSheet) {
+        const replacement = next.wires.find(wire => wire.id === reconnectingWire.id);
+        if (replacement && !replacement.branchOfWireId) {
+          const route = routeBetweenTerminals(replacement.from, replacement.to);
+          if (route) replacement.points = route.storedPoints;
+        }
+      }
       if (next !== document && !updateDocument(next)) return;
       setSelectedWireId(reconnectingWire.id);
       setNotice(`Wire ${reconnectingWire.netName ?? reconnectingWire.id} reconnected to the selected terminal.`);
@@ -1630,13 +1646,7 @@ export function App() {
       const wire = createManualWire(document, wireStart, endpoint, wireBranchStart ? { wireId: wireBranchStart.wireId, source: wireBranchStart.source, position: wireBranchStart.position } : undefined);
       if (!wireBranchStart) wire.points = wireBends;
       if (!wireBranchStart && !isReferenceSheet && wireBends.length === 0) {
-        const anchors = terminalAnchors(document);
-        const from = anchors.find((anchor) => anchor.endpoint.componentId === wireStart.componentId && anchor.endpoint.terminalId === wireStart.terminalId);
-        const to = anchors.find((anchor) => anchor.endpoint.componentId === endpoint.componentId && anchor.endpoint.terminalId === endpoint.terminalId);
-        if (!from || !to) { setNotice("Could not find both terminal positions."); return; }
-        const hidden = new Set(document.draftingLayers?.filter((layer) => layer.hidden).map(({ id }) => id));
-        const obstacles = wireRouteObstacles(document.components.filter(({ layerId }) => !hidden.has(layerId ?? "")), drawingGrid.units === "mm");
-        const route = newWireRoute(from, to, obstacles);
+        const route = routeBetweenTerminals(wireStart, endpoint);
         if (route === null) {
           setNotice("No clear automatic route. Click the drawing to add bends, then choose the destination terminal again.");
           return;
