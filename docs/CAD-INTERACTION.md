@@ -72,7 +72,7 @@ Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawin
 
 ## HBK Z6 mounting comparison
 
-Import the [HBK Z6 mounting comparison](../public/examples/hbk-z6-mounting-comparison.json) to compare the Z6F 100 kg, Z6F 500 kg and Z6G 500 kg drawings. Each millimetre sheet has an editable top envelope, two mounting bores and one load application bore. Select its outline and use **Go to schematic device** to inspect the six bridge leads and shield. The example covers nominal geometry and leaves excitation and signal conditioning unwired.
+Import the [HBK Z6 mounting comparison](../public/examples/hbk-z6-mounting-comparison.json) to compare the Z6F 100 kg, Z6F 500 kg and Z6G 500 kg drawings. Each millimetre sheet has an editable top envelope, two mounting bores and one load application bore. Select its outline and use **Go to schematic device** to inspect the six bridge leads and shield. The 100 kg schematic connects the ideal differential bridge output to a 4.5–5.5 mV acceptance circuit. Set B1 to 490.3325 N and run to observe 5.000 mV and K1 ON. Excitation is configured on B1. Sense feedback and shielding are shown as terminals for drafting.
 
 ## Festo VOVG coil test and plan
 

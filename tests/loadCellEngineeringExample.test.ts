@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
+import { catalogById } from "../src/catalog/dolCatalog";
+import { verifyCircuitSequence } from "../src/projects/templateVerification";
 import { encodeProject, parseProjectJson } from "../src/projects/projectSerialization";
 
 const variants = [
@@ -31,4 +33,22 @@ it("imports and round-trips all three published HBK mounting drawings", () => {
     }
   }
   expect(parseProjectJson(JSON.stringify(encodeProject(project)))).toEqual(project);
+});
+
+it("uses the linked HBK bridge output to drive the acceptance circuit", () => {
+  const file = new URL("../public/examples/hbk-z6-mounting-comparison.json", import.meta.url);
+  const document = parseProjectJson(readFileSync(file, "utf8")).sheets[1].document;
+  const check = (name: string, forceN: number, output: string, coil: "ON" | "OFF") => ({
+    name, changes: [{ reference: "B1", properties: { forceN } }],
+    expectations: [
+      { reference: "B1", label: "Load-cell output", exact: output },
+      { reference: "K1", label: "Coil", exact: coil },
+    ],
+  });
+  const results = verifyCircuitSequence(document, [
+    check("Empty", 0, "0.000 mV", "OFF"),
+    check("Half scale", 490.3325, "5.000 mV", "ON"),
+    check("Full scale", 980.665, "10.000 mV", "OFF"),
+  ], catalogById);
+  expect(results.flatMap(step => step.failures)).toEqual([]);
 });

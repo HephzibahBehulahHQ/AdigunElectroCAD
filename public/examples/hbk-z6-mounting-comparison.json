@@ -81,27 +81,140 @@
     },
     {
       "id": "schematic-1",
-      "name": "Z6F 100 kg schematic",
+      "name": "100 kg bridge signal",
       "kind": "free-schematic",
       "document": {
         "id": "schematic-1",
-        "name": "Z6F 100 kg schematic",
-        "description": "The load cell exposes its six bridge leads and housing shield for wiring. Excitation and signal conditioning are left for the user.",
+        "name": "100 kg bridge signal",
+        "description": "Change B1 force to exercise the 4.5 to 5.5 mV acceptance window. The simulation uses configured bridge excitation and a differential signal abstraction.",
         "revision": 8,
         "components": [
           {
             "id": "breaker",
             "definitionId": "hbk.z6fc3.100kg",
             "reference": "B1",
-            "x": 520,
-            "y": 340,
+            "x": 150,
+            "y": 360,
             "rotation": 0,
             "properties": {
               "forceN": 0
             }
+          },
+          {
+            "id": "lower",
+            "definitionId": "logic.comparator-greater-than",
+            "reference": "CMP1",
+            "x": 390,
+            "y": 235,
+            "rotation": 0,
+            "properties": {
+              "left": 0,
+              "right": 4.5
+            }
+          },
+          {
+            "id": "upper",
+            "definitionId": "logic.comparator-less-than",
+            "reference": "CMP2",
+            "x": 390,
+            "y": 485,
+            "rotation": 0,
+            "properties": {
+              "left": 0,
+              "right": 5.5
+            }
+          },
+          {
+            "id": "window",
+            "definitionId": "logic.gate-and",
+            "reference": "G1",
+            "x": 640,
+            "y": 360,
+            "rotation": 0,
+            "properties": {
+              "inputA": false,
+              "inputB": false
+            }
+          },
+          {
+            "id": "acceptance",
+            "definitionId": "logic.output-coil",
+            "reference": "K1",
+            "x": 875,
+            "y": 360,
+            "rotation": 0,
+            "properties": {
+              "input": false
+            }
           }
         ],
-        "wires": []
+        "wires": [
+          {
+            "id": "bridge-reading",
+            "netName": "BRIDGE_MV",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "signal"
+            },
+            "to": {
+              "componentId": "lower",
+              "terminalId": "in-a"
+            },
+            "points": []
+          },
+          {
+            "id": "bridge-upper",
+            "netName": "BRIDGE_MV",
+            "from": {
+              "componentId": "breaker",
+              "terminalId": "signal"
+            },
+            "to": {
+              "componentId": "upper",
+              "terminalId": "in-a"
+            },
+            "points": []
+          },
+          {
+            "id": "above-minimum",
+            "netName": "ABOVE_MIN",
+            "from": {
+              "componentId": "lower",
+              "terminalId": "out"
+            },
+            "to": {
+              "componentId": "window",
+              "terminalId": "in-a"
+            },
+            "points": []
+          },
+          {
+            "id": "below-maximum",
+            "netName": "BELOW_MAX",
+            "from": {
+              "componentId": "upper",
+              "terminalId": "out"
+            },
+            "to": {
+              "componentId": "window",
+              "terminalId": "in-b"
+            },
+            "points": []
+          },
+          {
+            "id": "accept-command",
+            "netName": "ACCEPT",
+            "from": {
+              "componentId": "window",
+              "terminalId": "out"
+            },
+            "to": {
+              "componentId": "acceptance",
+              "terminalId": "in"
+            },
+            "points": []
+          }
+        ]
       }
     },
     {
