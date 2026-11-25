@@ -1515,3 +1515,14 @@ it("aligns the two independent PTTB paths to all four terminal anchors", () => {
   }
   expect(markup.match(/<path /g)).toHaveLength(2);
 });
+
+it("marks only the two HBK excitation and sense junctions on the bridge artwork", () => {
+  const definition = catalogById.get("hbk.z6fc3.100kg")!;
+  const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: definition.symbolId, x: 100, y: 100, properties: definition.propertiesSchema,
+  }));
+  expect(markup.match(/data-bridge-sense-junction=/g)).toHaveLength(2);
+  expect(markup).toContain('data-bridge-sense-junction="positive" cx="66" cy="74"');
+  expect(markup).toContain('data-bridge-sense-junction="negative" cx="71" cy="128"');
+  expect(markup).toContain('data-bridge-shield="" cx="135" cy="110"');
+});
