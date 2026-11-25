@@ -1451,3 +1451,19 @@ it("draws the nominal Rittal attachment centres at 280 × 250 mm spacing", () =>
   expect(render({ ...component, properties: { customBoreDiameterMm: 25 } })).not.toContain("data-mounting-bore");
   expect(render({ ...component, properties: { widthMm: 320, customBoreDiameterMm: 16 } })).not.toContain("data-mounting-pattern");
 });
+
+it("aligns all SM 1223 leads to their terminal anchors and clears the output markers", () => {
+  const component = { id: "io", definitionId: "siemens.sm1223.6es7223-1bh32-0xb0", reference: "IO1", x: 420, y: 300, rotation: 0 as const, properties: {} };
+  const anchors = terminalAnchors({ id: "io-sheet", name: "IO", description: "", revision: 1, wires: [], components: [component] });
+  const markup = renderToStaticMarkup(createElement(PlacedSymbol, {
+    component, draftingStyle: component, selectedComponentId: "", onSelect: () => undefined,
+    terminalAnchorsForComponent: anchors,
+  }));
+  expect(anchors).toHaveLength(21);
+  for (const { x, y } of anchors) {
+    expect(markup).toContain(`d="M ${x} ${y < component.y ? 265 : 335} V ${y}"`);
+  }
+  for (const { x } of anchors.filter(({ y }) => y > component.y)) {
+    expect(markup).toContain(`<text x="${x}" y="372" text-anchor="middle" class="free-terminal-label"`);
+  }
+});
