@@ -1459,6 +1459,13 @@ it("aligns all SM 1223 leads to their terminal anchors and clears the output mar
     component, draftingStyle: component, selectedComponentId: "", onSelect: () => undefined,
     terminalAnchorsForComponent: anchors,
   }));
+  const compact = { ...component, size: 0.5 };
+  const compactAnchors = terminalAnchors({ id: "io-sheet", name: "IO", description: "", revision: 1, wires: [], components: [compact] });
+  const compactMarkup = renderToStaticMarkup(createElement(PlacedSymbol, {
+    component: compact, draftingStyle: compact, selectedComponentId: "", onSelect: () => undefined,
+    terminalAnchorsForComponent: compactAnchors,
+  }));
+  expect(compactMarkup.match(/font-size:5px;stroke-width:1.5/g)).toHaveLength(21);
   expect(anchors).toHaveLength(21);
   for (const { x, y } of anchors) {
     expect(markup).toContain(`d="M ${x} ${y < component.y ? 265 : 335} V ${y}"`);
