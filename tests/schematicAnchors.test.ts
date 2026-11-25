@@ -1484,3 +1484,34 @@ it("centres the junction dot on its one shared wire anchor", () => {
   }));
   expect(markup).toContain('data-power-junction="" cx="520" cy="570"');
 });
+
+it("draws a feed-through terminal to the same pair of anchors in both continuity states", () => {
+  const component = { id: "terminal", definitionId: "generic.iec.feed-through-terminal", reference: "X1", x: 100, y: 100, rotation: 0 as const, properties: {} };
+  const definition = catalogById.get(component.definitionId)!;
+  const document = { id: "terminal-drawing", name: "Terminal", description: "", revision: 1, wires: [], components: [component] };
+  const anchors = terminalAnchors(document);
+  expect(anchors.map(({ endpoint, x, y }) => [endpoint.terminalId, x, y])).toEqual([["1", 53, 100], ["2", 147, 100]]);
+  for (const continuityClosed of [false, true]) {
+    const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+      symbolId: definition.symbolId, x: component.x, y: component.y, properties: { continuityClosed },
+    }));
+    expect(markup).toContain('d="M 53 100 H 78 M 122 100 H 147"');
+    expect(markup).toContain(continuityClosed ? 'd="M 78 100 H 122"' : 'd="M 78 100 H 96 M 104 100 H 122"');
+  }
+});
+
+it("aligns the two independent PTTB paths to all four terminal anchors", () => {
+  const component = { id: "pttb", definitionId: "phoenix-contact.pttb.3210567", reference: "X2", x: 100, y: 100, rotation: 0 as const, properties: {} };
+  const document = { id: "terminal-drawing", name: "Terminal", description: "", revision: 1, wires: [], components: [component] };
+  const anchors = terminalAnchors(document);
+  const markup = renderToStaticMarkup(createElement(FunctionalSymbol, {
+    symbolId: catalogById.get(component.definitionId)!.symbolId, x: component.x, y: component.y, properties: {},
+  }));
+  for (const level of ["upper", "lower"]) {
+    const left = anchors.find(({ endpoint }) => endpoint.terminalId === level + "-left")!;
+    const right = anchors.find(({ endpoint }) => endpoint.terminalId === level + "-right")!;
+    expect(right.y).toBe(left.y);
+    expect(markup).toContain(`data-terminal-level="${level}"><path d="M ${left.x} ${left.y} h ${right.x - left.x}"`);
+  }
+  expect(markup.match(/<path /g)).toHaveLength(2);
+});
