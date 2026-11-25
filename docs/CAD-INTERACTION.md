@@ -68,7 +68,7 @@ For added terminals on the generic user symbol, edit the local X/Y anchor offset
 
 ## Linked encoder drawing example
 
-Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawing.json) and open it through **File → Import JSON**. The mechanical sheet contains the Ø40 mm front view, three nominal M3 thread marks and the stepped side view. Select either outline and use **Go to schematic device** in Properties to inspect the two differential A-channel wires and their separate terminal levels. The example documents routing and nominal geometry. It omits the receiver circuit and encoder power wiring.
+Save the [Omron E6B2-C project](../public/examples/omron-e6b2-engineering-drawing.json) and open it through **File → Import JSON**. The mechanical sheet contains the Ø40 mm front view, three nominal M3 thread marks and the stepped side view. Select either outline and use **Go to schematic device** in Properties to inspect the two differential A-channel wires and their separate terminal levels. The Z output drives a simulated frequency meter. Set B2 to 1200 rpm and run to read 20 Hz on P1. Encoder power wiring and a physical differential receiver are outside this example.
 
 ## HBK Z6 mounting comparison
 
