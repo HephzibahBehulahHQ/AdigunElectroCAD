@@ -384,13 +384,15 @@ if (symbolId === "transformer" || symbolId.startsWith("transformer-")) {
     <path d={[-22, 0, 22].map(offset => `M ${x - 47} ${y + offset} H ${x - 24} M ${x + 24} ${y + offset} H ${x + 47}`).join(" ")} />
     <path d={`M ${x - 10} ${y + 5} v -10 h 7 v 10 h 7 v -10 h 6`} />
   </g>;
-  if (symbolId === "sensor-load-cell-bridge") return <g className={mark}>
+  if (symbolId === "sensor-load-cell-bridge") return <g className={mark} aria-label="Six-wire load-cell bridge with separate housing shield">
     <path d={["M",x,y-20,"L",x+22,y,"L",x,y+20,"L",x-22,y,"Z",
       "M",x-47,y-26,"H",x,"V",y-20,"M",x-47,y+10,"H",x-34,"V",y-26,
       "M",x-47,y-8,"H",x-29,"V",y+28,"H",x,"V",y+20,"M",x-47,y+28,"H",x-29,
       "M",x+47,y-26,"H",x+30,"V",y,"H",x+22,"M",x+47,y-8,"H",x+36,"V",y+33,"H",x-22,"V",y,
       "M",x+47,y+10,"H",x+38].join(" ")} />
-    <circle cx={x+35} cy={y+10} r={3} />
+    <circle data-bridge-sense-junction="positive" cx={x - 34} cy={y - 26} r={2} style={{ fill: "currentColor" }} />
+    <circle data-bridge-sense-junction="negative" cx={x - 29} cy={y + 28} r={2} style={{ fill: "currentColor" }} />
+    <circle data-bridge-shield="" cx={x + 35} cy={y + 10} r={3} />
   </g>;
   if (symbolId === "sensor-load-cell") return <g className={mark}><path d={`M ${x - 25} ${cy - 10} H ${x + 25} M ${x - 16} ${cy + 10} H ${x + 16}`} /><path d={`M ${x - 12} ${cy - 10} L ${x - 6} ${cy + 10} M ${x + 12} ${cy - 10} L ${x + 6} ${cy + 10}`} /></g>;
   if (symbolId === "sensor-ct") return <g className={mark} aria-label="Current transformer with simulated secondary current output"><circle cx={x} cy={cy} r="14" /><path d={`M ${x - 28} ${cy} H ${x + 28} M ${x + 14} ${cy + 7} H ${x + 27} V ${y} H ${x + 47}`} /><text x={x} y={cy + 5} textAnchor="middle" className={text}>CT</text></g>;
