@@ -151,7 +151,7 @@
       "document": {
         "id": "control",
         "name": "Encoder schematic",
-        "description": "Phase A+ and A− terminate on electrically isolated PTTB 2,5 levels. Add the actual receiving circuit and encoder supply to complete the installation.",
+        "description": "Compare isolated A and inverted A routing and measure the ideal Z index frequency. At 1200 rpm the index meter reads 20 Hz.",
         "revision": 1,
         "components": [
           {
@@ -171,6 +171,19 @@
             "y": 292,
             "rotation": 0,
             "properties": {}
+          },
+          {
+            "id": "index-meter",
+            "definitionId": "generic.iec.panel-meter",
+            "reference": "P1",
+            "x": 710,
+            "y": 450,
+            "rotation": 0,
+            "properties": {
+              "measurementKind": "Frequency",
+              "scaleMaximum": 100,
+              "requireWiredInput": true
+            }
           }
         ],
         "wires": [
@@ -199,6 +212,19 @@
             },
             "points": [],
             "netName": "MANUAL_2"
+          },
+          {
+            "id": "index-frequency",
+            "netName": "Z_INDEX_HZ",
+            "from": {
+              "componentId": "encoder",
+              "terminalId": "phase-z"
+            },
+            "to": {
+              "componentId": "index-meter",
+              "terminalId": "signal"
+            },
+            "points": []
           }
         ]
       }
